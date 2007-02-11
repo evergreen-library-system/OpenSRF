@@ -253,10 +253,11 @@ sub timed_read {
 				$self->{temp_buffer} = '';
 				#####
 
-				my $ff =  fcntl($fh, F_GETFL, 0);
-				if ($ff == ($ff | O_NONBLOCK) and $timeout > 0 ) {
+				# This code is no longer in use
+				#my $ff =  fcntl($fh, F_GETFL, 0);
+				#if ($ff == ($ff | O_NONBLOCK) and $timeout > 0 ) {
 					#throw OpenSRF::EX::ERROR ("File flags are set to NONBLOCK but timeout is $timeout", ERROR );
-				}
+				#}
 
 				my $t_buf = "";
 				my $read_size = 1024; my $f = 0;
@@ -266,6 +267,12 @@ sub timed_read {
 						OpenSRF::EX::JabberDisconnected->throw(
 							"Lost jabber client in timed_read()");
 					}
+
+					# XXX Change me to debug/internal at some point, this is for testing...
+					# XXX Found a race condition where reading >= $read_size bytes of data
+					# will fail if the log line below is removed.
+					$logger->info("timed_read() read $n bytes of data");
+
 
 					$buffer .= $t_buf;
 					if( $n < $read_size ) {
@@ -406,7 +413,7 @@ sub send {
 	$msg->setBody( $body );
 	$msg->set_router_command( $router_command );
 	$msg->set_router_class( $router_class );
-
+   $msg->set_osrf_xid($logger->get_osrf_xid);
 
 	$logger->transport( 
 			"JabberClient Sending message to $to with thread $thread and body: \n$body", INTERNAL );
