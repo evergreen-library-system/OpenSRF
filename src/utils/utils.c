@@ -25,29 +25,37 @@ inline void* safe_malloc( int size ) {
 	return ptr;
 }
 
+/****************
+ The following static variables, and the following two functions,
+ overwrite the argv array passed to main().  The purpose is to
+ change the program name as reported by ps and similar utilities.
 
-char** __global_argv = NULL;
-int __global_argv_size = 0;
+ Warning: this code makes the non-portable assumption that the
+ strings to which argv[] points are contiguous in memory.  The
+ C Standard makes no such guarantee.
+ ****************/
+static char** global_argv = NULL;
+static int global_argv_size = 0;
 
 int init_proc_title( int argc, char* argv[] ) {
 
-	__global_argv = argv;
+	global_argv = argv;
 
 	int i = 0;
 	while( i < argc ) {
-		int len = strlen( __global_argv[i]);
-		bzero( __global_argv[i++], len );
-		__global_argv_size += len;
+		int len = strlen( global_argv[i]);
+		bzero( global_argv[i++], len );
+		global_argv_size += len;
 	}
 
-	__global_argv_size -= 2;
+	global_argv_size -= 2;
 	return 0;
 }
 
 int set_proc_title( char* format, ... ) {
 	VA_LIST_TO_STRING(format);
-	bzero( *(__global_argv), __global_argv_size );
-	return snprintf( *(__global_argv), __global_argv_size, VA_BUF );
+	bzero( *(global_argv), global_argv_size );
+	return snprintf( *(global_argv), global_argv_size, VA_BUF );
 }
 
 
