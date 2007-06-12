@@ -144,7 +144,6 @@ install-prep:
 	mkdir -p $(INCLUDEDIR)
 	mkdir -p $(INCLUDEDIR)/$(OPENSRF)
 	mkdir -p $(ETCDIR)
-	mkdir -p $(TEMPLATEDIR)
 
 objson-install:	install-prep 
 	@echo $@
