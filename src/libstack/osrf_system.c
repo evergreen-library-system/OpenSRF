@@ -64,13 +64,22 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 
 	/* first we grab the settings */
 	if(!osrfSystemBootstrapClientResc(configfile, contextNode, "settings_grabber" )) {
-		osrfLogError( OSRF_LOG_MARK, "Unable to bootstrap");
+		osrfLogError( OSRF_LOG_MARK,
+			"Unable to bootstrap for host %s from configuration file %s",
+			hostname, configfile );
 		return -1;
 	}
 
-	osrf_settings_retrieve(hostname);
+	int retcode = osrf_settings_retrieve(hostname);
 	osrf_system_disconnect_client();
 
+	if( retcode ) {
+		osrfLogError( OSRF_LOG_MARK,
+			"Unable to retrieve settings for host %s from configuration file %s",
+			hostname, configfile );
+		return -1;
+	}
+	
 	jsonObject* apps = osrf_settings_host_value_object("/activeapps/appname");
 	osrfStringArray* arr = osrfNewStringArray(8);
 	
