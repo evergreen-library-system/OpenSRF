@@ -41,24 +41,33 @@ void osrfConfigReplaceConfig(osrfConfig* cfg, const jsonObject* obj) {
 osrfConfig* osrfConfigInit(char* configFile, char* configContext) {
 	if(!configFile) return NULL;
 
-	osrfConfig* cfg = safe_malloc(sizeof(osrfConfig));
-	if(configContext) cfg->configContext = strdup(configContext);
-	else cfg->configContext = NULL;
-
+	// Load XML from the configuration file
+	
 	xmlDocPtr doc = xmlParseFile(configFile);
 	if(!doc) {
 		osrfLogWarning( OSRF_LOG_MARK,  "Unable to parse XML config file %s", configFile);
 		return NULL;
 	}
 
-	cfg->config = xmlDocToJSON(doc);
+	// Translate it into a jsonObject
+	
+	jsonObject* json_config = xmlDocToJSON(doc);
 	xmlFreeDoc(doc);
 
-	if(!cfg->config) {
+	if(!json_config ) {
 		osrfLogWarning( OSRF_LOG_MARK, "xmlDocToJSON failed for config %s", configFile);
 		return NULL;
 	}	
 
+	// Build an osrfConfig and return it by pointer
+	
+	osrfConfig* cfg = safe_malloc(sizeof(osrfConfig));
+
+	if(configContext) cfg->configContext = strdup(configContext);
+	else cfg->configContext = NULL;
+
+	cfg->config = json_config;
+	
 	return cfg;
 }
 
