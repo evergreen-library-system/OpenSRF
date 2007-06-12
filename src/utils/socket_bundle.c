@@ -1,5 +1,19 @@
 #include "socket_bundle.h"
 
+/* buffer used to read from the sockets */
+#define RBUFSIZE 1024
+
+static socket_node* _socket_add_node(socket_manager* mgr,
+		int endpoint, int addr_type, int sock_fd, int parent_id );
+static socket_node* socket_find_node(socket_manager* mgr, int sock_fd);
+static void socket_remove_node(socket_manager*, int sock_fd);
+static int _socket_send(int sock_fd, const char* data, int flags);
+static int _socket_route_data(socket_manager* mgr, int num_active, fd_set* read_set);
+static int _socket_route_data_id( socket_manager* mgr, int sock_id);
+static int _socket_handle_new_client(socket_manager* mgr, socket_node* node);
+static int _socket_handle_client_data(socket_manager* mgr, socket_node* node);
+
+
 /* -------------------------------------------------------------------- 
 	Test Code 
 	-------------------------------------------------------------------- */
@@ -38,8 +52,9 @@ int main(int argc, char* argv[]) {
 /* -------------------------------------------------------------------- */
 
 
-
-socket_node* _socket_add_node(socket_manager* mgr, 
+/* allocates and inserts a new socket node into the nodeset.
+	if parent_id is positive and non-zero, it will be set */
+static socket_node* _socket_add_node(socket_manager* mgr, 
 		int endpoint, int addr_type, int sock_fd, int parent_id ) {
 
 	if(mgr == NULL) return NULL;
@@ -332,9 +347,8 @@ int socket_open_unix_client(socket_manager* mgr, char* sock_path) {
 }
 
 
-
 /* returns the socket_node with the given sock_fd */
-socket_node* socket_find_node(socket_manager* mgr, int sock_fd) {
+static socket_node* socket_find_node(socket_manager* mgr, int sock_fd) {
 	if(mgr == NULL) return NULL;
 	socket_node* node = mgr->socket;
 	while(node) {
@@ -346,7 +360,7 @@ socket_node* socket_find_node(socket_manager* mgr, int sock_fd) {
 }
 
 /* removes the node with the given sock_fd from the list and frees it */
-void socket_remove_node(socket_manager* mgr, int sock_fd) {
+static void socket_remove_node(socket_manager* mgr, int sock_fd) {
 
 	if(mgr == NULL) return;
 
@@ -378,7 +392,6 @@ void socket_remove_node(socket_manager* mgr, int sock_fd) {
 }
 
 
-
 void _socket_print_list(socket_manager* mgr) {
 	if(mgr == NULL) return;
 	socket_node* node = mgr->socket;
@@ -396,8 +409,8 @@ int socket_send(int sock_fd, const char* data) {
 	return _socket_send( sock_fd, data, 0);
 }
 
-
-int _socket_send(int sock_fd, const char* data, int flags) {
+/* utility method */
+static int _socket_send(int sock_fd, const char* data, int flags) {
 
 	signal(SIGPIPE, SIG_IGN); /* in case a unix socket was closed */
 
@@ -415,9 +428,13 @@ int _socket_send(int sock_fd, const char* data, int flags) {
 }
 
 
-int socket_send_nowait( int sock_fd, const char* data) {
-	return _socket_send( sock_fd, data, MSG_DONTWAIT);
-}
+/* sends the given data to the given socket. 
+ * sets the send flag MSG_DONTWAIT which will allow the 
+ * process to continue even if the socket buffer is full
+ * returns 0 on success, -1 otherwise */
+//int socket_send_nowait( int sock_fd, const char* data) {
+//	return _socket_send( sock_fd, data, MSG_DONTWAIT);
+//}
 
 
 /*
@@ -552,9 +569,14 @@ int socket_wait_all(socket_manager* mgr, int timeout) {
 	return _socket_route_data(mgr, retval, &read_set);
 }
 
-/* determines if we'er receiving a new client or data
+/* iterates over the sockets in the set and handles active sockets.
+	new sockets connecting to server sockets cause the creation
+	of a new socket node.
+	Any new data read is is passed off to the data_received callback
+	as it arrives */
+/* determines if we're receiving a new client or data
 	on an existing client */
-int _socket_route_data(
+static int _socket_route_data(
 	socket_manager* mgr, int num_active, fd_set* read_set) {
 
 	if(!(mgr && read_set)) return -1;
@@ -617,7 +639,8 @@ int _socket_route_data(
 }
 
 
-int _socket_route_data_id( socket_manager* mgr, int sock_id) {
+/* routes data from a single known socket */
+static int _socket_route_data_id( socket_manager* mgr, int sock_id) {
 	socket_node* node = socket_find_node(mgr, sock_id);	
 	int status = 0;
 
@@ -639,7 +662,7 @@ int _socket_route_data_id( socket_manager* mgr, int sock_id) {
 }
 
 
-int _socket_handle_new_client(socket_manager* mgr, socket_node* node) {
+static int _socket_handle_new_client(socket_manager* mgr, socket_node* node) {
 	if(mgr == NULL || node == NULL) return -1;
 
 	errno = 0;
@@ -664,7 +687,7 @@ int _socket_handle_new_client(socket_manager* mgr, socket_node* node) {
 }
 
 
-int _socket_handle_client_data(socket_manager* mgr, socket_node* node) {
+static int _socket_handle_client_data(socket_manager* mgr, socket_node* node) {
 	if(mgr == NULL || node == NULL) return -1;
 
 	char buf[RBUFSIZE];
