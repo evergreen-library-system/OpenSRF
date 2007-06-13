@@ -6,8 +6,8 @@
 // returns a built and allocated transport_session object.
 // This codes does no network activity, only memory initilization
 // ---------------------------------------------------------------------------------
-transport_session* init_transport(  char* server, 
-	int port, char* unix_path, void* user_data, int component ) {
+transport_session* init_transport(  const char* server, 
+	int port, const char* unix_path, void* user_data, int component ) {
 
 	/* create the session struct */
 	transport_session* session = 
@@ -119,7 +119,7 @@ int session_wait( transport_session* session, int timeout ) {
 	int ret =  socket_wait( session->sock_mgr, timeout, session->sock_id );
 
 	if( ret ) {
-		osrfLogWarning(OSRF_LOG_MARK, "socket_wait returned error code %d", ret);
+		osrfLogDebug(OSRF_LOG_MARK, "socket_wait returned error code %d", ret);
 		session->state_machine->connected = 0;
 	}
 	return ret;
@@ -169,6 +169,10 @@ int session_connect( transport_session* session,
 		} else if(session->unix_path != NULL) {
 			if( (session->sock_id = socket_open_unix_client(
 				session->sock_mgr, session->unix_path)) <= 0 ) 
+			return 0;
+		}
+		else {
+			osrfLogWarning( OSRF_LOG_MARK, "Can't open session: no port or unix path" );
 			return 0;
 		}
 	}

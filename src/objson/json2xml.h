@@ -5,7 +5,7 @@
 /* the JSON parser, so we can read the response we're XMLizing */
 #include "object.h"
 #include "json_parser.h"
-#include "utils.h"
+#include "opensrf/utils.h"
 
 char* jsonObjectToXML(jsonObject*);
 

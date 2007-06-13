@@ -18,8 +18,8 @@ GNU General Public License for more details.
 #include <stdio.h>
 #include <time.h>
 
-int __osrfChatXMLErrorOcurred = 0;
-int __osrfChatClientSentDisconnect = 0;
+static int osrfChatXMLErrorOcurred = 0;
+static int osrfChatClientSentDisconnect = 0;
 
 /* shorter version of strcmp */
 static int eq(const char* a, const char* b) { return (a && b && !strcmp(a,b)); }
@@ -83,14 +83,16 @@ osrfChatServer* osrfNewChatServer( char* domain, char* secret, int s2sport ) {
 	server->deadNodes = osrfNewList();
 	server->nodeList->freeItem = &osrfChatNodeFree;
 	server->domain		= strdup(domain);
+	server->secret      = strdup(secret);
 	server->s2sport	= s2sport;
+	server->port        = 0;
 
+	// Build socket manager
 	server->mgr = safe_malloc(sizeof(socket_manager));
 	server->mgr->data_received = &osrfChatHandleData;
 	server->mgr->blob = server;
 	server->mgr->on_socket_closed = &osrfChatSocketClosed;
 
-	if(secret) server->secret = strdup(secret);
 	return server;
 }
 
@@ -192,8 +194,12 @@ void osrfChatServerFree(osrfChatServer* server ) {
 	if(!server) return;
 	osrfHashFree(server->nodeHash);
 	osrfListFree(server->nodeList);
+	osrfListFree(server->deadNodes);
 	free(server->mgr);
+	free(server->domain);
 	free(server->secret);
+
+	free(server);
 }
 
 
@@ -399,16 +405,16 @@ int osrfChatPushData( osrfChatServer* server, osrfChatNode* node, char* data ) {
 	xmlParseChunk(node->parserCtx, data, strlen(data), 0);
 	node->inparse = 0;
 
-	if(__osrfChatXMLErrorOcurred) {
-		__osrfChatXMLErrorOcurred = 0;
+	if(osrfChatXMLErrorOcurred) {
+		osrfChatXMLErrorOcurred = 0;
 		return -1;
 	}
 
 	/* we can't do cleanup of the XML handlers while in the middle of a 
 		data push, so set flags in the data push and doe the cleanup here */
 	/*
-	if(__osrfChatClientSentDisconnect) {
-		__osrfChatClientSentDisconnect  = 0;
+	if(osrfChatClientSentDisconnect) {
+		osrfChatClientSentDisconnect  = 0;
 		osrfChatNodeFinish( server, node );
 	}
 	*/
@@ -587,7 +593,7 @@ int osrfChatHandleNewConnection( osrfChatNode* node, const char* name, const xml
 char* osrfChatMkAuthKey() {
 	char keybuf[112];
 	bzero(keybuf, 112);
-	snprintf(keybuf, 111, "%d%d%s", (int) time(NULL), getpid(), getenv("HOSTNAME"));
+	snprintf(keybuf, 111, "%d%ld%s", (int) time(NULL), (long) getpid(), getenv("HOSTNAME"));
 	return strdup(shahash(keybuf));
 }
 
@@ -797,7 +803,7 @@ void osrfChatHandleCharacter( void* blob, const xmlChar *ch, int len) {
 
 void osrfChatParseError( void* blob, const char* msg, ... ) {
 
-	__osrfChatXMLErrorOcurred = 1;
+	osrfChatXMLErrorOcurred = 1;
 }
 
 

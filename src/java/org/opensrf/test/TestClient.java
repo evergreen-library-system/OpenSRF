@@ -1,61 +1,54 @@
 package org.opensrf.test;
 import org.opensrf.*;
 import org.opensrf.util.*;
-import org.opensrf.net.xmpp.*;
-import java.io.PrintStream;
 import java.util.Map;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
+import java.io.PrintStream;
 
 
 public class TestClient {
+
     public static void main(String args[]) throws Exception {
-        
+
         PrintStream out = System.out;
-
-        try {
-
-            /** setup the config parser */
-            String configFile = args[0];
-            Config config = new Config("/config/opensrf");
-            config.parse(configFile);
-            Config.setConfig(config);
-
-            /** Connect to jabber */
-            String username = Config.getString("/username");
-            String passwd = Config.getString("/passwd");
-            String host = (String) Config.getFirst("/domains/domain");
-            int port = Config.getInt("/port");
-            XMPPSession xses = new XMPPSession(host, port);
-            xses.connect(username, passwd, "test-java-client");
-            XMPPSession.setGlobalSession(xses);
-    
-            /** build the client session and send the request */
-            ClientSession session = new ClientSession("opensrf.settings");
-            Request request = session.request(
-                "opensrf.settings.host_config.get", 
-                new String[] {args[1]}
-            );
-
-            Result result = request.recv(10000);
-            if(result == null) {
-                out.println("no result");
-                return;
-            }
-
-            out.println("status = " + result.getStatus());
-            out.println("status code = " + result.getStatusCode());
-
-            out.println("setting config memcache server(s) = " +
-                new JSONWriter(
-                    Utils.findPath( (Map) result.getContent(), 
-                    "/cache/global/servers/server")
-                ).write());
-
-
-        } catch(ArrayIndexOutOfBoundsException e) {
-            out.println("usage: org.opensrf.test.TestClient <osrfConfigFile> <domain>");
+        if(args.length < 3) {
+            out.println( "usage: org.opensrf.test.TestClient "+
+                "<osrfConfigFile> <service> <method> [<JSONparam1>, <JSONparam2>]");
             return;
         }
+
+        Sys.bootstrapClient(args[0], "/config/opensrf");
+        String service = args[1];
+        String method = args[2];
+
+        /** build the client session and send the request */
+        ClientSession session = new ClientSession(service);
+        List<Object> params = new ArrayList<Object>();
+        JSONReader reader;
+
+        for(int i = 3; i < args.length; i++) /* add the params */
+            params.add(new JSONReader(args[i]).read());
+
+
+        Result result;
+
+        long start = new Date().getTime();
+        Request request = session.request(method, params);
+
+        while( (result = request.recv(60000)) != null ) { 
+            /** loop over the results and print the JSON version of the content */
+
+            if(result.getStatusCode() != 200) { /* make sure the request succeeded */
+                out.println("status = " + result.getStatus());
+                out.println("status code = " + result.getStatusCode());
+                continue;
+            }
+
+            out.println("result JSON: " + new JSONWriter(result.getContent()).write());
+        }
+        out.println("Request round trip took: " + (new Date().getTime() - start) + " ms.");
     }
 }
 

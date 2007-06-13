@@ -586,7 +586,7 @@ void prefork_child_wait( prefork_child* child ) {
 		if( errno == EAGAIN ) n = 0;
 
       if( errno == EPIPE ) {
-         osrfLogWarning(OSRF_LOG_MARK, "C child attempted read on broken pipe, exiting...");
+         osrfLogDebug(OSRF_LOG_MARK, "C child attempted read on broken pipe, exiting...");
          break;
       }
 
@@ -606,8 +606,8 @@ void prefork_child_wait( prefork_child* child ) {
 
 	buffer_free(gbuf);
 
-	osrfLogDebug( OSRF_LOG_MARK, "Child with max-requests=%d, num-served=%d exiting...[%d]", 
-			child->max_requests, i, getpid() );
+	osrfLogDebug( OSRF_LOG_MARK, "Child with max-requests=%d, num-served=%d exiting...[%ld]", 
+			child->max_requests, i, (long) getpid() );
 
    osrf_prefork_child_exit(child); /* just to be sure */
 }

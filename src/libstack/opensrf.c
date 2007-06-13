@@ -21,13 +21,22 @@ int main( int argc, char* argv[] ) {
 	init_proc_title( argc, argv );
 	set_proc_title( "OpenSRF System-C" );
 
-	osrfSystemBootstrap( host, config, context );
+	int ret = osrfSystemBootstrap( host, config, context );
+
+	if (ret != 0) {
+		osrfLogError(
+			OSRF_LOG_MARK,
+			"Server Loop returned an error condition, exiting with %d",
+			ret
+		);
+	}
+
 
 	free(host);
 	free(config);
 	free(context);
 
-	return 0;
+	return ret;
 }
 
 

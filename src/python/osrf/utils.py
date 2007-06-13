@@ -1,116 +1,100 @@
-# -----------------------------------------------------------------------
-# Copyright (C) 2007  Georgia Public Library Service
-# Bill Erickson <billserickson@gmail.com>
-# 
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-# 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# -----------------------------------------------------------------------
-
-import libxml2, re
+import xml.dom.minidom, re
 
 def osrfXMLFileToObject(filename):
-	"""Turns the contents of an XML file into a Python object"""
-	doc	= libxml2.parseFile(filename)
-	xmlNode	= doc.children.children
-	return osrfXMLNodeToObject(xmlNode)
+    """Turns the contents of an XML file into a Python object"""
+    doc = xml.dom.minidom.parse(filename)
+    obj = osrfXMLNodeToObject(doc.childNodes[0])
+    doc.unlink()
+    return obj
 
 def osrfXMLStringToObject(string):
-	"""Turns an XML string into a Python object"""
-	doc	= libxml2.parseString(string)
-	xmlNode	= doc.children.children
-	return osrfXMLNodeToObject(xmlNode)
+    """Turns an XML string into a Python object"""
+    doc = xml.dom.minidom.parseString(string)
+    obj = osrfXMLNodeToObject(doc.childNodes[0])
+    doc.unlink()
+    return obj
 
 def osrfXMLNodeToObject(xmlNode):
-	"""Turns an XML node into a Python object"""
-	obj = {}
+    """Turns an XML node into a Python object"""
+    obj = {}
 
-	while xmlNode:
-		if xmlNode.type == 'element':
-			nodeChild = xmlNode.children
-			done = False
-			nodeName = xmlNode.name
+    if xmlNode.nodeType != xmlNode.ELEMENT_NODE:
+        return obj
 
-			while nodeChild:
-				if nodeChild.type == 'element':
+    done = False
+    nodeName = xmlNode.nodeName
 
-					# If a node has element children, create a new sub-object 
-					# for this node, attach an array for each type of child
-					# and recursively collect the children data into the array(s)
+    for nodeChild in xmlNode.childNodes:
+        if nodeChild.nodeType == xmlNode.ELEMENT_NODE:
 
-					if not obj.has_key(nodeName):
-						obj[nodeName] = {}
+            # If a node has element children, create a new sub-object 
+            # for this node, attach an array for each type of child
+            # and recursively collect the children data into the array(s)
 
-					sub_obj = osrfXMLNodeToObject(nodeChild);
+            if not obj.has_key(nodeName):
+                obj[nodeName] = {}
 
-					if not obj[nodeName].has_key(nodeChild.name):
-						# we've encountered 1 sub-node with nodeChild's name
-						obj[nodeName][nodeChild.name] = sub_obj[nodeChild.name]
+            sub_obj = osrfXMLNodeToObject(nodeChild);
 
-					else:
-						if isinstance(obj[nodeName][nodeChild.name], list):
-							# we already have multiple sub-nodes with nodeChild's name
-							obj[nodeName][nodeChild.name].append(sub_obj[nodeChild.name])
+            if not obj[nodeName].has_key(nodeChild.nodeName):
+                # we've encountered 1 sub-node with nodeChild's name
+                obj[nodeName][nodeChild.nodeName] = sub_obj[nodeChild.nodeName]
 
-						else:
-							# we already have 1 sub-node with nodeChild's name, make 
-							# it a list and append the current node
-							val = obj[nodeName][nodeChild.name]
-							obj[nodeName][nodeChild.name] = [ val, sub_obj[nodeChild.name] ]
+            else:
+                if isinstance(obj[nodeName][nodeChild.nodeName], list):
+                    # we already have multiple sub-nodes with nodeChild's name
+                    obj[nodeName][nodeChild.nodeName].append(sub_obj[nodeChild.nodeName])
 
-					done = True
+                else:
+                    # we already have 1 sub-node with nodeChild's name, make 
+                    # it a list and append the current node
+                    val = obj[nodeName][nodeChild.nodeName]
+                    obj[nodeName][nodeChild.nodeName] = [ val, sub_obj[nodeChild.nodeName] ]
 
-				nodeChild = nodeChild.next
+            done = True
 
-			if not done:
-				# If the node has no children, clean up the text content 
-				# and use that as the data
-				data = re.compile('^\s*').sub('', xmlNode.content)
-				data = re.compile('\s*$').sub('', data)
+    if not done:
+        # If the node has no element children, clean up the text content 
+        # and use that as the data
+        xmlNode = xmlNode.childNodes[0] # extract the text node
+        data = re.compile('^\s*').sub('', str(xmlNode.nodeValue))
+        data = re.compile('\s*$').sub('', data)
 
-				obj[nodeName] = data
+        obj[nodeName] = data
 
-		xmlNode = xmlNode.next
-
-	return obj
+    return obj
 
 
 def osrfObjectFindPath(obj, path, idx=None):
-	"""Searches an object along the given path for a value to return.
+    """Searches an object along the given path for a value to return.
 
-	Path separaters can be '/' or '.', '/' is tried first."""
+    Path separaters can be '/' or '.', '/' is tried first."""
 
-	parts = []
+    parts = []
 
-	if re.compile('/').search(path):
-		parts = path.split('/')
-	else:
-		parts = path.split('.')
+    if re.compile('/').search(path):
+        parts = path.split('/')
+    else:
+        parts = path.split('.')
 
-	for part in parts:
-		try:
-			o = obj[part]
-		except Exception:
-			return None
-		if isinstance(o,str): 
-			return o
-		if isinstance(o,list):
-			if( idx != None ):
-				return o[idx]
-			return o
-		if isinstance(o,dict):
-			obj = o
-		else:
-			return o
+    for part in parts:
+        try:
+            o = obj[part]
+        except Exception:
+            return None
+        if isinstance(o,str): 
+            return o
+        if isinstance(o,list):
+            if( idx != None ):
+                return o[idx]
+            return o
+        if isinstance(o,dict):
+            obj = o
+        else:
+            return o
 
-	return obj
+    return obj
 
 
-			
+            
 

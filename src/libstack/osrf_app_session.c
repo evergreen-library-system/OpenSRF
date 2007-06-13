@@ -229,7 +229,7 @@ osrf_app_session* osrf_app_client_session_init( char* remote_service ) {
 	char id[256];
 	memset(id,0,256);
 
-	sprintf(id, "%f.%d%d", get_timestamp_millis(), (int)time(NULL), getpid());
+	sprintf(id, "%f.%d%ld", get_timestamp_millis(), (int)time(NULL), (long) getpid());
 	session->session_id = strdup(id);
 	osrfLogDebug( OSRF_LOG_MARK,  "Building a new client session with id [%s] [%s]", 
 			session->remote_service, session->session_id );
@@ -598,6 +598,7 @@ int osrfAppRequestRespond( osrfAppSession* ses, int requestId, jsonObject* data 
 	if(!ses || ! data ) return -1;
 
 	osrf_message* msg = osrf_message_init( RESULT, requestId, 1 );
+	osrf_message_set_status_info( msg, NULL, "OK", OSRF_STATUS_OK );
 	char* json = jsonObjectToJSON( data );
 
 	osrf_message_set_result_content( msg, json );

@@ -8,9 +8,11 @@ import java.util.Iterator;
 
 public class Stack {
 
-    public static void processXMPPMessage(XMPPMessage msg) {
+    public static void processXMPPMessage(XMPPMessage msg) throws MethodException {
 
         if(msg == null) return;
+
+        //System.out.println(msg.getBody());
 
         /** fetch this session from the cache */
         Session ses = Session.findCachedSession(msg.getThread());
@@ -55,7 +57,7 @@ public class Stack {
         /** LOG the duration */
     }
 
-    private static void processOSRFMessage(Session ses, Message msg) {
+    private static void processOSRFMessage(Session ses, Message msg) throws MethodException {
         if( ses instanceof ClientSession ) 
             processResponse((ClientSession) ses, msg);
         else
@@ -65,10 +67,29 @@ public class Stack {
     /** 
      * Process a server response
      */
-    private static void processResponse(ClientSession session, Message msg) {
-        if(msg.RESULT.equals(msg.getType())) {
+    private static void processResponse(ClientSession session, Message msg) throws MethodException {
+        String type = msg.getType();
+
+        if(msg.RESULT.equals(type)) {
             session.pushResponse(msg);
             return;
+        }
+
+        if(msg.STATUS.equals(type)) {
+
+            OSRFObject obj = (OSRFObject) msg.getPayload();
+            Status stat = new Status(obj.getString("status"), obj.getInt("statusCode"));
+            int statusCode = stat.getStatusCode();
+            String status = stat.getStatus();
+
+            switch(statusCode) {
+                case Status.COMPLETE:
+                    session.setRequestComplete(msg.getId());
+                    break;
+                case Status.NOTFOUND: 
+                    session.setRequestComplete(msg.getId());
+                    throw new MethodException(status);
+            }
         }
     }
 

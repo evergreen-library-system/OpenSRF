@@ -2,7 +2,7 @@
 JAVA_LIBDIR = .lib
 JAVAC=javac -J-Xmx256m
 JAVA=java -Xmx256m 
-JAVA_LIBS = .:$(JAVA_LIBDIR):ext/json-jdk1.5-2007-05-01.jar:ext/wstx-asl-3.2.1.jar:ext/stax-api-1.0.1.jar
+JAVA_LIBS = .:$(JAVA_LIBDIR):ext/json-jdk1.5-2007-05-01.jar:ext/wstx-lgpl-3.2.1.jar:ext/stax-api-1.0.1.jar:ext/java_memcached-release_1.5.1.jar
 JAVA_SRC = \
 	org/opensrf/net/xmpp/*.java \
 	org/opensrf/util/*.java \
@@ -25,7 +25,15 @@ check:
 	@echo -e "\nTruncating at 30 lines"
 
 run:
-	$(JAVA) -cp $(JAVA_LIBS) $(JAVA_EXE) $(JAVA_ARGS)
+	@$(JAVA) -cp $(JAVA_LIBS) $(JAVA_EXE) $(JAVA_ARGS)
+
+deps:
+	mkdir -p ext
+	wget 'http://woodstox.codehaus.org/stax-api-1.0.1.jar' -O ext/stax-api-1.0.1.jar
+	wget 'http://woodstox.codehaus.org/3.2.1/wstx-lgpl-3.2.1.jar' -O ext/wstx-lgpl-3.2.1.jar
+	wget 'http://img.whalin.com/memcached/jdk5/standard/java_memcached-release_1.5.1.jar' -O ext/java_memcached-release_1.5.1.jar
+	mkdir -p .tmp && cd .tmp && wget 'http://www.json.org/java/json.zip' && unzip json.zip
+	$(JAVAC) -d $(JAVA_LIBDIR) .tmp/org/json/*.java
 
 docs:
 	find . -name *.java > files;

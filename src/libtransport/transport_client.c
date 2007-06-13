@@ -45,19 +45,24 @@ int main( int argc, char** argv ) {
 */
 
 
-transport_client* client_init( char* server, int port, char* unix_path, int component ) {
+transport_client* client_init( const char* server, int port, const char* unix_path, int component ) {
 
 	if(server == NULL) return NULL;
 
 	/* build and clear the client object */
 	size_t c_size = sizeof( transport_client);
-	transport_client* client = (transport_client*) safe_malloc( c_size );
+	transport_client* client = safe_malloc( c_size );
 
 	/* build and clear the message list */
 	size_t l_size = sizeof( transport_message_list );
-	client->m_list = (transport_message_list*) safe_malloc( l_size );
+	client->m_list = safe_malloc( l_size );
 
+	client->m_list->next = NULL;
+	client->m_list->message = NULL;
 	client->m_list->type = MESSAGE_LIST_HEAD;
+
+	/* build the session */
+	
 	client->session = init_transport( server, port, unix_path, client, component );
 
 	client->session->message_callback = client_message_handler;

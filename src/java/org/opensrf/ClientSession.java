@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.Arrays;
 
 import org.opensrf.util.*;
+import org.opensrf.net.xmpp.*;
 
 
 /**
@@ -41,8 +42,8 @@ public class ClientSession extends Session {
         this.service = service;
 
         /** generate the remote node string */
-        domain = (String) Config.getFirst("/domains/domain");
-        router = Config.getString("/router_name");
+        domain = (String) Config.global().getFirst("/domains/domain");
+        router = Config.global().getString("/router_name");
         setRemoteNode(router + "@" + domain + "/" + service);
         origRemoteNode = getRemoteNode();
 
@@ -111,7 +112,7 @@ public class ClientSession extends Session {
      */
     public void pushResponse(Message msg) {
 
-        Request req = requests.get(new Integer(msg.getId()));
+        Request req = findRequest(msg.getId());
         if(req == null) {
             /** LOG that we've received a result to a non-existant request */
             return;
@@ -128,11 +129,21 @@ public class ClientSession extends Session {
         );
     }
 
+    public Request findRequest(int reqId) {
+        return requests.get(new Integer(reqId));
+    }
+
     /**
      * Removes a request for this session's request set
      */
     public void cleanupRequest(int reqId) {
         requests.remove(new Integer(reqId));
+    }
+
+     public void setRequestComplete(int reqId) {
+        Request req = findRequest(reqId);
+        if(req == null) return;
+        req.setComplete();
     }
 }
 

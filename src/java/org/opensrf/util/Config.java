@@ -23,6 +23,11 @@ public class Config {
      */
     private String context;
 
+    public static Config global() {
+        return config;
+    }
+
+
     /**
      * @param context The config context
      */
@@ -34,7 +39,7 @@ public class Config {
      * Sets the global config object.
      * @param c The config object to use.
      */
-    public static void setConfig(Config c) {
+    public static void setGlobalConfig(Config c) {
         config = c;
     }
 
@@ -42,11 +47,28 @@ public class Config {
      * Parses an XML config file.
      * @param filename The path to the file to parse.
      */
-    public void parse(String filename) throws Exception {
-        String xml = Utils.fileToString(filename);
-        JSONObject jobj = XML.toJSONObject(xml);
-        configObject = (Map) new JSONReader(jobj.toString()).readObject();
+    public void parse(String filename) throws ConfigException {
+        try {
+            String xml = Utils.fileToString(filename);
+            JSONObject jobj = XML.toJSONObject(xml);
+            configObject = (Map) new JSONReader(jobj.toString()).readObject();
+        } catch(Exception e) {
+            throw new ConfigException("Error parsing config", e);
+        }
     }
+
+    public static void setConfig(Config conf) {
+        config = conf;
+    }
+
+    public void setConfigObject(Map config) {
+        this.configObject = config;
+    }
+
+    protected Map getConfigObject() {
+        return this.configObject;
+    }
+
 
     /**
      * Returns the configuration value found at the requested path.
@@ -54,7 +76,7 @@ public class Config {
      * @return The config value, or null if no value exists at the given path.  
      * @throws ConfigException thrown if nothing is found at the path
      */
-    public static String getString(String path) throws ConfigException {
+    public String getString(String path) throws ConfigException {
         try {
             return (String) get(path);
         } catch(Exception e) {
@@ -67,7 +89,7 @@ public class Config {
      * Gets the int value at the given path
      * @param path The search path
      */
-    public static int getInt(String path) throws ConfigException {
+    public int getInt(String path) throws ConfigException {
         try {
             return Integer.parseInt(getString(path));
         } catch(Exception e) {
@@ -82,9 +104,9 @@ public class Config {
      * @return The config value
      * @throws ConfigException thrown if nothing is found at the path
      */
-    public static Object get(String path) throws ConfigException {
+    public Object get(String path) throws ConfigException {
         try {
-            Object obj = Utils.findPath(config.configObject, config.context + path);
+            Object obj = Utils.findPath(configObject, context + path);
             if(obj == null)
                 throw new ConfigException("");
             return obj;
@@ -99,7 +121,7 @@ public class Config {
      * no list is found, ConfigException is thrown.
      * @param path The search path
      */
-    public static Object getFirst(String path) throws ConfigException {
+    public Object getFirst(String path) throws ConfigException {
         Object obj = get(path); 
         if(obj instanceof List) 
             return ((List) obj).get(0);

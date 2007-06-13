@@ -9,7 +9,7 @@ export PERLDIR			= $(LIBDIR)/perl5
 export INCLUDEDIR		= $(PREFIX)/include
 
 export LDLIBS			+= 
-export LDFLAGS			+= -L $(TMPDIR) -L . -L /opt/lib
+export LDFLAGS			+= -Wl,-rpath=$(LIBDIR) -L $(TMPDIR) -L . -L /opt/lib
 export CFLAGS			+= -pipe -g -Wall -O2 -fPIC -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) \
 								-I$(LIBXML2_HEADERS)/libxml  -I$(TMP) \
 								-I$(APR_HEADERS) -I$(TMPDIR)
@@ -135,7 +135,6 @@ install-prep:
 	mkdir -p $(INCLUDEDIR)
 	mkdir -p $(INCLUDEDIR)/$(OPENSRF)
 	mkdir -p $(ETCDIR)
-	mkdir -p $(TEMPLATEDIR)
 
 libopensrf-install:	install-prep
 	@echo $@
