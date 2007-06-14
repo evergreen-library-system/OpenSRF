@@ -26,12 +26,12 @@
 #
 # --------------------------------------------------------------------
 
-OBJS				= md5.o utils.o json2xml.o object.o json_parser.o
+OBJS				= md5.o utils.o json2xml.o object.o json_parser.o xml2json.o
 UTIL_DIR			= ../utils
 DEST_INCLUDE	= objson
 CFLAGS			+= -DSTRICT_JSON_WRITE #-DSTRICT_JSON_READ
 
-JSON_HEADERS = object.h json_parser.h json2xml.h
+JSON_HEADERS = object.h json_parser.h json2xml.h xml2json.h
 
 all:	test
 
@@ -40,6 +40,9 @@ test: libobjson.so objson_test.o
 objson_test.o: objson_test.c 
 object.o:	object.h object.c
 json_parser.o:	json_parser.h json_parser.c
+json2xml.o:	json2xml.h json2xml.c
+xml2json.o:	xml2json.h xml2json.c
+
 
 install:
 	mkdir -p $(INCLUDEDIR)/$(DEST_INCLUDE)
@@ -61,10 +64,6 @@ md5.o:	$(UTIL_DIR)/md5.h $(UTIL_DIR)/md5.c
 	cp $(UTIL_DIR)/md5.h .
 	cp $(UTIL_DIR)/md5.c .
 	$(CC) -c $(CFLAGS) md5.c -o $@
-
-json2xml.o:	json2xml.h json2xml.c
-	$(CC) -c $(CFLAGS) json2xml.c -o $@
-
 
 clean:
 	/bin/rm -f *.o *.so utils.c utils.h libobjson.so

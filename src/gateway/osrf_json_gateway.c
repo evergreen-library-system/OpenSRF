@@ -4,6 +4,7 @@
 #include "opensrf/osrfConfig.h"
 #include "objson/object.h"
 #include "objson/json2xml.h"
+#include "objson/xml2json.h"
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
@@ -99,6 +100,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	char* method		= NULL;	/* method to perform */
 	char* format		= NULL;	/* method to perform */
 	char* a_l			= NULL;	/* request api level */
+    char* input_format  = NULL; /* POST data format, defaults to 'format' */
 	int   isXML			= 0;
 	int   api_level	= 1;
 
@@ -111,8 +113,14 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	service		= apacheGetFirstParamValue( params, "service" );
 	method		= apacheGetFirstParamValue( params, "method" ); 
 	format		= apacheGetFirstParamValue( params, "format" ); 
+	input_format = apacheGetFirstParamValue( params, "input_format" ); 
 	a_l			= apacheGetFirstParamValue( params, "api_level" ); 
 	mparams		= apacheGetParamValues( params, "param" ); /* free me */
+
+    if(format == NULL)
+        format = "json";
+    if(input_format == NULL)
+        input_format = format;
 
    /* set the user defined timeout value */
    int timeout = 60;
@@ -126,7 +134,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	if (a_l)
 		api_level = atoi(a_l);
 
-	if (format && !strcasecmp(format, "xml" )) {
+	if (!strcasecmp(format, "xml")) {
 		isXML = 1;
 		ap_set_content_type(r, "application/xml");
 	} else {
@@ -158,7 +166,29 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		osrfAppSession* session = osrf_app_client_session_init(service);
 
 		double starttime = get_timestamp_millis();
-		int req_id = osrf_app_session_make_req( session, NULL, method, api_level, mparams );
+		int req_id = -1;
+
+        if(!strcasecmp(input_format, "json")) {
+		    req_id = osrf_app_session_make_req( session, NULL, method, api_level, mparams );
+
+        } else {
+
+            /**
+             * If we receive XML method params, convert each param to a JSON object
+             * and pass the array of JSON object params to the method */
+            if(!strcasecmp(input_format, "xml")) {
+                jsonObject* jsonParams = jsonNewObject(NULL);
+
+                char* str;
+                int i = 0;
+                while( (str = osrfStringArrayGetString(mparams, i++)) ) {
+                    jsonObjectPush(jsonParams, jsonXMLToJSONObject(str));
+                }
+
+		        req_id = osrf_app_session_make_req( session, jsonParams, method, api_level, NULL );
+                jsonObjectFree(jsonParams);
+            }
+        }
 
 
 		if( req_id == -1 ) {
