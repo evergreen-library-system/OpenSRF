@@ -71,4 +71,7 @@ OSRF_APP_MATH = 'opensrf.math'
 # where do we find the settings config
 OSRF_METHOD_GET_HOST_CONFIG = 'opensrf.settings.host_config.get'
 
+OSRF_JSON_PAYLOAD_KEY = '__p'
+OSRF_JSON_CLASS_KEY = '__c'
+
 

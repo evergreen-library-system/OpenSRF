@@ -2,9 +2,10 @@ from xml.dom import minidom
 from xml.sax import handler, make_parser, saxutils
 from json import *
 from net_obj import *
-import urllib, urllib2, sys
+import urllib, urllib2, sys, re
 
 defaultHost = None
+paramRegex = re.compile('\%27')
 
 class GatewayRequest:
     def __init__(self, service, method, params=[]):
@@ -30,12 +31,14 @@ class GatewayRequest:
         params = urllib.urlencode({   
             'service': self.service,
             'method': self.method,
-            'format': self.getFormat()
+            'format': self.getFormat(),
+            'input_format': self.getInputFormat()
         })
 
         for p in self.params:
-            param = {'param': osrfObjectToJSON(p)}
-            params += '&%s' % urllib.urlencode(param)
+            # XXX for some reason, the gateway does not like escaped single-quotes ?
+            param = paramRegex.sub("'", urllib.quote(self.encodeParam(p)))
+            params += '&param=%s' % urllib.quote(self.encodeParam(param))
 
         return params
 
@@ -56,12 +59,18 @@ class XMLGatewayRequest(GatewayRequest):
     def getFormat(self):
         return 'xml'
 
+    def getInputFormat(self):
+        return self.getFormat()
+
     def handleResponse(self, response):
         handler = XMLGatewayParser()
         parser = make_parser()
         parser.setContentHandler(handler)
         parser.parse(response)
         return handler.getResult()
+
+    def encodeParam(self, param):
+        return osrfObjectToXML(param);
 
 class XMLGatewayParser(handler.ContentHandler):
 
@@ -83,15 +92,17 @@ class XMLGatewayParser(handler.ContentHandler):
 
         # XXX add support for serializable objects!
 
+        if name == 'null':
+            self.appendChild(None)
+            return
+
         if name == 'element': # this is an object item wrapper
             self.keyStack.append(self.__getAttr(attrs, 'key'))
             return
 
-        if name == 'object':
-            obj = {}
-            self.appendChild(obj)
-            self.objStack.append(obj)
-            return
+        hint = self.__getAttr(attrs, 'class_hint')
+        if hint:
+            obj = osrfNetworkObject.newFromHint(hint)
 
         if name == 'array':
             obj = []
@@ -99,8 +110,10 @@ class XMLGatewayParser(handler.ContentHandler):
             self.objStack.append(obj)
             return
 
-        if name == 'null':
-            self.appendChild(None)
+        if name == 'object':
+            obj = {}
+            self.appendChild(obj)
+            self.objStack.append(obj)
             return
 
         if name == 'boolean':
