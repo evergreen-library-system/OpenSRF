@@ -4,8 +4,6 @@ from json import *
 from net_obj import *
 import urllib, urllib2, sys, re
 
-#
-
 defaultHost = None
 paramRegex = re.compile('\%27')
 
