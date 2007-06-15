@@ -5,7 +5,7 @@ from net_obj import *
 import urllib, urllib2, sys, re
 
 defaultHost = None
-paramRegex = re.compile('\%27')
+#paramRegex = re.compile('\%27')
 
 class GatewayRequest:
     def __init__(self, service, method, params=[]):
@@ -36,10 +36,7 @@ class GatewayRequest:
         })
 
         for p in self.params:
-            # XXX for some reason, the gateway does not like escaped single-quotes ?
-            param = paramRegex.sub("'", urllib.quote(self.encodeParam(p)))
-            params += '&param=%s' % urllib.quote(self.encodeParam(param))
-
+            params += '&param=%s' % urllib.quote(self.encodeParam(p), "'/")
         return params
 
     def setDefaultHost(host):
@@ -78,6 +75,7 @@ class XMLGatewayParser(handler.ContentHandler):
         self.result = None
         self.objStack = []
         self.keyStack = []
+        self.posStack = [] # for tracking array-based hinted object indices
 
     def getResult(self):
         return self.result
@@ -102,7 +100,12 @@ class XMLGatewayParser(handler.ContentHandler):
 
         hint = self.__getAttr(attrs, 'class_hint')
         if hint:
-            obj = osrfNetworkObject.newFromHint(hint)
+            obj = osrfNewObjectFromHint(hint)
+            self.appendChild(obj)
+            self.objStack.append(obj)
+            if name == 'array':
+                self.posStack.append(0)
+            return
 
         if name == 'array':
             obj = []
@@ -130,17 +133,30 @@ class XMLGatewayParser(handler.ContentHandler):
 
         parent = self.objStack[len(self.objStack)-1]
 
-        if( isinstance(parent, list) ):
+        if isinstance(parent, list):
             parent.append(child)
         else:
-            parent[self.keyStack.pop()] = child
+            if isinstance(parent, dict):
+                parent[self.keyStack.pop()] = child
+            else:
+                if isinstance(parent, osrfNetworkObject):
+                    key = None
+                    if parent.getRegistry().wireProtocol == 'array':
+                        keys = parent.getRegistry().keys
+                        i = self.posStack.pop()
+                        key = keys[i]
+                        if i+1 < len(keys):
+                            self.posStack.append(i+1)
+                    else:
+                        key = self.keyStack.pop()
+
+                    parent.setField(key, child)
 
     def endElement(self, name):
         if name == 'array' or name == 'object':
             self.objStack.pop()
 
     def characters(self, chars):
-        #self.appendChild(''.join(chars[start:leng+start]))
         self.appendChild(urllib.unquote_plus(chars))
 
 

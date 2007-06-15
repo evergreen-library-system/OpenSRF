@@ -5,11 +5,15 @@ from xml.sax import saxutils
 class osrfNetworkObject(object):
     ''' Base class for all network serializable objects '''
     pass
-    def newFromHint(hint):
+
+def osrfNewObjectFromHint(hint):
+    try:
         obj = None
         exec('obj = osrfNetworkObject.%s()' % hint)
         return obj
-    newFromHint = staticmethod(newFromHint)
+    except AttributeError:
+        return osrfNetworkObject.__unknown()
+#newFromHint = staticmethod(newFromHint)
 
 
 ''' Global object registry '''
@@ -59,6 +63,12 @@ def __makeGetData(cls):
     def get(self):
         return self.__data
     setattr(cls, 'getData', get)
+
+def __makeSetField(cls):
+    ''' Creates a generic mutator for fields by fieldname '''
+    def set(self, field, value):
+        self.__data[field] = value
+    setattr(cls, 'setField', set)
         
 
 def __osrfNetworkObjectInit(self, data={}):
@@ -107,6 +117,7 @@ def osrfNetworkRegisterHint(hint, keys, type='hash'):
     setattr(cls, '__init__', __osrfNetworkObjectInit)
     __makeGetRegistry(cls, registry)
     __makeGetData(cls)
+    __makeSetField(cls)
 
 
     # attach our new class to the osrfNetworkObject 
