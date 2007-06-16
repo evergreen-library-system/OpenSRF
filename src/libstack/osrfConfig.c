@@ -45,7 +45,8 @@ osrfConfig* osrfConfigInit(char* configFile, char* configContext) {
 	
 	xmlDocPtr doc = xmlParseFile(configFile);
 	if(!doc) {
-		osrfLogWarning( OSRF_LOG_MARK,  "Unable to parse XML config file %s", configFile);
+		fprintf( stderr, "osrfConfigInit: Unable to parse XML config file %s\n", configFile);
+		osrfLogWarning( OSRF_LOG_MARK, "Unable to parse XML config file %s", configFile);
 		return NULL;
 	}
 
@@ -55,6 +56,7 @@ osrfConfig* osrfConfigInit(char* configFile, char* configContext) {
 	xmlFreeDoc(doc);
 
 	if(!json_config ) {
+		fprintf( stderr, "osrfConfigInit: xmlDocToJSON failed for config %s\n", configFile);
 		osrfLogWarning( OSRF_LOG_MARK, "xmlDocToJSON failed for config %s", configFile);
 		return NULL;
 	}	
