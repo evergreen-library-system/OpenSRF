@@ -1,23 +1,30 @@
 #include "log.h"
 
-int __osrfLogType					= -1;
-int __osrfLogFacility			= LOG_LOCAL0;
-int __osrfLogActFacility		= LOG_LOCAL1;
-char* __osrfLogFile				= NULL;
-char* __osrfLogAppname			= NULL;
-int __osrfLogLevel				= OSRF_LOG_INFO;
-int __osrfLogActivityEnabled	= 1;
-int __osrfLogIsClient         = 0;
+static int _osrfLogType				= -1;
+static int _osrfLogFacility			= LOG_LOCAL0;
+static int _osrfLogActFacility		= LOG_LOCAL1;
+static char* _osrfLogFile			= NULL;
+static char* _osrfLogAppname		= NULL;
+static int _osrfLogLevel			= OSRF_LOG_INFO;
+static int _osrfLogActivityEnabled	= 1;
+static int _osrfLogIsClient         = 0;
 
+static char* _osrfLogXid            = NULL; /* current xid */
+static char* _osrfLogXidPfx         = NULL; /* xid prefix string */
 
-int __osrfLogXidInc              = 0; /* increments with each new xid for uniqueness */
-char* __osrfLogXid            = NULL; /* current xid */
-char* __osrfLogXidPfx         = NULL; /* xid prefix string */
+static void osrfLogSetType( int logtype );
+static void _osrfLogDetail( int level, const char* filename, int line, char* msg );
+static void _osrfLogToFile( char* msg, ... );
+static void _osrfLogSetXid(char* xid);
 
+#define OSRF_LOG_GO(f,li,m,l)	\
+        if(!m) return;		\
+        VA_LIST_TO_STRING(m);	\
+        _osrfLogDetail( l, f, li, VA_BUF );
 
 void osrfLogCleanup() {
-	free(__osrfLogAppname);
-	free(__osrfLogFile);
+	free(_osrfLogAppname);
+	free(_osrfLogFile);
 }
 
 
@@ -26,85 +33,94 @@ void osrfLogInit( int type, const char* appname, int maxlevel ) {
 	if(appname) osrfLogSetAppname(appname);
 	osrfLogSetLevel(maxlevel);
 	if( type == OSRF_LOG_TYPE_SYSLOG ) 
-		openlog(__osrfLogAppname, 0, __osrfLogFacility );
+		openlog(_osrfLogAppname, 0, _osrfLogFacility );
 }
 
-static void __osrfLogSetXid(char* xid) {
+static void _osrfLogSetXid(char* xid) {
    if(xid) {
-      if(__osrfLogXid) free(__osrfLogXid);
-      __osrfLogXid = strdup(xid);
+      if(_osrfLogXid) free(_osrfLogXid);
+      _osrfLogXid = strdup(xid);
    }
 }
 
-void osrfLogClearXid() { __osrfLogSetXid(""); }
+void osrfLogClearXid() { _osrfLogSetXid(""); }
 void osrfLogSetXid(char* xid) {
-   if(!__osrfLogIsClient) __osrfLogSetXid(xid);
+   if(!_osrfLogIsClient) _osrfLogSetXid(xid);
 }
 
 void osrfLogMkXid() {
-   if(__osrfLogIsClient) {
+   if(_osrfLogIsClient) {
+      static int _osrfLogXidInc = 0; /* increments with each new xid for uniqueness */
       char buf[32];
       memset(buf, 0x0, 32);
-      snprintf(buf, 32, "%s%d", __osrfLogXidPfx, __osrfLogXidInc);
-      __osrfLogSetXid(buf);
-      __osrfLogXidInc++;
+      snprintf(buf, 32, "%s%d", _osrfLogXidPfx, _osrfLogXidInc);
+      _osrfLogSetXid(buf);
+      _osrfLogXidInc++;
    }
 }
 
 char* osrfLogGetXid() {
-   return __osrfLogXid;
+   return _osrfLogXid;
 }
 
 void osrfLogSetIsClient(int is) {
-   __osrfLogIsClient = is;
+   _osrfLogIsClient = is;
    if(!is) return;
    /* go ahead and create the xid prefix so it will be consistent later */
    static char buff[32];
    memset(buff, 0x0, 32);
    snprintf(buff, 32, "%d%ld", (int)time(NULL), (long) getpid());
-   __osrfLogXidPfx = buff;
+   _osrfLogXidPfx = buff;
 }
 
-void osrfLogSetType( int logtype ) { 
+/** Sets the type of logging to perform.  See log types */
+static void osrfLogSetType( int logtype ) { 
 	if( logtype != OSRF_LOG_TYPE_FILE &&
 			logtype != OSRF_LOG_TYPE_SYSLOG ) {
 		fprintf(stderr, "Unrecognized log type.  Logging to stderr\n");
 		return;
 	}
-	__osrfLogType = logtype; 
+	_osrfLogType = logtype;
 }
 
 void osrfLogSetFile( const char* logfile ) {
 	if(!logfile) return;
-	if(__osrfLogFile) free(__osrfLogFile);
-	__osrfLogFile = strdup(logfile);
+	if(_osrfLogFile) free(_osrfLogFile);
+	_osrfLogFile = strdup(logfile);
 }
 
 void osrfLogSetActivityEnabled( int enabled ) {
-	__osrfLogActivityEnabled = enabled;
+	_osrfLogActivityEnabled = enabled;
 }
 
 void osrfLogSetAppname( const char* appname ) {
 	if(!appname) return;
-	if(__osrfLogAppname) free(__osrfLogAppname);
-	__osrfLogAppname = strdup(appname);
+	if(_osrfLogAppname) free(_osrfLogAppname);
+	_osrfLogAppname = strdup(appname);
 
 	/* if syslogging, re-open the log with the appname */
-	if( __osrfLogType == OSRF_LOG_TYPE_SYSLOG) {
+	if( _osrfLogType == OSRF_LOG_TYPE_SYSLOG) {
 		closelog();
-		openlog(__osrfLogAppname, 0, __osrfLogFacility);
+		openlog(_osrfLogAppname, 0, _osrfLogFacility);
 	}
 }
 
 void osrfLogSetSyslogFacility( int facility ) {
-	__osrfLogFacility = facility;
+	_osrfLogFacility = facility;
 }
 void osrfLogSetSyslogActFacility( int facility ) {
-	__osrfLogActFacility = facility;
+	_osrfLogActFacility = facility;
 }
 
+/** Sets the global log level.  Any log statements with a higher level
+ * than "level" will not be logged */
 void osrfLogSetLevel( int loglevel ) {
-	__osrfLogLevel = loglevel;
+	_osrfLogLevel = loglevel;
+}
+
+/** Gets the current global log level. **/
+void osrfLogGetLevel( void ) {
+	return _osrfLogLevel;
 }
 
 void osrfLogError( const char* file, int line, const char* msg, ... ) 
@@ -122,16 +138,17 @@ void osrfLogActivity( const char* file, int line, const char* msg, ... ) {
 	_osrfLogDetail( OSRF_LOG_INFO, file, line, VA_BUF ); /* also log at info level */
 }
 
-void _osrfLogDetail( int level, const char* filename, int line, char* msg ) {
+/** Actually does the logging */
+static void _osrfLogDetail( int level, const char* filename, int line, char* msg ) {
 
-	if( level == OSRF_LOG_ACTIVITY && ! __osrfLogActivityEnabled ) return;
-	if( level > __osrfLogLevel ) return;
+	if( level == OSRF_LOG_ACTIVITY && ! _osrfLogActivityEnabled ) return;
+	if( level > _osrfLogLevel ) return;
 	if(!msg) return;
 	if(!filename) filename = "";
 
 	char* l = "INFO";		/* level name */
 	int lvl = LOG_INFO;	/* syslog level */
-	int fac = __osrfLogFacility;
+	int fac = _osrfLogFacility;
 
 	switch( level ) {
 		case OSRF_LOG_ERROR:		
@@ -162,13 +179,13 @@ void _osrfLogDetail( int level, const char* filename, int line, char* msg ) {
 		case OSRF_LOG_ACTIVITY: 
 			l = "ACT"; 
 			lvl = LOG_INFO;
-			fac = __osrfLogActFacility;
+			fac = _osrfLogActFacility;
 			break;
 	}
 
-   char* xid = (__osrfLogXid) ? __osrfLogXid : "";
+   char* xid = (_osrfLogXid) ? _osrfLogXid : "";
 
-	if(__osrfLogType == OSRF_LOG_TYPE_SYSLOG ) {
+	if(_osrfLogType == OSRF_LOG_TYPE_SYSLOG ) {
 		char buf[1536];  
 		memset(buf, 0x0, 1536);
 		/* give syslog some breathing room, and be cute about it */
@@ -180,20 +197,20 @@ void _osrfLogDetail( int level, const char* filename, int line, char* msg ) {
 		syslog( fac | lvl, "[%s:%ld:%s:%d:%s] %s", l, (long) getpid(), filename, line, xid, buf );
 	}
 
-	else if( __osrfLogType == OSRF_LOG_TYPE_FILE )
+	else if( _osrfLogType == OSRF_LOG_TYPE_FILE )
 		_osrfLogToFile("[%s:%ld:%s:%d:%s] %s", l, (long) getpid(), filename, line, xid, msg );
 
 }
 
 
-void _osrfLogToFile( char* msg, ... ) {
+static void _osrfLogToFile( char* msg, ... ) {
 
 	if(!msg) return;
-	if(!__osrfLogFile) return;
+	if(!_osrfLogFile) return;
 	VA_LIST_TO_STRING(msg);
 
-	if(!__osrfLogAppname) __osrfLogAppname = strdup("osrf");
-	int l = strlen(VA_BUF) + strlen(__osrfLogAppname) + 36;
+	if(!_osrfLogAppname) _osrfLogAppname = strdup("osrf");
+	int l = strlen(VA_BUF) + strlen(_osrfLogAppname) + 36;
 	char buf[l];
 	bzero(buf,l);
 
@@ -203,13 +220,13 @@ void _osrfLogToFile( char* msg, ... ) {
 	struct tm* tms = localtime(&t);
 	strftime(datebuf, 36, "%Y-%m-%d %H:%M:%S", tms);
 
-	FILE* file = fopen(__osrfLogFile, "a");
+	FILE* file = fopen(_osrfLogFile, "a");
 	if(!file) {
-		fprintf(stderr, "Unable to fopen file %s for writing\n", __osrfLogFile);
+		fprintf(stderr, "Unable to fopen file %s for writing\n", _osrfLogFile);
 		return;
 	}
 
-	fprintf(file, "%s %s %s\n", __osrfLogAppname, datebuf, VA_BUF );
+	fprintf(file, "%s %s %s\n", _osrfLogAppname, datebuf, VA_BUF );
 	if( fclose(file) != 0 ) 
 		osrfLogWarning(OSRF_LOG_MARK, "Error closing log file: %s", strerror(errno));
 
