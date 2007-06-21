@@ -1,4 +1,4 @@
-#include "xml2json.h"
+#include <objson/xml2json.h>
 
 struct osrfXMLGatewayParserStruct {
     osrfList* objStack;

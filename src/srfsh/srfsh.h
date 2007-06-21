@@ -1,13 +1,13 @@
-#include "opensrf/transport_client.h"
-#include "opensrf/osrf_message.h"
-#include "opensrf/osrf_app_session.h"
+#include <opensrf/transport_client.h>
+#include <opensrf/osrf_message.h>
+#include <opensrf/osrf_app_session.h>
 #include <time.h>
 #include <sys/timeb.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "utils.h"
-#include "log.h"
+#include <opensrf/utils.h>
+#include <opensrf/log.h>
 
 #include <signal.h>
 

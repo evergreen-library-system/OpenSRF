@@ -13,8 +13,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#include "object.h"
-#include "json_parser.h"
+#include <objson/object.h>
+#include <objson/json_parser.h>
 
 
 /* ---------------------------------------------------------------------- */

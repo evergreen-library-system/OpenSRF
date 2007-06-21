@@ -26,45 +26,28 @@
 #
 # --------------------------------------------------------------------
 
-OBJS				= md5.o utils.o json2xml.o object.o json_parser.o xml2json.o
-UTIL_DIR			= ../utils
-DEST_INCLUDE	= objson
-CFLAGS			+= -DSTRICT_JSON_WRITE #-DSTRICT_JSON_READ
+OBJS = utils.o json2xml.o object.o json_parser.o xml2json.o
+CFLAGS += -DSTRICT_JSON_WRITE -DOSRF_DISABLE_MD5 
+TARGETS = object.o json_parser.o json2xml.o xml2json.o ../libopensrf/utils.o ../libopensrf/md5.o
+JSON_INC = ../../include/objson
 
-JSON_HEADERS = object.h json_parser.h json2xml.h xml2json.h
 
-all:	test
+all: libobjson.so
 
-test: libobjson.so objson_test.o
-
-objson_test.o: objson_test.c 
-object.o:	object.h object.c
-json_parser.o:	json_parser.h json_parser.c
-json2xml.o:	json2xml.h json2xml.c
-xml2json.o:	xml2json.h xml2json.c
-
+object.o:	object.c $(JSON_INC)/object.h
+json_parser.o:	json_parser.c $(JSON_INC)/json_parser.h
+json2xml.o:	json2xml.c $(JSON_INC)/json2xml.h
+xml2json.o:	xml2json.c $(JSON_INC)/xml2json.h
+../libopensrf/utils.o: ../libopensrf/utils.c ../../include/opensrf/utils.h
+../libopensrf/md5.o: ../libopensrf/md5.c ../../include/opensrf/md5.h
 
 install:
-	mkdir -p $(INCLUDEDIR)/$(DEST_INCLUDE)
-	cp $(TMPDIR)/$(DEST_INCLUDE)/*.h $(INCLUDEDIR)/objson/
+	cp -r ../../include/objson $(INCLUDEDIR)
 	cp $(TMPDIR)/libobjson.so $(LIBDIR)/libobjson.so
 
-libobjson.so:	$(OBJS)
-	$(CC) -shared -W1 $(OBJS) -o $(TMPDIR)/libobjson.so
-	$(CC) -shared -W1 $(OBJS) -o libobjson.so
-	mkdir -p $(TMPDIR)/$(DEST_INCLUDE)/
-	cp $(JSON_HEADERS) $(TMPDIR)/$(DEST_INCLUDE)/
-
-utils.o:	$(UTIL_DIR)/utils.h $(UTIL_DIR)/utils.c
-	cp $(UTIL_DIR)/utils.h .
-	cp $(UTIL_DIR)/utils.c .
-	$(CC) -c $(CFLAGS) utils.c -o $@
-
-md5.o:	$(UTIL_DIR)/md5.h $(UTIL_DIR)/md5.c
-	cp $(UTIL_DIR)/md5.h .
-	cp $(UTIL_DIR)/md5.c .
-	$(CC) -c $(CFLAGS) md5.c -o $@
+libobjson.so:	$(TARGETS)
+	$(CC) -shared -W1 $(TARGETS) -o $(TMPDIR)/libobjson.so
 
 clean:
-	/bin/rm -f *.o *.so utils.c utils.h libobjson.so
+	/bin/rm -f *.o *.so 
 

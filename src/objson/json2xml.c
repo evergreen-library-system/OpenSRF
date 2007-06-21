@@ -1,5 +1,5 @@
 
-#include "json2xml.h"
+#include <objson/json2xml.h>
 
 static char* _escape_xml (char*);
 static int _recurse_jsonObjectToXML(jsonObject*, growing_buffer*);

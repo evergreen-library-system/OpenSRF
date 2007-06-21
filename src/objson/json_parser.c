@@ -14,7 +14,7 @@ GNU General Public License for more details.
 */
 
 
-#include "json_parser.h"
+#include <objson/json_parser.h>
 
 /* keep a copy of the length of the current json string so we don't 
  * have to calculate it in each function
