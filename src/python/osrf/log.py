@@ -13,18 +13,18 @@
 # GNU General Public License for more details.
 # -----------------------------------------------------------------------
 
-from syslog import *
 import traceback, sys, os, re
 from osrf.const import *
 
 loglevel = 4
 
 def osrfInitLog(level, facility=None, file=None):
-	"""Initialize the logging subsystem."""
-	global loglevel
-	if facility: osrfInitSyslog(facility, level)
-	loglevel = level
-	syslog(LOG_DEBUG, "syslog initialized")
+    """Initialize the logging subsystem."""
+    import syslog
+    global loglevel
+    if facility: osrfInitSyslog(facility, level)
+    loglevel = level
+    syslog.syslog(LOG_DEBUG, "syslog initialized")
 
 
 # -----------------------------------------------------------------------
@@ -40,49 +40,55 @@ def osrfLogErr(s): __osrfLog(OSRF_LOG_ERR,s)
 frgx = re.compile('/.*/')
 
 def __osrfLog(level, msg):
-	"""Builds the log message and passes the message off to the logger."""
-	global loglevel
-	if int(level) > int(loglevel): return
+    """Builds the log message and passes the message off to the logger."""
 
-	# find the caller info for logging the file and line number
-	tb = traceback.extract_stack(limit=3)
-	tb = tb[0]
-	lvl = 'DEBG'
-	slvl = LOG_DEBUG
+    try:
+        import syslog
+    except:
+        return
+        
+    global loglevel
+    if int(level) > int(loglevel): return
 
-	if level == OSRF_LOG_INTERNAL: lvl = 'INT '; slvl=LOG_DEBUG
-	if level == OSRF_LOG_INFO: lvl = 'INFO'; slvl=LOG_INFO
-	if level == OSRF_LOG_WARN: lvl = 'WARN'; slvl=LOG_WARNING
-	if level == OSRF_LOG_ERR:  lvl = 'ERR '; slvl=LOG_ERR
+    # find the caller info for logging the file and line number
+    tb = traceback.extract_stack(limit=3)
+    tb = tb[0]
+    lvl = 'DEBG'
+    slvl = syslog.LOG_DEBUG
 
-	file = frgx.sub('',tb[0])
-	msg = '[%s:%d:%s:%s] %s' % (lvl, os.getpid(), file, tb[1], msg)
-	syslog(slvl, msg)
+    if level == OSRF_LOG_INTERNAL: lvl = 'INT '; slvl=syslog.LOG_DEBUG
+    if level == OSRF_LOG_INFO: lvl = 'INFO'; slvl=syslog.LOG_INFO
+    if level == OSRF_LOG_WARN: lvl = 'WARN'; slvl=syslog.LOG_WARNING
+    if level == OSRF_LOG_ERR:  lvl = 'ERR '; slvl=syslog.LOG_ERR
 
-	if level == OSRF_LOG_ERR:
-		sys.stderr.write(msg + '\n')
+    file = frgx.sub('',tb[0])
+    msg = '[%s:%d:%s:%s] %s' % (lvl, os.getpid(), file, tb[1], msg)
+    syslog.syslog(slvl, msg)
+
+    if level == OSRF_LOG_ERR:
+        sys.stderr.write(msg + '\n')
 
 
 def osrfInitSyslog(facility, level):
-	"""Connect to syslog and set the logmask based on the level provided."""
+    """Connect to syslog and set the logmask based on the level provided."""
 
-	level = int(level)
+    level = int(level)
 
-	if facility == 'local0': facility = LOG_LOCAL0
-	if facility == 'local1': facility = LOG_LOCAL1
-	if facility == 'local2': facility = LOG_LOCAL2
-	if facility == 'local3': facility = LOG_LOCAL3
-	if facility == 'local4': facility = LOG_LOCAL4
-	if facility == 'local5': facility = LOG_LOCAL5
-	if facility == 'local6': facility = LOG_LOCAL6
-	# XXX add other facility maps if necessary
-	openlog(sys.argv[0], 0, facility)
+    if facility == 'local0': facility = syslog.LOG_LOCAL0
+    if facility == 'local1': facility = syslog.LOG_LOCAL1
+    if facility == 'local2': facility = syslog.LOG_LOCAL2
+    if facility == 'local3': facility = syslog.LOG_LOCAL3
+    if facility == 'local4': facility = syslog.LOG_LOCAL4
+    if facility == 'local5': facility = syslog.LOG_LOCAL5
+    if facility == 'local6': facility = syslog.LOG_LOCAL6
+    # XXX add other facility maps if necessary
+    openlog(sys.argv[0], 0, facility)
 
-	# this is redundant...
-	mask = LOG_UPTO(LOG_ERR)
-	if level >= 1: mask |= LOG_MASK(LOG_WARNING)
-	if level >= 2: mask |= LOG_MASK(LOG_NOTICE)
-	if level >= 3: mask |= LOG_MASK(LOG_INFO)
-	if level >= 4: mask |= LOG_MASK(LOG_DEBUG)
-	setlogmask(mask)
+    # this is redundant...
+    mask = LOG_UPTO(syslog.LOG_ERR)
+    if level >= 1: mask |= LOG_MASK(syslog.LOG_WARNING)
+    if level >= 2: mask |= LOG_MASK(syslog.LOG_NOTICE)
+    if level >= 3: mask |= LOG_MASK(syslog.LOG_INFO)
+    if level >= 4: mask |= LOG_MASK(syslog.LOG_DEBUG)
+    syslog.setlogmask(mask)
 
