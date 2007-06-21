@@ -119,7 +119,7 @@ void osrfLogSetLevel( int loglevel ) {
 }
 
 /** Gets the current global log level. **/
-void osrfLogGetLevel( void ) {
+int osrfLogGetLevel( void ) {
 	return _osrfLogLevel;
 }
 
