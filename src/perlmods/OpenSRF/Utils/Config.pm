@@ -327,7 +327,7 @@ sub FILE {
 
 sub load_env {
 	my $self = shift;
-	my $host = hostfqdn();
+	my $host = $ENV{'OSRF_HOSTNAME'} || hostfqdn();
 	chomp $host;
 	$$self{env} = $self->section_pkg->new;
 	$$self{env}{hostname} = $host;
