@@ -14,19 +14,19 @@ AC_PROG_MAKE_SET
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-ldl':
-AC_CHECK_LIB([dl], [main])
-# FIXME: Replace `main' with a function in `-lmemcache':
-AC_CHECK_LIB([memcache], [main])
-# FIXME: Replace `main' with a function in `-lncurses':
-AC_CHECK_LIB([ncurses], [main])
+#AC_CHECK_LIB([dl], [main])
+# Test for libmemcache.
+AC_CHECK_LIB([memcache], [mcMemSetup])
+# Test for ncurses.
+AC_CHECK_LIB([ncurses], [initscr])
 # FIXME: Replace `main' with a function in `-lobjson':
-AC_CHECK_LIB([objson], [main])
+#AC_CHECK_LIB([objson], [main])
 # FIXME: Replace `main' with a function in `-lopensrf':
-AC_CHECK_LIB([opensrf], [main])
-# FIXME: Replace `main' with a function in `-lreadline':
-AC_CHECK_LIB([readline], [main])
-# FIXME: Replace `main' with a function in `-lxml2':
-AC_CHECK_LIB([xml2], [main])
+#AC_CHECK_LIB([opensrf], [main])
+# Test for libreadline.
+AC_CHECK_LIB([readline], [readline])
+# Test for libxml2.
+AC_CHECK_LIB([xml2], [xmlInitParser])
 
 # Checks for header files.
 AC_HEADER_STDC
