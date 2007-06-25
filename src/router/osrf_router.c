@@ -6,6 +6,8 @@
 
 
 #define ROUTER_REQUEST_CLASS_LIST "opensrf.router.info.class.list"
+#define ROUTER_REQUEST_FULL_STATS "opensrf.router.info.stats.class.node.all"
+#define ROUTER_REQUEST_CLASS_STATS "opensrf.router.info.stats.class.all"
 
 osrfRouter* osrfNewRouter( 
 		char* domain, char* name, 
@@ -554,6 +556,53 @@ int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* msg, osr
 			jsonObjectPush( jresponse, jsonNewObject(osrfStringArrayGetString( keys, i )) );
 		osrfStringArrayFree(keys);
 
+
+	} else if(!strcmp( omsg->method_name, ROUTER_REQUEST_FULL_STATS )) {
+
+		osrfRouterClass* class;
+		osrfRouterNode* node;
+		jresponse = jsonParseString("{}");
+
+		osrfHashIterator* class_itr = osrfNewHashIterator(router->classes);
+		while( (class = osrfHashIteratorNext(class_itr)) ) {
+
+			jsonObject* class_res = jsonParseString("{}");
+			char* classname = class_itr->current;
+
+			osrfHashIterator* node_itr = osrfNewHashIterator(class->nodes);
+			while( (node = osrfHashIteratorNext(node_itr)) ) {
+				jsonObjectSetKey( class_res, node->remoteId, jsonNewNumberObject( (double) node->count ) );
+			}
+			osrfHashIteratorFree(node_itr);
+
+			jsonObjectSetKey( jresponse, classname, class_res );
+		}
+
+		osrfHashIteratorFree(class_itr);
+
+	} else if(!strcmp( omsg->method_name, ROUTER_REQUEST_CLASS_STATS )) {
+
+		osrfRouterClass* class;
+		osrfRouterNode* node;
+		int count;
+		jresponse = jsonParseString("{}");
+
+		osrfHashIterator* class_itr = osrfNewHashIterator(router->classes);
+		while( (class = osrfHashIteratorNext(class_itr)) ) {
+
+			count = 0;
+			char* classname = class_itr->current;
+
+			osrfHashIterator* node_itr = osrfNewHashIterator(class->nodes);
+			while( (node = osrfHashIteratorNext(node_itr)) ) {
+				count += node->count;
+			}
+			osrfHashIteratorFree(node_itr);
+
+			jsonObjectSetKey( jresponse, classname, jsonNewNumberObject( (double) count ) );
+		}
+
+		osrfHashIteratorFree(class_itr);
 
 	} else {
 
