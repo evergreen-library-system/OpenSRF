@@ -195,7 +195,14 @@ static void _osrfLogDetail( int level, const char* filename, int line, char* msg
 
    char* xid = (_osrfLogXid) ? _osrfLogXid : "";
 
-	if(_osrfLogType == OSRF_LOG_TYPE_SYSLOG ) {
+   int logtype = _osrfLogType;
+   if( logtype == OSRF_LOG_TYPE_FILE && !_osrfLogFile )
+   {
+	   // No log file defined?  Temporarily reroute to stderr
+	   logtype = OSRF_LOG_TYPE_STDERR;
+   }
+
+   if( logtype == OSRF_LOG_TYPE_SYSLOG ) {
 		char buf[1536];  
 		memset(buf, 0x0, 1536);
 		/* give syslog some breathing room, and be cute about it */
@@ -207,10 +214,10 @@ static void _osrfLogDetail( int level, const char* filename, int line, char* msg
 		syslog( fac | lvl, "[%s:%ld:%s:%d:%s] %s", label, (long) getpid(), filename, line, xid, buf );
 	}
 
-	else if( _osrfLogType == OSRF_LOG_TYPE_FILE )
+	else if( logtype == OSRF_LOG_TYPE_FILE )
 		_osrfLogToFile( "[%s:%ld:%s:%d:%s] %s", label, (long) getpid(), filename, line, xid, msg );
 
-	else if( _osrfLogType == OSRF_LOG_TYPE_STDERR )
+	else if( logtype == OSRF_LOG_TYPE_STDERR )
 		fprintf( stderr, "[%s:%ld:%s:%d:%s] %s\n", label, (long) getpid(), filename, line, xid, msg );
 }
 
