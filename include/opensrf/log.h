@@ -18,6 +18,7 @@
 
 #define OSRF_LOG_TYPE_FILE 1
 #define OSRF_LOG_TYPE_SYSLOG 2
+#define OSRF_LOG_TYPE_STDERR 3
 
 #define OSRF_LOG_MARK __FILE__, __LINE__
 
