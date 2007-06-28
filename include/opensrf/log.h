@@ -32,6 +32,13 @@ void osrfLogSetSyslogFacility( int facility );
 /** Sets the systlog facility for the activity logs */
 void osrfLogSetSyslogActFacility( int facility );
 
+/** Reroutes logged messages to standard error; */
+/** intended for development and debugging */
+void osrfLogToStderr( void );
+
+/** Undoes the effects of osrfLogToStderr() */
+void osrfRestoreLogType( void );
+
 /** Sets the log file to use if we're logging to a file */
 void osrfLogSetFile( const char* logfile );
 
@@ -62,13 +69,13 @@ void osrfLogInternal( const char* file, int line, const char* msg, ... );
 /* Log an activity message */
 void osrfLogActivity( const char* file, int line, const char* msg, ... );
 
-void osrfLogCleanup();
+void osrfLogCleanup( void );
 
-void osrfLogClearXid();
+void osrfLogClearXid( void );
 void osrfLogSetXid(char* xid);
-void osrfLogMkXid();
+void osrfLogMkXid( void );
 void osrfLogSetIsClient(int is);
-char* osrfLogGetXid();
+char* osrfLogGetXid( void );
 
 /* sets the activity flag */
 void osrfLogSetActivityEnabled( int enabled );
