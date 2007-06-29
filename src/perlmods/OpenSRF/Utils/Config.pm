@@ -26,57 +26,16 @@ sub new {
 
 	$self = bless {}, $class;
 
-	my $lines = shift;
+	$self->_sub_builder('__id');
+	# Hard-code this to match old bootstrap.conf section name
+	$self->__id('bootstrap');
 
-	for my $line (@$lines) {
+	my $bootstrap = shift;
 
-		#($line) = split(/\s+\/\//, $line);
-		#($line) = split(/\s+#/, $line);
-
-		if ($line =~ /^\s*\[([^\[\]]+)\]/) {
-			$self->_sub_builder('__id');
-			$self->__id( $1 );
-			next;
-		}
-
-		my ($protokey,$value,$keytype,$key);
-		if ($line =~ /^([^=\s]+)\s*=\s*(.*)\s*$/s) {
-			($protokey,$value) = ($1,$2);
-			($keytype,$key) = split(/:/,$protokey);
-		}
-
-		$key = $protokey unless ($key);
-
-		if ($keytype ne $key) {
-			$keytype = lc $keytype;
-			if ($keytype eq 'list') {
-				$value = [split /\s*,\s*/, $value];
-			} elsif ($keytype eq 'bool') {
-				$value = do{ $value =~ /^t|y|1/i ? 1 : 0; };
-			} elsif ($keytype eq 'interval') {
-				$value = interval_to_seconds($value);
-			} elsif ($keytype eq 'subsection') {
-				if (exists $SECTIONCACHE{$value}) {
-					$value = $SECTIONCACHE{$value};
-				} else {
-					$SUBSECTION_FIXUP{$value}{$self->SECTION} = $key ;
-					next;
-				}
-			}
-		}
-
+	foreach my $key (sort keys %$bootstrap) {
 		$self->_sub_builder($key);
-		$self->$key($value);
+		$self->$key($bootstrap->{$key});
 	}
-
-	no warnings;
-	if (my $parent_def = $SUBSECTION_FIXUP{$self->SECTION}) {
-		my ($parent_section, $parent_key) = each %$parent_def;
-		$SECTIONCACHE{$parent_section}->{$parent_key} = $self;
-		delete $SUBSECTION_FIXUP{$self->SECTION};
-	}
-
-	$SECTIONCACHE{$self->SECTION} = $self;
 
 	return $self;
 }
@@ -87,6 +46,7 @@ use vars qw/@ISA $AUTOLOAD $VERSION $OpenSRF::Utils::ConfigCache/;
 push @ISA, qw/OpenSRF::Utils/;
 
 use FileHandle;
+use XML::LibXML;
 use OpenSRF::Utils (':common');  
 use OpenSRF::Utils::Logger;
 use Net::Domain qw/hostfqdn/;
@@ -157,9 +117,9 @@ OpenSRF::Utils::Config
 
   my $config_obj = OpenSRF::Utils::Config->load( config_file   => '/config/file.cnf' );
 
-  my $attrs_href = $config_obj->attributes();
+  my $attrs_href = $config_obj->bootstrap();
 
-  $config_obj->attributes->no_db(0);
+  $config_obj->bootstrap->loglevel(0);
 
   open FH, '>'.$config_obj->FILE() . '.new';
   print FH $config_obj;
@@ -170,61 +130,56 @@ OpenSRF::Utils::Config
 =head1 DESCRIPTION
 
  
-This module is mainly used by other modules to load a configuration file.
+This module is mainly used by other OpenSRF modules to load an OpenSRF configuration file.
+OpenSRF configuration files are XML files that contain a C<< <config> >> root element and an C<< <opensrf> >>
+child element (in XPath notation, C</config/opensrf/>). Each child element is converted into a
+hash key=>value pair. Elements that contain other XML elements are pushed into arrays and added
+as an array reference to the hash. Scalar values have whitespace trimmed from the left and right
+sides.
+
+Child elements of C<< <config> >> other than C<< <opensrf> >> are currently ignored by this module.
+
+=head1 EXAMPLE
  
+Given an OpenSRF configuration file named F<opensrf_core.xml> with the following content:
+
+  <?xml version='1.0'?>
+  <config>
+    <opensrf>
+      <router_name>router</router_name>
+
+      <routers> 
+	<router>localhost</router>
+	<router>otherhost</router>
+      </routers>
+
+      <logfile>/openils/var/log/osrfsys.log</logfile>
+    </opensrf>
+  </config>
+
+... calling C<< OpenSRF::Utils::Config->load(config_file => 'opensrf_core.xml') >> will create a hash
+with the following structure:
+
+  {
+    router_name => 'router',
+    routers => ['localhost', 'otherhost'],
+    logfile => '/openils/var/log/osrfsys.log'
+  }
+
+You can retrieve any of these values by name from the bootstrap section of C<$config_obj>; for example:
+
+  $config_obj->bootstrap->router_name
 
 =head1 NOTES
 
- 
+For compatibility with a previous version of OpenSRF configuration files, the F</config/opensrf/> section
+has a hardcoded name of B<bootstrap>. However, future iterations of this module may extend the ability
+of the module to parse the entire OpenSRF configuration file and provide sections named after the sibling
+elements of C</config/opensrf>.
+
 Hashrefs of sections can be returned by calling a method of the object of the same name as the section.
 They can be set by passing a hashref back to the same method.  Sections will B<NOT> be autovivicated, though.
 
-Here be a config file example, HAR!:
-
- [datasource]
- # backend=XMLRPC
- backend=DBI
- subsection:definition=devel_db
-
- [devel_db]
- dsn=dbi:Pg(RaiseError => 0, AutoCommit => 1):dbname=dcl;host=nsite-dev
- user=postgres
- pw=postgres
- #readonly=1
- 
- [live_db]
- dsn=dbi:Pg(RaiseError => 0, AutoCommit => 1):dbname=dcl
- user=n2dcl
- pw=dclserver
- #readonly=1
-
- [devel_xmlrpc]
- subsection:definition=devel_rpc
- 
- [logs]
- base=/var/log/nsite
- debug=debug.log
- error=error.log
- 
- [debug]
- enabled=1
- level=ALL
- 
- [devel_rpc]
- url=https://localhost:9000/
- proto=SSL
- SSL_cipher_list=ALL
- SSL_verify_mode=5
- SSL_use_cert=1
- SSL_key_file=client-key.pem
- SSL_cert_file=client-cert.pem
- SSL_ca_file=cacert.pem
- log_level=4
- 
- [dirs]
- base_dir=/home/miker/cvs/NOC/monitor_core/
- cert_dir=certs/
- 
 
 =head1 METHODS
 
@@ -358,60 +313,56 @@ sub mangle_dirs {
 
 sub load_config {
 	my $self = shift;
-	my $config = new FileHandle $self->FILE, 'r';
+	my $parser = XML::LibXML->new();
+
+	# Hash of config values
+	my %bootstrap;
+	
+	# Return an XML::LibXML::Document object
+	my $config = $parser->parse_file($self->FILE);
+
 	unless ($config) {
 		OpenSRF::Utils::Logger->error("Could not open ".$self->FILE.": $!\n");
 		die "Could not open ".$self->FILE.": $!\n";
 	}
-	my @stripped_config = $self->__strip_comments($config) if (defined $config);
 
-	my $chunk = [];
-	for my $line (@stripped_config) {
-		no warnings;
-		next unless ($line);
+	# Return an XML::LibXML::NodeList object matching all child elements
+	# of <config><opensrf>...
+	my $osrf_cfg = $config->findnodes('/config/opensrf/child::*');
 
-		if ($line =~ /^\s*\[/ and @$chunk) {
-			my $section = $self->section_pkg->new($chunk);
+	# Iterate through the nodes to pull out key=>value pairs of config settings
+	foreach my $node ($osrf_cfg->get_nodelist()) {
+		my $child_state = 0;
 
-			my $sub_name = $section->SECTION;
-			$self->_sub_builder($sub_name);
-			$self->$sub_name($section);
+		# This will be overwritten if it's a scalar setting
+		$bootstrap{$node->nodeName()} = [];
 
-			#$self->{$section->SECTION} = $section;
+		foreach my $child_node ($node->childNodes) {
+			# from libxml/tree.h: nodeType 1 = ELEMENT_NODE
+			next if $child_node->nodeType() != 1;
 
-			$chunk = [];
-			push @$chunk,$line;
-			next;
-		} 
-		if ($line =~ /^#\s*include\s+"(\S+)"\s*$/o) {
-                        my $included_file = $1;
-			my $section = OpenSRF::Utils::Config->load(config_file => $included_file, nocache => 1);
-
-			my $sub_name = $section->FILE;
-			$self->_sub_builder($sub_name);
-			$self->$sub_name($section);
-
-			for my $subsect (keys %$section) {
-				next if ($subsect eq '__id');
-
-				$self->_sub_builder($subsect);
-				$self->$subsect($$section{$subsect});
-
-				#$self->$subsect($section->$subsect);
-				$self->$subsect->{__sub} = 1;
-			}
-			next;
+			# If the child node is an element, this element may
+			# have multiple values; therefore, push it into an array
+			push @{$bootstrap{$node->nodeName()}}, OpenSRF::Utils::Config::extract_text($child_node->textContent);
+			$child_state = 1;
 		}
-
-		push @$chunk,$line;
+		if (!$child_state) {
+			$bootstrap{$node->nodeName()} = OpenSRF::Utils::Config::extract_text($node->textContent);
+		}
 	}
-	my $section = $self->section_pkg->new($chunk) if (@$chunk);
+
+	my $section = $self->section_pkg->new(\%bootstrap);
 	my $sub_name = $section->SECTION;
 	$self->_sub_builder($sub_name);
 	$self->$sub_name($section);
 
 }
 
+sub extract_text {
+	my $self = shift;
+	$self =~ s/^\s*([.*?])\s*$//m;
+	return $self;
+}
 
 #------------------------------------------------------------------------------------------------------------------------------------
 
@@ -419,13 +370,25 @@ sub load_config {
 
 	OpenSRF::Utils
 
+=head1 LIMITATIONS
+
+Elements containing heterogeneous child elements are treated as though they have the same element name;
+for example:
+  <routers>
+    <router>localhost</router>
+    <furniture>chair</furniture>
+  </routers>
+
+... will simply generate a key=>value pair of C<< routers => ['localhost', 'chair'] >>.
+
 =head1 BUGS
 
-No know bugs, but report any to mrylander@gmail.com.
+No known bugs, but report any to open-ils-dev@list.georgialibraries.org or mrylander@gmail.com.
 
 =head1 COPYRIGHT AND LICENSING
 
-Mike Rylander, Copyright 2000-2007
+Copyright (C) 2000-2007, Mike Rylander
+Copyright (C) 2007, Laurentian University, Dan Scott <dscott@laurentian.ca>
 
 The OpenSRF::Utils::Config module is free software. You may distribute under the terms
 of the GNU General Public License version 2 or greater.

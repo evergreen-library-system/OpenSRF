@@ -1,5 +1,8 @@
 #include <opensrf/log.h>
 
+#define OSRF_NO_LOG_TYPE -1
+
+static int _prevLogType             = OSRF_NO_LOG_TYPE;
 static int _osrfLogType				= OSRF_LOG_TYPE_STDERR;
 static int _osrfLogFacility			= LOG_LOCAL0;
 static int _osrfLogActFacility		= LOG_LOCAL1;
@@ -22,7 +25,7 @@ static void _osrfLogSetXid( const char* xid );
         VA_LIST_TO_STRING(m);	\
         _osrfLogDetail( l, f, li, VA_BUF );
 
-void osrfLogCleanup() {
+void osrfLogCleanup( void ) {
 	free(_osrfLogAppname);
 	_osrfLogAppname = NULL;
 	free(_osrfLogFile);
@@ -46,12 +49,12 @@ static void _osrfLogSetXid( const char* xid ) {
    }
 }
 
-void osrfLogClearXid() { _osrfLogSetXid(""); }
+void osrfLogClearXid( void ) { _osrfLogSetXid(""); }
 void osrfLogSetXid(char* xid) {
    if(!_osrfLogIsClient) _osrfLogSetXid(xid);
 }
 
-void osrfLogMkXid() {
+void osrfLogMkXid( void ) {
    if(_osrfLogIsClient) {
       static int _osrfLogXidInc = 0; /* increments with each new xid for uniqueness */
       char buf[32];
@@ -62,7 +65,7 @@ void osrfLogMkXid() {
    }
 }
 
-char* osrfLogGetXid() {
+char* osrfLogGetXid( void ) {
    return _osrfLogXid;
 }
 
@@ -90,6 +93,22 @@ static void osrfLogSetType( int logtype ) {
 			fprintf(stderr, "Unrecognized log type.  Logging to stderr\n");
 			_osrfLogType = OSRF_LOG_TYPE_STDERR;
 			break;
+	}
+}
+
+void osrfLogToStderr( void )
+{
+	if( OSRF_NO_LOG_TYPE == _prevLogType ) {
+		_prevLogType = _osrfLogType;
+		_osrfLogType = OSRF_LOG_TYPE_STDERR;
+	}
+}
+
+void osrfRestoreLogType( void )
+{
+	if( _prevLogType != OSRF_NO_LOG_TYPE ) {
+		_osrfLogType = _prevLogType;
+		_prevLogType = OSRF_NO_LOG_TYPE;
 	}
 }
 
@@ -237,7 +256,10 @@ static void _osrfLogToFile( const char* msg, ... ) {
 
 	FILE* file = fopen(_osrfLogFile, "a");
 	if(!file) {
-		fprintf(stderr, "Unable to fopen log file %s for writing\n", _osrfLogFile);
+		fprintf(stderr,
+			"Unable to fopen log file %s for writing; logging to standard error\n", _osrfLogFile);
+		fprintf(stderr, "%s %s %s\n", _osrfLogAppname, datebuf, VA_BUF );
+
 		return;
 	}
 
