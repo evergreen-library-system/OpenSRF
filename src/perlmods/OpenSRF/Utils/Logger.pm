@@ -39,7 +39,6 @@ my $syslog_enabled = 0;			# is syslog enabled?
 my $act_syslog_enabled = 0;	# is syslog enabled?
 my $logfile_enabled = 1;		# are we logging to a file?
 my $act_logfile_enabled = 1;	# are we logging to a file?
-my $logdir;							# log file directory
 
 our $logger = "OpenSRF::Utils::Logger";
 
@@ -66,15 +65,13 @@ sub set_config {
 		warn "*** Logger found no config.  Using STDERR ***\n";
 	}
 
-	$loglevel =  $config->bootstrap->debug; 
-	if($loglevel =~ /error/i){ $loglevel = ERROR(); }
-	elsif($loglevel =~ /warn/i){ $loglevel = WARN(); }
-	elsif($loglevel =~ /info/i){ $loglevel = INFO(); }
-	elsif($loglevel =~ /debug/i){ $loglevel = DEBUG(); }
-	elsif($loglevel =~ /internal/i){ $loglevel = INTERNAL(); }
+	$loglevel =  $config->bootstrap->loglevel; 
+	if($loglevel = 1){ $loglevel = ERROR(); }
+	elsif($loglevel = 2){ $loglevel = WARN(); }
+	elsif($loglevel = 3){ $loglevel = INFO(); }
+	elsif($loglevel = 4){ $loglevel = DEBUG(); }
+	elsif($loglevel = 5){ $loglevel = INTERNAL(); }
 	else{$loglevel= INFO(); }
-
-	my $logdir = $config->bootstrap->log_dir;
 
 	$logfile = $config->bootstrap->logfile;
 	if($logfile =~ /^syslog/) {
@@ -86,7 +83,7 @@ sub set_config {
 		$facility = _fac_to_const($facility);
 		openlog($service, 0, $facility);
 
-	} else { $logfile = "$logdir/$logfile"; }
+	} else { $logfile = "$logfile"; }
 
 	$actfile = $config->bootstrap->actlog;
 	if($actfile =~ /^syslog/) {
@@ -97,7 +94,7 @@ sub set_config {
 		$actfile = undef;
 		$actfac = _fac_to_const($actfac);
 
-	} else { $actfile = "$logdir/$actfile"; }
+	} else { $actfile = "$actfile"; }
 
 	$isclient = (OpenSRF::Utils::Config->current->bootstrap->client =~ /^true$/iog) ?  1 : 0;
 }

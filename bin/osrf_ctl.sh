@@ -1,8 +1,7 @@
 #!/bin/bash
 
 OPT_ACTION=""
-OPT_PERL_CONFIG=""
-OPT_C_CONFIG=""
+OPT_CONFIG=""
 OPT_PID_DIR=""
 
 # ---------------------------------------------------------------------------
@@ -11,12 +10,9 @@ OPT_PID_DIR=""
 [ $(whoami) != 'opensrf' ] && echo 'Must run as user "opensrf"' && exit;
 
 
-# NOTE: Eventually, there will be one OpenSRF config file format
-# When this happens, we will only need a single OPT_CONFIG variable
-
 function usage {
 	echo "";
-	echo "usage: $0 -d <pid_dir> -p <perl_config> -c <c_config> -a <action>";
+	echo "usage: $0 -d <pid_dir> -c <c_config> -a <action>";
 	echo "";
 	echo "Actions include:"
 	echo -e "\tstart_router"
@@ -36,7 +32,7 @@ function usage {
 	echo -e "\trestart_all"
 	echo "";
     echo "Example:";
-    echo "  $0 -p bootstrap.conf -c opensrf_core.xml -a restart_all";
+    echo "  $0 -c opensrf_core.xml -a restart_all";
     echo "";
 	exit;
 }
@@ -45,11 +41,10 @@ function usage {
 # ---------------------------------------------------------------------------
 # Load the command line options and set the global vars
 # ---------------------------------------------------------------------------
-while getopts  "p:c:a:d:h" flag; do
+while getopts  "c:a:d:h" flag; do
 	case $flag in	
 		"a")		OPT_ACTION="$OPTARG";;
-		"c")		OPT_C_CONFIG="$OPTARG";;
-		"p")		OPT_PERL_CONFIG="$OPTARG";;
+		"c")		OPT_CONFIG="$OPTARG";;
 		"d")		OPT_PID_DIR="$OPTARG";;
 		"h"|*)	usage;;
 	esac;
@@ -110,7 +105,7 @@ function do_action {
 
 function start_router {
 	do_action "start" $PID_ROUTER "OpenSRF Router";
-	opensrf_router $OPT_C_CONFIG router
+	opensrf_router $OPT_CONFIG router
 	pid=$(ps ax | grep "OpenSRF Router" | grep -v grep | awk '{print $1}')
 	echo $pid > $PID_ROUTER;
 	return 0;
@@ -123,7 +118,7 @@ function stop_router {
 
 function start_perl {
 	do_action "start" $PID_OSRF_PERL "OpenSRF Perl";
-	perl -MOpenSRF::System="$OPT_PERL_CONFIG" -e 'OpenSRF::System->bootstrap()' & 
+	perl -MOpenSRF::System="$OPT_CONFIG" -e 'OpenSRF::System->bootstrap()' & 
 	pid=$!;
 	echo $pid > $PID_OSRF_PERL;
 	sleep 5;
@@ -143,7 +138,7 @@ function start_c {
 	fi;
 
 	do_action "start" $PID_OSRF_C "OpenSRF C (host=$host)";
-	opensrf-c $host $OPT_C_CONFIG opensrf;
+	opensrf-c $host $OPT_CONFIG opensrf;
 	pid=$(ps ax | grep "OpenSRF System-C" | grep -v grep | awk '{print $1}')
 	echo $pid > "$PID_OSRF_C";
 	return 0;

@@ -2,7 +2,7 @@
 
 <config>
 
-	<opensrf> <!-- bootstrap config for the C apps -->
+  <opensrf> <!-- bootstrap config for OpenSRF apps -->
 
 		<!--  the routers's name on the network -->
 		<!-- do not change this -->
@@ -17,7 +17,7 @@
       </routers>
 
       <domains>
-			<!-- Our jabber domain, currenlty only one domain is supported -->
+      <!-- Our jabber domain, currently only one domain is supported -->
          <domain>localhost</domain>
       </domains>
 
@@ -41,8 +41,10 @@
 
 		<!-- 0 None, 1 Error, 2 Warning, 3 Info, 4 debug, 5 Internal (Nasty) -->
       <loglevel>3</loglevel>
-   </opensrf>
 
+    <!-- config file for the services -->
+    <settings_config>/openils/conf/opensrf.xml</settings_config>
+  </opensrf>
 
 	<!-- Update this if you use ChopChop -->
 	<chopchop> <!-- Our jabber server -->
@@ -57,7 +59,6 @@
 		<loglevel>3</loglevel>
 		<logfile>/openils/var/log/osrfsys.log</logfile>
 	</chopchop>
-
 
 	<!-- The section between <gateway>...</gateway> is a standard OpenSRF C stack config file -->
 	<gateway>
@@ -140,7 +141,3 @@
 	<!-- ======================================================================================== -->
 
 </config>
-
-
-
-
