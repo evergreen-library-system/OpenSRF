@@ -79,7 +79,12 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 			hostname, configfile );
 		return -1;
 	}
-	
+
+	/** daemonize me **/
+	/* background and let our children do their thing */
+	/* NOTE: This has been moved from below the 'if (apps)' block below ... move it back if things go crazy */
+	daemonize();
+
 	jsonObject* apps = osrf_settings_host_value_object("/activeapps/appname");
 	osrfStringArray* arr = osrfNewStringArray(8);
 	
@@ -122,7 +127,7 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 	
 				} else {
 		
-					fprintf(stderr, " * Running application %s\n", appname);
+					osrfLogError( OSRF_LOG_MARK, " * Running application %s\n", appname);
 					if( osrfAppRegisterApplication( appname, libfile ) == 0 ) 
 						osrf_prefork_run(appname);
 	
@@ -131,26 +136,21 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 				}
 			} // language == c
 		} 
+	} // should we do something if there are no apps? does the wait(NULL) below do that for us?
+
+	while(1) {
+		errno = 0;
+		pid_t pid = wait(NULL);
+		if(-1 == pid) {
+			if(errno == ECHILD)
+				osrfLogError(OSRF_LOG_MARK, "We have no more live services... exiting");
+			else
+				osrfLogError(OSRF_LOG_MARK, "Exiting top-level system loop with error: %s", strerror(errno));
+			break;
+		} else {
+			osrfLogError(OSRF_LOG_MARK, "We lost a top-level service process with PID %ld", pid);
+		}
 	}
-
-	/** daemonize me **/
-
-	/* background and let our children do their thing */
-	daemonize();
-    while(1) {
-        errno = 0;
-        pid_t pid = wait(NULL);
-        if(-1 == pid) {
-            if(errno == ECHILD)
-                osrfLogError(OSRF_LOG_MARK, "We have no more live services... exiting");
-            else
-                osrfLogError(OSRF_LOG_MARK, "Exiting top-level system loop with error: %s", strerror(errno));
-            break;
-        } else {
-            osrfLogError(OSRF_LOG_MARK, "We lost a top-level service process with PID %ld", pid);
-        }
-    }
-
 
 	return 0;
 }
