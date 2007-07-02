@@ -66,18 +66,12 @@ sub set_config {
 	}
 
 	$loglevel =  $config->bootstrap->loglevel; 
-	if($loglevel = 1){ $loglevel = ERROR(); }
-	elsif($loglevel = 2){ $loglevel = WARN(); }
-	elsif($loglevel = 3){ $loglevel = INFO(); }
-	elsif($loglevel = 4){ $loglevel = DEBUG(); }
-	elsif($loglevel = 5){ $loglevel = INTERNAL(); }
-	else{$loglevel= INFO(); }
 
 	$logfile = $config->bootstrap->logfile;
 	if($logfile =~ /^syslog/) {
 		$syslog_enabled = 1;
 		$logfile_enabled = 0;
-		$logfile =~ s/^syslog:?//;
+        $logfile = $config->bootstrap->syslog;
 		$facility = $logfile;
 		$logfile = undef;
 		$facility = _fac_to_const($facility);
@@ -85,16 +79,28 @@ sub set_config {
 
 	} else { $logfile = "$logfile"; }
 
-	$actfile = $config->bootstrap->actlog;
-	if($actfile =~ /^syslog/) {
-		$act_syslog_enabled = 1;
-		$act_logfile_enabled = 0;
-		$actfile =~ s/^syslog:?//;
-		$actfac = $actfile || "local1";
-		$actfile = undef;
-		$actfac = _fac_to_const($actfac);
 
-	} else { $actfile = "$actfile"; }
+    if($syslog_enabled) {
+        # --------------------------------------------------------------
+        # if we're syslogging, see if we have a special syslog facility 
+        # for activity logging.  If not, use the syslog facility for
+        # standard logging
+        # --------------------------------------------------------------
+        $act_syslog_enabled = 1;
+        $act_logfile_enabled = 0;
+        $actfac = $config->bootstrap->actlog || $config->bootstrap->syslog;
+        $actfac = _fac_to_const($actfac);
+        $actfile = undef;
+    } else {
+        # --------------------------------------------------------------
+        # we're not syslogging, use any specified activity log file.
+        # Fall back to the standard log file otherwise
+        # --------------------------------------------------------------
+		$act_syslog_enabled = 0;
+		$act_logfile_enabled = 1;
+        $actfile = $config->bootstrap->actlog || $config->bootstrap->logfile;
+    }
+
 
 	$isclient = (OpenSRF::Utils::Config->current->bootstrap->client =~ /^true$/iog) ?  1 : 0;
 }
