@@ -10,7 +10,7 @@ use Data::Dumper;
 use Time::HiRes qw/time/;
 use OpenSRF::EX qw/:try/;
 use Carp;
-use JSON;
+use OpenSRF::Utils::JSON;
 #use OpenSRF::UnixServer;  # to get the server class from UnixServer::App
 
 sub DESTROY{};
@@ -148,7 +148,7 @@ sub handler {
 							for my $p (0 .. scalar(@{ $sig->{params} }) - 1 ) {
 								my $s = $sig->{params}->[$p];
 								my $a = $args[$p];
-								if ($s->{class} && JSON->lookup_hint(ref $a) ne $s->{class}) {
+								if ($s->{class} && OpenSRF::Utils::JSON->lookup_hint(ref $a) ne $s->{class}) {
 									die "Incorrect param class at position $p : should be a '$$s{class}'";
 								} elsif ($s->{type}) {
 									if (lc($s->{type}) eq 'object' && $a !~ /HASH/o) {
@@ -225,7 +225,7 @@ sub handler {
 								for my $p (0 .. scalar(@{ $sig->{params} }) - 1 ) {
 									my $s = $sig->{params}->[$p];
 									my $a = $args[$p];
-									if ($s->{class} && JSON->lookup_hint(ref $a) ne $s->{class}) {
+									if ($s->{class} && OpenSRF::Utils::JSON->lookup_hint(ref $a) ne $s->{class}) {
 										die "Incorrect param class at position $p : should be a '$$s{class}'";
 									} elsif ($s->{type}) {
 										if (lc($s->{type}) eq 'object' && $a !~ /HASH/o) {
@@ -393,7 +393,7 @@ sub register_method {
 		($args{object_hint} = $args{package}) =~ s/::/_/go;
 	}
 
-	JSON->register_class_hint( name => $args{package}, hint => $args{object_hint}, type => "hash" );
+	OpenSRF::Utils::JSON->register_class_hint( name => $args{package}, hint => $args{object_hint}, type => "hash" );
 
 	$_METHODS[$args{api_level}]{$args{api_name}} = bless \%args => $app;
 

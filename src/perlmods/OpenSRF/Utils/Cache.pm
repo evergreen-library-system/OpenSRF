@@ -6,7 +6,7 @@ use OpenSRF::Utils::Logger qw/:level/;
 use OpenSRF::Utils::Config;
 use OpenSRF::Utils::SettingsClient;
 use OpenSRF::EX qw(:try);
-use JSON;
+use OpenSRF::Utils::JSON;
 
 my $log = 'OpenSRF::Utils::Logger';
 
@@ -96,7 +96,7 @@ sub put_cache {
 	my($self, $key, $value, $expiretime ) = @_;
 	return undef unless( defined $key and defined $value );
 
-	$value = JSON->perl2JSON($value);
+	$value = OpenSRF::Utils::JSON->perl2JSON($value);
 
 	if($self->{persist}){ _load_methods(); }
 
@@ -148,7 +148,7 @@ sub get_cache {
 	my($self, $key ) = @_;
 
 	my $val = $self->{memcache}->get( $key );
-	return JSON->JSON2perl($val) if defined($val);
+	return OpenSRF::Utils::JSON->JSON2perl($val) if defined($val);
 
 	if($self->{persist}){ _load_methods(); }
 
@@ -162,7 +162,7 @@ sub get_cache {
 			} else {
 				$self->{memcache}->set( $key, $val, $max_persist_time);
 			}
-			return JSON->JSON2perl($val);
+			return OpenSRF::Utils::JSON->JSON2perl($val);
 		} 
 	}
 	return undef;

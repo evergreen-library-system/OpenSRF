@@ -6,7 +6,7 @@ use OpenSRF::Utils::SettingsClient;
 use OpenSRF::EX qw/:try/;
 use OpenSRF::Utils qw/:common/;
 use OpenSRF::Utils::Logger;
-use JSON;
+use OpenSRF::Utils::JSON;
 use DBI;
 
 use vars qw/$dbh $log $default_expire_time/;
@@ -227,7 +227,7 @@ sub add_item {
 			$dbh->do('DELETE FROM storage WHERE name_id = ?;', {}, $name_id);
 		}
 
-		$dbh->do('INSERT INTO storage (name_id,value) VALUES (?,?);', {}, $name_id, JSON->perl2JSON($value));
+		$dbh->do('INSERT INTO storage (name_id,value) VALUES (?,?);', {}, $name_id, OpenSRF::Utils::JSON->perl2JSON($value));
 
 		_flush_by_name($name);
 
@@ -344,7 +344,7 @@ sub pop_queue {
 
 		_flush_by_name($name);
 
-		return JSON->JSON2perl( $value->[1] );
+		return OpenSRF::Utils::JSON->JSON2perl( $value->[1] );
 	} catch Error with {
 		#my $e = shift;
 		#return $e;
@@ -377,7 +377,7 @@ sub peek_slot {
 	
 	my $values = $dbh->selectall_arrayref("SELECT value FROM storage WHERE name_id = ? ORDER BY id $order;", {}, $name_id);
 
-	$client->respond( JSON->JSON2perl( $_->[0] ) ) for (@$values);
+	$client->respond( OpenSRF::Utils::JSON->JSON2perl( $_->[0] ) ) for (@$values);
 
 	_flush_by_name($name);
 	return undef;
@@ -407,7 +407,7 @@ sub store_size {
 
 	my $value = $dbh->selectcol_arrayref('SELECT SUM(LENGTH(value)) FROM storage WHERE name_id = ?;', {}, $name_id);
 
-	return JSON->JSON2perl( $value->[0] );
+	return OpenSRF::Utils::JSON->JSON2perl( $value->[0] );
 }
 __PACKAGE__->register_method(
 	api_name => 'opensrf.persist.queue.size',
@@ -436,7 +436,7 @@ sub store_depth {
 
 	my $value = $dbh->selectcol_arrayref('SELECT COUNT(*) FROM storage WHERE name_id = ?;', {}, $name_id);
 
-	return JSON->JSON2perl( $value->[0] );
+	return OpenSRF::Utils::JSON->JSON2perl( $value->[0] );
 }
 __PACKAGE__->register_method(
 	api_name => 'opensrf.persist.queue.length',
@@ -465,7 +465,7 @@ sub shift_stack {
 
 		_flush_by_name($name);
 
-		return JSON->JSON2perl( $value->[1] );
+		return OpenSRF::Utils::JSON->JSON2perl( $value->[1] );
 	} catch Error with {
 		my $e = shift;
 		return undef;
@@ -498,7 +498,7 @@ sub get_object {
 
 		_flush_by_name($name);
 
-		return JSON->JSON2perl( $value->[1] );
+		return OpenSRF::Utils::JSON->JSON2perl( $value->[1] );
 	} catch Error with {
 		return undef;
 	};

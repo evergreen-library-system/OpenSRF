@@ -1,13 +1,13 @@
 package OpenSRF::DomainObject::oilsMethod;
 
-use JSON;
-JSON->register_class_hint(hint => 'osrfMethod', name => 'OpenSRF::DomainObject::oilsMethod', type => 'hash');
+use OpenSRF::Utils::JSON;
+OpenSRF::Utils::JSON->register_class_hint(hint => 'osrfMethod', name => 'OpenSRF::DomainObject::oilsMethod', type => 'hash');
 
 sub toString {
 	my $self = shift;
 	my $pretty = shift;
-	return JSON->perl2prettyJSON($self) if ($pretty);
-	return JSON->perl2JSON($self);
+	return OpenSRF::Utils::JSON->perl2prettyJSON($self) if ($pretty);
+	return OpenSRF::Utils::JSON->perl2JSON($self);
 }
 
 sub new {

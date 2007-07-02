@@ -3,6 +3,7 @@ use strict; use warnings;
 use base 'OpenSRF';
 use Time::HiRes qw/time/;
 use OpenSRF::AppSession;
+use OpenSRF::Utils::JSON;
 use OpenSRF::Utils::Logger qw(:level);
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use OpenSRF::EX qw/:try/;
@@ -118,7 +119,7 @@ sub handler {
 
 	# Create a document from the JSON contained within the message 
 	my $doc; 
-	eval { $doc = JSON->JSON2perl($body); };
+	eval { $doc = OpenSRF::Utils::JSON->JSON2perl($body); };
 	if( $@ ) {
 
 		$logger->transport( "Received bogus JSON: $@", INFO );
