@@ -1,5 +1,5 @@
 package OpenSRF::AppSession;
-use OpenSRF::DOM;
+#use OpenSRF::DOM;
 #use OpenSRF::DOM::Element::userAuth;
 use OpenSRF::DomainObject::oilsMessage;
 use OpenSRF::DomainObject::oilsMethod;
