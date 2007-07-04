@@ -10,7 +10,7 @@ use OpenSRF::Utils;
 use OpenSRF::Utils::LogServer;
 #use OpenSRF::DOM;
 use OpenSRF::EX qw/:try/;
-use POSIX ":sys_wait_h";
+use POSIX qw/setsid :sys_wait_h/;
 use OpenSRF::Utils::Config; 
 use OpenSRF::Utils::SettingsParser;
 use OpenSRF::Utils::SettingsClient;
@@ -127,7 +127,13 @@ sub bootstrap {
 	my $bsconfig = OpenSRF::Utils::Config->current;
 
 	# Start a process group and make me the captain
-	setpgrp( 0, 0 ); 
+	exit if (OpenSRF::Utils::safe_fork());
+	chdir('/');
+	setsid(); 
+	close STDIN;
+	close STDOUT;
+	close STDERR;
+
 	$0 = "OpenSRF System";
 
 	# -----------------------------------------------
