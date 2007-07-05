@@ -77,6 +77,9 @@ class XMLGatewayParser(handler.ContentHandler):
         self.keyStack = []
         self.posStack = [] # for tracking array-based hinted object indices
 
+        # true if we are parsing an element that may have character data
+        self.charsPending = 0 
+
     def getResult(self):
         return self.result
 
@@ -87,11 +90,18 @@ class XMLGatewayParser(handler.ContentHandler):
         return None
 
     def startElement(self, name, attrs):
-
-        # XXX add support for serializable objects!
+        
+        if self.charsPending:
+            # we just read a 'string' or 'number' element that resulted
+            # in no text data.  Appaned a None object
+            self.appendChild(None)
 
         if name == 'null':
             self.appendChild(None)
+            return
+
+        if name == 'string' or name == 'number':
+            self.charsPending = True
             return
 
         if name == 'element': # this is an object item wrapper
@@ -157,6 +167,7 @@ class XMLGatewayParser(handler.ContentHandler):
             self.objStack.pop()
 
     def characters(self, chars):
+        self.charsPending = False
         self.appendChild(urllib.unquote_plus(chars))
 
 
