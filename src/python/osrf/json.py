@@ -6,7 +6,7 @@ class osrfJSONNetworkEncoder(simplejson.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, osrfNetworkObject):
             return { 
-                OSRF_JSON_CLASS_KEY: obj.getHint(),
+                OSRF_JSON_CLASS_KEY: obj.getRegistry().hint,
                 OSRF_JSON_PAYLOAD_KEY: self.default(obj.getData())
             }   
         return obj
