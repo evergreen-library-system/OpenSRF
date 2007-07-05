@@ -503,18 +503,18 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 	
 					if (ucs_char < 0x80) {
 						utf_out[0] = ucs_char;
-						buffer_add(buf, utf_out);
+						buffer_add(buf, (char*) utf_out);
 
 					} else if (ucs_char < 0x800) {
 						utf_out[0] = 0xc0 | (ucs_char >> 6);
 						utf_out[1] = 0x80 | (ucs_char & 0x3f);
-						buffer_add(buf, utf_out);
+						buffer_add(buf, (char*) utf_out);
 
 					} else {
 						utf_out[0] = 0xe0 | (ucs_char >> 12);
 						utf_out[1] = 0x80 | ((ucs_char >> 6) & 0x3f);
 						utf_out[2] = 0x80 | (ucs_char & 0x3f);
-						buffer_add(buf, utf_out);
+						buffer_add(buf, (char*) utf_out);
 					}
 					/* ----------------------------------------------------------------------- */
 					/* ----------------------------------------------------------------------- */
