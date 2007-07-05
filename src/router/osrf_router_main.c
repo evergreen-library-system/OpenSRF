@@ -35,11 +35,8 @@ int main( int argc, char* argv[] ) {
 
 int __setupRouter( char* config, char* context ) {
 
-	osrfLogInfo(OSRF_LOG_MARK, "Launching router with config "
-			"%s and config context %s", config, context );
 	osrfConfig* cfg = osrfConfigInit( config, context );
 	osrfConfigSetDefaultConfig(cfg);
-
 
 	char* server			= osrfConfigGetValue(NULL, "/transport/server");
 	char* port				= osrfConfigGetValue(NULL, "/transport/port");
@@ -54,11 +51,6 @@ int __setupRouter( char* config, char* context ) {
 
 	int llevel = 1;
 	if(level) llevel = atoi(level);
-
-	/*
-	if(!log_init( llevel, log_file )) 
-		fprintf(stderr, "Unable to init logging, going to stderr...\n" );
-		*/
 
 	if(!log_file) { fprintf(stderr, "Log file needed\n"); return -1; }
 
