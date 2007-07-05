@@ -21,7 +21,7 @@ class GatewayRequest:
             response =urllib2.urlopen(request)
         except urllib2.HTTPError, e:
             # log this?
-            sys.stderr.write('HTTPError: code=%d : %s' % (e.code, str(e)))
+            sys.stderr.write('%s => %s?%s\n' % (str(e), self.buildURL(), params))
             raise e
             
         return self.handleResponse(response)
