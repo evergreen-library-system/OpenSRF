@@ -179,34 +179,6 @@ Thrown where an argument to a method was invalid or not provided
 
 
 # -------------------------------------------------------------------
-package OpenSRF::EX::NotADomainObject;
-use base 'OpenSRF::EX::ERROR';
-our $ex_msg_header = "Must be a Domain Object";
-
-=head2 OpenSRF::EX::NotADomainObject
-
-Thrown where a OpenSRF::DomainObject::oilsScalar or
-OpenSRF::DomainObject::oilsPair was passed a value that
-is not a perl scalar or a OpenSRF::DomainObject.
-
-=cut
-
-
-# -------------------------------------------------------------------
-package OpenSRF::EX::ArrayOutOfBounds;
-use base 'OpenSRF::EX::ERROR';
-our $ex_msg_header = "Tied array access on a nonexistant index";
-
-=head2 OpenSRF::EX::ArrayOutOfBounds
-
-Thrown where a TIEd array (OpenSRF::DomainObject::oilsArray) was accessed at
-a nonexistant index
-
-=cut
-
-
-
-# -------------------------------------------------------------------
 package OpenSRF::EX::Socket;
 use base 'OpenSRF::EX::ERROR';
 our $ex_msg_header = "Socket Exception";

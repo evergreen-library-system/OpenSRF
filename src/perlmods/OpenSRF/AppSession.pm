@@ -1,6 +1,4 @@
 package OpenSRF::AppSession;
-#use OpenSRF::DOM;
-#use OpenSRF::DOM::Element::userAuth;
 use OpenSRF::DomainObject::oilsMessage;
 use OpenSRF::DomainObject::oilsMethod;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;

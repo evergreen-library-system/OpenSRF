@@ -3,7 +3,6 @@ use OpenSRF::Utils::JSON;
 use base qw/OpenSRF::Application/;
 use OpenSRF::Application;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
-#use OpenSRF::DomainObject::oilsPrimitive;
 use OpenSRF::Utils::Logger qw/:level/;
 use strict;
 use warnings;

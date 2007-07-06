@@ -106,10 +106,7 @@ sub statusCode {
 	return $self->{statusCode};
 }
 
-
 #-------------------------------------------------------------------------------
-
-
 
 package OpenSRF::DomainObject::oilsStatus;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
@@ -141,6 +138,8 @@ sets the default B<status> to C<Status> and B<statusCode> to C<STATUS_OK>.
 
 $status = 'Status';
 $statusCode = STATUS_OK;
+
+#-------------------------------------------------------------------------------
 
 package OpenSRF::DomainObject::oilsConnectStatus;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
@@ -177,8 +176,7 @@ B<OpenSRF::DomainObject::oilsStatus>
 $status = 'Connection Successful';
 $statusCode = STATUS_OK;
 
-
-
+#-------------------------------------------------------------------------------
 
 package OpenSRF::DomainObject::oilsContinueStatus;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
@@ -216,15 +214,10 @@ $statusCode = STATUS_CONTINUE;
 
 1;
 
-
-
 #-------------------------------------------------------------------------------
-
-
 
 package OpenSRF::DomainObject::oilsResult;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
-use OpenSRF::DomainObject::oilsPrimitive;
 use base 'OpenSRF::DomainObject::oilsResponse';
 use vars qw/$status $statusCode/;
 OpenSRF::Utils::JSON->register_class_hint( hint => 'osrfResult', name => 'OpenSRF::DomainObject::oilsResult', type => 'hash' );
@@ -284,11 +277,7 @@ B<OpenSRF::DomainObject::oilsResponse>
 
 1;
 
-
-
 #-------------------------------------------------------------------------------
-
-
 
 package OpenSRF::DomainObject::oilsException;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
@@ -334,6 +323,8 @@ sets the default B<status> to C<Exception occured> and B<statusCode> to C<STATUS
 $status = 'Exception occured';
 $statusCode = STATUS_INTERNALSERVERERROR;
 
+#-------------------------------------------------------------------------------
+
 package OpenSRF::DomainObject::oilsConnectException;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use OpenSRF::EX;
@@ -370,6 +361,8 @@ B<OpenSRF::DomainObject::oilsException>
 
 $status = 'Connect Request Failed';
 $statusCode = STATUS_FORBIDDEN;
+
+#-------------------------------------------------------------------------------
 
 package OpenSRF::DomainObject::oilsMethodException;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
@@ -421,10 +414,6 @@ $statusCode = STATUS_INTERNALSERVERERROR;
 
 # -------------------------------------------
 
-
-
-
-
 package OpenSRF::DomainObject::oilsBrokenSession;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use OpenSRF::EX;
@@ -434,6 +423,8 @@ OpenSRF::Utils::JSON->register_class_hint( hint => 'osrfBrokenSession', name => 
 $status = "Request on Disconnected Session";
 $statusCode = STATUS_EXPFAILED;
 
+#-------------------------------------------------------------------------------
+
 package OpenSRF::DomainObject::oilsXMLParseError;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use OpenSRF::EX;
@@ -442,6 +433,8 @@ use vars qw/$status $statusCode/;
 OpenSRF::Utils::JSON->register_class_hint( hint => 'osrfXMLParseError', name => 'OpenSRF::DomainObject::oilsXMLParseError', type => 'hash' );
 $status = "XML Parse Error";
 $statusCode = STATUS_EXPFAILED;
+
+#-------------------------------------------------------------------------------
 
 package OpenSRF::DomainObject::oilsAuthException;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
