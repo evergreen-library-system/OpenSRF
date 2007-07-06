@@ -23,6 +23,7 @@ GNU General Public License for more details.
 #define JSON_PARSER_H
 
 #include <stdio.h>
+#include <ctype.h>
 #include <objson/object.h>
 #include <opensrf/utils.h>
 
@@ -76,9 +77,6 @@ int json_eat_comment(char* string, unsigned long* index, char** class_hint, int 
 
 /* prints a useful error message to stderr. always returns -1 */
 int json_handle_error(char* string, unsigned long* index, char* err_msg);
-
-/* returns true if c is 0-9 */
-int is_number(char c);
 
 int json_parse_json_null(char* string, unsigned long* index, jsonObject* obj, int current_strlen);
 
