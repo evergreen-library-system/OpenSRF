@@ -85,7 +85,77 @@ sub _json_hint_to_class {
 	return $hint;
 }
 
+
+my $JSON_CLASS_KEY = '__c';
+my $JSON_PAYLOAD_KEY = '__p';
+
 sub JSON2perl {
+	my( $class, $string ) = @_;
+	my $perl = $class->rawJSON2perl($string);
+	return $class->JSONObject2Perl($perl);
+}
+
+sub perl2JSON {
+	my( $class, $obj ) = @_;
+	my $json = $class->perl2JSONObject($obj);
+	return $class->rawPerl2JSON($json);
+}
+
+sub JSONObject2Perl {
+	my $class = shift;
+	my $obj = shift;
+	my $ref = ref($obj);
+	if( $ref eq 'HASH' ) {
+		if( defined($obj->{$JSON_CLASS_KEY})) {
+			my $cls = $obj->{$JSON_CLASS_KEY};
+			if( $obj = $class->JSONObject2Perl($obj->{$JSON_PAYLOAD_KEY}) ) {
+				$cls = $class->lookup_class($cls) || $cls;
+				return bless(\$obj, $cls) unless ref($obj); 
+				return bless($obj, $cls);
+			}
+			return undef;
+		}
+		$obj->{$_} = $class->JSONObject2Perl($obj->{$_}) for (keys %$obj);
+	} elsif( $ref eq 'ARRAY' ) {
+		$obj->[$_] = $class->JSONObject2Perl($obj->[$_]) for(0..scalar(@$obj) - 1);
+	}
+	return $obj;
+}
+
+sub perl2JSONObject {
+	my $class = shift;
+	my $obj = shift;
+	my $ref = ref($obj);
+
+	return $obj unless $ref;
+	my $newobj;
+
+	if( $ref eq 'HASH' ) {
+		$newobj = {};
+		$newobj->{$_} = $class->perl2JSONObject( $obj->{$_} ) for (keys %$obj);
+	} elsif( $ref eq 'ARRAY' ) {
+		$newobj = [];
+		$newobj->[$_] = $class->perl2JSONObject( $obj->[$_] ) for(0..scalar(@$obj) - 1 );
+	} elsif( $ref ) {
+		if(UNIVERSAL::isa($obj, 'HASH')) {
+			$newobj = {};
+			$newobj->{$_} = $class->perl2JSONObject( $obj->{$_} ) for (keys %$obj);
+			bless( $newobj, ref($obj) );
+			#bless($obj, 'HASH'); # so our parser won't add the hints
+		} elsif(UNIVERSAL::isa($obj, 'ARRAY')) {
+			$newobj = [];
+			$newobj->[$_] = $class->perl2JSONObject( $obj->[$_] ) for(0..scalar(@$obj) - 1);
+			bless( $newobj, ref($obj) );
+			#bless($obj, 'ARRAY'); # so our parser won't add the hints
+		}
+		$ref = $class->lookup_hint($ref) || $ref;
+		$newobj = { $JSON_CLASS_KEY => $ref, $JSON_PAYLOAD_KEY => $newobj };
+	} 
+	return $newobj;	
+}
+
+
+sub rawJSON2perl {
 	my $class = shift;
 	local $_ = shift;
 
@@ -97,8 +167,8 @@ sub JSON2perl {
 	s/\\u([0-9a-fA-F]{4})/chr(hex($1))/esog;
 
 	# handle class blessings
-	s/\/\*--\s*S\w*?\s+\S+\s*--\*\// bless(/sog;
-	s/(\]|\}|")\s*\/\*--\s*E\w*?\s+(\S+)\s*--\*\//$1 => _json_hint_to_class("$1", "$2")) /sog;
+#	s/\/\*--\s*S\w*?\s+\S+\s*--\*\// bless(/sog;
+#	s/(\]|\}|")\s*\/\*--\s*E\w*?\s+(\S+)\s*--\*\//$1 => _json_hint_to_class("$1", "$2")) /sog;
 
 	my $re = qr/((?<!\\)"(?>(?<=\\)"|[^"])*(?<!\\)")/;
 	# Grab strings...
@@ -112,16 +182,17 @@ sub JSON2perl {
 	s/:/ => /sog;
 
 	# Do numbers...
-	#s/\b(-?\d+\.?\d*)\b/ OpenSRF::Utils::JSON::number::new($1) /sog;
+	#s/\b(-?\d+\.?\d*)\b/ JSON::number::new($1) /sog;
 
 	# Change javascript stuff to perl...
 	s/null/ undef /sog;
-	s/true/ bless( {}, "OpenSRF::Utils::JSON::bool::true") /sog;
-	s/false/ bless( {}, "OpenSRF::Utils::JSON::bool::false") /sog;
+	s/true/ bless( {}, "JSON::bool::true") /sog;
+	s/false/ bless( {}, "JSON::bool::false") /sog;
 
 	my $ret;
 	return eval '$ret = '.$_;
 }
+
 
 my $_json_index;
 sub ___JSON2perl {
@@ -638,7 +709,7 @@ sub old_JSON2perl {
 		} elsif ($element =~ /^\/\*/) {
 			next;
 		} elsif ($element =~ /^\d/) {
-			$output .= "do { OpenSRF::Utils::JSON::number::new($element) }";
+			$output .= "do { JSON::number::new($element) }";
 			next;
 		} elsif ($element eq '{' or $element eq '[') {
 			$casting_depth++;
@@ -654,10 +725,10 @@ sub old_JSON2perl {
 			$output .= ' => ';
 			next;
 		} elsif ($element eq 'true') {
-			$output .= 'bless( {}, "OpenSRF::Utils::JSON::bool::true")';
+			$output .= 'bless( {}, "JSON::bool::true")';
 			next;
 		} elsif ($element eq 'false') {
-			$output .= 'bless( {}, "OpenSRF::Utils::JSON::bool::false")';
+			$output .= 'bless( {}, "JSON::bool::false")';
 			next;
 		}
 		
@@ -667,26 +738,28 @@ sub old_JSON2perl {
 	return eval $output;
 }
 
-sub perl2JSON {
+
+sub rawPerl2JSON {
 	my ($class, $perl, $strict) = @_;
 
 	my $output = '';
 	if (!defined($perl)) {
 		$output = '' if $strict;
 		$output = 'null' unless $strict;
-	} elsif (ref($perl) and ref($perl) =~ /^OpenSRF::Utils::JSON/) {
+	} elsif (ref($perl) and ref($perl) =~ /^JSON/) {
 		$output .= $perl;
-	} elsif ( ref($perl) && exists($_class_map{classes}{ref($perl)}) ) {
-		$output .= '/*--S '.$_class_map{classes}{ref($perl)}{hint}.'--*/';
-		if (lc($_class_map{classes}{ref($perl)}{type}) eq 'hash') {
-			my %hash =  %$perl;
-			$output .= perl2JSON(undef,\%hash, $strict);
-		} elsif (lc($_class_map{classes}{ref($perl)}{type}) eq 'array') {
-			my @array =  @$perl;
-			$output .= perl2JSON(undef,\@array, $strict);
-		}
-		$output .= '/*--E '.$_class_map{classes}{ref($perl)}{hint}.'--*/';
-	} elsif (ref($perl) and ref($perl) =~ /HASH/) {
+#	} elsif ( ref($perl) && exists($_class_map{classes}{ref($perl)}) ) {
+#		$output .= '/*--S '.$_class_map{classes}{ref($perl)}{hint}.'--*/';
+#		if (lc($_class_map{classes}{ref($perl)}{type}) eq 'hash') {
+#			my %hash =  %$perl;
+#			$output .= rawPerl2JSON(undef,\%hash, $strict);
+#		} elsif (lc($_class_map{classes}{ref($perl)}{type}) eq 'array') {
+#			my @array =  @$perl;
+#			$output .= rawPerl2JSON(undef,\@array, $strict);
+#		}
+#		$output .= '/*--E '.$_class_map{classes}{ref($perl)}{hint}.'--*/';
+#	} elsif (ref($perl) and ref($perl) =~ /HASH/) {
+	} elsif (UNIVERSAL::isa($perl, 'HASH')) {
 		$output .= '{';
 		my $c = 0;
 		for my $key (sort keys %$perl) {
@@ -701,27 +774,28 @@ sub perl2JSON {
 			$outkey =~ s/\n/\\n/sgo;
 			$outkey =~ s/([\x{0080}-\x{fffd}])/sprintf('\u%0.4x',ord($1))/sgoe;
 
-			$output .= '"'.$outkey.'":'. perl2JSON(undef,$$perl{$key}, $strict);
+			$output .= '"'.$outkey.'":'. rawPerl2JSON(undef,$$perl{$key}, $strict);
 			$c++;
 		}
 		$output .= '}';
-	} elsif (ref($perl) and ref($perl) =~ /ARRAY/) {
+#	} elsif (ref($perl) and ref($perl) =~ /ARRAY/) {
+	} elsif (UNIVERSAL::isa($perl, 'ARRAY')) {
 		$output .= '[';
 		my $c = 0;
 		for my $part (@$perl) {
 			$output .= ',' if ($c); 
 			
-			$output .= perl2JSON(undef,$part, $strict);
+			$output .= rawPerl2JSON(undef,$part, $strict);
 			$c++;
 		}
 		$output .= ']';
 	} elsif (ref($perl) and ref($perl) =~ /CODE/) {
-		$output .= perl2JSON(undef,$perl->(), $strict);
+		$output .= rawPerl2JSON(undef,$perl->(), $strict);
 	} elsif (ref($perl) and ("$perl" =~ /^([^=]+)=(\w+)/o)) {
 		my $type = $2;
 		my $name = $1;
 		OpenSRF::Utils::JSON->register_class_hint(name => $name, hint => $name, type => lc($type));
-		$output .= perl2JSON(undef,$perl, $strict);
+		$output .= rawPerl2JSON(undef,$perl, $strict);
 	} else {
 		$perl = NFC($perl);
 		$perl =~ s{\\}{\\\\}sgo;
@@ -750,7 +824,7 @@ sub perl2prettyJSON {
 	if (!defined($perl)) {
 		$output = "   "x$depth unless($nospace);
 		$output .= 'null';
-	} elsif (ref($perl) and ref($perl) =~ /^OpenSRF::Utils::JSON/) {
+	} elsif (ref($perl) and ref($perl) =~ /^JSON/) {
 		$output = "   "x$depth unless($nospace);
 		$output .= $perl;
 	} elsif ( ref($perl) && exists($_class_map{classes}{ref($perl)}) ) {

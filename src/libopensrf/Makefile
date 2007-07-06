@@ -1,10 +1,6 @@
-# OSRF_LOG_PARAMS log all incoming method params at OSRF_INFO log level. 
-# OSRF_STRICT_PARAMS instructs the app handler to return an error if the number of method arguments
-#	provided to any method is not at least as large as the 'argc' setting for the method
-
-CFLAGS	+=  -DASSUME_STATELESS  -DOSRF_LOG_PARAMS -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing
-LDLIBS	+= -lxml2 -lobjson -ldl -lmemcache 
-OSRF_INC = ../../include/opensrf/
+CFLAGS	+=  -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing #-DOSRF_JSON_ALLOW_COMMENTS 
+LDLIBS	+= -lxml2 -ldl -lmemcache 
+export OSRF_INC = ../../include/opensrf/
 
 TARGETS = 	osrf_message.o \
 			osrf_app_session.o \
@@ -27,12 +23,11 @@ TARGETS = 	osrf_message.o \
 			utils.o\
 			socket_bundle.o\
 			sha.o\
-			string_array.o 
+			string_array.o
 
+JSON_TARGETS = osrf_json_object.o osrf_json_parser.o osrf_json_tools.o osrf_legacy_json.o osrf_json_xml.o
 
 all: opensrf
-
-
 
 # Build the OpenSRF C binary
 opensrf:	opensrf.o libopensrf.so
@@ -41,8 +36,13 @@ opensrf:	opensrf.o libopensrf.so
 
 
 # Build the OpenSRF library
-libopensrf.so:	$(TARGETS)
-	$(CC) -shared -W1 $(LDFLAGS) $(LDLIBS) $(TARGETS) -o $(TMPDIR)/libopensrf.so
+libopensrf.so:	$(TARGETS) 
+	make -f Makefile.json 
+	if [ ! -z "$(OSRF_LEGACY_JSON)" ]; then\
+		$(CC) -shared -W1 $(LDFLAGS) $(LDLIBS) $(TARGETS) -o $(TMPDIR)/libopensrf.so;\
+	else\
+		$(CC) -shared -W1 $(LDFLAGS) $(LDLIBS) $(TARGETS) $(JSON_TARGETS) -o $(TMPDIR)/libopensrf.so;\
+	fi; 
 
 
 opensrf.o:	opensrf.c
@@ -67,7 +67,6 @@ socket_bundle.o:	socket_bundle.c $(OSRF_INC)/socket_bundle.h
 sha.o:	sha.c $(OSRF_INC)/sha.h
 string_array.o:	string_array.c $(OSRF_INC)/string_array.h
 
-
 clean:
-	/bin/rm -f *.o libopensrf.so opensrf
+	/bin/rm -f *.o *.so opensrf
 

@@ -2,9 +2,9 @@
 #include "opensrf/osrf_app_session.h"
 #include "opensrf/osrf_system.h"
 #include "opensrf/osrfConfig.h"
-#include "objson/object.h"
-#include "objson/json2xml.h"
-#include "objson/xml2json.h"
+#include <opensrf/osrf_json.h>
+#include <opensrf/osrf_json_xml.h>
+#include <opensrf/osrf_legacy_json.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>

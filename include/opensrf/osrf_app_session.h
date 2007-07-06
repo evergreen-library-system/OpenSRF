@@ -9,8 +9,7 @@
 #include <opensrf/osrf_hash.h>
 #include <opensrf/osrf_list.h>
 
-#include <objson/object.h>
-#include <objson/json_parser.h>
+#include <opensrf/osrf_json.h>
 
 
 

@@ -12,8 +12,7 @@
 #include <opensrf/utils.h>
 #include <opensrf/osrf_app_session.h>
 
-#include <objson/object.h>
-#include <objson/json_parser.h>
+#include <opensrf/osrf_json.h>
 
 typedef struct { 
 	char* hostname; 

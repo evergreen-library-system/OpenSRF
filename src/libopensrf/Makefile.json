@@ -1,0 +1,17 @@
+#-DOSRF_JSON_ALLOW_COMMENTS 
+TARGETS = osrf_json_object.o osrf_json_parser.o osrf_json_tools.o osrf_legacy_json.o osrf_json_xml.o
+
+all:	$(TARGETS)
+	if [ ! -z "$(OSRF_LEGACY_JSON)" ]; then \
+		$(CC) -shared -W1 $(LDFLAGS) $(TARGETS) -o $(TMPDIR)/libobjson.so;\
+	fi;
+
+standalone:
+	$(CC) -shared -W1 $(LDFLAGS) $(LDLIBS) $(TARGETS) -o libosrf_json.so
+
+osrf_json_object.o:	osrf_json_object.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
+osrf_json_parser.o:	osrf_json_parser.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
+osrf_json_tools.o:	osrf_json_tools.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
+osrf_legacy_json.o:	osrf_legacy_json.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
+osrf_json_xml.o:	osrf_json_xml.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_xml.h
+
