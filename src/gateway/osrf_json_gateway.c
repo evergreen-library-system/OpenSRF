@@ -13,10 +13,10 @@
 #define MODULE_NAME "osrf_json_gateway_module"
 #define GATEWAY_CONFIG "OSRFGatewayConfig"
 #define CONFIG_CONTEXT "gateway"
-#define JSON_PROTOCOL "OSRFGatewayJSONProtocol"
+#define JSON_PROTOCOL "OSRFGatewayLegacyJSON"
+#define GATEWAY_USE_LEGACY_JSON 1
 
 #define GATEWAY_DEFAULT_CONFIG "/openils/conf/opensrf_core.xml"
-#define GATEWAY_DEFAULT_PROTOCOL "wrapper"  // other option is "classy"
 
 
 /* our config structure */
@@ -25,7 +25,7 @@ typedef struct {
 } osrf_json_gateway_config;
 
 typedef struct { 
-	char* JSONProtocol;
+	int legacyJSON;
 } osrf_json_gateway_dir_config;
 
 
@@ -46,7 +46,7 @@ static const char* osrf_json_gateway_set_config(cmd_parms *parms, void *config, 
 
 static const char* osrf_json_gateway_set_json_proto(cmd_parms *parms, void *config, const char *arg) {
 	osrf_json_gateway_dir_config* cfg = (osrf_json_gateway_dir_config*) config;
-	cfg->JSONProtocol = (char*) arg;
+	cfg->legacyJSON = (!strcasecmp((char*) arg, "false")) ? 0 : 1;
 	return NULL;
 }
 
@@ -70,7 +70,7 @@ static void* osrf_json_gateway_create_config( apr_pool_t* p, server_rec* s) {
 static void* osrf_json_gateway_create_dir_config( apr_pool_t* p, char* dir) {
 	osrf_json_gateway_dir_config* cfg = (osrf_json_gateway_dir_config*) 
 			apr_palloc(p, sizeof(osrf_json_gateway_dir_config));
-	cfg->JSONProtocol = GATEWAY_DEFAULT_PROTOCOL;
+	cfg->legacyJSON = GATEWAY_USE_LEGACY_JSON;
 	return (void*) cfg;
 }
 
@@ -110,15 +110,16 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	osrf_json_gateway_dir_config* dir_conf =  
 		ap_get_module_config(r->per_dir_config, &osrf_json_gateway_module);
 
-	ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r, "JSON protocol = %s", dir_conf->JSONProtocol);
 
 	/* provide 2 different JSON parsers and serializers to support legacy JSON */
 	jsonObject* (*parseJSONFunc) (char*) = legacy_jsonParseString;
 	char* (*jsonToStringFunc) (const jsonObject*) = legacy_jsonObjectToJSON;
 
-	if(dir_conf->JSONProtocol && !strcmp(dir_conf->JSONProtocol,"wrapper") ) {
-		/* if protocol is wrapper, use the new wrapper JSON code */
-		ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r, "Using wrapper JSON");
+	if(dir_conf->legacyJSON) {
+	    ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r, "Using legacy JSON");
+
+    } else {
+	    ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r, "Not using legacy JSON");
 		parseJSONFunc = jsonParseString;
 		jsonToStringFunc = jsonObjectToJSON;
 	}
