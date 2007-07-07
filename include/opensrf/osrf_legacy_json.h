@@ -23,6 +23,7 @@ GNU General Public License for more details.
 #define LEGACY_JSON_H
 
 #include <opensrf/osrf_json.h>
+#include <ctype.h>
 
 
 
@@ -74,9 +75,6 @@ int json_eat_comment(char* string, unsigned long* index, char** class_hint, int 
 
 /* prints a useful error message to stderr. always returns -1 */
 int json_handle_error(char* string, unsigned long* index, char* err_msg);
-
-/* returns true if c is 0-9 */
-int is_number(char c);
 
 int json_parse_json_null(char* string, unsigned long* index, jsonObject* obj, int current_strlen);
 
