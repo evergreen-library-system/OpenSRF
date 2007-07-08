@@ -67,19 +67,19 @@ void socket_manager_free(socket_manager* mgr);
 /* creates a new server socket node and adds it to the socket set.
 	returns socket id on success.  -1 on failure.
 	socket_type is one of INET or UNIX  */
-int socket_open_tcp_server(socket_manager*, int port, char* listen_ip );
+int socket_open_tcp_server(socket_manager*, int port, const char* listen_ip );
 
 int socket_open_unix_server(socket_manager* mgr, char* path);
 
-int socket_open_udp_server( socket_manager* mgr, int port, char* listen_ip );
+int socket_open_udp_server( socket_manager* mgr, int port, const char* listen_ip );
 
 /* creates a client TCP socket and adds it to the socket set.
 	returns 0 on success.  -1 on failure.  */
-int socket_open_tcp_client(socket_manager*, int port, char* dest_addr);
+int socket_open_tcp_client(socket_manager*, int port, const char* dest_addr);
 
 /* creates a client UNIX socket and adds it to the socket set.
 	returns 0 on success.  -1 on failure.  */
-int socket_open_unix_client(socket_manager*, char* sock_path);
+int socket_open_unix_client(socket_manager*, const char* sock_path);
 
 int socket_open_udp_client( socket_manager* mgr, int port, char* dest_addr);
 

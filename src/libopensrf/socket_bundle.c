@@ -77,7 +77,7 @@ static socket_node* _socket_add_node(socket_manager* mgr,
 /* creates a new server socket node and adds it to the socket set.
 	returns new socket fd on success.  -1 on failure.
 	socket_type is one of INET or UNIX  */
-int socket_open_tcp_server(socket_manager* mgr, int port, char* listen_ip) {
+int socket_open_tcp_server(socket_manager* mgr, int port, const char* listen_ip) {
 
 	if( mgr == NULL ) {
 		osrfLogWarning( OSRF_LOG_MARK, "socket_open_tcp_server(): NULL mgr"); 
@@ -98,7 +98,13 @@ int socket_open_tcp_server(socket_manager* mgr, int port, char* listen_ip) {
 	server_addr.sin_family = AF_INET;
 
 	if(listen_ip != NULL) {
-		server_addr.sin_addr.s_addr = inet_addr(listen_ip);
+		struct in_addr addr;
+		if( inet_aton( listen_ip, &addr ) )
+			server_addr.sin_addr.s_addr = addr.s_addr;
+		else {
+			osrfLogError( OSRF_LOG_MARK, "Listener address is invalid: %s", listen_ip );
+			return -1;
+		}
 	} else {
 		server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	}
@@ -175,7 +181,7 @@ int socket_open_unix_server(socket_manager* mgr, char* path) {
 
 
 int socket_open_udp_server( 
-		socket_manager* mgr, int port, char* listen_ip ) {
+		socket_manager* mgr, int port, const char* listen_ip ) {
 
 	int sockfd;
 	struct sockaddr_in server_addr;
@@ -188,8 +194,15 @@ int socket_open_udp_server(
 
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port);
-	if(listen_ip) server_addr.sin_addr.s_addr = inet_addr(listen_ip);
-	else server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	if(listen_ip) {
+		struct in_addr addr;
+		if( inet_aton( listen_ip, &addr ) )
+			server_addr.sin_addr.s_addr = addr.s_addr;
+		else {
+			osrfLogError( OSRF_LOG_MARK, "UDP listener address is invalid: %s", listen_ip );
+			return -1;
+		}
+	} else server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	errno = 0;
 	if( (bind (sockfd, (struct sockaddr *) &server_addr,sizeof(server_addr))) ) {
@@ -203,7 +216,7 @@ int socket_open_udp_server(
 }
 
 
-int socket_open_tcp_client(socket_manager* mgr, int port, char* dest_addr) {
+int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr) {
 
 	struct sockaddr_in remoteAddr, localAddr;
    struct hostent *hptr;
