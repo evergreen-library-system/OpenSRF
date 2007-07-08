@@ -2,17 +2,20 @@
 
 #include <opensrf/utils.h>
 #include <opensrf/log.h>
+#include <opensrf/osrf_list.h>
 
-#define STRING_ARRAY_MAX_SIZE 1024
+#define STRING_ARRAY_MAX_SIZE 4096
 
 #ifndef STRING_ARRAY_H
 #define STRING_ARRAY_H
 
+#define OSRF_STRING_ARRAY_FREE(arr)\
+    if(arr) {osrfListFree(arr->list); free(arr);}
+        
+
 struct string_array_struct {
-		char** array;	
-		int size;
-		int arr_size;
-		int total_string_size;
+    osrfList* list;
+    int size;
 };
 typedef struct string_array_struct string_array;
 typedef struct string_array_struct osrfStringArray;

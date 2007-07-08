@@ -70,7 +70,7 @@ int _jsonParserError( jsonParserContext* ctx, char* err, ... ) {
 	if( ctx->handler->handleError ) {
 		VA_LIST_TO_STRING(err);
 		int pre	= ctx->index - 15;
-		int post	= ctx->index + 15;
+		int post= ctx->index + 15;
 		while( pre < 0 ) pre++;
 		while( post >= ctx->chunksize ) post--;
 		int l = post - pre;
@@ -136,7 +136,7 @@ int _jsonParserHandleUnicode( jsonParserContext* ctx ) {
 
 	JSON_STATE_REMOVE(ctx, JSON_STATE_IN_UTF);
 	JSON_STATE_REMOVE(ctx, JSON_STATE_IN_ESCAPE);
-	buffer_reset(ctx->utfbuf);
+	OSRF_BUFFER_RESET(ctx->utfbuf);
 	return 0;
 }
 
@@ -225,7 +225,7 @@ int _jsonParserHandleMatch( jsonParserContext* ctx, int type ) {
 	}
 
 	ctx->index--; /* set it back to the index of the final sequence character */
-	buffer_reset(ctx->buffer);
+	OSRF_BUFFER_RESET(ctx->buffer);
 	JSON_STATE_REMOVE(ctx, JSON_STATE_IN_NULL);
 	JSON_STATE_REMOVE(ctx, JSON_STATE_IN_TRUE);
 	JSON_STATE_REMOVE(ctx, JSON_STATE_IN_FALSE);
@@ -288,7 +288,7 @@ int _jsonParserHandleString( jsonParserContext* ctx ) {
 
 				}
 
-				buffer_reset(ctx->buffer); /* flush the buffer and states */
+				OSRF_BUFFER_RESET(ctx->buffer); /* flush the buffer and states */
 				JSON_STATE_REMOVE(ctx, JSON_STATE_IN_STRING);
 				JSON_STATE_REMOVE(ctx, JSON_STATE_IN_KEY);
 				break;
@@ -323,7 +323,7 @@ int _jsonParserHandleNumber( jsonParserContext* ctx ) {
 	if(err && err[0] != '\0') 
 		return _jsonParserError(ctx, "Invalid number sequence");
 	JSON_STATE_REMOVE(ctx, JSON_STATE_IN_NUMBER);
-	buffer_reset(ctx->buffer);
+	OSRF_BUFFER_RESET(ctx->buffer);
 	if(ctx->handler->handleNumber)
 		ctx->handler->handleNumber( ctx->userData, d );
 	ctx->index--; /* scooch back to the first non-digit number */

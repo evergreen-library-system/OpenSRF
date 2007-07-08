@@ -64,6 +64,10 @@ GNU General Public License for more details.
 		}\
 	}while(0)
 
+#define OSRF_BUFFER_RESET(gb) \
+    memset(gb->buf, 0, gb->size);\
+    gb->n_used = 0;
+
 	
 
 
