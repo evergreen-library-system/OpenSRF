@@ -331,7 +331,7 @@ int socket_open_udp_client(
 }
 
 
-int socket_open_unix_client(socket_manager* mgr, char* sock_path) {
+int socket_open_unix_client(socket_manager* mgr, const char* sock_path) {
 
 	int sock_fd, len;
    struct sockaddr_un usock;
