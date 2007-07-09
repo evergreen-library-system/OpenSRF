@@ -1,9 +1,79 @@
-#include "srfsh.h"
+#include <opensrf/transport_client.h>
+#include <opensrf/osrf_message.h>
+#include <opensrf/osrf_app_session.h>
+#include <time.h>
+#include <sys/timeb.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
-int recv_timeout = 120;
-int is_from_script = 0;
-FILE* shell_writer = NULL;
-FILE* shell_reader = NULL;
+#include <opensrf/utils.h>
+#include <opensrf/log.h>
+
+#include <signal.h>
+
+#include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#define SRFSH_PORT 5222
+#define COMMAND_BUFSIZE 4096
+
+
+/* shell prompt */
+static const char* prompt = "srfsh# ";
+
+static char* history_file = NULL;
+
+static int child_dead = 0;
+
+static char* login_session = NULL;
+
+/* true if we're pretty printing json results */
+static int pretty_print = 1;
+/* true if we're bypassing 'less' */
+static int raw_print = 0;
+
+/* our jabber connection */
+static transport_client* client = NULL; 
+
+/* the last result we received */
+static osrf_message* last_result = NULL;
+
+/* functions */
+static int parse_request( char* request );
+
+/* handles router requests */
+static int handle_router( char* words[] );
+
+/* utility method for print time data */
+/* static int handle_time( char* words[] ); */
+
+/* handles app level requests */
+static int handle_request( char* words[], int relay );
+static int handle_exec(char* words[], int new_shell);
+static int handle_set( char* words[]);
+static int handle_print( char* words[]);
+static int send_request( char* server, 
+				  char* method, growing_buffer* buffer, int relay );
+static int parse_error( char* words[] );
+static int router_query_servers( char* server );
+//static int srfsh_client_connect();
+static int print_help();
+//static char* tabs(int count);
+static void sig_child_handler( int s );
+//static void sig_int_handler( int s );
+
+static int load_history();
+static int handle_math( char* words[] );
+static int do_math( int count, int style );
+static int handle_introspect(char* words[]);
+static int handle_login( char* words[]);
+
+static int recv_timeout = 120;
+static int is_from_script = 0;
+static FILE* shell_writer = NULL;
+// static FILE* shell_reader = NULL;
+
 
 int main( int argc, char* argv[] ) {
 
@@ -85,7 +155,7 @@ int main( int argc, char* argv[] ) {
 	return 0;
 }
 
-void sig_child_handler( int s ) {
+static void sig_child_handler( int s ) {
 	child_dead = 1;
 }
 
@@ -97,7 +167,7 @@ void sig_int_handler( int s ) {
 }
 */
 
-int load_history() {
+static int load_history() {
 
 	char* home = getenv("HOME");
 	int l = strlen(home) + 24;
@@ -115,7 +185,7 @@ int load_history() {
 }
 
 
-int parse_error( char* words[] ) {
+static int parse_error( char* words[] ) {
 
 	if( ! words )
 		return 0;
@@ -138,7 +208,7 @@ int parse_error( char* words[] ) {
 }
 
 
-int parse_request( char* request ) {
+static int parse_request( char* request ) {
 
 	if( request == NULL )
 		return 0;
@@ -212,7 +282,7 @@ int parse_request( char* request ) {
 }
 
 
-int handle_introspect(char* words[]) {
+static int handle_introspect(char* words[]) {
 
 	if(words[1] && words[2]) {
 		fprintf(stderr, "--> %s\n", words[1]);
@@ -236,7 +306,7 @@ int handle_introspect(char* words[]) {
 }
 
 
-int handle_login( char* words[]) {
+static int handle_login( char* words[]) {
 
 	if( words[1] && words[2]) {
 
@@ -317,7 +387,7 @@ int handle_login( char* words[]) {
 	return 0;
 }
 
-int handle_set( char* words[]) {
+static int handle_set( char* words[]) {
 
 	char* variable;
 	if( (variable=words[1]) ) {
@@ -358,7 +428,7 @@ int handle_set( char* words[]) {
 }
 
 
-int handle_print( char* words[]) {
+static int handle_print( char* words[]) {
 
 	char* variable;
 	if( (variable=words[1]) ) {
@@ -381,7 +451,7 @@ int handle_print( char* words[]) {
 	return 0;
 }
 
-int handle_router( char* words[] ) {
+static int handle_router( char* words[] ) {
 
 	if(!client)
 		return 1;
@@ -407,7 +477,7 @@ int handle_router( char* words[] ) {
 
 /* if new shell, spawn a new child and subshell to do the work,
 	otherwise pipe the request to the currently open (piped) shell */
-int handle_exec(char* words[], int new_shell) {
+static int handle_exec(char* words[], int new_shell) {
 
 	if(!words[0]) return 0;
 
@@ -477,7 +547,7 @@ int handle_exec(char* words[], int new_shell) {
 }
 
 
-int handle_request( char* words[], int relay ) {
+static int handle_request( char* words[], int relay ) {
 
 	if(!client)
 		return 1;
@@ -662,7 +732,7 @@ int send_request( char* server,
 }
 
 /*
-int handle_time( char* words[] ) {
+static int handle_time( char* words[] ) {
 
 	if( ! words[1] ) {
 
@@ -688,7 +758,7 @@ int handle_time( char* words[] ) {
 
 		
 
-int router_query_servers( char* router_server ) {
+static int router_query_servers( char* router_server ) {
 
 	if( ! router_server || strlen(router_server) == 0 ) 
 		return 0;
@@ -724,8 +794,8 @@ int router_query_servers( char* router_server ) {
 	
 	return 1;
 }
-		
-int print_help() {
+
+static int print_help() {
 
 	printf(
 			"---------------------------------------------------------------------------------\n"
@@ -733,8 +803,10 @@ int print_help() {
 			"---------------------------------------------------------------------------------\n"
 			"help			- Display this message\n"
 			"!<command> [args] - Forks and runs the given command in the shell\n"
-			"time			- Prints the current time\n"					
+		/*
+			"time			- Prints the current time\n"
 			"time <timestamp>	- Formats seconds since epoch into readable format\n"	
+		*/
 			"set <variable> <value> - set a srfsh variable (e.g. set pretty_print true )\n"
 			"print <variable>		- Displays the value of a srfsh variable\n"
 			"---------------------------------------------------------------------------------\n"
@@ -778,8 +850,8 @@ int print_help() {
 }
 
 
-
-char* tabs(int count) {
+/*
+static char* tabs(int count) {
 	growing_buffer* buf = buffer_init(24);
 	int i;
 	for(i=0;i!=count;i++)
@@ -789,15 +861,17 @@ char* tabs(int count) {
 	buffer_free( buf );
 	return final;
 }
+*/
 
-int handle_math( char* words[] ) {
+
+static int handle_math( char* words[] ) {
 	if( words[1] )
 		return do_math( atoi(words[1]), 0 );
 	return 0;
 }
 
 
-int do_math( int count, int style ) {
+static int do_math( int count, int style ) {
 
 	osrf_app_session* session = osrf_app_client_session_init(  "opensrf.math" );
 	osrf_app_session_connect(session);

@@ -6,7 +6,7 @@ LDFLAGS	+= -DEXEC_DEFAULT
 all: srfsh
 
 srfsh:	srfsh.o
-srfsh.o:	srfsh.c srfsh.h
+srfsh.o:	srfsh.c 
 
 install: 
 	cp srfsh $(BINDIR)
