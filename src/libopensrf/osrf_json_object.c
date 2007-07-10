@@ -52,6 +52,13 @@ jsonObject* jsonNewNumberObject( long double num ) {
 	return o;
 }
 
+jsonObject* jsonNewBoolObject(int val) {
+    jsonObject* o = jsonNewObject(NULL);
+    o->type = JSON_BOOL;
+    jsonSetBool(o, val);
+    return o;
+}
+
 jsonObject* jsonNewObjectType(int type) {
 	jsonObject* o = jsonNewObject(NULL);
 	o->type = type;
@@ -84,6 +91,11 @@ static void _jsonFreeListItem(void* item){
 	jsonObjectFree(o);
 }
 
+void jsonSetBool(jsonObject* bl, int val) {
+    if(!bl) return;
+    JSON_INIT_CLEAR(bl, JSON_BOOL);
+    bl->value.b = val;
+}
 
 unsigned long jsonObjectPush(jsonObject* o, jsonObject* newo) {
 	if(!(o && newo)) return -1;
@@ -300,6 +312,7 @@ void jsonObjectSetClass(jsonObject* dest, const char* classname ) {
 	dest->classname = strdup(classname);
 }
 
+/*
 jsonObject* jsonObjectClone( const jsonObject* o ) {
 	if(!o) return NULL;
 	char* json = jsonObjectToJSONRaw(o);
@@ -308,6 +321,40 @@ jsonObject* jsonObjectClone( const jsonObject* o ) {
 	jsonObjectSetClass(oo, o->classname);
 	free(json);
 	return oo;
+}
+*/
+
+jsonObject* jsonObjectClone( const jsonObject* o ) {
+    if(!o) return NULL;
+
+    jsonObject* arr; 
+    jsonObject* hash; 
+    jsonIterator* itr;
+    jsonObject* tmp;
+    int i;
+
+    switch(o->type) {
+        case JSON_NULL:
+            return jsonNewObject(NULL);
+        case JSON_STRING:
+            return jsonNewObject(jsonObjectGetString(o));
+        case JSON_NUMBER:
+            return jsonNewNumberObject(jsonObjectGetNumber(o));
+        case JSON_BOOL:
+            return jsonNewBoolObject(jsonBoolIsTrue((jsonObject*) o));
+        case JSON_ARRAY:
+            arr = jsonNewObject(NULL);
+            for(i=0; i < o->size; i++) 
+                jsonObjectPush(arr, jsonObjectClone(jsonObjectGetIndex(o, i)));
+            return arr;
+        case JSON_HASH:
+            hash = jsonNewObject(NULL);
+            itr = jsonNewIterator(o);
+            while( (tmp = jsonIteratorNext(itr)) )
+                jsonObjectSetKey(hash, itr->key, jsonObjectClone(tmp));
+            jsonObjectIteratorFree(itr);
+            return hash;
+    }
 }
 
 int jsonBoolIsTrue( jsonObject* boolObj ) {

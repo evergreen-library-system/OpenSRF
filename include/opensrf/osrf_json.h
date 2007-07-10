@@ -188,6 +188,12 @@ jsonObject* jsonNewObjectType(int type);
  */
 jsonObject* jsonNewNumberObject( long double num );
 
+
+/**
+ * Creates a new json bool
+ */
+jsonObject* jsonNewBoolObject(int val);
+
 /**
  * Deallocates an object
  */
@@ -291,6 +297,7 @@ void jsonObjectSetClass(jsonObject* dest, const char* classname );
 
 int jsonBoolIsTrue( jsonObject* boolObj );
 
+void jsonSetBool(jsonObject* bl, int val);
 
 jsonObject* jsonObjectClone( const jsonObject* o );
 
