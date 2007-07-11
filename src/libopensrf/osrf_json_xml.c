@@ -1,5 +1,7 @@
 #include <opensrf/osrf_json_xml.h>
 
+#ifdef OSRF_JSON_ENABLE_XML_UTILS
+
 struct osrfXMLGatewayParserStruct {
     osrfList* objStack;
     osrfList* keyStack;
@@ -360,4 +362,4 @@ char* _escape_xml (char* text) {
 	return out;
 }
 
-
+#endif

@@ -1,3 +1,5 @@
+#ifdef OSRF_JSON_ENABLE_XML_UTILS
+
 #include <stdio.h>
 #include <string.h>
 #include <libxml/globals.h>
@@ -21,3 +23,4 @@ char* jsonObjectToXML(jsonObject*);
  */
 jsonObject* jsonXMLToJSONObject(const char* xml);
 
+#endif
