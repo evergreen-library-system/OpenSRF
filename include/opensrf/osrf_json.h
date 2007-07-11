@@ -294,6 +294,7 @@ void jsonObjectSetNumber(jsonObject* dest, double num);
 
 /* sets the class hint for this object */
 void jsonObjectSetClass(jsonObject* dest, const char* classname );
+const char* jsonObjectGetClass(const jsonObject* dest);
 
 int jsonBoolIsTrue( jsonObject* boolObj );
 

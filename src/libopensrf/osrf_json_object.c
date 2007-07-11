@@ -140,6 +140,9 @@ char* jsonObjectToJSON( const jsonObject* obj ) {
 char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 	if(!obj) return NULL;
 	growing_buffer* buf = buffer_init(32);
+    //jsonObject* tmp;
+	int i;
+    char* json;
 
 	switch(obj->type) {
 
@@ -166,34 +169,33 @@ char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 			break;
 
 		case JSON_STRING:
-			OSRF_BUFFER_ADD(buf, "\"");
+			OSRF_BUFFER_ADD_CHAR(buf, '"');
 			char* data = obj->value.s;
 			int len = strlen(data);
 			
 			char* output = uescape(data, len, 1);
 			OSRF_BUFFER_ADD(buf, output);
 			free(output);
-			OSRF_BUFFER_ADD(buf, "\"");
+			OSRF_BUFFER_ADD_CHAR(buf, '"');
 			break;
 			
 		case JSON_ARRAY: {
-			OSRF_BUFFER_ADD(buf, "[");
+			OSRF_BUFFER_ADD_CHAR(buf, '[');
 			if( obj->value.l ) {
-				int i;
 				for( i = 0; i != obj->value.l->size; i++ ) {
-					char* json = jsonObjectToJSON(osrfListGetIndex(obj->value.l, i));
+					json = jsonObjectToJSONRaw(OSRF_LIST_GET_INDEX(obj->value.l, i));
 					if(i > 0) OSRF_BUFFER_ADD(buf, ",");
 					OSRF_BUFFER_ADD(buf, json);
 					free(json);
 				}
 			} 
-			OSRF_BUFFER_ADD(buf, "]");
+			OSRF_BUFFER_ADD_CHAR(buf, ']');
 			break;
 		}
 
 		case JSON_HASH: {
 
-			OSRF_BUFFER_ADD(buf, "{");
+			OSRF_BUFFER_ADD_CHAR(buf, '{');
 			osrfHashIterator* itr = osrfNewHashIterator(obj->value.h);
 			jsonObject* item;
 			int i = 0;
@@ -201,13 +203,14 @@ char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 			while( (item = osrfHashIteratorNext(itr)) ) {
 				if(i++ > 0) OSRF_BUFFER_ADD(buf, ",");
 				buffer_fadd(buf, "\"%s\":", itr->current);
-				char* json = jsonObjectToJSON(item);
+				//char* json = jsonObjectToJSON(item);
+				char* json = jsonObjectToJSONRaw(item);
 				OSRF_BUFFER_ADD(buf, json);
 				free(json);
 			}
 
 			osrfHashIteratorFree(itr);
-			OSRF_BUFFER_ADD(buf, "}");
+			OSRF_BUFFER_ADD_CHAR(buf, '}');
 			break;
 		}
 	}
@@ -263,7 +266,7 @@ int jsonIteratorHasNext(const jsonIterator* itr) {
 jsonObject* jsonObjectGetIndex( const jsonObject* obj, unsigned long index ) {
 	if(!obj) return NULL;
 	return (obj->type == JSON_ARRAY) ? 
-		osrfListGetIndex(obj->value.l, index) : NULL;
+        (OSRF_LIST_GET_INDEX(obj->value.l, index)) : NULL;
 }
 
 
@@ -311,50 +314,52 @@ void jsonObjectSetClass(jsonObject* dest, const char* classname ) {
 	free(dest->classname);
 	dest->classname = strdup(classname);
 }
-
-/*
-jsonObject* jsonObjectClone( const jsonObject* o ) {
-	if(!o) return NULL;
-	char* json = jsonObjectToJSONRaw(o);
-	jsonObject* oo = jsonParseStringRaw(json);
-	oo->type = o->type;
-	jsonObjectSetClass(oo, o->classname);
-	free(json);
-	return oo;
+const char* jsonObjectGetClass(const jsonObject* dest) {
+    if(!dest) return NULL;
+    return dest->classname;
 }
-*/
 
 jsonObject* jsonObjectClone( const jsonObject* o ) {
     if(!o) return NULL;
 
+    int i;
     jsonObject* arr; 
     jsonObject* hash; 
     jsonIterator* itr;
     jsonObject* tmp;
-    int i;
+    jsonObject* result = NULL;
 
     switch(o->type) {
         case JSON_NULL:
-            return jsonNewObject(NULL);
+            result = jsonNewObject(NULL);
+            break;
         case JSON_STRING:
-            return jsonNewObject(jsonObjectGetString(o));
+            result = jsonNewObject(jsonObjectGetString(o));
+            break;
         case JSON_NUMBER:
-            return jsonNewNumberObject(jsonObjectGetNumber(o));
+            result = jsonNewNumberObject(jsonObjectGetNumber(o));
+            break;
         case JSON_BOOL:
-            return jsonNewBoolObject(jsonBoolIsTrue((jsonObject*) o));
+            result = jsonNewBoolObject(jsonBoolIsTrue((jsonObject*) o));
+            break;
         case JSON_ARRAY:
             arr = jsonNewObject(NULL);
             for(i=0; i < o->size; i++) 
                 jsonObjectPush(arr, jsonObjectClone(jsonObjectGetIndex(o, i)));
-            return arr;
+            result = arr;
+            break;
         case JSON_HASH:
             hash = jsonNewObject(NULL);
             itr = jsonNewIterator(o);
             while( (tmp = jsonIteratorNext(itr)) )
                 jsonObjectSetKey(hash, itr->key, jsonObjectClone(tmp));
-            jsonObjectIteratorFree(itr);
-            return hash;
+            jsonIteratorFree(itr);
+            result = hash;
+            break;
     }
+
+    jsonObjectSetClass(result, jsonObjectGetClass(o));
+    return result;
 }
 
 int jsonBoolIsTrue( jsonObject* boolObj ) {
