@@ -478,7 +478,7 @@ int jsonParseChunk( jsonParserContext* ctx, char* data, int datalen, int flags )
 				JSON_STATE_SET(ctx, JSON_STATE_IN_STRING);
 				break;
 
-#ifdef OSRF_JSON_IGNORE_COMMENTS
+#ifdef OSRF_JSON_ALLOW_COMMENTS
 			case '/' :
 				JSON_STATE_SET(ctx, JSON_STATE_START_COMMENT);
 				break;
