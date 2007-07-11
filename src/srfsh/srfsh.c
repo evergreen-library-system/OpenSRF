@@ -24,7 +24,7 @@ static const char* prompt = "srfsh# ";
 
 static char* history_file = NULL;
 
-static int child_dead = 0;
+//static int child_dead = 0;
 
 static char* login_session = NULL;
 
@@ -50,20 +50,21 @@ static int handle_router( char* words[] );
 
 /* handles app level requests */
 static int handle_request( char* words[], int relay );
-static int handle_exec(char* words[], int new_shell);
+//static int handle_exec(char* words[], int new_shell);
 static int handle_set( char* words[]);
 static int handle_print( char* words[]);
 static int send_request( char* server, 
 				  char* method, growing_buffer* buffer, int relay );
 static int parse_error( char* words[] );
-static int router_query_servers( char* server );
+static int router_query_servers( const char* server );
+static int print_help( void );
+
 //static int srfsh_client_connect();
-static int print_help();
 //static char* tabs(int count);
-static void sig_child_handler( int s );
+//static void sig_child_handler( int s );
 //static void sig_int_handler( int s );
 
-static int load_history();
+static int load_history( void );
 static int handle_math( char* words[] );
 static int do_math( int count, int style );
 static int handle_introspect(char* words[]);
@@ -155,9 +156,11 @@ int main( int argc, char* argv[] ) {
 	return 0;
 }
 
+/*
 static void sig_child_handler( int s ) {
 	child_dead = 1;
 }
+*/
 
 /*
 void sig_int_handler( int s ) {
@@ -167,7 +170,7 @@ void sig_int_handler( int s ) {
 }
 */
 
-static int load_history() {
+static int load_history( void ) {
 
 	char* home = getenv("HOME");
 	int l = strlen(home) + 24;
@@ -190,19 +193,15 @@ static int parse_error( char* words[] ) {
 	if( ! words )
 		return 0;
 
-
-	int i = 0;
-	char* current;
-	char buffer[256];
-	memset(buffer, 0, 256);
-	while( (current=words[i++]) ) {
-		strcat(buffer, current);
-		strcat(buffer, " ");
+	growing_buffer * gbuf = buffer_init( 64 );
+	buffer_add( gbuf, *words );
+	while( *++words ) {
+		buffer_add( gbuf, " " );
+		buffer_add( gbuf, *words );
 	}
-	if( ! buffer || strlen(buffer) < 1 ) 
-		printf("\n");
-
-	fprintf( stderr, "???: %s\n", buffer );
+	fprintf( stderr, "???: %s\n", gbuf->buf );
+	buffer_free( gbuf );
+	
 	return 0;
 
 }
@@ -213,6 +212,8 @@ static int parse_request( char* request ) {
 	if( request == NULL )
 		return 0;
 
+	char * original_request = strdup( request );
+	
 	int ret_val = 0;
 	int i = 0;
 	char* words[COMMAND_BUFSIZE]; 
@@ -222,7 +223,10 @@ static int parse_request( char* request ) {
 	char* cur_tok = strtok( req, " " );
 
 	if( cur_tok == NULL )
+	{
+		free( original_request );
 		return 0;
+	}
 
 	while(cur_tok != NULL) {
 		words[i++] = cur_tok;
@@ -266,9 +270,14 @@ static int parse_request( char* request ) {
 	else if (!strcmp(words[0],"login"))
 		ret_val = handle_login(words);
 
-	else if (words[0][0] == '!')
-		ret_val = handle_exec( words, 1 );
-
+	else if (words[0][0] == '!') {
+		//ret_val = handle_exec( words, 1 );
+		system( original_request + 1 );
+		ret_val = 1;
+	}
+	
+	free( original_request );
+	
 	if(!ret_val) {
 		#ifdef EXEC_DEFAULT
 			return handle_exec( words, 0 );
@@ -477,6 +486,7 @@ static int handle_router( char* words[] ) {
 
 /* if new shell, spawn a new child and subshell to do the work,
 	otherwise pipe the request to the currently open (piped) shell */
+/*
 static int handle_exec(char* words[], int new_shell) {
 
 	if(!words[0]) return 0;
@@ -486,7 +496,7 @@ static int handle_exec(char* words[], int new_shell) {
 		char command[len];
 		memset(command,0,len);
 	
-		int i; /* chop out the ! */
+		int i; // chop out the !
 		for( i=1; i!= len; i++) {
 			command[i-1] = words[0][i];
 		}
@@ -521,30 +531,18 @@ static int handle_exec(char* words[], int new_shell) {
 	
 		buffer_add( b, "\n");
 	
-		//int reader;
-		//int reader = dup2(STDOUT_FILENO, reader);
-		//int reader = dup(STDOUT_FILENO);
-		//close(STDOUT_FILENO);
-
 		fprintf( shell_writer, b->buf );
 		buffer_free(b);
 	
 		fflush(shell_writer);
 		usleep(1000);
 
-		/*
-		char c[4096];
-		bzero(c, 4096);
-		read( reader, c, 4095 );
-		fprintf(stderr, "read %s", c);
-		dup2(reader, STDOUT_FILENO);
-		*/
-
 	}
 
 	
 	return 1;
 }
+*/
 
 
 static int handle_request( char* words[], int relay ) {
@@ -758,7 +756,7 @@ static int handle_time( char* words[] ) {
 
 		
 
-static int router_query_servers( char* router_server ) {
+static int router_query_servers( const char* router_server ) {
 
 	if( ! router_server || strlen(router_server) == 0 ) 
 		return 0;
@@ -795,7 +793,7 @@ static int router_query_servers( char* router_server ) {
 	return 1;
 }
 
-static int print_help() {
+static int print_help( void ) {
 
 	printf(
 			"---------------------------------------------------------------------------------\n"
