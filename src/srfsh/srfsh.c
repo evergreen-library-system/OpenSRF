@@ -120,19 +120,15 @@ int parse_error( char* words[] ) {
 	if( ! words )
 		return 0;
 
-
-	int i = 0;
-	char* current;
-	char buffer[256];
-	memset(buffer, 0, 256);
-	while( (current=words[i++]) ) {
-		strcat(buffer, current);
-		strcat(buffer, " ");
+	growing_buffer * gbuf = buffer_init( 64 );
+	buffer_add( gbuf, *words );
+	while( *++words ) {
+		buffer_add( gbuf, " " );
+		buffer_add( gbuf, *words );
 	}
-	if( ! buffer || strlen(buffer) < 1 ) 
-		printf("\n");
+	fprintf( stderr, "???: %s\n", gbuf->buf );
+	buffer_free( gbuf );
 
-	fprintf( stderr, "???: %s\n", buffer );
 	return 0;
 
 }
