@@ -7,17 +7,18 @@
 
 static void speedTest();
 
+
 int main(int argc, char* argv[]) {
     /* XXX add support for command line test type specification */
     speedTest(); 
-   return 0; 
+    return 0; 
 }
 
 
 
 static void speedTest() {
 
-    /* creates a giant json object, generation the JSON string
+    /* creates a giant json object, generating JSON strings
      * of subobjects as it goes. */
 
     int i,k;
@@ -44,22 +45,12 @@ static void speedTest() {
 
         jsonString = jsonObjectToJSON(hash);
         printf("%s\n\n", jsonString);
-
         dupe = jsonParseString(jsonString);
+
         jsonObjectFree(dupe);
-
         free(jsonString);
-
     }
 
-    jsonString = jsonObjectToJSON(hash);
-    dupe = jsonParseString(jsonString);
-    free(jsonString);
-
-    jsonObjectFree(dupe);
-    dupe = jsonObjectClone(hash);
-
-    jsonObjectFree(dupe);
     jsonObjectFree(hash);
 }
 
