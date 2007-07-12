@@ -140,7 +140,6 @@ char* jsonObjectToJSON( const jsonObject* obj ) {
 char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 	if(!obj) return NULL;
 	growing_buffer* buf = buffer_init(32);
-    //jsonObject* tmp;
 	int i;
     char* json;
 
@@ -203,7 +202,6 @@ char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 			while( (item = osrfHashIteratorNext(itr)) ) {
 				if(i++ > 0) OSRF_BUFFER_ADD(buf, ",");
 				buffer_fadd(buf, "\"%s\":", itr->current);
-				//char* json = jsonObjectToJSON(item);
 				char* json = jsonObjectToJSONRaw(item);
 				OSRF_BUFFER_ADD(buf, json);
 				free(json);
@@ -215,9 +213,7 @@ char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 		}
 	}
 
-	char* data = buffer_data(buf);
-	buffer_free(buf);
-	return data;
+    return buffer_release(buf);
 }
 
 
