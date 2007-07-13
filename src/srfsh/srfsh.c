@@ -203,8 +203,8 @@ static int parse_request( char* request ) {
 	if( request == NULL )
 		return 0;
 
-	char*  original_request = strdup( request );
-	char** words = calloc(COMMAND_BUFSIZE, sizeof(char*)); 
+	char* original_request = strdup( request );
+	char* words[COMMAND_BUFSIZE]; 
 	
 	int ret_val = 0;
 	int i = 0;
@@ -216,7 +216,6 @@ static int parse_request( char* request ) {
 	if( cur_tok == NULL )
 	{
 		free( original_request );
-		free( words );
 		return 0;
 	}
 
@@ -230,7 +229,6 @@ static int parse_request( char* request ) {
 		} else {
 			fprintf( stderr, "Too many tokens in command\n" );
 			free( original_request );
-			free( words );
 			return 1;
 		}
 	}
@@ -275,15 +273,12 @@ static int parse_request( char* request ) {
 		ret_val = 1;
 	}
 	
+	free( original_request );
 	
 	if(!ret_val)
-		ret_val = parse_error( words );
+		return parse_error( words );
 	else
-		ret_val = 1;
-
-	free( original_request );
-	free( words );
-	return ret_val;
+		return 1;
 }
 
 
