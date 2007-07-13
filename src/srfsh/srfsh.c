@@ -50,7 +50,6 @@ static int handle_router( char* words[] );
 
 /* handles app level requests */
 static int handle_request( char* words[], int relay );
-//static int handle_exec(char* words[], int new_shell);
 static int handle_set( char* words[]);
 static int handle_print( char* words[]);
 static int send_request( char* server, 
@@ -72,9 +71,6 @@ static int handle_login( char* words[]);
 
 static int recv_timeout = 120;
 static int is_from_script = 0;
-static FILE* shell_writer = NULL;
-// static FILE* shell_reader = NULL;
-
 
 int main( int argc, char* argv[] ) {
 
@@ -121,10 +117,6 @@ int main( int argc, char* argv[] ) {
 
 	client = osrf_system_get_transport_client();
 
-	/* open the shell handle */
-	shell_writer = popen( "bash", "w");
-	//shell_reader = popen( "bash", "r");
-
 	/* main process loop */
 	char* request;
 	while((request=readline(prompt))) {
@@ -142,7 +134,6 @@ int main( int argc, char* argv[] ) {
 		free(request);
 		free(req_copy);
 
-		fflush(shell_writer);
 		fflush(stderr);
 		fflush(stdout);
 	}
@@ -212,14 +203,14 @@ static int parse_request( char* request ) {
 	if( request == NULL )
 		return 0;
 
-	char * original_request = strdup( request );
+	char* original_request = strdup( request );
+	char* words[COMMAND_BUFSIZE]; 
 	
 	int ret_val = 0;
 	int i = 0;
-	char* words[COMMAND_BUFSIZE]; 
-	memset(words,0,COMMAND_BUFSIZE);
-	char* req = request;
 
+
+	char* req = request;
 	char* cur_tok = strtok( req, " " );
 
 	if( cur_tok == NULL )
@@ -228,15 +219,22 @@ static int parse_request( char* request ) {
 		return 0;
 	}
 
+	/* Load an array with pointers to    */
+	/* the tokens as defined by strtok() */
+	
 	while(cur_tok != NULL) {
-		words[i++] = cur_tok;
-		cur_tok = strtok( NULL, " " );
+		if( i < COMMAND_BUFSIZE - 1 ) {
+			words[i++] = cur_tok;
+			cur_tok = strtok( NULL, " " );
+		} else {
+			fprintf( stderr, "Too many tokens in command\n" );
+			free( original_request );
+			return 1;
+		}
 	}
 
-
-	// not sure why (strtok?), but this is necessary
-	memset( words + i, 0, COMMAND_BUFSIZE - i );
-
+	words[i] = NULL;
+	
 	/* pass off to the top level command */
 	if( !strcmp(words[0],"router") ) 
 		ret_val = handle_router( words );
@@ -271,23 +269,16 @@ static int parse_request( char* request ) {
 		ret_val = handle_login(words);
 
 	else if (words[0][0] == '!') {
-		//ret_val = handle_exec( words, 1 );
 		system( original_request + 1 );
 		ret_val = 1;
 	}
 	
 	free( original_request );
 	
-	if(!ret_val) {
-		#ifdef EXEC_DEFAULT
-			return handle_exec( words, 0 );
-		#else
-			return parse_error( words );
-		#endif
-	}
-
-	return 1;
-
+	if(!ret_val)
+		return parse_error( words );
+	else
+		return 1;
 }
 
 
@@ -483,66 +474,6 @@ static int handle_router( char* words[] ) {
 	return 0;
 }
 
-
-/* if new shell, spawn a new child and subshell to do the work,
-	otherwise pipe the request to the currently open (piped) shell */
-/*
-static int handle_exec(char* words[], int new_shell) {
-
-	if(!words[0]) return 0;
-
-	if( words[0] && words[0][0] == '!') {
-		int len = strlen(words[0]);
-		char command[len];
-		memset(command,0,len);
-	
-		int i; // chop out the !
-		for( i=1; i!= len; i++) {
-			command[i-1] = words[0][i];
-		}
-	
-		free(words[0]);
-		words[0] = strdup(command);
-	}
-
-	if(new_shell) {
-		signal(SIGCHLD, sig_child_handler);
-
-		if(fork()) {
-	
-			waitpid(-1, 0, 0);
-			if(child_dead) {
-				signal(SIGCHLD,sig_child_handler);
-				child_dead = 0;
-			}
-	
-		} else {
-			execvp( words[0], words );
-			exit(0);
-		}
-
-	} else {
-
-
-		growing_buffer* b = buffer_init(64);
-		int i = 0;
-		while(words[i]) 
-			buffer_fadd( b, "%s ", words[i++] );
-	
-		buffer_add( b, "\n");
-	
-		fprintf( shell_writer, b->buf );
-		buffer_free(b);
-	
-		fflush(shell_writer);
-		usleep(1000);
-
-	}
-
-	
-	return 1;
-}
-*/
 
 
 static int handle_request( char* words[], int relay ) {
