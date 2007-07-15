@@ -2,6 +2,7 @@
 #include <opensrf/osrf_message.h>
 #include <opensrf/osrf_app_session.h>
 #include <time.h>
+#include <ctype.h>
 #include <sys/timeb.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -118,16 +119,46 @@ int main( int argc, char* argv[] ) {
 	client = osrf_system_get_transport_client();
 
 	/* main process loop */
+	int newline_needed = 1;  /* used as boolean */
 	char* request;
 	while((request=readline(prompt))) {
 
-		if( !strcasecmp(request, "exit") || !strcasecmp(request,"quit")) 
-			break; 
+		// Find first non-whitespace character
+		
+		char * cmd = request;
+		while( isspace( (unsigned char) *cmd ) )
+			++cmd;
 
-		char* req_copy = strdup(request);
+		// ignore comments and empty lines
+
+		if( '\0' == *cmd || '#' == *cmd )
+			continue;
+
+		// Remove trailing whitespace.  We know at this point that
+		// there is at least one non-whitespace character somewhere,
+		// or we would have already skipped this line.  Hence we
+		// needn't check to make sure that we don't back up past
+		// the beginning.
+
+		{
+			// The curly braces limit the scope of the end variable
+			
+			char * end = cmd + strlen(cmd) - 1;
+			while( isspace( (unsigned char) *end ) )
+				--end;
+			end[1] = '\0';
+		}
+
+		if( !strcasecmp(cmd, "exit") || !strcasecmp(cmd, "quit"))
+		{
+			newline_needed = 0;
+			break; 
+		}
+		
+		char* req_copy = strdup(cmd);
 
 		parse_request( req_copy ); 
-		if( request && strlen(request) > 1 ) {
+		if( request && *cmd ) {
 			add_history(request);
 		}
 
@@ -136,6 +167,15 @@ int main( int argc, char* argv[] ) {
 
 		fflush(stderr);
 		fflush(stdout);
+	}
+
+	if( newline_needed ) {
+		
+		// We left the readline loop after seeing an EOF, not after
+		// seeing "quit" or "exit".  So we issue a newline in order
+		// to avoid leaving a dangling prompt.
+
+		putchar( '\n' );
 	}
 
 	if(history_file != NULL )
