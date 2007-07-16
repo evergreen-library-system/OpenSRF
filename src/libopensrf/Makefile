@@ -9,7 +9,7 @@
 # allow legacy JSON comments like /* comment */
 # ------------------------------------------------------------------
 
-CFLAGS	+=  -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing -I../../include -fPIC -Wall 
+CFLAGS	+=  -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing -I../../include -fPIC -Wall -DOSRF_JSON_ENABLE_XML_UTILS
 LDLIBS	+= -lxml2 -ldl -lmemcache 
 export OSRF_INC = ../../include/opensrf/
 
@@ -70,12 +70,12 @@ libopensrf.so:	$(TARGETS) json
 
 json:	$(JSON_TARGETS) $(JSON_DEPS)
 	if [ ! -z "$(OSRF_LEGACY_JSON)" ]; then \
-		$(CC) -shared -W1  $(CFLAGS) -D OSRF_JSON_ENABLE_XML_UTILS \
+		$(CC) -shared -W1  $(CFLAGS) \
 			$(LDFLAGS) $(JSON_TARGETS) $(JSON_DEPS) -o $(TMPDIR)/libobjson.so;\
 	fi;
 
 libosrf_json.so:	$(JSON_TARGETS) $(JSON_DEPS)
-	$(CC) -shared -W1 $(CFLAGS) -D OSRF_JSON_ENABLE_XML_UTILS \
+	$(CC) -shared -W1 $(CFLAGS) \
 		$(LDFLAGS) $(LDLIBS) $(JSON_TARGETS) $(JSON_DEPS) -o $@
 
 
@@ -117,27 +117,4 @@ clean:
 
 
 
-
-
-
-
-# ------------------------------------------------------------------
-# To build a standalone version of libosrf_json, something 
-# like the following should work:
-# $ CFLAGS="-fPIC -I ../../include" OSRF_INC="../../include/opensrf" make -f Makefile.json standalone
-#
-# -- with XML utils included --
-# $ CFLAGS="-fPIC -I /usr/include/libxml2 -I ../../include -D OSRF_JSON_ENABLE_XML_UTILS" \
-# 	OSRF_INC="../../include/opensrf" LDLIBS="-lxml2" \
-# 	make -f Makefile.json standalone
-#
-# ------------------------------------------------------------------
-
-#CFLAGS="-I ../../include" OSRF_INC="../../include/opensrf" make -f Makefile.json clean osrf_json_test
-#osrf_json_test:	osrf_json_test.o $(TARGETS) $(EXT_TARGETS)
-#	$(CC) $(CFLAGS) osrf_json_test.o $(TARGETS) $(EXT_TARGETS) -o $@
-#osrf_json_test.o:	osrf_json_test.c
-#
-#clean:
-#	rm -f osrf_json*.o osrf_legacy_json.o libosrf_json.so osrf_json_test
 
