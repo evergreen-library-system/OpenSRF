@@ -324,25 +324,30 @@ static int parse_request( char* request ) {
 
 static int handle_introspect(char* words[]) {
 
-	if(words[1] && words[2]) {
-		fprintf(stderr, "--> %s\n", words[1]);
-		char buf[256];
-		memset(buf,0,256);
-		sprintf( buf, "request %s opensrf.system.method %s", words[1], words[2] );
+	if( ! words[1] )
+		return 0;
+
+	fprintf(stderr, "--> %s\n", words[1]);
+
+	// Build a command in a suitably-sized
+	// buffer and then parse it
+	
+	size_t len;
+	if( words[2] ) {
+		static const char text[] = "request %s opensrf.system.method %s";
+		len = sizeof( text ) + strlen( words[1] ) + strlen( words[2] );
+		char buf[len];
+		sprintf( buf, text, words[1], words[2] );
 		return parse_request( buf );
 
 	} else {
-	
-		if(words[1]) {
-			fprintf(stderr, "--> %s\n", words[1]);
-			char buf[256];
-			memset(buf,0,256);
-			sprintf( buf, "request %s opensrf.system.method.all", words[1] );
-			return parse_request( buf );
-		}
-	}
+		static const char text[] = "request %s opensrf.system.method.all";
+		len = sizeof( text ) + strlen( words[1] );
+		char buf[len];
+		sprintf( buf, text, words[1] );
+		return parse_request( buf );
 
-	return 0;
+	}
 }
 
 
