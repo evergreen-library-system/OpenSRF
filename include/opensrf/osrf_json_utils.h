@@ -70,7 +70,7 @@ void _jsonHandleEndArray(void*);
 void _jsonHandleNull(void*);
 void _jsonHandleString(void*, char* string);
 void _jsonHandleBool(void*, int boolval);
-void _jsonHandleNumber(void*, long double num);
+void _jsonHandleNumber(void*, double num);
 void _jsonHandleError(void*, char* str, ...);
 
 struct jsonInternalParserStruct {

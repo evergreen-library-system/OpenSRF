@@ -94,7 +94,7 @@ struct jsonParserHandlerStruct {
 	void (*handleNull)			(void* userData);
 	void (*handleString)			(void* userData, char* string);
 	void (*handleBool)			(void* userData, int boolval);
-	void (*handleNumber)			(void* userData, long double num);
+	void (*handleNumber)			(void* userData, double num);
 	void (*handleError)			(void* userData, char* err, ...);
 };
 typedef struct jsonParserHandlerStruct jsonParserHandler;
@@ -109,7 +109,8 @@ struct _jsonObjectStruct {
 		osrfList*	l;		/* array container */
 		char* 		s;		/* string */
 		int 			b;		/* bool */
-		long double	n;		/* number */
+//		double	n;		/* number */
+		double	n;		/* number */
 	} value;
 };
 typedef struct _jsonObjectStruct jsonObject;
@@ -186,7 +187,7 @@ jsonObject* jsonNewObjectType(int type);
 /**
  * Creates a new number object
  */
-jsonObject* jsonNewNumberObject( long double num );
+jsonObject* jsonNewNumberObject( double num );
 
 
 /**
@@ -284,7 +285,7 @@ unsigned long jsonObjectRemoveKey( jsonObject* dest, const char* key);
 	is a string.  Otherwise returns NULL*/
 char* jsonObjectGetString(const jsonObject*);
 
-long double jsonObjectGetNumber( const jsonObject* obj );
+double jsonObjectGetNumber( const jsonObject* obj );
 
 /* sets the string data */
 void jsonObjectSetString(jsonObject* dest, const char* string);

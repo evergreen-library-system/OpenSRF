@@ -319,7 +319,7 @@ int _jsonParserHandleNumber( jsonParserContext* ctx ) {
 
 	/* make me more strict */
 	char* err = NULL;
-	long double d = strtod(ctx->buffer->buf, &err);
+	double d = strtod(ctx->buffer->buf, &err);
 	if(err && err[0] != '\0') 
 		return _jsonParserError(ctx, "Invalid number sequence");
 	JSON_STATE_REMOVE(ctx, JSON_STATE_IN_NUMBER);
@@ -586,7 +586,7 @@ void _jsonHandleBool(void* ctx, int boolval) {
 	_jsonInsertParserItem(p, obj);
 }
 
-void _jsonHandleNumber(void* ctx, long double num) {
+void _jsonHandleNumber(void* ctx, double num) {
 	jsonInternalParser* p = (jsonInternalParser*) ctx;
 	_jsonInsertParserItem(p, jsonNewNumberObject(num));
 }

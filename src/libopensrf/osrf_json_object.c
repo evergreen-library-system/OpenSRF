@@ -45,7 +45,7 @@ jsonObject* jsonNewObjectFmt(const char* data, ...) {
 	return o;
 }
 
-jsonObject* jsonNewNumberObject( long double num ) {
+jsonObject* jsonNewNumberObject( double num ) {
 	jsonObject* o = jsonNewObject(NULL);
 	o->type = JSON_NUMBER;
 	o->value.n = num;
@@ -151,14 +151,14 @@ char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 			break;
 
 		case JSON_NUMBER: {
-			long double x = obj->value.n;
+			double x = obj->value.n;
 			if( x == (long) x ) {
 				LONG_TO_STRING((long)x);	
 				OSRF_BUFFER_ADD(buf, LONGSTR);
 
 			} else {
-				LONG_DOUBLE_TO_STRING(x);
-				OSRF_BUFFER_ADD(buf, LONGDOUBLESTR);
+				DOUBLE_TO_STRING(x);
+				OSRF_BUFFER_ADD(buf, DOUBLESTR);
 			}
 			break;
 		}
@@ -288,7 +288,7 @@ char* jsonObjectGetString(const jsonObject* obj) {
 	return (obj && obj->type == JSON_STRING) ? obj->value.s : NULL;
 }
 
-long double jsonObjectGetNumber( const jsonObject* obj ) {
+double jsonObjectGetNumber( const jsonObject* obj ) {
 	return (obj && obj->type == JSON_NUMBER) ? obj->value.n : 0;
 }
 
@@ -379,8 +379,8 @@ char* jsonObjectToSimpleString( const jsonObject* o ) {
 				value = strdup(LONGSTR);
 
 			} else {
-				LONG_DOUBLE_TO_STRING(o->value.n);
-				value = strdup(LONGDOUBLESTR);
+				DOUBLE_TO_STRING(o->value.n);
+				value = strdup(DOUBLESTR);
 			}
 
 			break;
