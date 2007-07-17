@@ -13,7 +13,6 @@ def osrfNewObjectFromHint(hint):
         return obj
     except AttributeError:
         return osrfNetworkObject.__unknown()
-#newFromHint = staticmethod(newFromHint)
 
 
 ''' Global object registry '''
@@ -76,9 +75,8 @@ def __osrfNetworkObjectInit(self, data={}):
         If this is an array, we pull data out of the data array
         (if there is any) and translate that into a hash internally
         '''
-
     self.__data = data
-    if len(data) > 0:
+    if isinstance(data, list) and len(data) > 0:
         reg = self.getRegistry()
         if reg.wireProtocol == 'array':
             self.__data = {}
@@ -134,31 +132,47 @@ osrfNetworkRegisterHint('__unknown', [], 'hash')
 # Define the custom object parsing behavior 
 # -------------------------------------------------------------------
 def parseNetObject(obj):
-    hint = None
-    islist = False
+    
     try:
-        hint = obj[OSRF_JSON_CLASS_KEY]
-        obj = obj[OSRF_JSON_PAYLOAD_KEY]
-    except: pass
-    if isinstance(obj,list):
-        islist = True
-        for i in range(len(obj)):
-            obj[i] = parseNetObject(obj[i])
-    else: 
-        if isinstance(obj,dict):
-            for k,v in obj.iteritems():
-                obj[k] = parseNetObject(v)
 
-    if hint: # Now, "bless" the object into an osrfNetworkObject
+        hint = obj[OSRF_JSON_CLASS_KEY]
+        subObj = obj[OSRF_JSON_PAYLOAD_KEY]
+        reg = osrfNetworkRegistry.getRegistry(hint)
+
+        obj = {}
+
+        if reg.wireProtocol == 'array':
+            for i in range(len(reg.keys)):
+                if len(subObj) > i:
+                    obj[reg.keys[i]] = parseNetObject(subObj[i])
+                else:
+                    obj[reg.keys[i]] = None
+        else:
+            for k in reg.keys:
+                obj[k] = parseNetObject(subObj.get(k))
+
         estr = 'obj = osrfNetworkObject.%s(obj)' % hint
         try:
             exec(estr)
-        except AttributeError:
+        except e:
             # this object has not been registered, shove it into the default container
             obj = osrfNetworkObject.__unknown(obj)
 
-    return obj;
+        return obj
 
+    except: pass
+
+    # the current object does not have a class hint
+    if isinstance(obj, list):
+        for i in range(len(obj)):
+            obj[i] = parseNetObject(obj[i])
+
+    else:
+        if isinstance(obj, dict):
+            for k,v in obj.iteritems():
+                obj[k] = parseNetObject(v)
+
+    return obj;
 
 
 def osrfObjectToXML(obj):

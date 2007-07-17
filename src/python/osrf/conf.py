@@ -16,33 +16,56 @@
 
 from osrf.utils import *
 from osrf.ex import *
+import re
 
 class osrfConfig(object):
-	"""Loads and parses the bootstrap config file"""
+    """Loads and parses the bootstrap config file"""
 
-	config = None
+    config = None
 
-	def __init__(self, file=None):
-		self.file = file	
-		self.data = {}
+    def __init__(self, file, context=None):
+        self.file = file    
+        self.context = context
+        self.data = {}
 
-	def parseConfig(self,file=None):
-		self.data = osrfXMLFileToObject(file or self.file)
-		osrfConfig.config = self
-	
-	def getValue(self, key, idx=None):
-		val = osrfObjectFindPath(self.data, key, idx)
-		if not val:
-			raise osrfConfigException("Config value not found: " + key)
-		return val
+    #def parseConfig(self,file=None):
+    def parseConfig(self):
+        self.data = osrfXMLFileToObject(self.file)
+        osrfConfig.config = self
+    
+    def getValue(self, key, idx=None):
+        if self.context:
+            if re.search('/', key):
+                key = "%s/%s" % (self.context, key)
+            else:
+                key = "%s.%s" % (self.context, key)
+
+        val = osrfObjectFindPath(self.data, key, idx)
+        if not val:
+            raise osrfConfigException("Config value not found: " + key)
+        return val
 
 
 def osrfConfigValue(key, idx=None):
-	"""Returns a bootstrap config value.
+    """Returns a bootstrap config value.
 
-	key -- A string representing the path to the value in the config object
-		e.g.  "domains.domain", "username"
-	idx -- Optional array index if the searched value is an array member
-	"""
-	return osrfConfig.config.getValue(key, idx)
-				
+    key -- A string representing the path to the value in the config object
+        e.g.  "domains.domain", "username"
+    idx -- Optional array index if the searched value is an array member
+    """
+    return osrfConfig.config.getValue(key, idx)
+                
+
+def osrfConfigValueNoEx(key, idx=None):
+    """ Returns a bootstrap config value without throwing an exception
+        if the item is not found. 
+
+    key -- A string representing the path to the value in the config object
+        e.g.  "domains.domain", "username"
+    idx -- Optional array index if the searched value is an array member
+    """
+    try:
+        return osrfConfig.config.getValue(key, idx)
+    except:
+        return None
+
