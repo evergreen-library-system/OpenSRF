@@ -22,9 +22,14 @@ def osrfInitLog(level, facility=None, file=None):
     """Initialize the logging subsystem."""
     import syslog
     global loglevel
-    if facility: osrfInitSyslog(facility, level)
+    if facility: 
+        osrfInitSyslog(facility, level)
+        syslog.syslog(syslog.LOG_DEBUG, "syslog initialized")
+    else:
+        if file:
+            sys.stderr.write("\n * file-based logging not implemented yet\n")
+            
     loglevel = level
-    syslog.syslog(LOG_DEBUG, "syslog initialized")
 
 
 # -----------------------------------------------------------------------
@@ -72,6 +77,8 @@ def __osrfLog(level, msg):
 def osrfInitSyslog(facility, level):
     """Connect to syslog and set the logmask based on the level provided."""
 
+    import syslog
+
     level = int(level)
 
     if facility == 'local0': facility = syslog.LOG_LOCAL0
@@ -82,13 +89,13 @@ def osrfInitSyslog(facility, level):
     if facility == 'local5': facility = syslog.LOG_LOCAL5
     if facility == 'local6': facility = syslog.LOG_LOCAL6
     # XXX add other facility maps if necessary
-    openlog(sys.argv[0], 0, facility)
+    syslog.openlog(sys.argv[0], 0, facility)
 
     # this is redundant...
-    mask = LOG_UPTO(syslog.LOG_ERR)
-    if level >= 1: mask |= LOG_MASK(syslog.LOG_WARNING)
-    if level >= 2: mask |= LOG_MASK(syslog.LOG_NOTICE)
-    if level >= 3: mask |= LOG_MASK(syslog.LOG_INFO)
-    if level >= 4: mask |= LOG_MASK(syslog.LOG_DEBUG)
+    mask = syslog.LOG_UPTO(syslog.LOG_ERR)
+    if level >= 1: mask |= syslog.LOG_MASK(syslog.LOG_WARNING)
+    if level >= 2: mask |= syslog.LOG_MASK(syslog.LOG_NOTICE)
+    if level >= 3: mask |= syslog.LOG_MASK(syslog.LOG_INFO)
+    if level >= 4: mask |= syslog.LOG_MASK(syslog.LOG_DEBUG)
     syslog.setlogmask(mask)
 

@@ -3,14 +3,14 @@ import xml.dom.minidom, re
 def osrfXMLFileToObject(filename):
     """Turns the contents of an XML file into a Python object"""
     doc = xml.dom.minidom.parse(filename)
-    obj = osrfXMLNodeToObject(doc.childNodes[0])
+    obj = osrfXMLNodeToObject(doc.documentElement)
     doc.unlink()
     return obj
 
 def osrfXMLStringToObject(string):
     """Turns an XML string into a Python object"""
     doc = xml.dom.minidom.parseString(string)
-    obj = osrfXMLNodeToObject(doc.childNodes[0])
+    obj = osrfXMLNodeToObject(doc.documentElement)
     doc.unlink()
     return obj
 
@@ -72,7 +72,7 @@ def osrfObjectFindPath(obj, path, idx=None):
 
     parts = []
 
-    if re.compile('/').search(path):
+    if re.search('/', path):
         parts = path.split('/')
     else:
         parts = path.split('.')

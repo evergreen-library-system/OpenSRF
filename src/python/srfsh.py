@@ -214,9 +214,8 @@ def setup_readline():
 
 def do_connect():
 	file = os.path.join(get_var('HOME'), ".srfsh.xml")
-
 	print_green("Connecting to opensrf...")
-	osrfConnect(file)
+	osrfConnect(file, 'srfsh')
 	print_red('OK\n')
 
 def load_plugins():
