@@ -80,7 +80,6 @@ libosrf_json.so:	$(JSON_TARGETS) $(JSON_DEPS)
 
 
 osrf_json_test:	osrf_json_test.o $(JSON_TARGETS) $(JSON_DEPS)
-	$(CC) $(CFLAGS) osrf_json_test.o $(JSON_TARGETS) $(JSON_DEPS) -o $@
 
 
 opensrf.o:	opensrf.c
