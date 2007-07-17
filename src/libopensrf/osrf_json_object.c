@@ -152,9 +152,9 @@ char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 
 		case JSON_NUMBER: {
 			double x = obj->value.n;
-			if( x == (long) x ) {
-				LONG_TO_STRING((long)x);	
-				OSRF_BUFFER_ADD(buf, LONGSTR);
+			if( x == (int) x ) {
+				INT_TO_STRING((int)x);	
+				OSRF_BUFFER_ADD(buf, INTSTR);
 
 			} else {
 				DOUBLE_TO_STRING(x);
@@ -316,7 +316,7 @@ const char* jsonObjectGetClass(const jsonObject* dest) {
 }
 
 jsonObject* jsonObjectClone( const jsonObject* o ) {
-    if(!o) return NULL;
+    if(!o) return jsonNewObject(NULL);
 
     int i;
     jsonObject* arr; 
@@ -375,8 +375,8 @@ char* jsonObjectToSimpleString( const jsonObject* o ) {
 		case JSON_NUMBER: {
 
 			if( o->value.n == (int) o->value.n ) {
-				LONG_TO_STRING((long) o->value.n);	
-				value = strdup(LONGSTR);
+				INT_TO_STRING((int) o->value.n);	
+				value = strdup(INTSTR);
 
 			} else {
 				DOUBLE_TO_STRING(o->value.n);
