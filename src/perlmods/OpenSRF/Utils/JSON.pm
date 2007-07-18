@@ -108,6 +108,8 @@ sub JSONObject2Perl {
 	if( $ref eq 'HASH' ) {
 		if( defined($obj->{$JSON_CLASS_KEY})) {
 			my $cls = $obj->{$JSON_CLASS_KEY};
+            $cls =~ s/^\s+//o;
+            $cls =~ s/\s+$//o;
 			if( $obj = $class->JSONObject2Perl($obj->{$JSON_PAYLOAD_KEY}) ) {
 				$cls = $class->lookup_class($cls) || $cls;
 				return bless(\$obj, $cls) unless ref($obj); 
