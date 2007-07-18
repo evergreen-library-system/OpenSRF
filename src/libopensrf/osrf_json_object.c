@@ -98,7 +98,8 @@ void jsonSetBool(jsonObject* bl, int val) {
 }
 
 unsigned long jsonObjectPush(jsonObject* o, jsonObject* newo) {
-	if(!(o && newo)) return -1;
+    if(!o) return -1;
+    if(!newo) newo = jsonNewObject(NULL);
 	JSON_INIT_CLEAR(o, JSON_ARRAY);
 	newo->parent = o;
 	osrfListPush( o->value.l, newo );
@@ -107,7 +108,8 @@ unsigned long jsonObjectPush(jsonObject* o, jsonObject* newo) {
 }
 
 unsigned long jsonObjectSetIndex(jsonObject* dest, unsigned long index, jsonObject* newObj) {
-	if(!(dest && newObj)) return -1;
+    if(!dest) return -1;
+    if(!newObj) newObj = jsonNewObject(NULL);
 	JSON_INIT_CLEAR(dest, JSON_ARRAY);
 	newObj->parent = dest;
 	osrfListSet( dest->value.l, newObj, index );
@@ -115,9 +117,9 @@ unsigned long jsonObjectSetIndex(jsonObject* dest, unsigned long index, jsonObje
 	return dest->value.l->size;
 }
 
-unsigned long jsonObjectSetKey(
-		jsonObject* o, const char* key, jsonObject* newo) {
-	if(!(o && key && newo)) return -1;
+unsigned long jsonObjectSetKey( jsonObject* o, const char* key, jsonObject* newo) {
+    if(!o) return -1;
+    if(!newo) newo = jsonNewObject(NULL);
 	JSON_INIT_CLEAR(o, JSON_HASH);
 	newo->parent = o;
 	osrfHashSet( o->value.h, newo, key );
@@ -340,12 +342,14 @@ jsonObject* jsonObjectClone( const jsonObject* o ) {
             break;
         case JSON_ARRAY:
             arr = jsonNewObject(NULL);
+            arr->type = JSON_ARRAY;
             for(i=0; i < o->size; i++) 
                 jsonObjectPush(arr, jsonObjectClone(jsonObjectGetIndex(o, i)));
             result = arr;
             break;
         case JSON_HASH:
             hash = jsonNewObject(NULL);
+            hash->type = JSON_HASH;
             itr = jsonNewIterator(o);
             while( (tmp = jsonIteratorNext(itr)) )
                 jsonObjectSetKey(hash, itr->key, jsonObjectClone(tmp));
