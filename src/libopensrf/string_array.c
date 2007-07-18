@@ -30,10 +30,12 @@ void string_array_add(string_array* arr, char* str) {
 }
 
 char* osrfStringArrayGetString(osrfStringArray* arr, int index) {
+    if(!arr) return NULL;
     return OSRF_LIST_GET_INDEX(arr->list, index);
 }
 
 char* string_array_get_string(string_array* arr, int index) {
+    if(!arr) return NULL;
     return OSRF_LIST_GET_INDEX(arr->list, index);
 }
 
