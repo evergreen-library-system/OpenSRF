@@ -4,10 +4,21 @@ from osrf.const import OSRF_JSON_PAYLOAD_KEY, OSRF_JSON_CLASS_KEY
 
 class osrfJSONNetworkEncoder(simplejson.JSONEncoder):
     def default(self, obj):
+
         if isinstance(obj, osrfNetworkObject):
+            reg = obj.getRegistry()
+            data = obj.getData()
+
+            # re-encode the object as an array if necessary
+            if reg.wireProtocol == 'array':
+                d = []
+                for k in reg.keys:
+                    d.append(data[k]) 
+                data = d
+
             return { 
-                OSRF_JSON_CLASS_KEY: obj.getRegistry().hint,
-                OSRF_JSON_PAYLOAD_KEY: self.default(obj.getData())
+                OSRF_JSON_CLASS_KEY: reg.hint,
+                OSRF_JSON_PAYLOAD_KEY: self.default(data)
             }   
         return obj
 
@@ -77,9 +88,15 @@ def osrfFormatJSON(json):
     instring = False
     inescape = False
     done = False
+    eatws = False
 
     for c in json:
 
+        if eatws: # simpljson adds a pesky after array and object items
+            if c == ' ': 
+                continue
+
+        eatws = False
         done = False
         if (c == '{' or c == '[') and not instring:
             t += 1
@@ -94,6 +111,10 @@ def osrfFormatJSON(json):
         if c == ',' and not instring:
             r += c + '\n' + __tabs(t)
             done = True
+            eatws = True
+
+        if c == ':' and not instring:
+            eatws = True
 
         if c == '"' and not inescape:
             instring = not instring
