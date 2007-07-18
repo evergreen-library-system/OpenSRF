@@ -127,7 +127,7 @@ int _json_parse_string(char* string, unsigned long* index, jsonObject* obj, int 
 			break;
 
 		default:
-			if(is_number(c) || c == '.' || c == '-') { /* are we a number? */
+			if(isdigit(c) || c == '.' || c == '-') { /* are we a number? */
 				status = json_parse_json_number(string, index, obj, current_strlen);	
 				if(status) return status;
 				break;
@@ -225,7 +225,7 @@ int json_parse_json_number(char* string, unsigned long* index, jsonObject* obj, 
 
 	while(*index < current_strlen) {
 
-		if(is_number(c)) {
+		if(isdigit(c)) {
 			buffer_add_char(buf, c);
 		}
 
@@ -503,18 +503,18 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 	
 					if (ucs_char < 0x80) {
 						utf_out[0] = ucs_char;
-						buffer_add(buf, utf_out);
+						buffer_add(buf, (char*) utf_out);
 
 					} else if (ucs_char < 0x800) {
 						utf_out[0] = 0xc0 | (ucs_char >> 6);
 						utf_out[1] = 0x80 | (ucs_char & 0x3f);
-						buffer_add(buf, utf_out);
+						buffer_add(buf, (char*) utf_out);
 
 					} else {
 						utf_out[0] = 0xe0 | (ucs_char >> 12);
 						utf_out[1] = 0x80 | ((ucs_char >> 6) & 0x3f);
 						utf_out[2] = 0x80 | (ucs_char & 0x3f);
-						buffer_add(buf, utf_out);
+						buffer_add(buf, (char*) utf_out);
 					}
 					/* ----------------------------------------------------------------------- */
 					/* ----------------------------------------------------------------------- */
@@ -689,23 +689,6 @@ int json_eat_comment(char* string, unsigned long* index, char** buffer, int pars
 		*buffer = buffer_data(buf);
 
 	buffer_free(buf);
-	return 0;
-}
-
-int is_number(char c) {
-	switch(c) {
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-			return 1;
-	}
 	return 0;
 }
 

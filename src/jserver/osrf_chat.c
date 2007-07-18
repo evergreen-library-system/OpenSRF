@@ -19,7 +19,10 @@ GNU General Public License for more details.
 #include <time.h>
 
 static int osrfChatXMLErrorOcurred = 0;
-static int osrfChatClientSentDisconnect = 0;
+
+/* This is used by code in osrfChatPushData, but that code is
+   currently commented out.  Uncomment the next line if needed. */
+//static int osrfChatClientSentDisconnect = 0;
 
 /* shorter version of strcmp */
 static int eq(const char* a, const char* b) { return (a && b && !strcmp(a,b)); }
@@ -613,7 +616,7 @@ int osrfChatHandleConnected( osrfChatNode* node, const char* name, const xmlChar
 	if(eq(name,"message")) {
 
 		/* drop the old message and start with a new one */
-		xmlNodePtr root = xmlNewNode(NULL, name);
+		xmlNodePtr root = xmlNewNode(NULL, BAD_CAST name);
 		xmlAddAttrs(root, atts);
 		xmlNodePtr oldRoot = xmlDocSetRootElement(node->msgDoc, root);
 		free(node->to);
@@ -628,7 +631,7 @@ int osrfChatHandleConnected( osrfChatNode* node, const char* name, const xmlChar
 	} else {
 
 		/* all non "message" nodes are simply added to the message */
-		xmlNodePtr nodep = xmlNewNode(NULL, name);
+		xmlNodePtr nodep = xmlNewNode(NULL, BAD_CAST name);
 		xmlAddAttrs(nodep, atts);
 		xmlAddChild(xmlDocGetRootElement(node->msgDoc), nodep);
 	}

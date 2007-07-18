@@ -86,7 +86,6 @@ opensrf-install:	objson-install
 	cp -r ../include/opensrf $(INCLUDEDIR)
 	cp libopensrf/opensrf $(BINDIR)/opensrf-c
 	make -C c-apps install
-	cp ../examples/bootstrap.conf.example $(ETCDIR)
 	cp ../bin/osrf_ctl.sh $(BINDIR)
 	cp ../examples/opensrf.xml.example $(ETCDIR)
 	cp ../examples/opensrf_core.xml.example $(ETCDIR)

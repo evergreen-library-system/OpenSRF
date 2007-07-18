@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-use OpenSRF::System qw(/pines/conf/bootstrap.conf);
+use OpenSRF::System qw(/openils/conf/opensrf_core.xml);
 use Getopt::Long
 
 $| = 1;

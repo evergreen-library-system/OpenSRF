@@ -1,9 +1,77 @@
-#include "srfsh.h"
+#include <opensrf/transport_client.h>
+#include <opensrf/osrf_message.h>
+#include <opensrf/osrf_app_session.h>
+#include <time.h>
+#include <ctype.h>
+#include <sys/timeb.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
-int recv_timeout = 120;
-int is_from_script = 0;
-FILE* shell_writer = NULL;
-FILE* shell_reader = NULL;
+#include <opensrf/utils.h>
+#include <opensrf/log.h>
+
+#include <signal.h>
+
+#include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#define SRFSH_PORT 5222
+#define COMMAND_BUFSIZE 4096
+
+
+/* shell prompt */
+static const char* prompt = "srfsh# ";
+
+static char* history_file = NULL;
+
+//static int child_dead = 0;
+
+static char* login_session = NULL;
+
+/* true if we're pretty printing json results */
+static int pretty_print = 1;
+/* true if we're bypassing 'less' */
+static int raw_print = 0;
+
+/* our jabber connection */
+static transport_client* client = NULL; 
+
+/* the last result we received */
+static osrf_message* last_result = NULL;
+
+/* functions */
+static int parse_request( char* request );
+
+/* handles router requests */
+static int handle_router( char* words[] );
+
+/* utility method for print time data */
+/* static int handle_time( char* words[] ); */
+
+/* handles app level requests */
+static int handle_request( char* words[], int relay );
+static int handle_set( char* words[]);
+static int handle_print( char* words[]);
+static int send_request( char* server, 
+				  char* method, growing_buffer* buffer, int relay );
+static int parse_error( char* words[] );
+static int router_query_servers( const char* server );
+static int print_help( void );
+
+//static int srfsh_client_connect();
+//static char* tabs(int count);
+//static void sig_child_handler( int s );
+//static void sig_int_handler( int s );
+
+static int load_history( void );
+static int handle_math( char* words[] );
+static int do_math( int count, int style );
+static int handle_introspect(char* words[]);
+static int handle_login( char* words[]);
+
+static int recv_timeout = 120;
+static int is_from_script = 0;
 
 int main( int argc, char* argv[] ) {
 
@@ -50,30 +118,64 @@ int main( int argc, char* argv[] ) {
 
 	client = osrf_system_get_transport_client();
 
-	/* open the shell handle */
-	shell_writer = popen( "bash", "w");
-	//shell_reader = popen( "bash", "r");
-
 	/* main process loop */
+	int newline_needed = 1;  /* used as boolean */
 	char* request;
 	while((request=readline(prompt))) {
 
-		if( !strcasecmp(request, "exit") || !strcasecmp(request,"quit")) 
-			break; 
+		// Find first non-whitespace character
+		
+		char * cmd = request;
+		while( isspace( (unsigned char) *cmd ) )
+			++cmd;
 
-		char* req_copy = strdup(request);
+		// ignore comments and empty lines
+
+		if( '\0' == *cmd || '#' == *cmd )
+			continue;
+
+		// Remove trailing whitespace.  We know at this point that
+		// there is at least one non-whitespace character somewhere,
+		// or we would have already skipped this line.  Hence we
+		// needn't check to make sure that we don't back up past
+		// the beginning.
+
+		{
+			// The curly braces limit the scope of the end variable
+			
+			char * end = cmd + strlen(cmd) - 1;
+			while( isspace( (unsigned char) *end ) )
+				--end;
+			end[1] = '\0';
+		}
+
+		if( !strcasecmp(cmd, "exit") || !strcasecmp(cmd, "quit"))
+		{
+			newline_needed = 0;
+			break; 
+		}
+		
+		char* req_copy = strdup(cmd);
 
 		parse_request( req_copy ); 
-		if( request && strlen(request) > 1 ) {
+		if( request && *cmd ) {
 			add_history(request);
 		}
 
 		free(request);
 		free(req_copy);
 
-		fflush(shell_writer);
 		fflush(stderr);
 		fflush(stdout);
+	}
+
+	if( newline_needed ) {
+		
+		// We left the readline loop after seeing an EOF, not after
+		// seeing "quit" or "exit".  So we issue a newline in order
+		// to avoid leaving a dangling prompt.
+
+		putchar( '\n' );
 	}
 
 	if(history_file != NULL )
@@ -85,9 +187,11 @@ int main( int argc, char* argv[] ) {
 	return 0;
 }
 
-void sig_child_handler( int s ) {
+/*
+static void sig_child_handler( int s ) {
 	child_dead = 1;
 }
+*/
 
 /*
 void sig_int_handler( int s ) {
@@ -97,7 +201,7 @@ void sig_int_handler( int s ) {
 }
 */
 
-int load_history() {
+static int load_history( void ) {
 
 	char* home = getenv("HOME");
 	int l = strlen(home) + 24;
@@ -115,54 +219,62 @@ int load_history() {
 }
 
 
-int parse_error( char* words[] ) {
+static int parse_error( char* words[] ) {
 
 	if( ! words )
 		return 0;
 
-
-	int i = 0;
-	char* current;
-	char buffer[256];
-	memset(buffer, 0, 256);
-	while( (current=words[i++]) ) {
-		strcat(buffer, current);
-		strcat(buffer, " ");
+	growing_buffer * gbuf = buffer_init( 64 );
+	buffer_add( gbuf, *words );
+	while( *++words ) {
+		buffer_add( gbuf, " " );
+		buffer_add( gbuf, *words );
 	}
-	if( ! buffer || strlen(buffer) < 1 ) 
-		printf("\n");
-
-	fprintf( stderr, "???: %s\n", buffer );
+	fprintf( stderr, "???: %s\n", gbuf->buf );
+	buffer_free( gbuf );
+	
 	return 0;
 
 }
 
 
-int parse_request( char* request ) {
+static int parse_request( char* request ) {
 
 	if( request == NULL )
 		return 0;
 
+	char* original_request = strdup( request );
+	char* words[COMMAND_BUFSIZE]; 
+	
 	int ret_val = 0;
 	int i = 0;
-	char* words[COMMAND_BUFSIZE]; 
-	memset(words,0,COMMAND_BUFSIZE);
-	char* req = request;
 
+
+	char* req = request;
 	char* cur_tok = strtok( req, " " );
 
 	if( cur_tok == NULL )
+	{
+		free( original_request );
 		return 0;
-
-	while(cur_tok != NULL) {
-		words[i++] = cur_tok;
-		cur_tok = strtok( NULL, " " );
 	}
 
+	/* Load an array with pointers to    */
+	/* the tokens as defined by strtok() */
+	
+	while(cur_tok != NULL) {
+		if( i < COMMAND_BUFSIZE - 1 ) {
+			words[i++] = cur_tok;
+			cur_tok = strtok( NULL, " " );
+		} else {
+			fprintf( stderr, "Too many tokens in command\n" );
+			free( original_request );
+			return 1;
+		}
+	}
 
-	// not sure why (strtok?), but this is necessary
-	memset( words + i, 0, COMMAND_BUFSIZE - i );
-
+	words[i] = NULL;
+	
 	/* pass off to the top level command */
 	if( !strcmp(words[0],"router") ) 
 		ret_val = handle_router( words );
@@ -196,47 +308,50 @@ int parse_request( char* request ) {
 	else if (!strcmp(words[0],"login"))
 		ret_val = handle_login(words);
 
-	else if (words[0][0] == '!')
-		ret_val = handle_exec( words, 1 );
-
-	if(!ret_val) {
-		#ifdef EXEC_DEFAULT
-			return handle_exec( words, 0 );
-		#else
-			return parse_error( words );
-		#endif
+	else if (words[0][0] == '!') {
+		system( original_request + 1 );
+		ret_val = 1;
 	}
-
-	return 1;
-
+	
+	free( original_request );
+	
+	if(!ret_val)
+		return parse_error( words );
+	else
+		return 1;
 }
 
 
-int handle_introspect(char* words[]) {
+static int handle_introspect(char* words[]) {
 
-	if(words[1] && words[2]) {
-		fprintf(stderr, "--> %s\n", words[1]);
-		char buf[256];
-		memset(buf,0,256);
-		sprintf( buf, "request %s opensrf.system.method %s", words[1], words[2] );
+	if( ! words[1] )
+		return 0;
+
+	fprintf(stderr, "--> %s\n", words[1]);
+
+	// Build a command in a suitably-sized
+	// buffer and then parse it
+	
+	size_t len;
+	if( words[2] ) {
+		static const char text[] = "request %s opensrf.system.method %s";
+		len = sizeof( text ) + strlen( words[1] ) + strlen( words[2] );
+		char buf[len];
+		sprintf( buf, text, words[1], words[2] );
 		return parse_request( buf );
 
 	} else {
-	
-		if(words[1]) {
-			fprintf(stderr, "--> %s\n", words[1]);
-			char buf[256];
-			memset(buf,0,256);
-			sprintf( buf, "request %s opensrf.system.method.all", words[1] );
-			return parse_request( buf );
-		}
-	}
+		static const char text[] = "request %s opensrf.system.method.all";
+		len = sizeof( text ) + strlen( words[1] );
+		char buf[len];
+		sprintf( buf, text, words[1] );
+		return parse_request( buf );
 
-	return 0;
+	}
 }
 
 
-int handle_login( char* words[]) {
+static int handle_login( char* words[]) {
 
 	if( words[1] && words[2]) {
 
@@ -317,7 +432,7 @@ int handle_login( char* words[]) {
 	return 0;
 }
 
-int handle_set( char* words[]) {
+static int handle_set( char* words[]) {
 
 	char* variable;
 	if( (variable=words[1]) ) {
@@ -358,7 +473,7 @@ int handle_set( char* words[]) {
 }
 
 
-int handle_print( char* words[]) {
+static int handle_print( char* words[]) {
 
 	char* variable;
 	if( (variable=words[1]) ) {
@@ -381,7 +496,7 @@ int handle_print( char* words[]) {
 	return 0;
 }
 
-int handle_router( char* words[] ) {
+static int handle_router( char* words[] ) {
 
 	if(!client)
 		return 1;
@@ -405,79 +520,8 @@ int handle_router( char* words[] ) {
 }
 
 
-/* if new shell, spawn a new child and subshell to do the work,
-	otherwise pipe the request to the currently open (piped) shell */
-int handle_exec(char* words[], int new_shell) {
 
-	if(!words[0]) return 0;
-
-	if( words[0] && words[0][0] == '!') {
-		int len = strlen(words[0]);
-		char command[len];
-		memset(command,0,len);
-	
-		int i; /* chop out the ! */
-		for( i=1; i!= len; i++) {
-			command[i-1] = words[0][i];
-		}
-	
-		free(words[0]);
-		words[0] = strdup(command);
-	}
-
-	if(new_shell) {
-		signal(SIGCHLD, sig_child_handler);
-
-		if(fork()) {
-	
-			waitpid(-1, 0, 0);
-			if(child_dead) {
-				signal(SIGCHLD,sig_child_handler);
-				child_dead = 0;
-			}
-	
-		} else {
-			execvp( words[0], words );
-			exit(0);
-		}
-
-	} else {
-
-
-		growing_buffer* b = buffer_init(64);
-		int i = 0;
-		while(words[i]) 
-			buffer_fadd( b, "%s ", words[i++] );
-	
-		buffer_add( b, "\n");
-	
-		//int reader;
-		//int reader = dup2(STDOUT_FILENO, reader);
-		//int reader = dup(STDOUT_FILENO);
-		//close(STDOUT_FILENO);
-
-		fprintf( shell_writer, b->buf );
-		buffer_free(b);
-	
-		fflush(shell_writer);
-		usleep(1000);
-
-		/*
-		char c[4096];
-		bzero(c, 4096);
-		read( reader, c, 4095 );
-		fprintf(stderr, "read %s", c);
-		dup2(reader, STDOUT_FILENO);
-		*/
-
-	}
-
-	
-	return 1;
-}
-
-
-int handle_request( char* words[], int relay ) {
+static int handle_request( char* words[], int relay ) {
 
 	if(!client)
 		return 1;
@@ -662,7 +706,7 @@ int send_request( char* server,
 }
 
 /*
-int handle_time( char* words[] ) {
+static int handle_time( char* words[] ) {
 
 	if( ! words[1] ) {
 
@@ -688,7 +732,7 @@ int handle_time( char* words[] ) {
 
 		
 
-int router_query_servers( char* router_server ) {
+static int router_query_servers( const char* router_server ) {
 
 	if( ! router_server || strlen(router_server) == 0 ) 
 		return 0;
@@ -724,8 +768,8 @@ int router_query_servers( char* router_server ) {
 	
 	return 1;
 }
-		
-int print_help() {
+
+static int print_help( void ) {
 
 	printf(
 			"---------------------------------------------------------------------------------\n"
@@ -733,8 +777,10 @@ int print_help() {
 			"---------------------------------------------------------------------------------\n"
 			"help			- Display this message\n"
 			"!<command> [args] - Forks and runs the given command in the shell\n"
-			"time			- Prints the current time\n"					
+		/*
+			"time			- Prints the current time\n"
 			"time <timestamp>	- Formats seconds since epoch into readable format\n"	
+		*/
 			"set <variable> <value> - set a srfsh variable (e.g. set pretty_print true )\n"
 			"print <variable>		- Displays the value of a srfsh variable\n"
 			"---------------------------------------------------------------------------------\n"
@@ -778,8 +824,8 @@ int print_help() {
 }
 
 
-
-char* tabs(int count) {
+/*
+static char* tabs(int count) {
 	growing_buffer* buf = buffer_init(24);
 	int i;
 	for(i=0;i!=count;i++)
@@ -789,15 +835,17 @@ char* tabs(int count) {
 	buffer_free( buf );
 	return final;
 }
+*/
 
-int handle_math( char* words[] ) {
+
+static int handle_math( char* words[] ) {
 	if( words[1] )
 		return do_math( atoi(words[1]), 0 );
 	return 0;
 }
 
 
-int do_math( int count, int style ) {
+static int do_math( int count, int style ) {
 
 	osrf_app_session* session = osrf_app_client_session_init(  "opensrf.math" );
 	osrf_app_session_connect(session);

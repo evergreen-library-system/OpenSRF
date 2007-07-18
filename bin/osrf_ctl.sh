@@ -119,9 +119,9 @@ function stop_router {
 function start_perl {
 	do_action "start" $PID_OSRF_PERL "OpenSRF Perl";
 	perl -MOpenSRF::System="$OPT_CONFIG" -e 'OpenSRF::System->bootstrap()' & 
-	pid=$!;
+	sleep 3;
+	pid=$(ps ax | grep "OpenSRF System" | grep -v grep | grep -v "System-C"| awk '{print $1}')
 	echo $pid > $PID_OSRF_PERL;
-	sleep 5;
 	return 0;
 }
 

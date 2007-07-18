@@ -1,5 +1,5 @@
 
-package JSON::number;
+package OpenSRF::Utils::JSON::number;
 sub new {
 	my $class = shift;
 	my $x = shift || $class;
@@ -10,7 +10,7 @@ use overload ( '""' => \&toString );
 
 sub toString { defined($_[1]) ? ${$_[1]} : ${$_[0]} }
 
-package JSON::bool::true;
+package OpenSRF::Utils::JSON::bool::true;
 sub new { return bless {} => __PACKAGE__ }
 use overload ( '""' => \&toString );
 use overload ( 'bool' => sub { 1 } );
@@ -18,7 +18,7 @@ use overload ( '0+' => sub { 1 } );
 
 sub toString { 'true' }
 
-package JSON::bool::false;
+package OpenSRF::Utils::JSON::bool::false;
 sub new { return bless {} => __PACKAGE__ }
 use overload ( '""' => \&toString );
 use overload ( 'bool' => sub { 0 } );
@@ -26,7 +26,7 @@ use overload ( '0+' => sub { 0 } );
 
 sub toString { 'false' }
 
-package JSON;
+package OpenSRF::Utils::JSON;
 use Unicode::Normalize;
 use vars qw/%_class_map/;
 
@@ -80,7 +80,7 @@ sub _json_hint_to_class {
 	$type = 'hash' if ($type eq '}');
 	$type = 'array' if ($type eq ']');
 
-	JSON->register_class_hint(name => $hint, hint => $hint, type => $type);
+	OpenSRF::Utils::JSON->register_class_hint(name => $hint, hint => $hint, type => $type);
 
 	return $hint;
 }
@@ -112,12 +112,12 @@ sub JSON2perl {
 	s/:/ => /sog;
 
 	# Do numbers...
-	#s/\b(-?\d+\.?\d*)\b/ JSON::number::new($1) /sog;
+	#s/\b(-?\d+\.?\d*)\b/ OpenSRF::Utils::JSON::number::new($1) /sog;
 
 	# Change javascript stuff to perl...
 	s/null/ undef /sog;
-	s/true/ bless( {}, "JSON::bool::true") /sog;
-	s/false/ bless( {}, "JSON::bool::false") /sog;
+	s/true/ bless( {}, "OpenSRF::Utils::JSON::bool::true") /sog;
+	s/false/ bless( {}, "OpenSRF::Utils::JSON::bool::false") /sog;
 
 	my $ret;
 	return eval '$ret = '.$_;
@@ -638,7 +638,7 @@ sub old_JSON2perl {
 		} elsif ($element =~ /^\/\*/) {
 			next;
 		} elsif ($element =~ /^\d/) {
-			$output .= "do { JSON::number::new($element) }";
+			$output .= "do { OpenSRF::Utils::JSON::number::new($element) }";
 			next;
 		} elsif ($element eq '{' or $element eq '[') {
 			$casting_depth++;
@@ -654,10 +654,10 @@ sub old_JSON2perl {
 			$output .= ' => ';
 			next;
 		} elsif ($element eq 'true') {
-			$output .= 'bless( {}, "JSON::bool::true")';
+			$output .= 'bless( {}, "OpenSRF::Utils::JSON::bool::true")';
 			next;
 		} elsif ($element eq 'false') {
-			$output .= 'bless( {}, "JSON::bool::false")';
+			$output .= 'bless( {}, "OpenSRF::Utils::JSON::bool::false")';
 			next;
 		}
 		
@@ -674,7 +674,7 @@ sub perl2JSON {
 	if (!defined($perl)) {
 		$output = '' if $strict;
 		$output = 'null' unless $strict;
-	} elsif (ref($perl) and ref($perl) =~ /^JSON/) {
+	} elsif (ref($perl) and ref($perl) =~ /^OpenSRF::Utils::JSON/) {
 		$output .= $perl;
 	} elsif ( ref($perl) && exists($_class_map{classes}{ref($perl)}) ) {
 		$output .= '/*--S '.$_class_map{classes}{ref($perl)}{hint}.'--*/';
@@ -720,7 +720,7 @@ sub perl2JSON {
 	} elsif (ref($perl) and ("$perl" =~ /^([^=]+)=(\w+)/o)) {
 		my $type = $2;
 		my $name = $1;
-		JSON->register_class_hint(name => $name, hint => $name, type => lc($type));
+		OpenSRF::Utils::JSON->register_class_hint(name => $name, hint => $name, type => lc($type));
 		$output .= perl2JSON(undef,$perl, $strict);
 	} else {
 		$perl = NFC($perl);
@@ -750,7 +750,7 @@ sub perl2prettyJSON {
 	if (!defined($perl)) {
 		$output = "   "x$depth unless($nospace);
 		$output .= 'null';
-	} elsif (ref($perl) and ref($perl) =~ /^JSON/) {
+	} elsif (ref($perl) and ref($perl) =~ /^OpenSRF::Utils::JSON/) {
 		$output = "   "x$depth unless($nospace);
 		$output .= $perl;
 	} elsif ( ref($perl) && exists($_class_map{classes}{ref($perl)}) ) {

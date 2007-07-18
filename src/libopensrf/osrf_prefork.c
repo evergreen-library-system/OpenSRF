@@ -69,13 +69,13 @@ int osrf_prefork_run(char* appname) {
 	prefork_simple* forker = prefork_simple_init(
 		osrfSystemGetTransportClient(), maxr, minc, maxc);
 
-	forker->appname = strdup(appname);
-	forker->keepalive	= kalive;
-
 	if(forker == NULL) {
 		osrfLogError( OSRF_LOG_MARK, "osrf_prefork_run() failed to create prefork_simple object");
 		return -1;
 	}
+
+	forker->appname = strdup(appname);
+	forker->keepalive	= kalive;
 
 	prefork_launch_children(forker);
 

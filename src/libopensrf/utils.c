@@ -13,12 +13,13 @@ GNU General Public License for more details.
 */
 
 #include <opensrf/utils.h>
+#include <opensrf/log.h>
 #include <errno.h>
 
 inline void* safe_malloc( int size ) {
 	void* ptr = (void*) malloc( size );
 	if( ptr == NULL ) {
-		perror("safe_malloc(): Out of Memory" );
+		osrfLogError( OSRF_LOG_MARK, "Out of Memory" );
 		exit(99);
 	}
 	memset( ptr, 0, size );
@@ -189,7 +190,7 @@ int buffer_add(growing_buffer* gb, char* data) {
 		}
 	
 		if( gb->size > BUFFER_MAX_SIZE ) {
-			fprintf(stderr, "Buffer reached MAX_SIZE of %d", BUFFER_MAX_SIZE );
+			osrfLogError( OSRF_LOG_MARK, "Buffer reached MAX_SIZE of %d", BUFFER_MAX_SIZE );
 			buffer_free( gb );
 			return 0;
 		}
@@ -366,20 +367,34 @@ char* uescape( const char* string, int size, int full_escape ) {
 }
 
 
-// A function to turn a process into a daemon and set it's process name in ps/top
+// A function to turn a process into a daemon 
 int daemonize() {
-	int f = fork();
+	pid_t f = fork();
 
 	if (f == -1) {
-		perror("Failed to fork!");
+		osrfLogError( OSRF_LOG_MARK, "Failed to fork!" );
 		return -1;
 
 	} else if (f == 0) { // We're in the child now...
+		
+		// Change directories.  Otherwise whatever directory
+		// we're in couldn't be deleted until the program
+		// terminated -- possibly causing some inconvenience.
+		chdir( "/" );
+
+		/* create new session */
 		setsid();
+
+		// Now that we're no longer attached to a terminal,
+		// we don't want any traffic on the standard streams
+		freopen( "/dev/null", "r", stdin );
+		freopen( "/dev/null", "w", stdout );
+		freopen( "/dev/null", "w", stderr );
+		
 		return 0;
 
 	} else { // We're in the parent...
-		exit(0);
+		_exit(0);
 	}
 }
 
@@ -406,10 +421,7 @@ char* file_to_string(const char* filename) {
 
 	FILE* file = fopen(filename, "r");
 	if(!file) {
-		int l = strlen(filename) + 64;
-		char b[l];
-		snprintf(b,l,"Unable to open file [%s] in file_to_string()", filename);
-		perror(b);
+		osrfLogError( OSRF_LOG_MARK, "Unable to open file [%s]", filename );
 		return NULL;
 	}
 

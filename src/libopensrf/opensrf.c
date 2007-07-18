@@ -9,9 +9,6 @@ int main( int argc, char* argv[] ) {
 		return 1;
 	}
 
-	fprintf(stderr, "Loading OpenSRF host %s with bootstrap config %s "
-			"and config context %s\n", argv[1], argv[2], argv[3] );
-
 	/* these must be strdup'ed because init_proc_title / set_proc_title 
 		are evil and overwrite the argv memory */
 	char* host		= strdup( argv[1] );

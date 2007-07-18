@@ -1,18 +1,18 @@
 package OpenSRF::DomainObject::oilsMessage;
-use JSON;
+use OpenSRF::Utils::JSON;
 use OpenSRF::AppSession;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use OpenSRF::Utils::Logger qw/:level/;
 use warnings; use strict;
 use OpenSRF::EX qw/:try/;
 
-JSON->register_class_hint(hint => 'osrfMessage', name => 'OpenSRF::DomainObject::oilsMessage', type => 'hash');
+OpenSRF::Utils::JSON->register_class_hint(hint => 'osrfMessage', name => 'OpenSRF::DomainObject::oilsMessage', type => 'hash');
 
 sub toString {
 	my $self = shift;
 	my $pretty = shift;
-	return JSON->perl2prettyJSON($self) if ($pretty);
-	return JSON->perl2JSON($self);
+	return OpenSRF::Utils::JSON->perl2prettyJSON($self) if ($pretty);
+	return OpenSRF::Utils::JSON->perl2JSON($self);
 }
 
 sub new {

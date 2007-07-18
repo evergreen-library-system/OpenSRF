@@ -1,10 +1,9 @@
 package OpenSRF::AppSession;
-use OpenSRF::DOM;
-#use OpenSRF::DOM::Element::userAuth;
 use OpenSRF::DomainObject::oilsMessage;
 use OpenSRF::DomainObject::oilsMethod;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use OpenSRF::Transport::PeerHandle;
+use OpenSRF::Utils::JSON;
 use OpenSRF::Utils::Logger qw(:level);
 use OpenSRF::Utils::SettingsClient;
 use OpenSRF::Utils::Config;
@@ -531,7 +530,7 @@ sub send {
 		}
 
 	} 
-	my $json = JSON->perl2JSON(\@doc);
+	my $json = OpenSRF::Utils::JSON->perl2JSON(\@doc);
 	$logger->internal("AppSession sending doc: $json");
 
 	$self->{peer_handle}->send( 

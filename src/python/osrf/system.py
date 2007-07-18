@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 # -----------------------------------------------------------------------
 
-from osrf.conf import osrfConfig, osrfConfigValue
+from osrf.conf import osrfConfig, osrfConfigValue, osrfConfigValueNoEx
 from osrf.net import osrfNetwork, osrfSetNetworkHandle
 from osrf.stack import osrfPushStack
 from osrf.log import *
@@ -21,28 +21,31 @@ from osrf.set import osrfLoadSettings
 import sys
 
 
-def osrfConnect(configFile):
-	""" Connects to the opensrf network """
+def osrfConnect(configFile, configContext):
+    """ Connects to the opensrf network """
 
-	# parse the config file
-	configParser = osrfConfig(configFile)
-	configParser.parseConfig()
-	
-	# set up logging
-	osrfInitLog(osrfConfigValue('loglevel'), osrfConfigValue('syslog'))
+    # parse the config file
+    configParser = osrfConfig(configFile, configContext)
+    configParser.parseConfig()
+    
+    # set up logging
+    osrfInitLog(
+        osrfConfigValue('loglevel'), 
+        osrfConfigValueNoEx('syslog'),
+        osrfConfigValueNoEx('logfile'))
 
-	# connect to the opensrf network
-	network = osrfNetwork(
-		host=osrfConfigValue('domains.domain'),
-		port=osrfConfigValue('port'),
-		username=osrfConfigValue('username'), 
-		password=osrfConfigValue('passwd'))
-	network.setRecvCallback(osrfPushStack)
-	osrfSetNetworkHandle(network)
-	network.connect()
+    # connect to the opensrf network
+    network = osrfNetwork(
+        host=osrfConfigValue('domains.domain'),
+        port=osrfConfigValue('port'),
+        username=osrfConfigValue('username'), 
+        password=osrfConfigValue('passwd'))
+    network.setRecvCallback(osrfPushStack)
+    osrfSetNetworkHandle(network)
+    network.connect()
 
-	# load the domain-wide settings file
-	osrfLoadSettings(osrfConfigValue('domains.domain'))
+    # load the domain-wide settings file
+    osrfLoadSettings(osrfConfigValue('domains.domain'))
 
 
 

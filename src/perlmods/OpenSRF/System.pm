@@ -8,9 +8,8 @@ use OpenSRF::Transport;
 use OpenSRF::UnixServer;
 use OpenSRF::Utils;
 use OpenSRF::Utils::LogServer;
-use OpenSRF::DOM;
 use OpenSRF::EX qw/:try/;
-use POSIX ":sys_wait_h";
+use POSIX qw/setsid :sys_wait_h/;
 use OpenSRF::Utils::Config; 
 use OpenSRF::Utils::SettingsParser;
 use OpenSRF::Utils::SettingsClient;
@@ -111,7 +110,7 @@ sub load_bootstrap_config {
 
 	OpenSRF::Utils::Config->load( config_file => $bootstrap_config_file );
 
-	JSON->register_class_hint( name => "OpenSRF::Application", hint => "method", type => "hash" );
+	OpenSRF::Utils::JSON->register_class_hint( name => "OpenSRF::Application", hint => "method", type => "hash" );
 
 	OpenSRF::Transport->message_envelope(  "OpenSRF::Transport::SlimJabber::MessageWrapper" );
 	OpenSRF::Transport::PeerHandle->set_peer_client(  "OpenSRF::Transport::SlimJabber::PeerConnection" );
@@ -127,7 +126,13 @@ sub bootstrap {
 	my $bsconfig = OpenSRF::Utils::Config->current;
 
 	# Start a process group and make me the captain
-	setpgrp( 0, 0 ); 
+	exit if (OpenSRF::Utils::safe_fork());
+	chdir('/');
+	setsid(); 
+	close STDIN;
+	close STDOUT;
+	close STDERR;
+
 	$0 = "OpenSRF System";
 
 	# -----------------------------------------------

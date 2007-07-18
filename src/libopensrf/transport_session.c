@@ -332,7 +332,7 @@ void startElementHandler(
 	if( ! ses ) { return; }
 
 	
-	if( strcmp( name, "message" ) == 0 ) {
+	if( strcmp( (char*) name, "message" ) == 0 ) {
 		ses->state_machine->in_message = 1;
 		buffer_add( ses->from_buffer, get_xml_attr( atts, "from" ) );
 		buffer_add( ses->recipient_buffer, get_xml_attr( atts, "to" ) );
@@ -350,37 +350,37 @@ void startElementHandler(
 
 	if( ses->state_machine->in_message ) {
 
-		if( strcmp( name, "body" ) == 0 ) {
+		if( strcmp( (char*) name, "body" ) == 0 ) {
 			ses->state_machine->in_message_body = 1;
 			return;
 		}
 	
-		if( strcmp( name, "subject" ) == 0 ) {
+		if( strcmp( (char*) name, "subject" ) == 0 ) {
 			ses->state_machine->in_subject = 1;
 			return;
 		}
 	
-		if( strcmp( name, "thread" ) == 0 ) {
+		if( strcmp( (char*) name, "thread" ) == 0 ) {
 			ses->state_machine->in_thread = 1;
 			return;
 		}
 
 	}
 
-	if( strcmp( name, "presence" ) == 0 ) {
+	if( strcmp( (char*) name, "presence" ) == 0 ) {
 		ses->state_machine->in_presence = 1;
 		buffer_add( ses->from_buffer, get_xml_attr( atts, "from" ) );
 		buffer_add( ses->recipient_buffer, get_xml_attr( atts, "to" ) );
 		return;
 	}
 
-	if( strcmp( name, "status" ) == 0 ) {
+	if( strcmp( (char*) name, "status" ) == 0 ) {
 		ses->state_machine->in_status = 1;
 		return;
 	}
 
 
-	if( strcmp( name, "stream:error" ) == 0 ) {
+	if( strcmp( (char*) name, "stream:error" ) == 0 ) {
 		ses->state_machine->in_error = 1;
 		ses->state_machine->connected = 0;
 		osrfLogWarning(  OSRF_LOG_MARK, "Received <stream:error> message from Jabber server" );
@@ -389,21 +389,21 @@ void startElementHandler(
 
 
 	/* first server response from a connect attempt */
-	if( strcmp( name, "stream:stream" ) == 0 ) {
+	if( strcmp( (char*) name, "stream:stream" ) == 0 ) {
 		if( ses->state_machine->connecting == CONNECTING_1 ) {
 			ses->state_machine->connecting = CONNECTING_2;
 			buffer_add( ses->session_id, get_xml_attr(atts, "id") );
 		}
 	}
 
-	if( strcmp( name, "handshake" ) == 0 ) {
+	if( strcmp( (char*) name, "handshake" ) == 0 ) {
 		ses->state_machine->connected = 1;
 		ses->state_machine->connecting = 0;
 		return;
 	}
 
 
-	if( strcmp( name, "error" ) == 0 ) {
+	if( strcmp( (char*) name, "error" ) == 0 ) {
 		ses->state_machine->in_message_error = 1;
 		buffer_add( ses->message_error_type, get_xml_attr( atts, "type" ) );
 		ses->message_error_code = atoi( get_xml_attr( atts, "code" ) );
@@ -412,7 +412,7 @@ void startElementHandler(
 		return;
 	}
 
-	if( strcmp( name, "iq" ) == 0 ) {
+	if( strcmp( (char*) name, "iq" ) == 0 ) {
 		ses->state_machine->in_iq = 1;
 
 		if( strcmp( get_xml_attr(atts, "type"), "result") == 0 
@@ -433,7 +433,7 @@ char* get_xml_attr( const xmlChar** atts, char* attr_name ) {
 	int i;
 	if (atts != NULL) {
 		for(i = 0;(atts[i] != NULL);i++) {
-			if( strcmp( atts[i++], attr_name ) == 0 ) {
+			if( strcmp( (char*) atts[i++], attr_name ) == 0 ) {
 				if( atts[i] != NULL ) {
 					return (char*) atts[i];
 				}
@@ -451,7 +451,7 @@ void endElementHandler( void *session, const xmlChar *name) {
 	transport_session* ses = (transport_session*) session;
 	if( ! ses ) { return; }
 
-	if( strcmp( name, "message" ) == 0 ) {
+	if( strcmp( (char*) name, "message" ) == 0 ) {
 
 
 		/* pass off the message info the callback */
@@ -489,22 +489,22 @@ void endElementHandler( void *session, const xmlChar *name) {
 		return;
 	}
 	
-	if( strcmp( name, "body" ) == 0 ) {
+	if( strcmp( (char*) name, "body" ) == 0 ) {
 		ses->state_machine->in_message_body = 0;
 		return;
 	}
 
-	if( strcmp( name, "subject" ) == 0 ) {
+	if( strcmp( (char*) name, "subject" ) == 0 ) {
 		ses->state_machine->in_subject = 0;
 		return;
 	}
 
-	if( strcmp( name, "thread" ) == 0 ) {
+	if( strcmp( (char*) name, "thread" ) == 0 ) {
 		ses->state_machine->in_thread = 0;
 		return;
 	}
 	
-	if( strcmp( name, "iq" ) == 0 ) {
+	if( strcmp( (char*) name, "iq" ) == 0 ) {
 		ses->state_machine->in_iq = 0;
 		if( ses->message_error_code > 0 ) {
 			osrfLogWarning( OSRF_LOG_MARK,  "Error in IQ packet: code %d",  ses->message_error_code );
@@ -514,7 +514,7 @@ void endElementHandler( void *session, const xmlChar *name) {
 		return;
 	}
 
-	if( strcmp( name, "presence" ) == 0 ) {
+	if( strcmp( (char*) name, "presence" ) == 0 ) {
 		ses->state_machine->in_presence = 0;
 		/*
 		if( ses->presence_callback ) {
@@ -525,17 +525,17 @@ void endElementHandler( void *session, const xmlChar *name) {
 		return;
 	}
 
-	if( strcmp( name, "status" ) == 0 ) {
+	if( strcmp( (char*) name, "status" ) == 0 ) {
 		ses->state_machine->in_status = 0;
 		return;
 	}
 
-	if( strcmp( name, "error" ) == 0 ) {
+	if( strcmp( (char*) name, "error" ) == 0 ) {
 		ses->state_machine->in_message_error = 0;
 		return;
 	}
 
-	if( strcmp( name, "error:error" ) == 0 ) {
+	if( strcmp( (char*) name, "error:error" ) == 0 ) {
 		ses->state_machine->in_error = 0;
 		return;
 	}

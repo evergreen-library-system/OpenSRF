@@ -10,7 +10,7 @@ use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use OpenSRF::System;
 use OpenSRF::Utils::SettingsClient;
 use Time::HiRes qw(time);
-use JSON;
+use OpenSRF::Utils::JSON;
 use vars qw/@ISA $app/;
 use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);
 use Carp;
@@ -208,7 +208,7 @@ sub configure_hook {
 	my $imp = $client->config_value("apps", $app, "implementation");
 	OpenSRF::Application::server_class($app);
 	OpenSRF::Application->application_implementation( $imp );
-	JSON->register_class_hint( name => $imp, hint => $app, type => "hash" );
+	OpenSRF::Utils::JSON->register_class_hint( name => $imp, hint => $app, type => "hash" );
 	OpenSRF::Application->application_implementation->initialize()
 		if (OpenSRF::Application->application_implementation->can('initialize'));
 
