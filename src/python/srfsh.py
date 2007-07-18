@@ -129,7 +129,7 @@ def handle_request(parts):
 
 		otp = get_var('SRFSH_OUTPUT')
 		if otp == 'pretty':
-			print osrfDebugNetworkObject(resp.content())
+			print "\n" + osrfDebugNetworkObject(resp.content())
 		else:
 			print osrfFormatJSON(osrfObjectToJSON(resp.content()))
 
