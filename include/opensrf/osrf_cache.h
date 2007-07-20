@@ -14,8 +14,7 @@ GNU General Public License for more details.
 */
 
 
-#include <objson/object.h>
-#include <objson/json_parser.h>
+#include <opensrf/osrf_json.h>
 #include <memcache.h>
 #include <opensrf/log.h>
 

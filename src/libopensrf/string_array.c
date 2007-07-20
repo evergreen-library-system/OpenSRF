@@ -8,18 +8,11 @@ string_array* init_string_array(int size) {
 	if(size > STRING_ARRAY_MAX_SIZE)
 		osrfLogError( OSRF_LOG_MARK, "init_string_array size is too large");
 
-	/*
-	string_array* arr = 
-		(string_array*) safe_malloc(sizeof(string_array));
-		*/
 	string_array* arr;
 	OSRF_MALLOC( arr, sizeof(string_array));
-
-	//arr->array = (char**) safe_malloc(size * sizeof(char*));
-	OSRF_MALLOC(arr->array, size * sizeof(char*));
-
+    arr->list = osrfNewListSize(size);
+    osrfListSetDefaultFree(arr->list);
 	arr->size = 0;
-	arr->arr_size = size;
 	return arr;
 }
 
@@ -30,65 +23,39 @@ void osrfStringArrayAdd(osrfStringArray* arr, char* string) {
 
 void string_array_add(string_array* arr, char* str) {
 	if(arr == NULL || str == NULL ) return;
-	if( strlen(str) < 1 ) return;
-
-	arr->size++;
-
 	if( arr->size > STRING_ARRAY_MAX_SIZE ) 
 		osrfLogError( OSRF_LOG_MARK, "string_array_add size is too large");
-
-	/* if necessary, double capacity */
-	if(arr->size >= arr->arr_size) {
-		arr->arr_size *= 2;
-		//char** tmp = (char**) safe_malloc(arr->arr_size * sizeof(char*));
-		char** tmp;
-		OSRF_MALLOC( tmp, arr->arr_size * sizeof(char*));
-		int i;
-
-		/* copy the string pointers over */
-		for( i = 0; i!= arr->size; i++ ) 
-			tmp[i] = arr->array[i];
-
-		free(arr->array);
-		arr->array = tmp;
-	}
-
-	arr->array[arr->size - 1] = strdup(str);
+    osrfListPush(arr->list, strdup(str));
+    arr->size = arr->list->size;
 }
 
 char* osrfStringArrayGetString(osrfStringArray* arr, int index) {
-	return string_array_get_string(arr, index);
+    if(!arr) return NULL;
+    return OSRF_LIST_GET_INDEX(arr->list, index);
 }
 
 char* string_array_get_string(string_array* arr, int index) {
-	if(!arr || index < 0 || index >= arr->size ) return NULL;
-	return arr->array[index]; 
+    if(!arr) return NULL;
+    return OSRF_LIST_GET_INDEX(arr->list, index);
 }
 
 
 void osrfStringArrayFree(osrfStringArray* arr) {
-	string_array_destroy(arr);
+    OSRF_STRING_ARRAY_FREE(arr);
 }
 
 void string_array_destroy(string_array* arr) {
-	if(arr) {
-		int i = 0;
-		while( i < arr->size ) free(arr->array[i++]);
-		free(arr->array);
-		free(arr);
-	}
+    OSRF_STRING_ARRAY_FREE(arr);
 }
 
 
 int osrfStringArrayContains( osrfStringArray* arr, char* string ) {
 	if(!(arr && string)) return 0;
-	
 	int i;
-	for( i = 0; i != arr->size; i++ ) {
-		char* str = osrfStringArrayGetString(arr, i);
-		if(str) {
-			if(!strcmp(str, string)) return 1;
-		}
+	for( i = 0; i < arr->size; i++ ) {
+        char* str = OSRF_LIST_GET_INDEX(arr->list, i);
+		if(str && !strcmp(str, string)) 
+            return 1;
 	}
 
 	return 0;
@@ -97,19 +64,29 @@ int osrfStringArrayContains( osrfStringArray* arr, char* string ) {
 void osrfStringArrayRemove( osrfStringArray* arr, char* tstr) {
 	if(!(arr && tstr)) return;
 	int i;
-	for( i = 0; i != arr->size; i++ ) {
-		char* str = osrfStringArrayGetString(arr, i);
-		if(str) {
-			if(!strcmp(str, tstr)) {
-				free(arr->array[i]);
-				arr->array[i] = NULL;
-				break;
-			}
+    char* str;
+
+	for( i = 0; i < arr->size; i++ ) {
+        /* find and remove the string */
+        str = OSRF_LIST_GET_INDEX(arr->list, i);
+		if(str && !strcmp(str, tstr)) {
+            osrfListRemove(arr->list, i);
+			break;
 		}
 	}
-	for( ; i != arr->size; i++ ) 
-		arr->array[i] = arr->array[i+1];
 
+    /* disable automatic item freeing on delete and shift
+     * items up in the array to fill in the gap
+     */
+    arr->list->freeItem = NULL;
+	for( ; i < arr->size - 1; i++ ) 
+        osrfListSet(arr->list, OSRF_LIST_GET_INDEX(arr->list, i+1) , i);
+
+    /* remove the last item since it was shifted up */
+    osrfListRemove(arr->list, i);
+
+    /* re-enable automatic item freeing in delete */
+    osrfListSetDefaultFree(arr->list);
 	arr->size--;
 }
 
