@@ -47,7 +47,7 @@ static int parse_request( char* request );
 static int handle_router( char* words[] );
 
 /* utility method for print time data */
-/* static int handle_time( char* words[] ); */
+static int handle_time( char* words[] ); 
 
 /* handles app level requests */
 static int handle_request( char* words[], int relay );
@@ -265,10 +265,8 @@ static int parse_request( char* request ) {
 	if( !strcmp(words[0],"router") ) 
 		ret_val = handle_router( words );
 
-	/*
 	else if( !strcmp(words[0],"time") ) 
 		ret_val = handle_time( words );
-		*/
 
 	else if (!strcmp(words[0],"request"))
 		ret_val = handle_request( words, 0 );
@@ -683,30 +681,15 @@ int send_request( char* server,
 
 }
 
-/*
 static int handle_time( char* words[] ) {
-
-	if( ! words[1] ) {
-
-		char buf[36];
-		memset(buf,0,36);
-		get_timestamp(buf);
-		printf( "%s\n", buf );
-		return 1;
-	}
-
-	if( words[1] ) {
-		time_t epoch = (time_t)atoi( words[1] );
-		char* localtime = strdup( ctime( &epoch ) );
-		printf( "%s => %s", words[1], localtime );
-		free(localtime);
-		return 1;
-	}
-
-	return 0;
-
+	if(!words[1]) {
+		printf("%f\n", get_timestamp_millis());
+    } else {
+        time_t epoch = (time_t) atoi(words[1]);
+		printf("%s", ctime(&epoch));
+    }
+	return 1;
 }
-*/
 
 		
 
