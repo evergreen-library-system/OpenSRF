@@ -187,20 +187,6 @@ int main( int argc, char* argv[] ) {
 	return 0;
 }
 
-/*
-static void sig_child_handler( int s ) {
-	child_dead = 1;
-}
-*/
-
-/*
-void sig_int_handler( int s ) {
-	printf("\n");
-	caught_sigint = 1;
-	signal(SIGINT,sig_int_handler);
-}
-*/
-
 static int load_history( void ) {
 
 	char* home = getenv("HOME");
@@ -363,15 +349,13 @@ static int handle_login( char* words[]) {
 		int orgloci = (orgloc) ? atoi(orgloc) : 0;
 		if(!type) type = "opac";
 
-		char buf[256];
-		memset(buf,0,256);
+		char login_text[] = "request open-ils.auth open-ils.auth.authenticate.init \"%s\"";
+		size_t len = sizeof( login_text ) + strlen(username);
 
-		char buf2[256];
-		memset(buf2,0,256);
-
-		sprintf( buf, 
-				"request open-ils.auth open-ils.auth.authenticate.init \"%s\"", username );
-		parse_request(buf); 
+		char buf[len];
+		buf[0] = '\0';
+		sprintf( buf, login_text, username );
+		parse_request(buf);
 
 		char* hash;
 		if(last_result && last_result->_result_content) {
@@ -382,18 +366,12 @@ static int handle_login( char* words[]) {
 
 		char* pass_buf = md5sum(password);
 
-		char both_buf[256];
-		memset(both_buf,0,256);
+		size_t both_len = strlen( hash ) + strlen( pass_buf ) + 1;
+		char both_buf[both_len];
+		both_buf[0] = '\0';
 		sprintf(both_buf,"%s%s",hash, pass_buf);
 
 		char* mess_buf = md5sum(both_buf);
-
-		/*
-		sprintf( buf2, "request open-ils.auth open-ils.auth.authenticate.complete "
-				"{ \"username\" : \"%s\", \"password\" : \"%s\", "
-				"\"type\" : \"%s\", \"org\" : %d, \"workstation\": \"%s\"}", 
-				username, mess_buf, type, orgloci, workstation );
-				*/
 
 		growing_buffer* argbuf = buffer_init(64);
 		buffer_fadd(argbuf, 
