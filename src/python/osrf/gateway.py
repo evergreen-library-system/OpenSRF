@@ -5,13 +5,16 @@ from net_obj import *
 import urllib, urllib2, sys, re
 
 defaultHost = None
-#paramRegex = re.compile('\%27')
 
 class GatewayRequest:
     def __init__(self, service, method, params=[]):
         self.service = service
         self.method = method
         self.params = params
+        self.path = 'gateway'
+
+    def setPath(self, path):
+        self.path = path
 
     def send(self):
         params = self.buildPOSTParams()
@@ -45,8 +48,33 @@ class GatewayRequest:
     setDefaultHost = staticmethod(setDefaultHost)
 
     def buildURL(self):
-        return 'http://%s/gateway' % defaultHost
+        return 'http://%s/%s' % (defaultHost, self.path)
 
+class JSONGatewayRequest(GatewayRequest):
+    def __init__(self, service, method, *params):
+        GatewayRequest.__init__(self, service, method, list(params))
+
+    def getFormat(self):
+        return 'json'
+
+    def getInputFormat(self):
+        return self.getFormat()
+
+    def handleResponse(self, response):
+        s = response.read()
+        obj = osrfJSONToObject(s)
+        if obj['status'] != 200:
+            sys.stderr.write('JSON gateway returned status %d:\n%s\n' % (obj['status'], s))
+            return None
+
+        # the gateway wraps responses in an array to handle streaming data
+        # if there is only one item in the array, it (probably) wasn't a streaming request
+        p = obj['payload']
+        if len(p) > 1: return p
+        return p[0]
+
+    def encodeParam(self, param):
+        return osrfObjectToJSON(param)
 
 class XMLGatewayRequest(GatewayRequest):
 
