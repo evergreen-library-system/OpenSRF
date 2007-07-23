@@ -182,6 +182,7 @@ int main( int argc, char* argv[] ) {
 		write_history(history_file);
 
 	free(request);
+	free(login_session);
 
 	osrf_system_shutdown();
 	return 0;
@@ -394,12 +395,15 @@ static int handle_login( char* words[]) {
 					jsonObjectGetKey(jsonObjectGetKey(x,"payload"), "authtoken"));
 			authtime  = jsonObjectGetNumber(
 					jsonObjectGetKey(jsonObjectGetKey(x,"payload"), "authtime"));
-			if(authtoken) login_session = strdup(authtoken);
-			else login_session = NULL;
+			if(authtoken) {
+				free(login_session);
+				login_session = strdup(authtoken);
+			} else login_session = NULL;
 		}
 		else login_session = NULL;
 
-		printf("Login Session: %s.  Session timeout: %f\n", login_session, authtime );
+		printf("Login Session: %s.  Session timeout: %f\n",
+			   (login_session ? login_session : "(none)"), authtime );
 		
 		return 1;
 
@@ -463,8 +467,19 @@ static int handle_print( char* words[]) {
 			}
 		}
 
+		if(!strcmp(variable,"raw_print")) {
+			if(raw_print) {
+				printf("raw_print = true\n");
+				return 1;
+			} else {
+				printf("raw_print = false\n");
+				return 1;
+			}
+		}
+
 		if(!strcmp(variable,"login")) {
-			printf("login session = %s\n", login_session );
+			printf("login session = %s\n",
+				   login_session ? login_session : "(none)" );
 			return 1;
 		}
 
