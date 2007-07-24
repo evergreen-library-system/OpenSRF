@@ -713,9 +713,11 @@ static int router_query_servers( const char* router_server ) {
 	if( ! router_server || strlen(router_server) == 0 ) 
 		return 0;
 
-	char rbuf[256];
-	memset(rbuf,0,256);
-	sprintf(rbuf,"router@%s/router", router_server );
+	const static char router_text[] = "router@%s/router";
+	size_t len = sizeof( router_text ) + strlen( router_server );
+	char rbuf[len];
+	rbuf[0] = '\0';
+	sprintf(rbuf, router_text, router_server );
 		
 	transport_message* send = 
 		message_init( "servers", NULL, NULL, rbuf, NULL );
