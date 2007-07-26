@@ -2,6 +2,7 @@ from xml.dom import minidom
 from xml.sax import handler, make_parser, saxutils
 from json import *
 from net_obj import *
+from log import *
 import urllib, urllib2, sys, re
 
 defaultHost = None
@@ -91,7 +92,12 @@ class XMLGatewayRequest(GatewayRequest):
         handler = XMLGatewayParser()
         parser = make_parser()
         parser.setContentHandler(handler)
-        parser.parse(response)
+        try:
+            parser.parse(response)
+        except Exception, e:
+            osrfLogErr('Error parsing gateway XML: %s' % str(e))
+            return None
+
         return handler.getResult()
 
     def encodeParam(self, param):
