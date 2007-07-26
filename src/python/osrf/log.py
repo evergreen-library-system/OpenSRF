@@ -50,6 +50,8 @@ def __osrfLog(level, msg):
     try:
         import syslog
     except:
+        if level == OSRF_LOG_ERR:
+            sys.stderr.write('ERR ' + msg)
         return
         
     global loglevel
