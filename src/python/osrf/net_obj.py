@@ -70,21 +70,24 @@ def __makeSetField(cls):
     setattr(cls, 'setField', set)
         
 
-def __osrfNetworkObjectInit(self, data={}):
+def __osrfNetworkObjectInit(self, data=None):
     ''' __init__ method for osrNetworkObjects.
         If this is an array, we pull data out of the data array
         (if there is any) and translate that into a hash internally
         '''
     self.__data = data
-    if isinstance(data, list) and len(data) > 0:
-        reg = self.getRegistry()
-        if reg.wireProtocol == 'array':
-            self.__data = {}
-            for i in range(len(reg.keys)):
-                try:
-                    self.__data[reg.keys[i]] = data[i]
-                except:
-                    self.__data[reg.keys[i]] = None
+    if not data: self.__data = {}
+
+    if isinstance(data, list):
+        self.__data = {}
+        if len(data) > 0:
+            reg = self.getRegistry()
+            if reg.wireProtocol == 'array':
+                for i in range(len(reg.keys)):
+                    try:
+                        self.__data[reg.keys[i]] = data[i]
+                    except:
+                        self.__data[reg.keys[i]] = None
 
 
 def osrfNetworkRegisterHint(hint, keys, type='hash'):
