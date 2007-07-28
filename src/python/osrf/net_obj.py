@@ -2,20 +2,11 @@ from osrf.const import OSRF_JSON_PAYLOAD_KEY, OSRF_JSON_CLASS_KEY
 from xml.sax import saxutils
 
 
-class osrfNetworkObject(object):
-    ''' Base class for all network serializable objects '''
-    pass
+# -----------------------------------------------------------
+# Define the global network-class registry
+# -----------------------------------------------------------
 
-def osrfNewObjectFromHint(hint):
-    try:
-        obj = None
-        exec('obj = osrfNetworkObject.%s()' % hint)
-        return obj
-    except AttributeError:
-        return osrfNetworkObject.__unknown()
-
-
-''' Global object registry '''
+# Global object registry 
 objectRegistry = {}
 
 class osrfNetworkRegistry(object):
@@ -37,57 +28,77 @@ class osrfNetworkRegistry(object):
     getRegistry = staticmethod(getRegistry)
 
 
-def __makeNetworkAccessor(cls, key):
-    '''  Creates and accessor/mutator method for the given class.  
+# -----------------------------------------------------------
+# Define the base class for all network-serializable objects
+# -----------------------------------------------------------
 
+class osrfNetworkObject(object):
+    ''' Base class for all network serializable objects '''
+
+    # link to our registry object for this registered class
+    registry = None
+
+    def __init__(self, data=None):
+        ''' If this is an array, we pull data out of the data array
+            (if there is any) and translate that into a hash internally '''
+
+        self._data = data
+        if not data: self._data = {}
+        if isinstance(data, list):
+            self.importArrayData(list)
+
+    def importArrayData(self, data):
+        ''' If an array-based object is created with an array
+            of data, cycle through and load the data '''
+
+        self._data = {}
+        if len(data) == 0: return
+
+        reg = self.getRegistry()
+        if reg.wireProtocol == 'array':
+            for i in range(len(reg.keys)):
+                if len(data) > i: break
+                self.setField(reg.keys[i], data[i])
+
+    def getData(self):
+        ''' Returns the full dataset for this object as a dict '''
+        return self._data
+
+    def setField(self, field, value):
+        self._data[field] = value
+
+    def getField(self, field):
+        return self._data.get(field)
+
+    def getRegistry(cls):
+        ''' Returns the registry object for this registered class '''
+        return cls.registry
+    getRegistry = classmethod(getRegistry)
+
+
+def osrfNewObjectFromHint(hint):
+    ''' Given a hint, this will create a new object of that 
+        type and return it.  If this hint is not registered,
+        an object of type osrfNetworkObject.__unknown is returned'''
+    try:
+        obj = None
+        exec('obj = osrfNetworkObject.%s()' % hint)
+        return obj
+    except AttributeError:
+        return osrfNetworkObject.__unknown()
+
+
+
+
+def __makeNetworkAccessor(cls, key):
+    ''' Creates and accessor/mutator method for the given class.  
         'key' is the name the method will have and represents
-        the field on the object whose data we are accessing
-        ''' 
+        the field on the object whose data we are accessing ''' 
     def accessor(self, *args):
         if len(args) != 0:
-            self.__data[key] = args[0]
-        return self.__data.get(key)
+            self.setField(key, args[0])
+        return self.getField(key)
     setattr(cls, key, accessor)
-
-
-
-def __makeGetRegistry(cls, registry):
-    ''' Wraps the registry for this class inside an accessor method '''
-    def get(self):
-        return registry
-    setattr(cls, 'getRegistry', get)
-
-def __makeGetData(cls):
-    ''' Wraps the stored data in an accessor method '''
-    def get(self):
-        return self.__data
-    setattr(cls, 'getData', get)
-
-def __makeSetField(cls):
-    ''' Creates a generic mutator for fields by fieldname '''
-    def set(self, field, value):
-        self.__data[field] = value
-    setattr(cls, 'setField', set)
-        
-
-def __osrfNetworkObjectInit(self, data=None):
-    ''' __init__ method for osrNetworkObjects.
-        If this is an array, we pull data out of the data array
-        (if there is any) and translate that into a hash internally
-        '''
-    self.__data = data
-    if not data: self.__data = {}
-
-    if isinstance(data, list):
-        self.__data = {}
-        if len(data) > 0:
-            reg = self.getRegistry()
-            if reg.wireProtocol == 'array':
-                for i in range(len(reg.keys)):
-                    try:
-                        self.__data[reg.keys[i]] = data[i]
-                    except:
-                        self.__data[reg.keys[i]] = None
 
 
 def osrfNetworkRegisterHint(hint, keys, type='hash'):
@@ -114,16 +125,10 @@ def osrfNetworkRegisterHint(hint, keys, type='hash'):
     for k in keys:
         __makeNetworkAccessor(cls, k)
 
-    # assign our custom init function
-    setattr(cls, '__init__', __osrfNetworkObjectInit)
-    __makeGetRegistry(cls, registry)
-    __makeGetData(cls)
-    __makeSetField(cls)
-
-
     # attach our new class to the osrfNetworkObject 
     # class so others can access it
     setattr(osrfNetworkObject, hint , cls)
+    cls.registry = registry
 
 
 
