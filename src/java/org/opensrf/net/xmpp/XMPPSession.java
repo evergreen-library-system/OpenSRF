@@ -113,29 +113,33 @@ public class XMPPSession {
         thread.setDaemon(true);
         thread.start();
 
-        /* send the initial jabber message */
-        sendConnect();
-        reader.waitCoreEvent(10000);
+        synchronized(reader) {
+            /* send the initial jabber message */
+            sendConnect();
+            reader.waitCoreEvent(10000);
+        }
         if( reader.getXMPPStreamState() != XMPPReader.XMPPStreamState.CONNECT_RECV ) 
             throw new XMPPException("unable to connect to jabber server");
 
-        /* send the basic auth message */
-        sendBasicAuth(); /* XXX add support for other auth mechanisms */
-        reader.waitCoreEvent(10000);
-        if(!connected())
+        synchronized(reader) {
+            /* send the basic auth message */
+            sendBasicAuth(); 
+            reader.waitCoreEvent(10000);
+        }
+        if(!connected()) 
             throw new XMPPException("Authentication failed");
     }
 
     /** Sends the initial jabber message */
     private void sendConnect() {
-        writer.printf(JABBER_CONNECT, host);
         reader.setXMPPStreamState(XMPPReader.XMPPStreamState.CONNECT_SENT);
+        writer.printf(JABBER_CONNECT, host);
     }
 
     /** Send the basic auth message */
     private void sendBasicAuth() {
-        writer.printf(JABBER_BASIC_AUTH, username, password, resource);
         reader.setXMPPStreamState(XMPPReader.XMPPStreamState.AUTH_SENT);
+        writer.printf(JABBER_BASIC_AUTH, username, password, resource);
     }
 
 
