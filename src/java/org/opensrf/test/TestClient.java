@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.io.PrintStream;
 
-
 public class TestClient {
 
     public static void main(String args[]) throws Exception {
@@ -72,6 +71,8 @@ public class TestClient {
         
         /** How long did the request take? */
         out.println("Request round trip took: " + (new Date().getTime() - start) + " ms.");
+
+        Sys.shutdown();
     }
 }
 
