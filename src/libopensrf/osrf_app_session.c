@@ -4,7 +4,6 @@
 /* the global app_session cache */
 osrfHash* osrfAppSessionCache = NULL;
 
-
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
 // Request API
@@ -111,6 +110,11 @@ osrf_message* _osrf_app_request_recv( osrf_app_request* req, int timeout ) {
 			osrf_message* ret_msg = req->result;
 			osrf_message* tmp_msg = ret_msg->next;
 			req->result = tmp_msg;
+			if (ret_msg->sender_locale) {
+				if (req->session->session_locale)
+					free(req->session->session_locale);
+				req->session->session_locale = strdup(ret_msg->sender_locale);
+			}
 			return ret_msg;
 		}
 
@@ -125,6 +129,11 @@ osrf_message* _osrf_app_request_recv( osrf_app_request* req, int timeout ) {
 			osrf_message* ret_msg = req->result;
 			osrf_message* tmp_msg = ret_msg->next;
 			req->result = tmp_msg;
+			if (ret_msg->sender_locale) {
+				if (req->session->session_locale)
+					free(req->session->session_locale);
+				req->session->session_locale = strdup(ret_msg->sender_locale);
+			}
 			return ret_msg;
 		}
 		if( req->complete )
@@ -159,6 +168,18 @@ int _osrf_app_request_resend( osrf_app_request* req ) {
 // --------------------------------------------------------------------------
 // Session API
 // --------------------------------------------------------------------------
+
+/** returns a session from the global session hash */
+char* osrf_app_session_set_locale( osrf_app_session* session, const char* locale ) {
+	if (!session || !locale)
+		return NULL;
+
+	if(session->session_locale)
+		free(session->session_locale);
+
+	session->session_locale = strdup( locale );
+	return session->session_locale;
+}
 
 /** returns a session from the global session hash */
 osrf_app_session* osrf_app_session_find_session( char* session_id ) {
@@ -200,7 +221,10 @@ osrf_app_session* osrf_app_client_session_init( char* remote_service ) {
 	char* domain = osrfStringArrayGetString(arr, 0);
 	char* router_name = osrfConfigGetValue(NULL, "/router_name");
 	
-	int len = snprintf( target_buf, 512, "%s@%s/%s",  router_name, domain, remote_service );
+	int len = snprintf( target_buf, 512, "%s@%s/%s",
+			router_name ? router_name : "(null)",
+			domain ? domain : "(null)",
+			remote_service ? remote_service : "(null)" );
 	osrfStringArrayFree(arr);
 	//free(domain);
 	free(router_name);
@@ -216,6 +240,7 @@ osrf_app_session* osrf_app_client_session_init( char* remote_service ) {
 	session->remote_id = strdup(target_buf);
 	session->orig_remote_id = strdup(session->remote_id);
 	session->remote_service = strdup(remote_service);
+	session->session_locale = NULL;
 
 	#ifdef ASSUME_STATELESS
 	session->stateless = 1;
@@ -296,6 +321,9 @@ void _osrf_app_session_free( osrf_app_session* session ){
 	if( session->userDataFree && session->userData ) 
 		session->userDataFree(session->userData);
 	
+	if(session->session_locale)
+		free(session->session_locale);
+
 	free(session->remote_id);
 	free(session->orig_remote_id);
 	free(session->session_id);
@@ -308,19 +336,42 @@ int osrfAppSessionMakeRequest(
 		osrf_app_session* session, jsonObject* params, 
 		char* method_name, int protocol, string_array* param_strings ) {
 
-	return osrf_app_session_make_req( session, params, 
-			method_name, protocol, param_strings );
+	return osrf_app_session_make_locale_req( session, params, 
+			method_name, protocol, param_strings, NULL );
+}
+
+int osrfAppSessionMakeLocaleRequest(
+		osrf_app_session* session, jsonObject* params, 
+		char* method_name, int protocol, string_array* param_strings, char* locale ) {
+
+	return osrf_app_session_make_locale_req( session, params, 
+			method_name, protocol, param_strings, locale );
 }
 
 int osrf_app_session_make_req( 
 		osrf_app_session* session, jsonObject* params, 
-		char* method_name, int protocol, string_array* param_strings ) {
+		char* method_name, int protocol, string_array* param_strings) {
+
+	return osrf_app_session_make_locale_req(session, params,
+			method_name, protocol, param_strings, NULL);
+}
+
+int osrf_app_session_make_locale_req( 
+		osrf_app_session* session, jsonObject* params, 
+		char* method_name, int protocol, string_array* param_strings, char* locale ) {
 	if(session == NULL) return -1;
 
-   osrfLogMkXid();
+	osrfLogMkXid();
 
 	osrf_message* req_msg = osrf_message_init( REQUEST, ++(session->thread_trace), protocol );
 	osrf_message_set_method(req_msg, method_name);
+
+	if (locale) {
+		osrf_message_set_locale(req_msg, locale);
+	} else if (session->session_locale) {
+		osrf_message_set_locale(req_msg, session->session_locale);
+	}
+
 	if(params) {
 		osrf_message_set_params(req_msg, params);
 
