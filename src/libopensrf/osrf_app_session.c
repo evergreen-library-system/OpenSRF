@@ -204,6 +204,11 @@ osrf_app_session* osrfAppSessionClientInit( char* remote_service ) {
 
 osrf_app_session* osrf_app_client_session_init( char* remote_service ) {
 
+	if (!remote_service) {
+		osrfLogWarning( OSRF_LOG_MARK, "No remote service specified in osrf_app_client_session_init");
+		return NULL;
+	}
+
 	osrf_app_session* session = safe_malloc(sizeof(osrf_app_session));	
 
 	session->transport_handle = osrf_system_get_transport_client();
@@ -213,14 +218,28 @@ osrf_app_session* osrf_app_client_session_init( char* remote_service ) {
 		return NULL;
 	}
 
-	char target_buf[512];
-	target_buf[ 0 ] = '\0';
-
 	osrfStringArray* arr = osrfNewStringArray(8);
 	osrfConfigGetValueList(NULL, arr, "/domains/domain");
 	char* domain = osrfStringArrayGetString(arr, 0);
+
+	if (!domain) {
+		osrfLogWarning( OSRF_LOG_MARK, "No domains specified in the OpenSRF config file");
+		free( session );
+		osrfStringArrayFree(arr);
+		return NULL;
+	}
+
 	char* router_name = osrfConfigGetValue(NULL, "/router_name");
-	
+	if (!router_name) {
+		osrfLogWarning( OSRF_LOG_MARK, "No router name specified in the OpenSRF config file");
+		free( session );
+		osrfStringArrayFree(arr);
+		return NULL;
+	}
+
+	char target_buf[512];
+	target_buf[ 0 ] = '\0';
+
 	int len = snprintf( target_buf, 512, "%s@%s/%s",
 			router_name ? router_name : "(null)",
 			domain ? domain : "(null)",

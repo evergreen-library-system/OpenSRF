@@ -1,6 +1,4 @@
 #include <opensrf/osrf_system.h>
-//#include <opensrf/osrf_hash.h>
-//#include <opensrf/osrf_list.h>
 
 int main( int argc, char* argv[] ) {
 

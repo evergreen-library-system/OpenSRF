@@ -12,7 +12,7 @@ int osrfAppRegisterApplication( char* appName, char* soFile ) {
 
 	osrfApplication* app = safe_malloc(sizeof(osrfApplication));
 	app->handle = dlopen (soFile, RTLD_NOW);
-   app->onExit = NULL;
+	app->onExit = NULL;
 
 	if(!app->handle) {
 		osrfLogWarning( OSRF_LOG_MARK, "Failed to dlopen library file %s: %s", soFile, dlerror() );
@@ -51,28 +51,27 @@ int osrfAppRegisterApplication( char* appName, char* soFile ) {
 
 	osrfLogSetAppname(appName);
 
-   osrfAppSetOnExit(app, appName);
+	osrfAppSetOnExit(app, appName);
 
 	return 0;
 }
 
 
 void osrfAppSetOnExit(osrfApplication* app, char* appName) {
-   if(!(app && appName)) return;
+	if(!(app && appName)) return;
 
 	/* see if we can run the initialize method */
-   char* error;
+	char* error;
 	void (*onExit) (void);
 	*(void **) (&onExit) = dlsym(app->handle, "osrfAppChildExit");
 
 	if( (error = dlerror()) != NULL ) {
-      osrfLogDebug(OSRF_LOG_MARK, "No exit handler defined for %s", appName);
-      return;
-   }
+		osrfLogDebug(OSRF_LOG_MARK, "No exit handler defined for %s", appName);
+		return;
+	}
 
-   osrfLogInfo(OSRF_LOG_MARK, "registering exit handler for %s", appName);
-   app->onExit = (*onExit);
-   //if( (ret = (*onExit)()) ) {
+	osrfLogInfo(OSRF_LOG_MARK, "registering exit handler for %s", appName);
+	app->onExit = (*onExit);
 }
 
 
@@ -102,14 +101,14 @@ int osrfAppRunChildInit(char* appname) {
 
 
 void osrfAppRunExitCode() { 
-   osrfHashIterator* itr = osrfNewHashIterator(__osrfAppHash);
-   osrfApplication* app;
-   while( (app = osrfHashIteratorNext(itr)) ) {
-      if( app->onExit ) {
-         osrfLogInfo(OSRF_LOG_MARK, "Running onExit handler for app %s", itr->current);
-         app->onExit();
-      }
-   }
+	osrfHashIterator* itr = osrfNewHashIterator(__osrfAppHash);
+	osrfApplication* app;
+	while( (app = osrfHashIteratorNext(itr)) ) {
+		if( app->onExit ) {
+			osrfLogInfo(OSRF_LOG_MARK, "Running onExit handler for app %s", itr->current);
+			app->onExit();
+		}
+	}
 }
 
 

@@ -75,10 +75,31 @@ struct osrf_message_struct {
 
 	char* full_param_string;
 
+	/* magical LOCALE hint */
+	char* sender_locale;
+
+	/* timezone offset from GMT of sender, in seconds */
+	int sender_tz_offset;
+
 };
 typedef struct osrf_message_struct osrf_message;
 typedef struct osrf_message_struct osrfMessage;
 
+/* Set the locale hint for this message.
+   default_locale is used if not set.
+   Returns NULL if msg or locale is not set, char* to msg->sender_locale on success.
+*/
+char* osrf_message_set_locale( osrf_message* msg, const char* locale );
+
+/* Set the default locale hint to be used for future outgoing messages.
+   Returns NULL if locale is NULL, const char* to default_locale otherwise.
+*/
+const char* osrf_message_set_default_locale( const char* locale );
+
+/* Get the current locale hint -- either the default or most recently received locale.
+   Returns const char* to current_locale.
+*/
+const char* osrf_message_get_current_locale(void);
 
 osrf_message* osrf_message_init( enum M_TYPE type, int thread_trace, int protocol );
 //void osrf_message_set_request_info( osrf_message*, char* param_name, json* params );

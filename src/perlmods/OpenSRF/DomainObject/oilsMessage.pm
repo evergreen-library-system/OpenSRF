@@ -86,6 +86,24 @@ sub api_level {
 	return $self->{api_level};
 }
 
+=head2 OpenSRF::DomainObject::oilsMessage->sender_locale( [$locale] );
+
+=over 4
+
+Sets or gets the current message locale hint.  Useful for telling the
+server how you see the world.
+
+=back
+
+=cut
+
+sub sender_locale {
+	my $self = shift;
+	my $val = shift;
+	$self->{sender_locale} = $val if (defined $val);
+	return $self->{sender_locale};
+}
+
 =head2 OpenSRF::DomainObject::oilsMessage->threadTrace( [$new_threadTrace] );
 
 =over 4

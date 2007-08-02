@@ -1,5 +1,8 @@
 #include <opensrf/osrf_message.h>
 
+static char default_locale[17] = "en-US\0\0\0\0\0\0\0\0\0\0\0\0";
+static char* current_locale = default_locale;
+
 osrf_message* osrf_message_init( enum M_TYPE type, int thread_trace, int protocol ) {
 
 	osrf_message* msg			= (osrf_message*) safe_malloc(sizeof(osrf_message));
@@ -10,10 +13,29 @@ osrf_message* osrf_message_init( enum M_TYPE type, int thread_trace, int protoco
 	msg->is_exception			= 0;
 	msg->_params				= NULL;
 	msg->_result_content		= NULL;
+	msg->sender_locale		= NULL;
 
 	return msg;
 }
 
+
+const char* osrf_message_get_last_locale() {
+	return current_locale;
+}
+
+char* osrf_message_set_locale( osrf_message* msg, const char* locale ) {
+	if( msg == NULL || locale == NULL ) return NULL;
+	return msg->sender_locale = strdup( locale );
+}
+
+const char* osrf_message_set_default_locale( const char* locale ) {
+	if( locale == NULL ) return NULL;
+	if( strlen(locale) > 16 ) return NULL;
+
+	memcpy( default_locale, locale, strlen(locale) );
+	default_locale[strlen(locale)] = '\0';
+	return (const char*) default_locale;
+}
 
 void osrf_message_set_method( osrf_message* msg, char* method_name ) {
 	if( msg == NULL || method_name == NULL ) return;
@@ -101,6 +123,9 @@ void osrf_message_free( osrf_message* msg ) {
 	if( msg->method_name != NULL )
 		free(msg->method_name);
 
+	if( msg->sender_locale != NULL )
+		free(msg->sender_locale);
+
 	if( msg->_params != NULL )
 		jsonObjectFree(msg->_params);
 
@@ -155,6 +180,14 @@ jsonObject* osrfMessageToJSON( osrfMessage* msg ) {
 
 	INT_TO_STRING(msg->thread_trace);
 	jsonObjectSetKey(json, "threadTrace", jsonNewObject(INTSTR));
+
+	if (msg->sender_locale != NULL) {
+		jsonObjectSetKey(json, "locale", jsonNewObject(msg->sender_locale));
+	} else if (current_locale != NULL) {
+		jsonObjectSetKey(json, "locale", jsonNewObject(current_locale));
+	} else {
+		jsonObjectSetKey(json, "locale", jsonNewObject(default_locale));
+	}
 
 	switch(msg->m_type) {
 		
@@ -249,14 +282,14 @@ int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
 					new_msg->thread_trace = atoi(tt);
 					free(tt);
 				}
-				/*
-				if(tmp->type == JSON_NUMBER)
-					new_msg->thread_trace = (int) jsonObjectGetNumber(tmp);
-				if(tmp->type == JSON_STRING)
-					new_msg->thread_trace = atoi(jsonObjectGetString(tmp));
-					*/
 			}
 
+			/* use the sender's locale, or the global default */
+			tmp = jsonObjectGetKey(message, "locale");
+			if(tmp)
+				new_msg->sender_locale = jsonObjectToSimpleString(tmp);
+
+			current_locale = new_msg->sender_locale;
 
 			tmp = jsonObjectGetKey(message, "protocol");
 
@@ -266,13 +299,6 @@ int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
 					new_msg->protocol = atoi(proto);
 					free(proto);
 				}
-
-				/*
-				if(tmp->type == JSON_NUMBER)
-					new_msg->protocol = (int) jsonObjectGetNumber(tmp);
-				if(tmp->type == JSON_STRING)
-					new_msg->protocol = atoi(jsonObjectGetString(tmp));
-					*/
 			}
 
 			tmp = jsonObjectGetKey(message, "payload");

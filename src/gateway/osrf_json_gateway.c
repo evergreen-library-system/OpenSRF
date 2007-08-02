@@ -8,10 +8,12 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
+#include <strings.h>
 
 
 #define MODULE_NAME "osrf_json_gateway_module"
 #define GATEWAY_CONFIG "OSRFGatewayConfig"
+#define DEFAULT_LOCALE "OSRFDefaultLocale"
 #define CONFIG_CONTEXT "gateway"
 #define JSON_PROTOCOL "OSRFGatewayLegacyJSON"
 #define GATEWAY_USE_LEGACY_JSON 1
@@ -31,10 +33,16 @@ typedef struct {
 
 module AP_MODULE_DECLARE_DATA osrf_json_gateway_module;
 
+char* osrf_json_default_locale = "en-US";
 char* osrf_json_gateway_config_file = NULL;
 int bootstrapped = 0;
 int numserved = 0;
 osrfStringArray* allowedServices = NULL;
+
+static const char* osrf_json_gateway_set_default_locale(cmd_parms *parms, void *config, const char *arg) {
+	osrf_json_default_locale = (char*) arg;
+	return NULL;
+}
 
 static const char* osrf_json_gateway_set_config(cmd_parms *parms, void *config, const char *arg) {
 	osrf_json_gateway_config  *cfg;
@@ -54,6 +62,8 @@ static const char* osrf_json_gateway_set_json_proto(cmd_parms *parms, void *conf
 static const command_rec osrf_json_gateway_cmds[] = {
 	AP_INIT_TAKE1( GATEWAY_CONFIG, osrf_json_gateway_set_config, 
 			NULL, RSRC_CONF, "osrf json gateway config file"),
+	AP_INIT_TAKE1( DEFAULT_LOCALE, osrf_json_gateway_set_default_locale, 
+			NULL, RSRC_CONF, "osrf json gateway default locale"),
 	AP_INIT_TAKE1( JSON_PROTOCOL, osrf_json_gateway_set_json_proto,
 			NULL, ACCESS_CONF, "osrf json gateway config file"),
 	{NULL}
@@ -137,6 +147,8 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 
 	osrfLogSetAppname("osrf_json_gw");
 
+	char* osrf_locale	= NULL;
+	char* param_locale	= NULL;	/* locale for this call */
 	char* service		= NULL;	/* service to connect to */
 	char* method		= NULL;	/* method to perform */
 	char* format		= NULL;	/* method to perform */
@@ -151,6 +163,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	osrfLogDebug(OSRF_LOG_MARK, "osrf gateway: parsing URL params");
 	string_array* mparams	= NULL;
 	string_array* params		= apacheParseParms(r); /* free me */
+	param_locale		= apacheGetFirstParamValue( params, "locale" );
 	service		= apacheGetFirstParamValue( params, "service" );
 	method		= apacheGetFirstParamValue( params, "method" ); 
 	format		= apacheGetFirstParamValue( params, "format" ); 
@@ -184,6 +197,38 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 
 	int ret = OK;
 
+	/* ----------------------------------------------------------------- */
+	/* Grab the requested locale using the Accept-Language header*/
+
+
+	if ( !param_locale ) {
+		if ( apr_table_get(r->headers_in, "X-OpenSRF-Language") ) {
+			param_locale = strdup( apr_table_get(r->headers_in, "X-OpenSRF-Language") );
+		} else if ( apr_table_get(r->headers_in, "Accept-Language") ) {
+			param_locale = strdup( apr_table_get(r->headers_in, "Accept-Language") );
+		}
+	}
+
+
+	if (param_locale) {
+		growing_buffer* osrf_locale_buf = buffer_init(16);	
+		if (index(param_locale, ',')) {
+			int ind = index(param_locale, ',') - param_locale;
+			int i;
+			for ( i = 0; i < ind - 1 && i < 128; i++ )
+				buffer_add_char( osrf_locale_buf, param_locale[i] );
+		} else {
+			buffer_add( osrf_locale_buf, param_locale );
+		}
+
+		free(param_locale);
+		osrf_locale = buffer_release( osrf_locale_buf );
+	} else {
+		osrf_locale = strdup( osrf_json_default_locale );
+	}
+	/* ----------------------------------------------------------------- */
+
+
 	if(!(service && method) || 
 		!osrfStringArrayContains(allowedServices, service)) {
 
@@ -205,6 +250,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		*/
 
 		osrfAppSession* session = osrf_app_client_session_init(service);
+		osrf_app_session_set_locale(session, osrf_locale);
 
 		double starttime = get_timestamp_millis();
 		int req_id = -1;
@@ -294,7 +340,6 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 				if (isXML) {
 					output = jsonObjectToXML( res );
 				} else {
-					//output = jsonObjectToJSON( res );
                     output = jsonToStringFunc( res );
 					if( morethan1 ) ap_rputs(",", r); /* comma between JSON array items */
 				}
@@ -342,7 +387,6 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 				snprintf(bb, l,  "%s : %s", statusname, statustext);
 				jsonObject* tmp = jsonNewObject(bb);
                 char* j = jsonToStringFunc(tmp);
-				//char* j = jsonObjectToJSON(tmp);
 				snprintf( buf, l, ",\"debug\": %s", j);
 				free(j);
 				jsonObjectFree(tmp);
@@ -374,6 +418,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	}
 
 	osrfLogInfo(OSRF_LOG_MARK, "Completed processing service=%s, method=%s", service, method);
+	free(osrf_locale);
 	string_array_destroy(params);
 	string_array_destroy(mparams);
 
