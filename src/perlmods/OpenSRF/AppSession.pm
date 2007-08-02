@@ -750,13 +750,7 @@ sub recv {
 	$logger->debug( "Number of matched responses: " . @list, DEBUG );
 	$self->queue_wait(0); # check for statuses
 	
-	if (!wantarray) {
-		$self->session_locale( $list[0]->sender_locale );
-		return $list[0];
-	} else {
-		$self->session_locale( $list[-1]->sender_locale );
-	}
-
+	return $list[0] if (!wantarray);
 	return @list;
 }
 
