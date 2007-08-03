@@ -126,10 +126,10 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	char* (*jsonToStringFunc) (const jsonObject*) = legacy_jsonObjectToJSON;
 
 	if(dir_conf->legacyJSON) {
-	    ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r, "Using legacy JSON");
+		ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r, "Using legacy JSON");
 
-    } else {
-	    ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r, "Not using legacy JSON");
+	} else {
+		ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r, "Not using legacy JSON");
 		parseJSONFunc = jsonParseString;
 		jsonToStringFunc = jsonObjectToJSON;
 	}
@@ -152,38 +152,37 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	char* service		= NULL;	/* service to connect to */
 	char* method		= NULL;	/* method to perform */
 	char* format		= NULL;	/* method to perform */
-	char* a_l			= NULL;	/* request api level */
-    char* input_format  = NULL; /* POST data format, defaults to 'format' */
-	int   isXML			= 0;
-	int   api_level	= 1;
+	char* a_l		= NULL;	/* request api level */
+	char* input_format	= NULL; /* POST data format, defaults to 'format' */
+	int   isXML		= 0;
+	int   api_level		= 1;
 
 	r->allowed |= (AP_METHOD_BIT << M_GET);
 	r->allowed |= (AP_METHOD_BIT << M_POST);
 
 	osrfLogDebug(OSRF_LOG_MARK, "osrf gateway: parsing URL params");
 	string_array* mparams	= NULL;
-	string_array* params		= apacheParseParms(r); /* free me */
+	string_array* params	= apacheParseParms(r); /* free me */
 	param_locale		= apacheGetFirstParamValue( params, "locale" );
-	service		= apacheGetFirstParamValue( params, "service" );
-	method		= apacheGetFirstParamValue( params, "method" ); 
-	format		= apacheGetFirstParamValue( params, "format" ); 
-	input_format = apacheGetFirstParamValue( params, "input_format" ); 
+	service			= apacheGetFirstParamValue( params, "service" );
+	method			= apacheGetFirstParamValue( params, "method" ); 
+	format			= apacheGetFirstParamValue( params, "format" ); 
+	input_format		= apacheGetFirstParamValue( params, "input_format" ); 
 	a_l			= apacheGetFirstParamValue( params, "api_level" ); 
-	mparams		= apacheGetParamValues( params, "param" ); /* free me */
+	mparams			= apacheGetParamValues( params, "param" ); /* free me */
 
-    if(format == NULL)
-        format = "json";
-    if(input_format == NULL)
-        input_format = format;
+	if(format == NULL)
+		format = "json";
+	if(input_format == NULL)
+		input_format = format;
 
-   /* set the user defined timeout value */
-   int timeout = 60;
-   char* tout = apacheGetFirstParamValue( params, "timeout" ); /* request timeout in seconds */
-   if( tout ) {
-      timeout = atoi(tout);
-      osrfLogDebug(OSRF_LOG_MARK, "Client supplied timeout of %d", timeout);
-   }
-
+	/* set the user defined timeout value */
+	int timeout = 60;
+	char* tout = apacheGetFirstParamValue( params, "timeout" ); /* request timeout in seconds */
+	if( tout ) {
+		timeout = atoi(tout);
+		osrfLogDebug(OSRF_LOG_MARK, "Client supplied timeout of %d", timeout);
+	}
 
 	if (a_l)
 		api_level = atoi(a_l);
@@ -255,33 +254,34 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		double starttime = get_timestamp_millis();
 		int req_id = -1;
 
-        if(!strcasecmp(input_format, "json")) {
-            jsonObject * arr = jsonNewObject(NULL);
-            char* str;
-            int i = 0;
-            while( (str = osrfStringArrayGetString(mparams, i++)) ) 
-                jsonObjectPush(arr, parseJSONFunc(str));
+		if(!strcasecmp(input_format, "json")) {
+			jsonObject * arr = jsonNewObject(NULL);
 
-		    req_id = osrf_app_session_make_req( session, arr, method, api_level, NULL );
+			char* str;
+			int i = 0;
 
-        } else {
+			while( (str = osrfStringArrayGetString(mparams, i++)) ) 
+				jsonObjectPush(arr, parseJSONFunc(str));
 
-            /**
-             * If we receive XML method params, convert each param to a JSON object
-             * and pass the array of JSON object params to the method */
-            if(!strcasecmp(input_format, "xml")) {
-                jsonObject* jsonParams = jsonNewObject(NULL);
+			req_id = osrf_app_session_make_req( session, arr, method, api_level, NULL );
+		} else {
 
-                char* str;
-                int i = 0;
-                while( (str = osrfStringArrayGetString(mparams, i++)) ) {
-                    jsonObjectPush(jsonParams, jsonXMLToJSONObject(str));
-                }
+			/**
+			* If we receive XML method params, convert each param to a JSON object
+			* and pass the array of JSON object params to the method */
+			if(!strcasecmp(input_format, "xml")) {
+				jsonObject* jsonParams = jsonNewObject(NULL);
 
-		        req_id = osrf_app_session_make_req( session, jsonParams, method, api_level, NULL );
-                jsonObjectFree(jsonParams);
-            }
-        }
+				char* str;
+				int i = 0;
+				while( (str = osrfStringArrayGetString(mparams, i++)) ) {
+					jsonObjectPush(jsonParams, jsonXMLToJSONObject(str));
+				}
+
+				req_id = osrf_app_session_make_req( session, jsonParams, method, api_level, NULL );
+				jsonObjectFree(jsonParams);
+			}
+		}
 
 
 		if( req_id == -1 ) {
@@ -302,7 +302,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		char* str; int i = 0;
 		while( (str = osrfStringArrayGetString(mparams, i++)) ) {
 			if( i == 1 ) {
-            OSRF_BUFFER_ADD(act, " ");
+				OSRF_BUFFER_ADD(act, " ");
 				OSRF_BUFFER_ADD(act, str);
 			} else {
 				OSRF_BUFFER_ADD(act, ", ");
@@ -340,7 +340,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 				if (isXML) {
 					output = jsonObjectToXML( res );
 				} else {
-                    output = jsonToStringFunc( res );
+					output = jsonToStringFunc( res );
 					if( morethan1 ) ap_rputs(",", r); /* comma between JSON array items */
 				}
 				ap_rputs(output, r);
@@ -386,7 +386,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 				bzero(bb, l);
 				snprintf(bb, l,  "%s : %s", statusname, statustext);
 				jsonObject* tmp = jsonNewObject(bb);
-                char* j = jsonToStringFunc(tmp);
+				char* j = jsonToStringFunc(tmp);
 				snprintf( buf, l, ",\"debug\": %s", j);
 				free(j);
 				jsonObjectFree(tmp);
@@ -423,7 +423,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	string_array_destroy(mparams);
 
 	osrfLogDebug(OSRF_LOG_MARK, "Gateway served %d requests", ++numserved);
-   osrfLogClearXid();
+	osrfLogClearXid();
 
 	return ret;
 }
