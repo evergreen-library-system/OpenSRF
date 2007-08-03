@@ -285,11 +285,12 @@ int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
 			}
 
 			/* use the sender's locale, or the global default */
+			if (current_locale)
+				free( current_locale );
+
 			tmp = jsonObjectGetKey(message, "locale");
 			if(tmp) {
 				new_msg->sender_locale = jsonObjectToSimpleString(tmp);
-				if (current_locale)
-					free( current_locale );
 				current_locale = strdup( new_msg->sender_locale );
 			} else {
 				current_locale = NULL;

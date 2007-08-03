@@ -215,7 +215,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		if (index(param_locale, ',')) {
 			int ind = index(param_locale, ',') - param_locale;
 			int i;
-			for ( i = 0; i < ind - 1 && i < 128; i++ )
+			for ( i = 0; i < ind && i < 128; i++ )
 				buffer_add_char( osrf_locale_buf, param_locale[i] );
 		} else {
 			buffer_add( osrf_locale_buf, param_locale );
