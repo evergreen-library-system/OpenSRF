@@ -1,7 +1,7 @@
 #include <opensrf/osrf_message.h>
 
 static char default_locale[17] = "en-US\0\0\0\0\0\0\0\0\0\0\0\0";
-static char* current_locale = default_locale;
+static char* current_locale = NULL;
 
 osrf_message* osrf_message_init( enum M_TYPE type, int thread_trace, int protocol ) {
 
@@ -286,10 +286,14 @@ int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
 
 			/* use the sender's locale, or the global default */
 			tmp = jsonObjectGetKey(message, "locale");
-			if(tmp)
+			if(tmp) {
 				new_msg->sender_locale = jsonObjectToSimpleString(tmp);
-
-			current_locale = new_msg->sender_locale;
+				if (current_locale)
+					free( current_locale );
+				current_locale = strdup( new_msg->sender_locale );
+			} else {
+				current_locale = NULL;
+			}
 
 			tmp = jsonObjectGetKey(message, "protocol");
 
