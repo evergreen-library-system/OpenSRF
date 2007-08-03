@@ -40,7 +40,8 @@ int numserved = 0;
 osrfStringArray* allowedServices = NULL;
 
 static const char* osrf_json_gateway_set_default_locale(cmd_parms *parms, void *config, const char *arg) {
-	osrf_json_default_locale = (char*) arg;
+	if (arg)
+		osrf_json_default_locale = (char*) arg;
 	return NULL;
 }
 
@@ -418,7 +419,6 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	}
 
 	osrfLogInfo(OSRF_LOG_MARK, "Completed processing service=%s, method=%s", service, method);
-	free(osrf_locale);
 	string_array_destroy(params);
 	string_array_destroy(mparams);
 
