@@ -208,7 +208,7 @@ char *shahash(const char *str)
 	INT64 length=0;
 
 	int strsz;
-	static char final[40];
+	static char final[41];
 	int *hashval;
 
 	hashval = (int *)malloc(20);
