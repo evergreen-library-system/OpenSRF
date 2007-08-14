@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.Date;
 
+import com.ctc.wstx.stax.WstxInputFactory;
 
 /**
  * Slim XMPP Stream reader.  This reader only understands enough XMPP
@@ -133,8 +134,8 @@ public class XMPPReader implements Runnable {
     public synchronized long waitCoreEvent(long timeout) {
 
         if(msgQueue.peek() != null || timeout == 0) return 0;
-
         long start = new Date().getTime();
+
         try{
             if(timeout < 0) wait();
             else wait(timeout);
@@ -158,7 +159,8 @@ public class XMPPReader implements Runnable {
 
         try {
 
-            XMLInputFactory factory = XMLInputFactory.newInstance();
+            //XMLInputFactory factory = XMLInputFactory.newInstance();
+            XMLInputFactory factory = new com.ctc.wstx.stax.WstxInputFactory();
 
             /** disable as many unused features as possible to speed up the parsing */
             factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, Boolean.FALSE);
