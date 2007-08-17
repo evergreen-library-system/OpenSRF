@@ -73,11 +73,16 @@ public class Request {
 
         Result result = null;
 
+        if((result = resultQueue.poll()) != null)
+            return result;
+
         if(millis < 0 && !complete) {
             /** wait potentially forever for a result to arrive */
-            session.waitForMessage(millis);
-            if((result = resultQueue.poll()) != null)
-                return result;
+            while(!complete) {
+                session.waitForMessage(millis);
+                if((result = resultQueue.poll()) != null)
+                    return result;
+            }
 
         } else {
 

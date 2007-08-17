@@ -51,7 +51,7 @@ public class ClientSession extends Session {
         /** create a random thread */
         long time = new Date().getTime();
         Random rand = new Random(time);
-        setThread(rand.nextInt()+""+rand.nextInt()+""+time);
+        setThread(rand.nextInt()+""+rand.nextInt()+""+time+Thread.currentThread().getId());
 
         nextId = 0;
         requests = new HashMap<Integer, Request>();
@@ -115,6 +115,7 @@ public class ClientSession extends Session {
         Request req = findRequest(msg.getId());
         if(req == null) {
             /** LOG that we've received a result to a non-existant request */
+            System.err.println(msg.getId() +" has no corresponding request");
             return;
         }
         OSRFObject payload = (OSRFObject) msg.get("payload");
