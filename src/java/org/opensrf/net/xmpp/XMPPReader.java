@@ -119,7 +119,7 @@ public class XMPPReader implements Runnable {
      * Each reader should have exactly one dependent session thread. 
      */
     private synchronized void notifyCoreEvent() {
-        notify();
+        notifyAll();
     }
 
 
@@ -137,8 +137,10 @@ public class XMPPReader implements Runnable {
         long start = new Date().getTime();
 
         try{
-            if(timeout < 0) wait();
-            else wait(timeout);
+            if(timeout < 0) 
+                wait();
+            else 
+                wait(timeout);
         } catch(InterruptedException ie) {}
 
         return new Date().getTime() - start;
