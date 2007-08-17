@@ -35,7 +35,8 @@ opensrf:	deps
 jar:	opensrf
 	rm -f opensrf.jar
 	echo "creating opensrf.jar"
-	jar cf opensrf.jar -C .lib org/opensrf/
+	jar cf opensrf.jar -C .lib org
+	rm -r $(JAVA_LIBDIR)
 
 # only prints the first 30 lines of errors
 slim:
@@ -49,7 +50,7 @@ check:
 	@echo -e "\nTruncating at 30 lines"
 
 run:
-	$(JAVA) -cp $(JAVA_LIBS) $(JAVA_EXE) $(JAVA_ARGS)
+	$(JAVA) -cp $(JAVA_LIBS):opensrf.jar $(JAVA_EXE) $(JAVA_ARGS)
 
 deps:
 	mkdir -p ext
