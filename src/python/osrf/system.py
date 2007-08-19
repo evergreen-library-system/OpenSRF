@@ -14,7 +14,7 @@
 # -----------------------------------------------------------------------
 
 from osrf.conf import osrfConfig, osrfConfigValue, osrfConfigValueNoEx
-from osrf.net import osrfNetwork, osrfSetNetworkHandle
+from osrf.net import osrfNetwork, osrfSetNetworkHandle, osrfGetNetworkHandle
 from osrf.stack import osrfPushStack
 from osrf.log import *
 from osrf.set import osrfLoadSettings
