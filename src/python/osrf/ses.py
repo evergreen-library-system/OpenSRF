@@ -19,7 +19,7 @@ from osrf.conf import osrfConfigValue
 from osrf.net import osrfNetworkMessage, osrfGetNetworkHandle
 from osrf.log import *
 from osrf.const import *
-import random, sys, os, time
+import random, sys, os, time, threading
 
 
 # -----------------------------------------------------------------------
@@ -35,10 +35,16 @@ osrfNetworkRegisterHint('osrfMethodException', ['status', 'statusCode'], 'hash')
 class osrfSession(object):
     """Abstract session superclass."""
 
+    ''' Global cache of in-service sessions '''
+    sessionCache = {}
+
     def __init__(self):
         # by default, we're connected to no one
         self.state = OSRF_APP_SESSION_DISCONNECTED
 
+    def findSession(threadTrace):
+        return osrfSession.sessionCache.get(threadTrace)
+    findSession = staticmethod(findSession)
 
     def wait(self, timeout=120):
         """Wait up to <timeout> seconds for data to arrive on the network"""
@@ -58,7 +64,7 @@ class osrfSession(object):
 
     def cleanup(self):
         """Removes the session from the global session cache."""
-        del osrfClientSession.sessionCache[self.thread]
+        del osrfSession.sessionCache[self.thread]
 
 class osrfClientSession(osrfSession):
     """Client session object.  Use this to make server requests."""
@@ -78,7 +84,8 @@ class osrfClientSession(osrfSession):
         self.origRemoteId = self.remoteId
 
         # generate a random message thread
-        self.thread = "%s%s%s" % (os.getpid(), str(random.randint(100,100000)), str(time.time()))
+        self.thread = "%s%s%s%s" % (os.getpid(), 
+            str(random.randint(100,100000)), str(time.time()),threading.currentThread().getName().lower())
 
         # how many requests this session has taken part in
         self.nextId = 0 
@@ -87,7 +94,7 @@ class osrfClientSession(osrfSession):
         self.requests = {}
 
         # cache this session in the global session cache
-        osrfClientSession.sessionCache[self.thread] = self
+        osrfSession.sessionCache[self.thread] = self
 
     def resetRequestTimeout(self, rid):
         req = self.findRequest(rid)
@@ -189,13 +196,6 @@ class osrfClientSession(osrfSession):
             return None
 
 
-
-osrfSession.sessionCache = {}
-def osrfFindSession(thread):
-    """Finds a session in the global cache."""
-    try:
-        return osrfClientSession.sessionCache[thread]
-    except: return None
 
 class osrfRequest(object):
     """Represents a single OpenSRF request.

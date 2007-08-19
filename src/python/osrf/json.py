@@ -92,7 +92,7 @@ def osrfFormatJSON(json):
 
     for c in json:
 
-        if eatws: # simpljson adds a pesky after array and object items
+        if eatws: # simpljson adds a pesky space after array and object items
             if c == ' ': 
                 continue
 

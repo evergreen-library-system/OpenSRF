@@ -68,6 +68,9 @@ def __osrfLog(level, msg):
     if level == OSRF_LOG_WARN: lvl = 'WARN'; slvl=syslog.LOG_WARNING
     if level == OSRF_LOG_ERR:  lvl = 'ERR '; slvl=syslog.LOG_ERR
 
+
+    # XXX when file logging is implemented, wrap io in a semaphore for thread safety
+
     file = frgx.sub('',tb[0])
     msg = '[%s:%d:%s:%s] %s' % (lvl, os.getpid(), file, tb[1], msg)
     syslog.syslog(slvl, msg)
