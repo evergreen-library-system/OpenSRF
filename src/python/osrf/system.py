@@ -24,6 +24,10 @@ import sys
 def osrfConnect(configFile, configContext):
     """ Connects to the opensrf network """
 
+    if osrfGetNetworkHandle():
+        ''' This thread already has a handle '''
+        return
+
     # parse the config file
     configParser = osrfConfig(configFile, configContext)
     configParser.parseConfig()

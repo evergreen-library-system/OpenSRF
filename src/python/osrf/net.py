@@ -70,7 +70,7 @@ class osrfNetwork(JabberClient):
         self.isconnected = False
 
         # Create a unique jabber resource
-        resource = 'python_'
+        resource = 'python'
         if args.has_key('resource'):
             resource = args['resource']
         resource += '_' + gethostname()+':'+ str(os.getpid()) + '_'+ threading.currentThread().getName().lower()
