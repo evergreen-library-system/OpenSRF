@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 # -----------------------------------------------------------------------
 
-import traceback, sys, os, re
+import traceback, sys, os, re, threading
 from osrf.const import *
 
 loglevel = 4
@@ -72,7 +72,7 @@ def __osrfLog(level, msg):
     # XXX when file logging is implemented, wrap io in a semaphore for thread safety
 
     file = frgx.sub('',tb[0])
-    msg = '[%s:%d:%s:%s] %s' % (lvl, os.getpid(), file, tb[1], msg)
+    msg = '[%s:%d:%s:%s:%s] %s' % (lvl, os.getpid(), file, tb[1], threading.currentThread().getName(), msg)
     syslog.syslog(slvl, msg)
 
     if level == OSRF_LOG_ERR:
