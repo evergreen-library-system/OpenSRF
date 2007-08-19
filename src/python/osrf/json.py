@@ -13,7 +13,7 @@ class osrfJSONNetworkEncoder(simplejson.JSONEncoder):
             if reg.wireProtocol == 'array':
                 d = []
                 for k in reg.keys:
-                    d.append(data[k]) 
+                    d.append(data.get(k)) 
                 data = d
 
             return { 
