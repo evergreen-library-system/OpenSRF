@@ -4,6 +4,7 @@
 #include <signal.h>
 
 static int _osrfSystemInitCache( void );
+static void report_child_status( pid_t pid, int status );
 
 static transport_client* osrfGlobalTransportClient = NULL;
 
@@ -140,7 +141,8 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 
 	while(1) {
 		errno = 0;
-		pid_t pid = wait(NULL);
+		int status;
+		pid_t pid = wait( &status );
 		if(-1 == pid) {
 			if(errno == ECHILD)
 				osrfLogError(OSRF_LOG_MARK, "We have no more live services... exiting");
@@ -148,12 +150,37 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 				osrfLogError(OSRF_LOG_MARK, "Exiting top-level system loop with error: %s", strerror(errno));
 			break;
 		} else {
-			osrfLogError(OSRF_LOG_MARK, "We lost a top-level service process with PID %ld", pid);
+			report_child_status( pid, status );
 		}
 	}
 
 	return 0;
 }
+
+
+static void report_child_status( pid_t pid, int status ) {
+	
+	if( WIFEXITED( status ) )
+	{
+		int rc = WEXITSTATUS( status );  // return code of child process
+		if( rc )
+			osrfLogError( OSRF_LOG_MARK, "Child process %ld exited with return code %d",
+						  (long) pid, rc );
+		else
+			osrfLogError( OSRF_LOG_MARK, "Child process %ld exited normally", (long) pid );
+	}
+	else if( WIFSIGNALED( status ) )
+	{
+		osrfLogError( OSRF_LOG_MARK, "Child process %ld killed by signal %d",
+					  (long) pid, WTERMSIG( status) );
+	}
+	else if( WIFSTOPPED( status ) )
+	{
+		osrfLogError( OSRF_LOG_MARK, "Child process %ld stopped by signal %d",
+					  (long) pid, (int) WSTOPSIG( status ) );
+	}
+}
+
 
 int osrf_system_bootstrap_client_resc( char* config_file, char* contextnode, char* resource ) {
 
