@@ -336,7 +336,7 @@ jsonObject* jsonParseFile( char* filename );
 
 /* ------------------------------------------------------------------------- */
 /**
- * The following methods provide a ficility for serializing and
+ * The following methods provide a facility for serializing and
  * deserializing "classed" JSON objects.  To give a JSON object a 
  * class, simply call jsonObjectSetClass().  
  * Then, calling jsonObjectEncodeClass() will convert the JSON
@@ -362,7 +362,7 @@ jsonObject* jsonObjectDecodeClass( jsonObject* obj );
  * class-wrapped (serialized) object
  * Caller must free the returned object 
  */ 
-jsonObject* jsonObjectEncodeClass( jsonObject* obj );
+jsonObject* jsonObjectEncodeClass( const jsonObject* obj );
 
 /* ------------------------------------------------------------------------- */
 

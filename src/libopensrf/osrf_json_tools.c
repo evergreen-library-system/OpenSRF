@@ -15,7 +15,7 @@ GNU General Public License for more details.
 
 #include <opensrf/osrf_json.h>
 
-jsonObject* _jsonObjectEncodeClass( jsonObject* obj, int ignoreClass );
+jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClass );
 
 
 jsonObject* jsonObjectFindPath( const jsonObject* obj, char* path, ...);
@@ -126,11 +126,11 @@ jsonObject* jsonObjectDecodeClass( jsonObject* obj ) {
 	return newObj;
 }
 
-jsonObject* jsonObjectEncodeClass( jsonObject* obj ) {
+jsonObject* jsonObjectEncodeClass( const jsonObject* obj ) {
 	return _jsonObjectEncodeClass( obj, 0 );
 }
 
-jsonObject* _jsonObjectEncodeClass( jsonObject* obj, int ignoreClass ) {
+jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClass ) {
 
 	//if(!obj) return NULL;
 	if(!obj) return jsonNewObject(NULL);
