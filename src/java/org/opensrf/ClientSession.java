@@ -146,5 +146,19 @@ public class ClientSession extends Session {
         if(req == null) return;
         req.setComplete();
     }
+
+    public static Object atomicRequest(String service, String method, Object[] params) throws MethodException {
+        try {
+            ClientSession session = new ClientSession(service);
+            Request osrfRequest = session.request(method, params);
+            Result result = osrfRequest.recv(600000);
+            if(result.getStatusCode() != 200) 
+                throw new MethodException( 
+                    "Request "+service+":"+method+":"+" failed with status code " + result.getStatusCode());
+            return result.getContent();
+        } catch(Exception e) {
+            throw new MethodException(e);
+        }
+    }
 }
 

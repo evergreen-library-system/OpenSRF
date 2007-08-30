@@ -7,5 +7,8 @@ public class MethodException extends Exception {
     public MethodException(String info) {
         super(info);
     }
+    public MethodException(Throwable cause) {
+        super(cause);
+    }
 }
 
