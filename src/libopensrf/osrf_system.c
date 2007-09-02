@@ -5,8 +5,26 @@
 
 static int _osrfSystemInitCache( void );
 static void report_child_status( pid_t pid, int status );
+struct child_node;
+typedef struct child_node ChildNode;
+
+struct child_node
+{
+	ChildNode* pNext;
+	ChildNode* pPrev;
+	pid_t pid;
+	char* app;
+	char* libfile;
+};
+
+static ChildNode* child_list;
 
 static transport_client* osrfGlobalTransportClient = NULL;
+
+static void add_child( pid_t pid, const char* app, const char* libfile );
+static void delete_child( ChildNode* node );
+static void delete_all_children( void );
+static ChildNode* seek_child( pid_t pid );
 
 transport_client* osrfSystemGetTransportClient( void ) {
 	return osrfGlobalTransportClient;
@@ -123,8 +141,10 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 				pid_t pid;
 		
 				if( (pid = fork()) ) { 
-					// storage pid in local table for re-launching dead children...
-					osrfLogInfo( OSRF_LOG_MARK, "Launched application child %ld", (long) pid);
+					// store pid in local list for re-launching dead children...
+					add_child( pid, appname, libfile );
+					osrfLogInfo( OSRF_LOG_MARK, "Running application child %s: process id %ld",
+								 appname, (long) pid );
 	
 				} else {
 		
@@ -154,32 +174,125 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 		}
 	}
 
+	delete_all_children();
 	return 0;
 }
 
 
-static void report_child_status( pid_t pid, int status ) {
+static void report_child_status( pid_t pid, int status )
+{
+	const char* app;
+	const char* libfile;
+	ChildNode* node = seek_child( pid );
+
+	if( node ) {
+		app     = node->app     ? node->app     : "[unknown]";
+		libfile = node->libfile ? node->libfile : "[none]";
+	} else
+		app = libfile = NULL;
 	
 	if( WIFEXITED( status ) )
 	{
 		int rc = WEXITSTATUS( status );  // return code of child process
 		if( rc )
-			osrfLogError( OSRF_LOG_MARK, "Child process %ld exited with return code %d",
-						  (long) pid, rc );
+			osrfLogError( OSRF_LOG_MARK, "Child process %ld (app %s) exited with return code %d",
+						  (long) pid, app, rc );
 		else
-			osrfLogError( OSRF_LOG_MARK, "Child process %ld exited normally", (long) pid );
+			osrfLogError( OSRF_LOG_MARK, "Child process %ld (app %s) exited normally",
+						  (long) pid, app );
 	}
 	else if( WIFSIGNALED( status ) )
 	{
-		osrfLogError( OSRF_LOG_MARK, "Child process %ld killed by signal %d",
-					  (long) pid, WTERMSIG( status) );
+		osrfLogError( OSRF_LOG_MARK, "Child process %ld (app %s) killed by signal %d",
+					  (long) pid, app, WTERMSIG( status) );
 	}
 	else if( WIFSTOPPED( status ) )
 	{
-		osrfLogError( OSRF_LOG_MARK, "Child process %ld stopped by signal %d",
-					  (long) pid, (int) WSTOPSIG( status ) );
+		osrfLogError( OSRF_LOG_MARK, "Child process %ld (app %s) stopped by signal %d",
+					  (long) pid, app, (int) WSTOPSIG( status ) );
 	}
+
+	delete_child( node );
 }
+
+/*----------- Routines to manage list of children --*/
+
+static void add_child( pid_t pid, const char* app, const char* libfile )
+{
+	/* Construct new child node */
+	
+	ChildNode* node = safe_malloc( sizeof( ChildNode ) );
+
+	node->pid = pid;
+
+	if( app )
+		node->app = strdup( app );
+	else
+		node->app = NULL;
+
+	if( libfile )
+		node->libfile = strdup( libfile );
+	else
+		node->libfile = NULL;
+	
+	/* Add new child node to the head of the list */
+
+	node->pNext = child_list;
+	node->pPrev = NULL;
+
+	if( child_list )
+		child_list->pPrev = node;
+
+	child_list = node;
+}
+
+static void delete_child( ChildNode* node ) {
+
+	/* Sanity check */
+
+	if( ! node )
+		return;
+	
+	/* Detach the node from the list */
+
+	if( node->pPrev )
+		node->pPrev->pNext = node->pNext;
+	else
+		child_list = node->pNext;
+
+	if( node->pNext )
+		node->pNext->pPrev = node->pPrev;
+
+	/* Deallocate the node and its payload */
+
+	free( node->app );
+	free( node->libfile );
+	free( node );
+}
+
+static void delete_all_children( void ) {
+
+	while( child_list )
+		delete_child( child_list );
+}
+
+static ChildNode* seek_child( pid_t pid ) {
+
+	/* Return a pointer to the child node for the */
+	/* specified process ID, or NULL if not found */
+	
+	ChildNode* node = child_list;
+	while( node ) {
+		if( node->pid == pid )
+			break;
+		else
+			node = node->pNext;
+	}
+
+	return node;
+}
+
+/*----------- End of routines to manage list of children --*/
 
 
 int osrf_system_bootstrap_client_resc( char* config_file, char* contextnode, char* resource ) {
