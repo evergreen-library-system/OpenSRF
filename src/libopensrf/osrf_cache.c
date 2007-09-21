@@ -96,4 +96,9 @@ int osrfCacheSetExpire( time_t seconds, char* key, ... ) {
 	return -1;
 }
 
+void osrfCacheCleanup() {
+    if(__osrfCache) 
+        mc_free(__osrfCache);
+}
+
 

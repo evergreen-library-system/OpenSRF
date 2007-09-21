@@ -454,6 +454,7 @@ int osrf_system_disconnect_client( void ) {
 
 int osrf_system_shutdown( void ) {
 	osrfConfigCleanup();
+    osrfCacheCleanup();
 	osrf_system_disconnect_client();
 	osrf_settings_free_host_config(NULL);
 	osrfAppSessionCleanup();

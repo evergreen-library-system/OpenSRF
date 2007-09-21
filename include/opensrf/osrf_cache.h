@@ -80,3 +80,7 @@ int osrfCacheSetExpire( time_t seconds, char* key, ... );
 
 
 
+/**
+ * Clean up the global cache handles, etc.
+ */
+void osrfCacheCleanup();
