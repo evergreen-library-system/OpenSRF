@@ -428,6 +428,7 @@ int jsonParseChunk( jsonParserContext* ctx, char* data, int datalen, int flags )
 			case '}' : /* ending an object */
 				if( ctx->handler->handleEndObject) 
 					ctx->handler->handleEndObject( ctx->userData ); 
+                JSON_STATE_REMOVE(ctx, JSON_STATE_IN_KEY);
 				JSON_STATE_POP(ctx);
 				if( JSON_STATE_PEEK(ctx) == NULL )
 					JSON_STATE_SET(ctx, JSON_STATE_IS_DONE);
