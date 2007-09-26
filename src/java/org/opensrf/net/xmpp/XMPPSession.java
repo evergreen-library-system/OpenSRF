@@ -119,9 +119,10 @@ public class XMPPSession {
     /** true if this session is connected to the server */
     public boolean connected() {
         return (
-            reader != null && 
-            reader.getXMPPStreamState() == 
-                XMPPReader.XMPPStreamState.CONNECTED);
+                reader != null && 
+                reader.getXMPPStreamState() == XMPPReader.XMPPStreamState.CONNECTED &&
+                !socket.isClosed()
+            );
     }
 
 

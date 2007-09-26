@@ -20,7 +20,8 @@ public class Sys {
             throws ConfigException, SessionException  {
 
         /** see if the current thread already has a connection */
-        if(XMPPSession.getThreadSession() != null)
+        XMPPSession existing = XMPPSession.getThreadSession();
+        if(existing != null && existing.connected())
             return;
 
         /** create the config parser */
@@ -47,8 +48,8 @@ public class Sys {
         try {
 
             /** Connect to the Jabber network */
+            Logger.info("attempting to create XMPP session "+username+"@"+host+"/"+res);
             XMPPSession xses = new XMPPSession(host, port);
-            System.out.println("resource = " + res);
             xses.connect(username, passwd, res);
             XMPPSession.setThreadSession(xses);
 
