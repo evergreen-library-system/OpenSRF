@@ -75,21 +75,21 @@ char* jsonFormatString( const char* string ) {
 
 
 
-jsonObject* jsonObjectDecodeClass( jsonObject* obj ) {
+jsonObject* jsonObjectDecodeClass( const jsonObject* obj ) {
 	if(!obj) return jsonNewObject(NULL);
 
-	jsonObject* newObj		= NULL; 
-	jsonObject* classObj		= NULL; 
-	jsonObject* payloadObj	= NULL;
+	jsonObject* newObj			 = NULL; 
+	const jsonObject* classObj	 = NULL;
+	const jsonObject* payloadObj = NULL;
 	int i;
 
 	if( obj->type == JSON_HASH ) {
 
 		/* are we a special class object? */
-		if( (classObj = jsonObjectGetKey( obj, JSON_CLASS_KEY )) ) {
+		if( (classObj = jsonObjectGetKeyConst( obj, JSON_CLASS_KEY )) ) {
 
 			/* do we have a payload */
-			if( (payloadObj = jsonObjectGetKey( obj, JSON_DATA_KEY )) ) {
+			if( (payloadObj = jsonObjectGetKeyConst( obj, JSON_DATA_KEY )) ) {
 				newObj = jsonObjectDecodeClass( payloadObj ); 
 				jsonObjectSetClass( newObj, jsonObjectGetString(classObj) );
 
@@ -239,7 +239,7 @@ jsonObject* _jsonObjectFindPathRecurse(const jsonObject* obj, char* root, char* 
 
 		/* gather all of the sub-objects that match the full path */
 		for( i = 0; i < arr->size; i++ ) {
-			jsonObject* a = jsonObjectGetIndex(arr, i);
+			const jsonObject* a = jsonObjectGetIndex(arr, i);
 			jsonObject* thing = jsonObjectFindPath(a , path + strlen(root) + 1); 
 
 			if(thing) { //jsonObjectPush(newarr, thing);

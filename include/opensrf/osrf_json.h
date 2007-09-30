@@ -355,7 +355,7 @@ jsonObject* jsonParseFile( char* filename );
  * classname set
  * Caller must free the returned object 
  */ 
-jsonObject* jsonObjectDecodeClass( jsonObject* obj );
+jsonObject* jsonObjectDecodeClass( const jsonObject* obj );
 
 
 /** Converts an object with a classname into a
