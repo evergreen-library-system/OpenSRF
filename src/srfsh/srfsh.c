@@ -356,7 +356,7 @@ static int handle_login( char* words[]) {
 		sprintf( buf, login_text, username );
 		parse_request(buf);
 
-		char* hash;
+		const char* hash;
 		if(last_result && last_result->_result_content) {
 			jsonObject* r = last_result->_result_content;
 			hash = jsonObjectGetString(r);
@@ -388,17 +388,21 @@ static int handle_login( char* words[]) {
 		parse_request( argbuf->buf );
 		buffer_free(argbuf);
 
-		jsonObject* x = last_result->_result_content;
+		if( login_session != NULL )
+			free( login_session );
+
+		const jsonObject* x = last_result->_result_content;
 		double authtime = 0;
 		if(x) {
-			char* authtoken = jsonObjectGetString(
-					jsonObjectGetKey(jsonObjectGetKey(x,"payload"), "authtoken"));
+			const char* authtoken = jsonObjectGetString(
+					jsonObjectGetKeyConst(jsonObjectGetKeyConst(x,"payload"), "authtoken"));
 			authtime  = jsonObjectGetNumber(
-					jsonObjectGetKey(jsonObjectGetKey(x,"payload"), "authtime"));
-			if(authtoken) {
-				free(login_session);
+					jsonObjectGetKeyConst(jsonObjectGetKeyConst(x,"payload"), "authtime"));
+
+			if(authtoken)
 				login_session = strdup(authtoken);
-			} else login_session = NULL;
+			else
+				login_session = NULL;
 		}
 		else login_session = NULL;
 
@@ -607,14 +611,18 @@ int send_request( char* server,
 	
 				char* content;
 	
-				if( pretty_print && omsg->_result_content ) {
+				if( pretty_print ) {
 					char* j = jsonObjectToJSON(omsg->_result_content);
 					//content = json_printer(j); 
 					content = jsonFormatString(j);
 					free(j);
-				} else
-					content = jsonObjectGetString(omsg->_result_content);
-	
+				} else {
+					const char * temp_content = jsonObjectGetString(omsg->_result_content);
+					if( ! temp_content )
+						temp_content = "[null]";
+					content = strdup( temp_content );
+				}
+				
 				printf( "\nReceived Data: %s\n", content ); 
 				free(content);
 	
@@ -645,9 +653,14 @@ int send_request( char* server,
 					//content = json_printer(j); 
 					content = jsonFormatString(j);
 					free(j);
-				} else
-					content = jsonObjectGetString(omsg->_result_content);
-	
+				} else {
+					const char * temp_content = jsonObjectGetString(omsg->_result_content);
+					if( temp_content )
+						content = strdup( temp_content );
+					else
+						content = NULL;
+				}
+
 				buffer_add( resp_buffer, "\nReceived Data: " ); 
 				buffer_add( resp_buffer, content );
 				buffer_add( resp_buffer, "\n" );
