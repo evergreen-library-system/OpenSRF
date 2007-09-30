@@ -142,7 +142,7 @@ osrf_message* _osrf_app_request_recv( osrf_app_request* req, int timeout ) {
 		if(req->reset_timeout) {
 			remaining = (time_t) timeout;
 			req->reset_timeout = 0;
-			osrfLogDebug( OSRF_LOG_MARK, "Recevied a timeout reset");
+			osrfLogDebug( OSRF_LOG_MARK, "Received a timeout reset");
 		} else {
 			remaining -= (int) (time(NULL) - start);
 		}
@@ -411,7 +411,7 @@ int osrf_app_session_make_locale_req(
 		return -1;
 	}
 
-	osrfLogDebug( OSRF_LOG_MARK,  "Pushing [%d] onto requeust queue for session [%s] [%s]",
+	osrfLogDebug( OSRF_LOG_MARK,  "Pushing [%d] onto request queue for session [%s] [%s]",
 			req->request_id, session->remote_service, session->session_id );
 	osrfListSet( session->request_queue, req, req->request_id ); 
 	return req->request_id;

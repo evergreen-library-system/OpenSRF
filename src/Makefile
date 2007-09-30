@@ -10,7 +10,7 @@ export INCLUDEDIR= $(PREFIX)/include
 
 export LDLIBS	+= 
 export LDFLAGS	+= -Wl,-rpath=$(LIBDIR) -L $(TMPDIR) -L .
-export CFLAGS	+= -pipe -g -Wall -O2 -fPIC -I ../../include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS) 
+export CFLAGS	+= -D_LARGEFILE64_SOURCE -pipe -g -Wall -O2 -fPIC -I ../../include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS) 
 
 ifeq ($(OSRF_LEGACY_JSON), 1)
 export LDLIBS += -lobjson
