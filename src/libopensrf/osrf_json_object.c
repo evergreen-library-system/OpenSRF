@@ -132,6 +132,11 @@ jsonObject* jsonObjectGetKey( const jsonObject* obj, const char* key ) {
 	return osrfHashGet( obj->value.h, key);
 }
 
+const jsonObject* jsonObjectGetKeyConst( const jsonObject* obj, const char* key ) {
+	if(!(obj && obj->type == JSON_HASH && obj->value.h && key)) return NULL;
+	return osrfHashGet( obj->value.h, key);
+}
+
 char* jsonObjectToJSON( const jsonObject* obj ) {
 	jsonObject* obj2 = jsonObjectEncodeClass( (jsonObject*) obj);
 	char* json = jsonObjectToJSONRaw(obj2);

@@ -224,7 +224,7 @@ char* jsonObjectToJSONRaw( const jsonObject* obj );
  * Retrieves the object at the given key
  */
 jsonObject* jsonObjectGetKey( const jsonObject* obj, const char* key );
-
+const jsonObject* jsonObjectGetKeyConst( const jsonObject* obj, const char* key );
 
 
 
