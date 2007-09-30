@@ -256,16 +256,16 @@ int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
 
 	for( x = 0; x < json->size && x < count; x++ ) {
 
-		jsonObject* message = jsonObjectGetIndex(json, x);
+		const jsonObject* message = jsonObjectGetIndex(json, x);
 
 		if(message && message->type != JSON_NULL && 
 			message->classname && !strcmp(message->classname, "osrfMessage")) {
 
 			osrf_message* new_msg = safe_malloc(sizeof(osrf_message));
 
-			jsonObject* tmp = jsonObjectGetKey(message, "type");
+			const jsonObject* tmp = jsonObjectGetKeyConst(message, "type");
 
-			char* t;
+			const char* t;
 			if( ( t = jsonObjectGetString(tmp)) ) {
 
 				if(!strcmp(t, "CONNECT")) 		new_msg->m_type = CONNECT;
@@ -275,7 +275,7 @@ int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
 				if(!strcmp(t, "RESULT")) 		new_msg->m_type = RESULT;
 			}
 
-			tmp = jsonObjectGetKey(message, "threadTrace");
+			tmp = jsonObjectGetKeyConst(message, "threadTrace");
 			if(tmp) {
 				char* tt = jsonObjectToSimpleString(tmp);
 				if(tt) {
@@ -288,7 +288,7 @@ int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
 			if (current_locale)
 				free( current_locale );
 
-			tmp = jsonObjectGetKey(message, "locale");
+			tmp = jsonObjectGetKeyConst(message, "locale");
 			if(tmp) {
 				new_msg->sender_locale = jsonObjectToSimpleString(tmp);
 				current_locale = strdup( new_msg->sender_locale );
@@ -296,7 +296,7 @@ int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
 				current_locale = NULL;
 			}
 
-			tmp = jsonObjectGetKey(message, "protocol");
+			tmp = jsonObjectGetKeyConst(message, "protocol");
 
 			if(tmp) {
 				char* proto = jsonObjectToSimpleString(tmp);
@@ -306,16 +306,16 @@ int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
 				}
 			}
 
-			tmp = jsonObjectGetKey(message, "payload");
+			tmp = jsonObjectGetKeyConst(message, "payload");
 			if(tmp) {
 				if(tmp->classname)
 					new_msg->status_name = strdup(tmp->classname);
 
-				jsonObject* tmp0 = jsonObjectGetKey(tmp,"method");
+				const jsonObject* tmp0 = jsonObjectGetKeyConst(tmp,"method");
 				if(jsonObjectGetString(tmp0))
 					new_msg->method_name = strdup(jsonObjectGetString(tmp0));
 
-				tmp0 = jsonObjectGetKey(tmp,"params");
+				tmp0 = jsonObjectGetKeyConst(tmp,"params");
 				if(tmp0) {
 					char* s = jsonObjectToJSON(tmp0);
 					new_msg->_params = jsonParseString(s);
@@ -324,11 +324,11 @@ int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
 					free(s);
 				}
 
-				tmp0 = jsonObjectGetKey(tmp,"status");
+				tmp0 = jsonObjectGetKeyConst(tmp,"status");
 				if(jsonObjectGetString(tmp0))
 					new_msg->status_text = strdup(jsonObjectGetString(tmp0));
 
-				tmp0 = jsonObjectGetKey(tmp,"statusCode");
+				tmp0 = jsonObjectGetKeyConst(tmp,"statusCode");
 				if(tmp0) {
 					if(jsonObjectGetString(tmp0))
 						new_msg->status_code = atoi(jsonObjectGetString(tmp0));
@@ -336,7 +336,7 @@ int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
 						new_msg->status_code = (int) jsonObjectGetNumber(tmp0);
 				}
 
-				tmp0 = jsonObjectGetKey(tmp,"content");
+				tmp0 = jsonObjectGetKeyConst(tmp,"content");
 				if(tmp0) {
 					char* s = jsonObjectToJSON(tmp0);
 					new_msg->_result_content = jsonParseString(s);
