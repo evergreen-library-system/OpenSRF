@@ -58,8 +58,7 @@ void osrfLogMkXid( void ) {
    if(_osrfLogIsClient) {
       static int _osrfLogXidInc = 0; /* increments with each new xid for uniqueness */
       char buf[32];
-      memset(buf, 0x0, 32);
-      snprintf(buf, 32, "%s%d", _osrfLogXidPfx, _osrfLogXidInc);
+      snprintf(buf, sizeof(buf), "%s%d", _osrfLogXidPfx, _osrfLogXidInc);
       _osrfLogSetXid(buf);
       _osrfLogXidInc++;
    }
@@ -74,8 +73,7 @@ void osrfLogSetIsClient(int is) {
    if(!is) return;
    /* go ahead and create the xid prefix so it will be consistent later */
    static char buff[32];
-   memset(buff, 0x0, 32);
-   snprintf(buff, 32, "%d%ld", (int)time(NULL), (long) getpid());
+   snprintf(buff, sizeof(buff), "%d%ld", (int)time(NULL), (long) getpid());
    _osrfLogXidPfx = buff;
 }
 
@@ -223,7 +221,7 @@ static void _osrfLogDetail( int level, const char* filename, int line, char* msg
 
    if( logtype == OSRF_LOG_TYPE_SYSLOG ) {
 		char buf[1536];  
-		memset(buf, 0x0, 1536);
+		memset(buf, 0x0, sizeof(buf));
 		/* give syslog some breathing room, and be cute about it */
 		strncat(buf, msg, 1535);
 		buf[1532] = '.';

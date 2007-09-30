@@ -90,9 +90,8 @@ static void osrf_json_gateway_child_init(apr_pool_t *p, server_rec *s) {
 
 	char* cfg = osrf_json_gateway_config_file;
 	char buf[32];
-	memset(buf, 0x0, 32);
 	int t = time(NULL);
-	snprintf(buf, 32, "%d", t);
+	snprintf(buf, sizeof(buf), "%d", t);
 
 	if( ! osrfSystemBootstrapClientResc( cfg, CONFIG_CONTEXT, buf ) ) {
 		ap_log_error( APLOG_MARK, APLOG_ERR, 0, s, 
@@ -377,18 +376,16 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 					"OpenSRF JSON Request returned error: %s -> %s", statusname, statustext );
 			int l = strlen(statusname) + strlen(statustext) + 32;
 			char buf[l];
-			bzero(buf,l);
 
 			if (isXML)
-				snprintf( buf, l, "<debug>\"%s : %s\"</debug>", statusname, statustext );
+				snprintf( buf, sizeof(buf), "<debug>\"%s : %s\"</debug>", statusname, statustext );
 
 			else {
 				char bb[l];
-				bzero(bb, l);
-				snprintf(bb, l,  "%s : %s", statusname, statustext);
+				snprintf(bb, sizeof(bb),  "%s : %s", statusname, statustext);
 				jsonObject* tmp = jsonNewObject(bb);
 				char* j = jsonToStringFunc(tmp);
-				snprintf( buf, l, ",\"debug\": %s", j);
+				snprintf( buf, sizeof(buf), ",\"debug\": %s", j);
 				free(j);
 				jsonObjectFree(tmp);
 			}
@@ -401,12 +398,11 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 
 		/* insert the status code */
 		char buf[32];
-		bzero(buf,32);
 
 		if (isXML)
-			snprintf(buf, 32, "<status>%d</status>", statuscode );
+			snprintf(buf, sizeof(buf), "<status>%d</status>", statuscode );
 		else
-			snprintf(buf, 32, ",\"status\":%d", statuscode );
+			snprintf(buf, sizeof(buf), ",\"status\":%d", statuscode );
 
 		ap_rputs( buf, r );
 

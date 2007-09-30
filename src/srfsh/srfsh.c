@@ -80,8 +80,7 @@ int main( int argc, char* argv[] ) {
 	char* home = getenv("HOME");
 	int l = strlen(home) + 36;
 	char fbuf[l];
-	memset(fbuf, 0, l);
-	sprintf(fbuf,"%s/.srfsh.xml",home);
+	snprintf(fbuf, sizeof(fbuf), "%s/.srfsh.xml", home);
 	
 	if(!access(fbuf, R_OK)) {
 		if( ! osrf_system_bootstrap_client(fbuf, "srfsh") ) {
@@ -193,9 +192,7 @@ static int load_history( void ) {
 	char* home = getenv("HOME");
 	int l = strlen(home) + 24;
 	char fbuf[l];
-
-	memset(fbuf, 0, l);
-	sprintf(fbuf,"%s/.srfsh_history",home);
+	snprintf(fbuf, sizeof(fbuf), "%s/.srfsh_history", home);
 	history_file = strdup(fbuf);
 
 	if(!access(history_file, W_OK | R_OK )) {
@@ -322,14 +319,14 @@ static int handle_introspect(char* words[]) {
 		static const char text[] = "request %s opensrf.system.method %s";
 		len = sizeof( text ) + strlen( words[1] ) + strlen( words[2] );
 		char buf[len];
-		sprintf( buf, text, words[1], words[2] );
+		snprintf( buf, sizeof(buf), text, words[1], words[2] );
 		return parse_request( buf );
 
 	} else {
 		static const char text[] = "request %s opensrf.system.method.all";
 		len = sizeof( text ) + strlen( words[1] );
 		char buf[len];
-		sprintf( buf, text, words[1] );
+		snprintf( buf, sizeof(buf), text, words[1] );
 		return parse_request( buf );
 
 	}
@@ -349,11 +346,10 @@ static int handle_login( char* words[]) {
 		if(!type) type = "opac";
 
 		char login_text[] = "request open-ils.auth open-ils.auth.authenticate.init \"%s\"";
-		size_t len = sizeof( login_text ) + strlen(username);
+		size_t len = sizeof( login_text ) + strlen(username) + 1;
 
 		char buf[len];
-		buf[0] = '\0';
-		sprintf( buf, login_text, username );
+		snprintf( buf, sizeof(buf), login_text, username );
 		parse_request(buf);
 
 		const char* hash;
@@ -367,8 +363,7 @@ static int handle_login( char* words[]) {
 
 		size_t both_len = strlen( hash ) + strlen( pass_buf ) + 1;
 		char both_buf[both_len];
-		both_buf[0] = '\0';
-		sprintf(both_buf,"%s%s",hash, pass_buf);
+		snprintf(both_buf, sizeof(both_buf), "%s%s", hash, pass_buf);
 
 		char* mess_buf = md5sum(both_buf);
 
@@ -629,8 +624,7 @@ int send_request( char* server,
 			} else {
 
 				char code[16];
-				memset(code, 0, 16);
-				sprintf( code, "%d", omsg->status_code );
+				snprintf( code, sizeof(code), "%d", omsg->status_code );
 				buffer_add( resp_buffer, code );
 
 				printf( "\nReceived Exception:\nName: %s\nStatus: %s\nStatus: %s\n", 
@@ -674,8 +668,7 @@ int send_request( char* server,
 				buffer_add( resp_buffer, omsg->status_text );
 				buffer_add( resp_buffer, "\nStatus: " );
 				char code[16];
-				memset(code, 0, 16);
-				sprintf( code, "%d", omsg->status_code );
+				snprintf( code, sizeof(code), "%d", omsg->status_code );
 				buffer_add( resp_buffer, code );
 			}
 		}
@@ -727,10 +720,9 @@ static int router_query_servers( const char* router_server ) {
 		return 0;
 
 	const static char router_text[] = "router@%s/router";
-	size_t len = sizeof( router_text ) + strlen( router_server );
+	size_t len = sizeof( router_text ) + strlen( router_server ) + 1;
 	char rbuf[len];
-	rbuf[0] = '\0';
-	sprintf(rbuf, router_text, router_server );
+	snprintf(rbuf, sizeof(rbuf), router_text, router_server );
 		
 	transport_message* send = 
 		message_init( "servers", NULL, NULL, rbuf, NULL );
@@ -849,7 +841,7 @@ static int do_math( int count, int style ) {
 	char* answers[] = { "3", "-1", "2", "0.500000" };
 
 	float times[ count * 4 ];
-	memset(times,0,count*4);
+	memset(times, 0, sizeof(times));
 
 	int k;
 	for(k=0;k!=100;k++) {

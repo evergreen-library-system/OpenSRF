@@ -75,8 +75,7 @@ int _jsonParserError( jsonParserContext* ctx, char* err, ... ) {
 		while( post >= ctx->chunksize ) post--;
 		int l = post - pre;
 		char buf[l];
-        memset(buf, 0, l);
-		snprintf(buf, l, ctx->chunk + pre);
+		snprintf(buf, sizeof(buf), ctx->chunk + pre);
 		ctx->handler->handleError( ctx->userData, 
 			"*JSON Parser Error\n - char  = %c\n "
 			"- index = %d\n - near  => %s\n - %s", 
@@ -107,7 +106,7 @@ int _jsonParserHandleUnicode( jsonParserContext* ctx ) {
 	 */
 	#define hexdigit(x) ( ((x) <= '9') ? (x) - '0' : ((x) & 7) + 9)
 	unsigned char utf_out[4];
-	memset(utf_out,0,4);
+	memset(utf_out, 0, sizeof(utf_out));
 	char* buf = ctx->utfbuf->buf;
 
 	unsigned int ucs_char =

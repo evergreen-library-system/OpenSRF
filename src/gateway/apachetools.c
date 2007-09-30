@@ -24,7 +24,7 @@ string_array* apacheParseParms(request_rec* r) {
 		if(ap_should_client_block(r)) {
 
 			char body[1025];
-			memset(body,0,1025);
+			memset(body,0,sizeof(body));
 			buffer = buffer_init(1025);
 
 
@@ -40,7 +40,7 @@ string_array* apacheParseParms(request_rec* r) {
 				}
 
 				buffer_add( buffer, body );
-				memset(body,0,1025);
+				memset(body,0,sizeof(body));
 
 				osrfLogDebug(OSRF_LOG_MARK, 
 					"gateway read %d bytes: %d bytes of data so far", bread, buffer->n_used);
@@ -49,7 +49,7 @@ string_array* apacheParseParms(request_rec* r) {
 
 				if(buffer->n_used > APACHE_TOOLS_MAX_POST_SIZE) {
 					osrfLogError(OSRF_LOG_MARK, "gateway received POST larger "
-						"than %d bytes. dropping reqeust", APACHE_TOOLS_MAX_POST_SIZE);
+						"than %d bytes. dropping request", APACHE_TOOLS_MAX_POST_SIZE);
 					buffer_free(buffer);
 					return NULL;
 				}

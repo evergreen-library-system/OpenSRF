@@ -240,7 +240,7 @@ osrf_app_session* osrf_app_client_session_init( char* remote_service ) {
 	char target_buf[512];
 	target_buf[ 0 ] = '\0';
 
-	int len = snprintf( target_buf, 512, "%s@%s/%s",
+	int len = snprintf( target_buf, sizeof(target_buf), "%s@%s/%s",
 			router_name ? router_name : "(null)",
 			domain ? domain : "(null)",
 			remote_service ? remote_service : "(null)" );
@@ -271,9 +271,8 @@ osrf_app_session* osrf_app_client_session_init( char* remote_service ) {
 
 	/* build a chunky, random session id */
 	char id[256];
-	memset(id,0,256);
 
-	sprintf(id, "%f.%d%ld", get_timestamp_millis(), (int)time(NULL), (long) getpid());
+	snprintf(id, sizeof(id), "%f.%d%ld", get_timestamp_millis(), (int)time(NULL), (long) getpid());
 	session->session_id = strdup(id);
 	osrfLogDebug( OSRF_LOG_MARK,  "Building a new client session with id [%s] [%s]", 
 			session->remote_service, session->session_id );

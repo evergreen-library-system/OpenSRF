@@ -45,8 +45,9 @@ int init_proc_title( int argc, char* argv[] ) {
 	int i = 0;
 	while( i < argc ) {
 		int len = strlen( global_argv[i]);
-		bzero( global_argv[i++], len );
+		memset( global_argv[i], 0, len);
 		global_argv_size += len;
+		i++;
 	}
 
 	global_argv_size -= 2;
@@ -55,7 +56,7 @@ int init_proc_title( int argc, char* argv[] ) {
 
 int set_proc_title( char* format, ... ) {
 	VA_LIST_TO_STRING(format);
-	bzero( *(global_argv), global_argv_size );
+	memset( *(global_argv), 0, global_argv_size);
 	return snprintf( *(global_argv), global_argv_size, VA_BUF );
 }
 
@@ -121,7 +122,7 @@ char* va_list_to_string(const char* format, ...) {
 	len = va_list_size(format, args);
 
 	char buf[len];
-	memset(buf, 0, len);
+	memset(buf, 0, sizeof(buf));
 
 	va_start(a_copy, format);
 	vsnprintf(buf, len - 1, format, a_copy);
@@ -164,7 +165,7 @@ int buffer_fadd(growing_buffer* gb, const char* format, ... ) {
 	len = va_list_size(format, args);
 
 	char buf[len];
-	memset(buf, 0, len);
+	memset(buf, 0, sizeof(buf));
 
 	va_start(a_copy, format);
 	vsnprintf(buf, len - 1, format, a_copy);
@@ -212,7 +213,7 @@ int buffer_add(growing_buffer* gb, char* data) {
 int buffer_reset( growing_buffer *gb){
 	if( gb == NULL ) { return 0; }
 	if( gb->buf == NULL ) { return 0; }
-	memset( gb->buf, 0, gb->size );
+	memset( gb->buf, 0, sizeof(gb->buf) );
 	gb->n_used = 0;
 	return 1;
 }
@@ -416,7 +417,7 @@ char* file_to_string(const char* filename) {
 
 	int len = 1024;
 	char buf[len];
-	bzero(buf, len);
+	memset(buf, 0, sizeof(buf));
 	growing_buffer* gb = buffer_init(len);
 
 	FILE* file = fopen(filename, "r");
@@ -425,9 +426,9 @@ char* file_to_string(const char* filename) {
 		return NULL;
 	}
 
-	while(fgets(buf, len - 1, file)) {
+	while(fgets(buf, sizeof(buf), file)) {
 		buffer_add(gb, buf);
-		bzero(buf, len);
+		memset(buf, 0, sizeof(buf));
 	}
 
 	fclose(file);
@@ -454,13 +455,11 @@ char* md5sum( char* text, ... ) {
 	MD5_stop (&ctx, digest);
 
 	char buf[16];
-	memset(buf,0,16);
-
 	char final[256];
-	memset(final,0,256);
+	memset(final, 0, sizeof(final));
 
 	for ( i=0 ; i<16 ; i++ ) {
-		sprintf(buf, "%02x", digest[i]);
+		snprintf(buf, sizeof(buf), "%02x", digest[i]);
 		strcat( final, buf );
 	}
 

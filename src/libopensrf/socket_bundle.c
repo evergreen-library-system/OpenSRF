@@ -707,7 +707,7 @@ static int _socket_handle_client_data(socket_manager* mgr, socket_node* node) {
 	int read_bytes;
 	int sock_fd = node->sock_fd;
 
-	memset(buf, 0, RBUFSIZE);
+	memset(buf, 0, sizeof(buf));
 	set_fl(sock_fd, O_NONBLOCK);
 
 	osrfLogInternal( OSRF_LOG_MARK, "%ld : Received data at %f\n", (long) getpid(), get_timestamp_millis());
@@ -717,7 +717,7 @@ static int _socket_handle_client_data(socket_manager* mgr, socket_node* node) {
 		if(mgr->data_received)
 			mgr->data_received(mgr->blob, mgr, sock_fd, buf, node->parent_id);
 
-		memset(buf, 0, RBUFSIZE);
+		memset(buf, 0, sizeof(buf));
 	}
     int local_errno = errno; /* capture errno as set by recv() */
 

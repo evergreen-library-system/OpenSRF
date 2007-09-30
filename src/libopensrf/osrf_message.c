@@ -174,7 +174,8 @@ jsonObject* osrfMessageToJSON( osrfMessage* msg ) {
 	jsonObject* json = jsonNewObject(NULL);
 	jsonObjectSetClass(json, "osrfMessage");
 	jsonObject* payload;
-	char sc[64]; memset(sc,0,64);
+	char sc[64];
+	memset(sc, 0, sizeof(sc));
 
 	char* str;
 
@@ -204,7 +205,7 @@ jsonObject* osrfMessageToJSON( osrfMessage* msg ) {
 			payload = jsonNewObject(NULL);
 			jsonObjectSetClass(payload, msg->status_name);
 			jsonObjectSetKey(payload, "status", jsonNewObject(msg->status_text));
-         sprintf(sc,"%d",msg->status_code);
+			snprintf(sc, sizeof(sc), "%d", msg->status_code);
 			jsonObjectSetKey(payload, "statusCode", jsonNewObject(sc));
 			jsonObjectSetKey(json, "payload", payload);
 			break;
@@ -226,7 +227,7 @@ jsonObject* osrfMessageToJSON( osrfMessage* msg ) {
 			payload = jsonNewObject(NULL);
 			jsonObjectSetClass(payload,"osrfResult");
 			jsonObjectSetKey(payload, "status", jsonNewObject(msg->status_text));
-         sprintf(sc,"%d",msg->status_code);
+			snprintf(sc, sizeof(sc), "%d", msg->status_code);
 			jsonObjectSetKey(payload, "statusCode", jsonNewObject(sc));
 			str = jsonObjectToJSON(msg->_result_content);
 			jsonObjectSetKey(payload, "content", jsonParseString(str));

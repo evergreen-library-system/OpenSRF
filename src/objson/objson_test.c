@@ -183,11 +183,11 @@ int main() {
 
 	char buf[10240];
 	char smallbuf[512];
-	bzero(buf, 10240);
-	bzero(smallbuf, 512);
+	memset(buf, 0, sizeof(buf));
+	memset(smallbuf, 0, sizeof(smallbuf));
 
-	while(fgets(smallbuf, 512, F)) 
-		strcat(buf, smallbuf);
+	while(fgets(smallbuf, sizeof(smallbuf), F)) 
+		strncat(buf, smallbuf, sizeof(buf) - 1);
 
 	/* dig our way into the JSON object we parsed, see test.json to get
 	   an idea of the object structure */

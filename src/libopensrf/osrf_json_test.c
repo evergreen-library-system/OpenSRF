@@ -32,8 +32,7 @@ static void speedTest() {
 
     for(i = 0; i < count; i++) {
         
-        memset(buf, 0, 16);
-        snprintf(buf, 16, "key_%d", i);
+        snprintf(buf, sizeof(buf), "key_%d", i);
 
         array = jsonNewObject(NULL);
         for(k = 0; k < count + i; k++) {
