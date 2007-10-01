@@ -31,7 +31,7 @@ int main( int argc, char** argv ) {
 		signal(SIGINT, sig_int);
 		fprintf(stderr, "Listener: %ld\n", (long) getpid() );	
 		char buf[300];
-		memset(buf, 0, sizeof(buf));
+		osrf_clearbuf(buf, sizeof(buf));
 		printf("=> ");
 
 		while( fgets( buf, sizeof(buf), stdin) ) {
@@ -48,7 +48,7 @@ int main( int argc, char** argv ) {
 			client_send_message( client, send );
 			message_free( send );
 			printf("\n=> ");
-			memset(buf, 0, sizeof(buf));
+			osrf_clearbuf(buf, sizeof(buf));
 		}
 		fprintf(stderr, "Killing child %d\n", pid );
 		kill( pid, SIGKILL );

@@ -547,7 +547,7 @@ void check_children( prefork_simple* forker, int forever ) {
 
 			/* now suck off the data */
 			char buf[64];
-			memset( buf, 0, sizeof(buf) );
+			osrf_clearbuf( buf, sizeof(buf) );
 			if( (n=read(cur_child->read_status_fd, buf, 63))  < 0 ) {
 				osrfLogWarning( OSRF_LOG_MARK, "Read error after select in child status read with errno %d", errno);
 			}
@@ -566,7 +566,7 @@ void prefork_child_wait( prefork_child* child ) {
 	int i,n;
 	growing_buffer* gbuf = buffer_init( READ_BUFSIZE );
 	char buf[READ_BUFSIZE];
-	memset( buf, 0, sizeof(buf) );
+	osrf_clearbuf( buf, sizeof(buf) );
 
 	for( i = 0; i < child->max_requests; i++ ) {
 
@@ -579,7 +579,7 @@ void prefork_child_wait( prefork_child* child ) {
 			if(!gotdata)
 				set_fl(child->read_data_fd, O_NONBLOCK );
 			buffer_add( gbuf, buf );
-			memset( buf, 0, sizeof(buf) );
+			osrf_clearbuf( buf, sizeof(buf) );
 			gotdata = 1;
 		}
 

@@ -175,7 +175,7 @@ jsonObject* osrfMessageToJSON( osrfMessage* msg ) {
 	jsonObjectSetClass(json, "osrfMessage");
 	jsonObject* payload;
 	char sc[64];
-	memset(sc, 0, sizeof(sc));
+	osrf_clearbuf(sc, sizeof(sc));
 
 	char* str;
 

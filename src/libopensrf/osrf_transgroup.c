@@ -89,7 +89,7 @@ int osrfTransportGroupSendMatch( osrfTransportGroup* grp, transport_message* msg
 	if(!(grp && msg)) return -1;
 
 	char domain[256];
-	memset(domain, 0, sizeof(domain));
+	osrf_clearbuf(domain, sizeof(domain));
 	jid_get_domain( msg->recipient, domain, 255 );
 
 	osrfTransportGroupNode* node = osrfHashGet(grp->nodes, domain);
@@ -108,15 +108,15 @@ int osrfTransportGroupSend( osrfTransportGroup* grp, transport_message* msg ) {
 	int bufsize = 256;
 
 	char domain[bufsize];
-	memset(domain, 0, sizeof(domain));
+	osrf_clearbuf(domain, sizeof(domain));
 	jid_get_domain( msg->recipient, domain, bufsize - 1 );
 
 	char msgrecip[bufsize];
-	memset(msgrecip, 0, sizeof(msgrecip));
+	osrf_clearbuf(msgrecip, sizeof(msgrecip));
 	jid_get_username(msg->recipient, msgrecip, bufsize - 1);
 
 	char msgres[bufsize];
-	memset(msgres, 0, sizeof(msgres));
+	osrf_clearbuf(msgres, sizeof(msgres));
 	jid_get_resource(msg->recipient, msgres, bufsize - 1);
 
 	char* firstdomain = NULL;

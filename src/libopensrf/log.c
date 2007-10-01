@@ -221,7 +221,7 @@ static void _osrfLogDetail( int level, const char* filename, int line, char* msg
 
    if( logtype == OSRF_LOG_TYPE_SYSLOG ) {
 		char buf[1536];  
-		memset(buf, 0x0, sizeof(buf));
+		osrf_clearbuf(buf, sizeof(buf));
 		/* give syslog some breathing room, and be cute about it */
 		strncat(buf, msg, 1535);
 		buf[1532] = '.';

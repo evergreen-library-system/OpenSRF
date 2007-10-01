@@ -480,7 +480,7 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 							"json_parse_json_string(): truncated escaped unicode"); }
 
 					char buff[5];
-					memset(buff, 0, sizeof(buff));
+					osrf_clearbuf(buff, sizeof(buff));
 					memcpy(buff, string + (*index), 4);
 
 
@@ -693,7 +693,7 @@ int json_eat_comment(char* string, unsigned long* index, char** buffer, int pars
 int json_handle_error(char* string, unsigned long* index, char* err_msg) {
 
 	char buf[60];
-	memset(buf, 0, sizeof(buf));
+	osrf_clearbuf(buf, sizeof(buf));
 
 	if(*index > 30)
 		strncpy( buf, string + (*index - 30), 59 );
