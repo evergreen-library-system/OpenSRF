@@ -19,6 +19,9 @@ public class Sys {
     public static void bootstrapClient(String configFile, String configContext) 
             throws ConfigException, SessionException  {
 
+        if(Logger.instance() == null) /* provide a sane default logger */
+            Logger.init(Logger.WARN, new Logger()); 
+
         /** see if the current thread already has a connection */
         XMPPSession existing = XMPPSession.getThreadSession();
         if(existing != null && existing.connected())
