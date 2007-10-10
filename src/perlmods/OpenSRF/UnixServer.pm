@@ -146,7 +146,7 @@ sub process_request {
 		$logger->debug( "Looping on zombies " . $x++ , DEBUG);
 	}
 
-	$logger->debug( "Timed out, disconnected, or auth failed" );
+	$logger->debug( "Timed out, disconnected, or authentication failed" );
 	$app_session->kill_me if ($app_session);
 
 	$0 = $orig;
@@ -203,7 +203,7 @@ sub configure_hook {
 	# boot a client
 	OpenSRF::System->bootstrap_client( client_name => "system_client" );
 
-	$logger->debug( "Setting application implementaion for $app", DEBUG );
+	$logger->debug( "Setting application implementation for $app", DEBUG );
 	my $client = OpenSRF::Utils::SettingsClient->new();
 	my $imp = $client->config_value("apps", $app, "implementation");
 	OpenSRF::Application::server_class($app);
