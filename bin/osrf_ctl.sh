@@ -41,11 +41,12 @@ function usage {
 # ---------------------------------------------------------------------------
 # Load the command line options and set the global vars
 # ---------------------------------------------------------------------------
-while getopts  "c:a:d:h" flag; do
+while getopts  "c:a:d:l:h" flag; do
 	case $flag in	
 		"a")		OPT_ACTION="$OPTARG";;
 		"c")		OPT_CONFIG="$OPTARG";;
 		"d")		OPT_PID_DIR="$OPTARG";;
+		"l")		export OSRF_HOSTNAME="localhost";;
 		"h"|*)	usage;;
 	esac;
 done
