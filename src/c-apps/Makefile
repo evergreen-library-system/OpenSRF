@@ -1,5 +1,5 @@
 LDLIBS += -lopensrf
-CFLAGS += -DOSRF_LOG_PARAMS
+CFLAGS += -D_LARGEFILE64_SOURCE -DOSRF_LOG_PARAMS
 
 all:	osrf_math.so osrf_dbmath.so osrf_version.so
 
