@@ -98,7 +98,7 @@ sub handler {
         my @p = $app_msg->params;
 		my $method_name = $app_msg->method;
 		my $method_proto = $session->last_message_api_level;
-        $logger->info("CALL: $method_name [".join(', ',@p)."]");
+		$log->info("CALL: $method_name [".join(', ',@p)."]");
 
 		my $coderef = $app->method_lookup( $method_name, $method_proto, 1, 1 );
 
