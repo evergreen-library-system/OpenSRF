@@ -6,6 +6,7 @@ export OPENSRF	= opensrf
 export BINDIR	= $(PREFIX)/bin
 export LIBDIR	= $(PREFIX)/lib
 export PERLDIR	= $(LIBDIR)/perl5
+export JSDIR	= $(LIBDIR)/javascript
 export INCLUDEDIR= $(PREFIX)/include
 
 export LDLIBS	+= 
@@ -29,7 +30,8 @@ install: 	install-prep \
 		router-install \
 		srfsh-install \
 		jserver-install \
-		perl-install 
+		perl-install \
+		javascript-install
 
 
 # --------------------------------------------------------------------------------
@@ -70,6 +72,7 @@ install-prep:
 	mkdir -p $(LIBDIR)
 	mkdir -p $(BINDIR)
 	mkdir -p $(PERLDIR)
+	mkdir -p $(JSDIR)
 	mkdir -p $(INCLUDEDIR)
 	mkdir -p $(ETCDIR)
 
@@ -108,6 +111,10 @@ jserver-install:	install-prep
 perl-install:	install-prep
 	@echo $@
 	cp -r perlmods/* $(PERLDIR)/
+
+javascript-install:	install-prep
+	@echo $@
+	cp -r javascript/* $(JSDIR)/
 
 
 # --------------------------------------------------------------------------------
