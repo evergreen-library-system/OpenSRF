@@ -6,6 +6,7 @@ export OPENSRF	= opensrf
 export BINDIR	= $(PREFIX)/bin
 export LIBDIR	= $(PREFIX)/lib
 export PERLDIR	= $(LIBDIR)/perl5
+export PYTHON25DIR	= $(LIBDIR)/python25
 export JSDIR	= $(LIBDIR)/javascript
 export INCLUDEDIR= $(PREFIX)/include
 
@@ -30,8 +31,9 @@ install: 	install-prep \
 		router-install \
 		srfsh-install \
 		jserver-install \
+		javascript-install \
 		perl-install \
-		javascript-install
+		python25-install
 
 
 # --------------------------------------------------------------------------------
@@ -71,8 +73,9 @@ install-prep:
 	@echo $@
 	mkdir -p $(LIBDIR)
 	mkdir -p $(BINDIR)
-	mkdir -p $(PERLDIR)
 	mkdir -p $(JSDIR)
+	mkdir -p $(PERLDIR)
+	mkdir -p $(PYTHON25DIR)
 	mkdir -p $(INCLUDEDIR)
 	mkdir -p $(ETCDIR)
 
@@ -108,13 +111,17 @@ jserver-install:	install-prep
 	@echo $@
 	make -C jserver install
 
+javascript-install:	install-prep
+	@echo $@
+	cp -r javascript/* $(JSDIR)/
+
 perl-install:	install-prep
 	@echo $@
 	cp -r perlmods/* $(PERLDIR)/
 
-javascript-install:	install-prep
+python25-install:	install-prep
 	@echo $@
-	cp -r javascript/* $(JSDIR)/
+	cp -r python/* $(PYTHON25DIR)/
 
 
 # --------------------------------------------------------------------------------
