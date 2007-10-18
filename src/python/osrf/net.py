@@ -83,6 +83,8 @@ class osrfNetwork(JabberClient):
         JabberClient.__init__(self, self.jid, args['password'], args['host'])
         self.queue = []
 
+        self.recvCallback = None
+
     def connect(self):
         JabberClient.connect(self)
         while not self.isconnected:
@@ -123,7 +125,8 @@ class osrfNetwork(JabberClient):
         """Attempts to receive a message from the network.
 
         timeout - max number of seconds to wait for a message.  
-        If no message is received in 'timeout' seconds, None is returned. """
+        If a message is received in 'timeout' seconds, the message is passed to 
+        the recvCallback is called and True is returned.  Otherwise, false is returned."""
 
         msg = None
         if len(self.queue) == 0:
@@ -140,7 +143,9 @@ class osrfNetwork(JabberClient):
         # if we've acquired a message, handle it
         if len(self.queue) > 0:
             self.recvCallback(self.queue.pop(0))
-        return None
+            return True
+
+        return False
 
 
 
