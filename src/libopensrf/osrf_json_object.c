@@ -13,8 +13,33 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
+#include <limits.h>
 #include <opensrf/osrf_json.h>
 #include <opensrf/osrf_json_utils.h>
+
+/* cleans up an object if it is morphing another object, also
+ * verifies that the appropriate storage container exists where appropriate */
+#define JSON_INIT_CLEAR(_obj_, newtype)		\
+	if( _obj_->type == JSON_HASH && newtype != JSON_HASH ) {			\
+		osrfHashFree(_obj_->value.h);			\
+		_obj_->value.h = NULL; 					\
+} else if( _obj_->type == JSON_ARRAY && newtype != JSON_ARRAY ) {	\
+		osrfListFree(_obj_->value.l);			\
+		_obj_->value.l = NULL;					\
+} else if( _obj_->type == JSON_STRING && newtype != JSON_STRING ) { \
+		free(_obj_->value.s);						\
+		_obj_->value.s = NULL;					\
+} \
+	_obj_->type = newtype;\
+	if( newtype == JSON_HASH && _obj_->value.h == NULL ) {	\
+		_obj_->value.h = osrfNewHash();		\
+		_obj_->value.h->freeItem = _jsonFreeHashItem; \
+} else if( newtype == JSON_ARRAY && _obj_->value.l == NULL ) {	\
+		_obj_->value.l = osrfNewList();		\
+		_obj_->value.l->freeItem = _jsonFreeListItem;\
+}
+
+static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf );
 
 jsonObject* jsonNewObject(const char* data) {
 
@@ -138,7 +163,7 @@ const jsonObject* jsonObjectGetKeyConst( const jsonObject* obj, const char* key 
 }
 
 char* jsonObjectToJSON( const jsonObject* obj ) {
-	jsonObject* obj2 = jsonObjectEncodeClass( (jsonObject*) obj);
+	jsonObject* obj2 = jsonObjectEncodeClass( obj );
 	char* json = jsonObjectToJSONRaw(obj2);
 	jsonObjectFree(obj2);
 	return json;
@@ -147,8 +172,11 @@ char* jsonObjectToJSON( const jsonObject* obj ) {
 char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 	if(!obj) return NULL;
 	growing_buffer* buf = buffer_init(32);
-	int i;
-    char* json;
+	add_json_to_buffer( obj, buf );
+	return buffer_release( buf );
+}
+
+static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf ) {
 
 	switch(obj->type) {
 
@@ -159,8 +187,8 @@ char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 
 		case JSON_NUMBER: {
 			double x = obj->value.n;
-			if( x == (int) x ) {
-				INT_TO_STRING((int)x);	
+			if( x <= INT_MAX && x >= INT_MIN && x == (int) x ) {
+				INT_TO_STRING((int)x);
 				OSRF_BUFFER_ADD(buf, INTSTR);
 
 			} else {
@@ -188,13 +216,12 @@ char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 		case JSON_ARRAY: {
 			OSRF_BUFFER_ADD_CHAR(buf, '[');
 			if( obj->value.l ) {
+				int i;
 				for( i = 0; i != obj->value.l->size; i++ ) {
-					json = jsonObjectToJSONRaw(OSRF_LIST_GET_INDEX(obj->value.l, i));
 					if(i > 0) OSRF_BUFFER_ADD(buf, ",");
-					OSRF_BUFFER_ADD(buf, json);
-					free(json);
+					add_json_to_buffer( OSRF_LIST_GET_INDEX(obj->value.l, i), buf );
 				}
-			} 
+			}
 			OSRF_BUFFER_ADD_CHAR(buf, ']');
 			break;
 		}
@@ -209,9 +236,7 @@ char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 			while( (item = osrfHashIteratorNext(itr)) ) {
 				if(i++ > 0) OSRF_BUFFER_ADD(buf, ",");
 				buffer_fadd(buf, "\"%s\":", itr->current);
-				char* json = jsonObjectToJSONRaw(item);
-				OSRF_BUFFER_ADD(buf, json);
-				free(json);
+				add_json_to_buffer( item, buf );
 			}
 
 			osrfHashIteratorFree(itr);
@@ -219,8 +244,6 @@ char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 			break;
 		}
 	}
-
-    return buffer_release(buf);
 }
 
 

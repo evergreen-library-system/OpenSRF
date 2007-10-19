@@ -34,31 +34,7 @@ GNU General Public License for more details.
 
 #define JSON_NUMBER_CHARS "0123456789.+-e"
 
-
-/* cleans up an object if it is morphing another object, also
- * verifies that the appropriate storage container exists where appropriate */
-#define JSON_INIT_CLEAR(_obj_, newtype)		\
-	if( _obj_->type == JSON_HASH && newtype != JSON_HASH ) {			\
-		osrfHashFree(_obj_->value.h);			\
-		_obj_->value.h = NULL; 					\
-	} else if( _obj_->type == JSON_ARRAY && newtype != JSON_ARRAY ) {	\
-		osrfListFree(_obj_->value.l);			\
-		_obj_->value.l = NULL;					\
-	} else if( _obj_->type == JSON_STRING && newtype != JSON_STRING ) { \
-		free(_obj_->value.s);						\
-		_obj_->value.s = NULL;					\
-	} \
-	_obj_->type = newtype;\
-	if( newtype == JSON_HASH && _obj_->value.h == NULL ) {	\
-		_obj_->value.h = osrfNewHash();		\
-		_obj_->value.h->freeItem = _jsonFreeHashItem; \
-	} else if( newtype == JSON_ARRAY && _obj_->value.l == NULL ) {	\
-		_obj_->value.l = osrfNewList();		\
-		_obj_->value.l->freeItem = _jsonFreeListItem;\
-	}												\
-
-
-/** 
+/**
  * These are the callbacks through which the top level parser 
  * builds objects via the push parser
  */
