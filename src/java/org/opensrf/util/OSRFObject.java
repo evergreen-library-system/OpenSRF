@@ -16,6 +16,7 @@ public class OSRFObject extends HashMap<String, Object> implements OSRFSerializa
     public OSRFObject() {
     }
 
+
     /**
      * Creates a new object with the provided registry
      */
@@ -23,6 +24,15 @@ public class OSRFObject extends HashMap<String, Object> implements OSRFSerializa
         this();
         registry = reg;
     }
+
+
+    /**
+     * Creates a new OpenSRF object based on the net class string
+     * */
+    public OSRFObject(String netClass) {
+        this(OSRFRegistry.getRegistry(netClass));
+    }
+
 
     /**
      * @return This object's registry
