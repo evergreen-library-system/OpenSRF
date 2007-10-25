@@ -2,7 +2,7 @@
 
 osrf_host_config* config = NULL;
 
-char* osrf_settings_host_value(char* format, ...) {
+char* osrf_settings_host_value(const char* format, ...) {
 	VA_LIST_TO_STRING(format);
 
 	if( ! config ) {
@@ -18,7 +18,7 @@ char* osrf_settings_host_value(char* format, ...) {
 	return val;
 }
 
-jsonObject* osrf_settings_host_value_object(char* format, ...) {
+jsonObject* osrf_settings_host_value_object(const char* format, ...) {
 	VA_LIST_TO_STRING(format);
 
 	if( ! config ) {
@@ -32,7 +32,7 @@ jsonObject* osrf_settings_host_value_object(char* format, ...) {
 }
 
 
-int osrf_settings_retrieve(char* hostname) {
+int osrf_settings_retrieve(const char* hostname) {
 
 	if(!config) {
 
@@ -72,10 +72,11 @@ int osrf_settings_retrieve(char* hostname) {
 	return 0;
 }
 
-osrf_host_config* osrf_settings_new_host_config(char* hostname) {
+osrf_host_config* osrf_settings_new_host_config(const char* hostname) {
 	if(!hostname) return NULL;
 	osrf_host_config* c = safe_malloc(sizeof(osrf_host_config));
 	c->hostname = strdup(hostname);
+	c->config = NULL;
 	return c;
 }
 
