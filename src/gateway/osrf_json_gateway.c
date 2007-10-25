@@ -122,7 +122,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 
 
 	/* provide 2 different JSON parsers and serializers to support legacy JSON */
-	jsonObject* (*parseJSONFunc) (char*) = legacy_jsonParseString;
+	jsonObject* (*parseJSONFunc) (const char*) = legacy_jsonParseString;
 	char* (*jsonToStringFunc) (const jsonObject*) = legacy_jsonObjectToJSON;
 
 	if(dir_conf->legacyJSON) {

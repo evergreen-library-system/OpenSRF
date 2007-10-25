@@ -22,11 +22,11 @@ GNU General Public License for more details.
 int current_strlen; 
 
 
-jsonObject* legacy_jsonParseString( char* string) {
-	return json_parse_string( string );
+jsonObject* legacy_jsonParseString( const char* string) {
+	return json_parse_string( (char*) string );
 }
 
-jsonObject* legacy_jsonParseStringFmt( char* string, ... ) {
+jsonObject* legacy_jsonParseStringFmt( const char* string, ... ) {
 	VA_LIST_TO_STRING(string);
 	return json_parse_string( VA_BUF );
 }

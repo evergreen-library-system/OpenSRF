@@ -73,7 +73,7 @@ GNU General Public License for more details.
 
 struct jsonParserContextStruct {
 	int state;						/* what are we currently parsing */
-	char* chunk;					/* the chunk we're currently parsing */
+	const char* chunk;				/* the chunk we're currently parsing */
 	int index;						/* where we are in parsing the current chunk */
 	int chunksize;					/* the size of the current chunk */
 	int flags;						/* parser flags */
@@ -147,7 +147,7 @@ void jsonParserFree( jsonParserContext* ctx );
  * @param datalen The size of the chunk to parser
  * @param flags Reserved
  */
-int jsonParseChunk( jsonParserContext* ctx, char* data, int datalen, int flags );
+int jsonParseChunk( jsonParserContext* ctx, const char* data, int datalen, int flags );
 
 
 /**
@@ -155,10 +155,10 @@ int jsonParseChunk( jsonParserContext* ctx, char* data, int datalen, int flags )
  * @param str The string to parser
  * @return The resulting JSON object or NULL on error
  */
-jsonObject* jsonParseString( char* str );
-jsonObject* jsonParseStringRaw( char* str );
+jsonObject* jsonParseString( const char* str );
+jsonObject* jsonParseStringRaw( const char* str );
 
-jsonObject* jsonParseStringFmt( char* str, ... );
+jsonObject* jsonParseStringFmt( const char* str, ... );
 
 /**
  * Parses a JSON string;

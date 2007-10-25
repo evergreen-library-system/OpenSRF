@@ -33,8 +33,8 @@ GNU General Public License for more details.
 
 jsonObject* json_parse_string(char* string);
 
-jsonObject* legacy_jsonParseString(char* string);
-jsonObject* legacy_jsonParseStringFmt( char* string, ... );
+jsonObject* legacy_jsonParseString(const char* string);
+jsonObject* legacy_jsonParseStringFmt( const char* string, ... );
 
 jsonObject* json_parse_file( const char* filename );
 

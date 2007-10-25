@@ -332,7 +332,7 @@ int _jsonParserHandleNumber( jsonParserContext* ctx ) {
 
 
 
-int jsonParseChunk( jsonParserContext* ctx, char* data, int datalen, int flags ) {
+int jsonParseChunk( jsonParserContext* ctx, const char* data, int datalen, int flags ) {
 
 	if( !( ctx && ctx->handler && data && datalen > 0 )) return -1;
 	ctx->chunksize  = datalen;
@@ -514,7 +514,7 @@ void _jsonInternalParserFree(jsonInternalParser* p) {
 	free(p);
 }
 
-static jsonObject* _jsonParseStringImpl(char* str, void (*errorHandler) (const char*) ) {
+static jsonObject* _jsonParseStringImpl(const char* str, void (*errorHandler) (const char*) ) {
 	jsonInternalParser* parser = _jsonNewInternalParser();
 	parser->handleError = errorHandler;
 	jsonParseChunk( parser->ctx, str, strlen(str),  JSON_PARSE_LAST_CHUNK );
@@ -530,7 +530,7 @@ jsonObject* jsonParseStringHandleError(
 	return _jsonParseStringImpl(VA_BUF, errorHandler);
 }
 
-jsonObject* jsonParseString( char* str ) {
+jsonObject* jsonParseString( const char* str ) {
 	if(!str) return NULL;
 	jsonObject* obj =  _jsonParseStringImpl(str, NULL);
 	jsonObject* obj2 = jsonObjectDecodeClass(obj);
@@ -538,12 +538,12 @@ jsonObject* jsonParseString( char* str ) {
 	return obj2;
 }
 
-jsonObject* jsonParseStringRaw( char* str ) {
+jsonObject* jsonParseStringRaw( const char* str ) {
 	if(!str) return NULL;
 	return _jsonParseStringImpl(str, NULL);
 }
 
-jsonObject* jsonParseStringFmt( char* str, ... ) {
+jsonObject* jsonParseStringFmt( const char* str, ... ) {
 	if(!str) return NULL;
 	VA_LIST_TO_STRING(str);
 	return _jsonParseStringImpl(VA_BUF, NULL);
