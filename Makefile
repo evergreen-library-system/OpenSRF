@@ -14,6 +14,9 @@ install:
 jserver-install:
 	source install.conf && make -s -C src jserver-install
 
+javascript-install:
+	source install.conf && make -s -C src javascript-install
+
 clean:
 	make -s -C src clean
 
