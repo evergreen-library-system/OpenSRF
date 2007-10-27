@@ -103,15 +103,16 @@ const char* osrf_message_get_current_locale(void);
 
 osrf_message* osrf_message_init( enum M_TYPE type, int thread_trace, int protocol );
 //void osrf_message_set_request_info( osrf_message*, char* param_name, json* params );
-void osrf_message_set_status_info( osrf_message*, char* status_name, char* status_text, int status_code );
-void osrf_message_set_result_content( osrf_message*, char* json_string );
+void osrf_message_set_status_info( osrf_message*,
+		const char* status_name, const char* status_text, int status_code );
+void osrf_message_set_result_content( osrf_message*, const char* json_string );
 void osrfMessageFree( osrfMessage* );
 void osrf_message_free( osrf_message* );
 char* osrf_message_to_xml( osrf_message* );
-char* osrf_message_serialize(osrf_message*);
+char* osrf_message_serialize(const osrf_message*);
 
 /* count is the max number of messages we'll put into msgs[] */
-int osrf_message_deserialize(char* json, osrf_message* msgs[], int count);
+int osrf_message_deserialize(const char* json, osrf_message* msgs[], int count);
 
 
 
@@ -121,10 +122,10 @@ int osrf_message_deserialize(char* json, osrf_message* msgs[], int count);
   */
 int osrf_message_from_xml( char* xml, osrf_message* msgs[] );
 
-void osrf_message_set_params( osrf_message* msg, jsonObject* o );
-void osrf_message_set_method( osrf_message* msg, char* method_name );
-void osrf_message_add_object_param( osrf_message* msg, jsonObject* o );
-void osrf_message_add_param( osrf_message*, char* param_string );
+void osrf_message_set_params( osrf_message* msg, const jsonObject* o );
+void osrf_message_set_method( osrf_message* msg, const char* method_name );
+void osrf_message_add_object_param( osrf_message* msg, const jsonObject* o );
+void osrf_message_add_param( osrf_message*, const char* param_string );
 
 
 jsonObject* osrfMessageGetResult( osrfMessage* msg );
@@ -133,7 +134,7 @@ jsonObject* osrfMessageGetResult( osrfMessage* msg );
   Returns the message as a jsonObject
   @return The jsonObject which must be freed by the caller.
   */
-jsonObject* osrfMessageToJSON( osrfMessage* msg );
+jsonObject* osrfMessageToJSON( const osrfMessage* msg );
 
 char* osrfMessageSerializeBatch( osrfMessage* msgs [], int count );
 

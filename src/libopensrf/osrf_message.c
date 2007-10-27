@@ -30,20 +30,19 @@ char* osrf_message_set_locale( osrf_message* msg, const char* locale ) {
 
 const char* osrf_message_set_default_locale( const char* locale ) {
 	if( locale == NULL ) return NULL;
-	if( strlen(locale) > 16 ) return NULL;
+	if( strlen(locale) > sizeof(default_locale) - 1 ) return NULL;
 
-	memcpy( default_locale, locale, strlen(locale) );
-	default_locale[strlen(locale)] = '\0';
+	strcpy( default_locale, locale );
 	return (const char*) default_locale;
 }
 
-void osrf_message_set_method( osrf_message* msg, char* method_name ) {
+void osrf_message_set_method( osrf_message* msg, const char* method_name ) {
 	if( msg == NULL || method_name == NULL ) return;
 	msg->method_name = strdup( method_name );
 }
 
 
-void osrf_message_add_object_param( osrf_message* msg, jsonObject* o ) {
+void osrf_message_add_object_param( osrf_message* msg, const jsonObject* o ) {
 	if(!msg|| !o) return;
 	if(!msg->_params)
 		msg->_params = jsonParseString("[]");
@@ -52,16 +51,15 @@ void osrf_message_add_object_param( osrf_message* msg, jsonObject* o ) {
 	free(j);
 }
 
-void osrf_message_set_params( osrf_message* msg, jsonObject* o ) {
+void osrf_message_set_params( osrf_message* msg, const jsonObject* o ) {
 	if(!msg || !o) return;
 
 	if(o->type != JSON_ARRAY) {
 		osrfLogDebug( OSRF_LOG_MARK, "passing non-array to osrf_message_set_params(), fixing...");
-		jsonObject* clone = jsonObjectClone(o);
-		o = jsonNewObject(NULL);
-		jsonObjectPush(o, clone);
 		if(msg->_params) jsonObjectFree(msg->_params);
-		msg->_params = o;
+		jsonObject* clone = jsonObjectClone(o);
+		msg->_params = jsonNewObject(NULL);
+		jsonObjectPush(msg->_params, clone);
 		return;
 	}
 
@@ -71,15 +69,15 @@ void osrf_message_set_params( osrf_message* msg, jsonObject* o ) {
 
 
 /* only works if parse_json_params is false */
-void osrf_message_add_param( osrf_message* msg, char* param_string ) {
+void osrf_message_add_param( osrf_message* msg, const char* param_string ) {
 	if(msg == NULL || param_string == NULL) return;
 	if(!msg->_params) msg->_params = jsonParseString("[]");
 	jsonObjectPush(msg->_params, jsonParseString(param_string));
 }
 
 
-void osrf_message_set_status_info( 
-		osrf_message* msg, char* status_name, char* status_text, int status_code ) {
+void osrf_message_set_status_info( osrf_message* msg,
+		const char* status_name, const char* status_text, int status_code ) {
 	if(!msg) return;
 
 	if( status_name != NULL ) 
@@ -92,7 +90,7 @@ void osrf_message_set_status_info(
 }
 
 
-void osrf_message_set_result_content( osrf_message* msg, char* json_string ) {
+void osrf_message_set_result_content( osrf_message* msg, const char* json_string ) {
 	if( msg == NULL || json_string == NULL) return;
 	msg->result_string =	strdup(json_string);
 	if(json_string) msg->_result_content = jsonParseString(json_string);
@@ -138,7 +136,7 @@ char* osrfMessageSerializeBatch( osrfMessage* msgs [], int count ) {
 
 	char* j;
 	int i = 0;
-	osrfMessage* msg = NULL;
+	const osrfMessage* msg = NULL;
 	jsonObject* wrapper = jsonNewObject(NULL);
 
 	while( ((msg = msgs[i]) && (i++ < count)) ) 
@@ -151,7 +149,7 @@ char* osrfMessageSerializeBatch( osrfMessage* msgs [], int count ) {
 }
 
 
-char* osrf_message_serialize(osrf_message* msg) {
+char* osrf_message_serialize(const osrf_message* msg) {
 
 	if( msg == NULL ) return NULL;
 	char* j = NULL;
@@ -169,7 +167,7 @@ char* osrf_message_serialize(osrf_message* msg) {
 }
 
 
-jsonObject* osrfMessageToJSON( osrfMessage* msg ) {
+jsonObject* osrfMessageToJSON( const osrfMessage* msg ) {
 
 	jsonObject* json = jsonNewObject(NULL);
 	jsonObjectSetClass(json, "osrfMessage");
@@ -240,7 +238,7 @@ jsonObject* osrfMessageToJSON( osrfMessage* msg ) {
 }
 
 
-int osrf_message_deserialize(char* string, osrf_message* msgs[], int count) {
+int osrf_message_deserialize(const char* string, osrf_message* msgs[], int count) {
 
 	if(!string || !msgs || count <= 0) return 0;
 	int numparsed = 0;
