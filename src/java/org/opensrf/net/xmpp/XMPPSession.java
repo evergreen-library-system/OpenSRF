@@ -242,6 +242,7 @@ public class XMPPSession {
                 msg = reader.popMessageQueue();
                 if( msg != null ) return msg;
                 checkConnected();
+                if(timeout == 0) break;
             }
         }
 
