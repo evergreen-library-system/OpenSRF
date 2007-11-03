@@ -148,7 +148,7 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 	
 				} else {
 		
-					osrfLogError( OSRF_LOG_MARK, " * Running application %s\n", appname);
+					osrfLogInfo( OSRF_LOG_MARK, " * Running application %s\n", appname);
 					if( osrfAppRegisterApplication( appname, libfile ) == 0 ) 
 						osrf_prefork_run(appname);
 	
@@ -198,7 +198,7 @@ static void report_child_status( pid_t pid, int status )
 			osrfLogError( OSRF_LOG_MARK, "Child process %ld (app %s) exited with return code %d",
 						  (long) pid, app, rc );
 		else
-			osrfLogError( OSRF_LOG_MARK, "Child process %ld (app %s) exited normally",
+			osrfLogInfo( OSRF_LOG_MARK, "Child process %ld (app %s) exited normally",
 						  (long) pid, app );
 	}
 	else if( WIFSIGNALED( status ) )
