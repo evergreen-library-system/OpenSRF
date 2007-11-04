@@ -1,4 +1,5 @@
 package OpenSRF::Application;
+# vim:noet:ts=4
 use vars qw/$_app $log @_METHODS $thunk $server_class/;
 
 use base qw/OpenSRF/;
@@ -98,7 +99,7 @@ sub handler {
         my @p = $app_msg->params;
 		my $method_name = $app_msg->method;
 		my $method_proto = $session->last_message_api_level;
-		$log->info("CALL: $method_name [".join(', ',@p)."]");
+		$log->info("CALL: $method_name [". (@p ? join(', ',@p) : '') ."]");
 
 		my $coderef = $app->method_lookup( $method_name, $method_proto, 1, 1 );
 
