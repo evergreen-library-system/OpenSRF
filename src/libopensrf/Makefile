@@ -1,10 +1,17 @@
-# OSRF_LOG_PARAMS log all incoming method params at OSRF_INFO log level. 
-# OSRF_STRICT_PARAMS instructs the app handler to return an error if the number of method arguments
-#	provided to any method is not at least as large as the 'argc' setting for the method
+# ------------------------------------------------------------------
+# To build the standalone JSON lib libosrf_json.so:
+# 	$ make libosrf_json.so
+# To build the standalone JSON lib libosrf_json.so with XML utils 
+# 	support, use something like the following:
+# 	$ CFLAGS="-DOSRF_JSON_ENABLE_XML_UTILS -I/usr/include/libxml2" LDLIBS=-lxml2 make libosrf_json.so
+#
+# The compiler flag -DOSRF_JSON_ALLOW_COMMENTS tells the parser to 
+# allow legacy JSON comments like /* comment */
+# ------------------------------------------------------------------
 
-CFLAGS	+=  -DASSUME_STATELESS  -DOSRF_LOG_PARAMS -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing
-LDLIBS	+= -lxml2 -lobjson -ldl -lmemcache 
-OSRF_INC = ../../include/opensrf/
+CFLAGS	+=  -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing -I../../include -fPIC -Wall -DOSRF_JSON_ENABLE_XML_UTILS
+LDLIBS	+= -lxml2 -ldl -lmemcache 
+export OSRF_INC = ../../include/opensrf/
 
 TARGETS = 	osrf_message.o \
 			osrf_app_session.o \
@@ -27,12 +34,24 @@ TARGETS = 	osrf_message.o \
 			utils.o\
 			socket_bundle.o\
 			sha.o\
-			string_array.o 
+			string_array.o
+
+JSON_TARGETS = 	osrf_json_object.o\
+				osrf_json_parser.o \
+				osrf_json_tools.o \
+				osrf_legacy_json.o \
+				osrf_json_xml.o
+
+# use these when building the standalone JSON module
+JSON_DEPS = osrf_list.o\
+			osrf_hash.o\
+			utils.o\
+			log.o\
+			md5.o\
+			string_array.o
 
 
 all: opensrf
-
-
 
 # Build the OpenSRF C binary
 opensrf:	opensrf.o libopensrf.so
@@ -41,8 +60,26 @@ opensrf:	opensrf.o libopensrf.so
 
 
 # Build the OpenSRF library
-libopensrf.so:	$(TARGETS)
-	$(CC) -shared -W1 $(LDFLAGS) $(LDLIBS) $(TARGETS) -o $(TMPDIR)/libopensrf.so
+libopensrf.so:	$(TARGETS) json
+	if [ ! -z "$(OSRF_LEGACY_JSON)" ]; then\
+		$(CC) -shared -W1 $(LDFLAGS) $(LDLIBS) $(TARGETS) -o $(TMPDIR)/libopensrf.so;\
+	else\
+		$(CC) -shared -W1 $(LDFLAGS) $(LDLIBS) $(TARGETS) $(JSON_TARGETS) -o $(TMPDIR)/libopensrf.so;\
+	fi; 
+
+
+json:	$(JSON_TARGETS) $(JSON_DEPS)
+	if [ ! -z "$(OSRF_LEGACY_JSON)" ]; then \
+		$(CC) -shared -W1  $(CFLAGS) \
+			$(LDFLAGS) $(JSON_TARGETS) $(JSON_DEPS) -o $(TMPDIR)/libobjson.so;\
+	fi;
+
+libosrf_json.so:	$(JSON_TARGETS) $(JSON_DEPS)
+	$(CC) -shared -W1 $(CFLAGS) \
+		$(LDFLAGS) $(LDLIBS) $(JSON_TARGETS) $(JSON_DEPS) -o $@
+
+
+osrf_json_test:	osrf_json_test.o $(JSON_TARGETS) $(JSON_DEPS)
 
 
 opensrf.o:	opensrf.c
@@ -66,8 +103,17 @@ utils.o:	utils.c $(OSRF_INC)/utils.h
 socket_bundle.o:	socket_bundle.c $(OSRF_INC)/socket_bundle.h
 sha.o:	sha.c $(OSRF_INC)/sha.h
 string_array.o:	string_array.c $(OSRF_INC)/string_array.h
+osrf_json_object.o:	osrf_json_object.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
+osrf_json_parser.o:	osrf_json_parser.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
+osrf_json_tools.o:	osrf_json_tools.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
+osrf_legacy_json.o:	osrf_legacy_json.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
+osrf_json_xml.o:	osrf_json_xml.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_xml.h
+osrf_json_test.o:	osrf_json_test.c
 
 
 clean:
-	/bin/rm -f *.o libopensrf.so opensrf
+	/bin/rm -f *.o *.so opensrf osrf_json_test
+
+
+
 

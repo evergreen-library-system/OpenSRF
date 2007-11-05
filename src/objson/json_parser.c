@@ -482,7 +482,7 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 							"json_parse_json_string(): truncated escaped unicode"); }
 
 					char buff[5];
-					memset(buff,0,5);
+					memset(buff, 0, sizeof(buff));
 					memcpy(buff, string + (*index), 4);
 
 
@@ -491,7 +491,7 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 					/* The following chunk was borrowed with permission from 
 						json-c http://oss.metaparadigm.com/json-c/ */
 					unsigned char utf_out[4];
-					memset(utf_out,0,4);
+					memset(utf_out, 0, sizeof(utf_out));
 
 					#define hexdigit(x) ( ((x) <= '9') ? (x) - '0' : ((x) & 7) + 9)
 
@@ -695,7 +695,7 @@ int json_eat_comment(char* string, unsigned long* index, char** buffer, int pars
 int json_handle_error(char* string, unsigned long* index, char* err_msg) {
 
 	char buf[60];
-	memset(buf, 0, 60);
+	memset(buf, 0, sizeof(buf));
 
 	if(*index > 30)
 		strncpy( buf, string + (*index - 30), 59 );

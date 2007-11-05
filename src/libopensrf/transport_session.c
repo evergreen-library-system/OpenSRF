@@ -183,8 +183,7 @@ int session_connect( transport_session* session,
 		char* our_hostname = getenv("HOSTNAME");
 		size1 = 150 + strlen( server );
 		char stanza1[ size1 ]; 
-		memset( stanza1, 0, size1 );
-		sprintf( stanza1, 
+		snprintf( stanza1, sizeof(stanza1),
 				"<stream:stream version='1.0' xmlns:stream='http://etherx.jabber.org/streams' "
 				"xmlns='jabber:component:accept' to='%s' from='%s' xml:lang='en'>",
 				username, our_hostname );
@@ -207,14 +206,12 @@ int session_connect( transport_session* session,
 	
 			int ss = session->session_id->n_used + strlen(password) + 5;
 			char hashstuff[ss];
-			memset(hashstuff,0,ss);
-			sprintf( hashstuff, "%s%s", session->session_id->buf, password );
+			snprintf( hashstuff, sizeof(hashstuff), "%s%s", session->session_id->buf, password );
 
 			char* hash = shahash( hashstuff );
 			size2 = 100 + strlen( hash );
 			char stanza2[ size2 ];
-			memset( stanza2, 0, size2 );
-			sprintf( stanza2, "<handshake>%s</handshake>", hash );
+			snprintf( stanza2, sizeof(stanza2), "<handshake>%s</handshake>", hash );
 	
 			//if( ! tcp_send( session->sock_obj, stanza2 )  ) {
 			if( socket_send( session->sock_id, stanza2 )  ) {
@@ -228,8 +225,7 @@ int session_connect( transport_session* session,
 		/* the first Jabber connect stanza */
 		size1 = 100 + strlen( server );
 		char stanza1[ size1 ]; 
-		memset( stanza1, 0, size1 );
-		sprintf( stanza1, 
+		snprintf( stanza1, sizeof(stanza1), 
 				"<stream:stream to='%s' xmlns='jabber:client' "
 				"xmlns:stream='http://etherx.jabber.org/streams'>",
 			server );
@@ -253,9 +249,7 @@ int session_connect( transport_session* session,
 			/* the second jabber connect stanza including login info*/
 			size2 = 150 + strlen( username ) + strlen(password) + strlen(resource);
 			char stanza2[ size2 ];
-			memset( stanza2, 0, size2 );
-		
-			sprintf( stanza2, 
+			snprintf( stanza2, sizeof(stanza2), 
 					"<iq id='123456789' type='set'><query xmlns='jabber:iq:auth'>"
 					"<username>%s</username><password>%s</password><resource>%s</resource></query></iq>",
 					username, password, resource );
@@ -273,17 +267,14 @@ int session_connect( transport_session* session,
 
 			int ss = session->session_id->n_used + strlen(password) + 5;
 			char hashstuff[ss];
-			memset(hashstuff,0,ss);
-			sprintf( hashstuff, "%s%s", session->session_id->buf, password );
+			snprintf( hashstuff, sizeof(hashstuff), "%s%s", session->session_id->buf, password );
 
 			char* hash = shahash( hashstuff );
 
 			/* the second jabber connect stanza including login info*/
 			size2 = 150 + strlen( hash ) + strlen(password) + strlen(resource);
 			char stanza2[ size2 ];
-			memset( stanza2, 0, size2 );
-		
-			sprintf( stanza2, 
+			snprintf( stanza2, sizeof(stanza2), 
 					"<iq id='123456789' type='set'><query xmlns='jabber:iq:auth'>"
 					"<username>%s</username><digest>%s</digest><resource>%s</resource></query></iq>",
 					username, hash, resource );
@@ -566,7 +557,6 @@ void characterHandler(
 		void *session, const xmlChar *ch, int len) {
 
 	char data[len+1];
-	memset( data, 0, len+1 );
 	strncpy( data, (char*) ch, len );
 	data[len] = 0;
 
@@ -597,7 +587,7 @@ void characterHandler(
 
 	if( ses->state_machine->in_error ) {
 		/* for now... */
-		osrfLogWarning( OSRF_LOG_MARK,  "ERROR Xml fragment: %s\n", ch );
+		osrfLogWarning( OSRF_LOG_MARK,  "ERROR XML fragment: %s\n", ch );
 	}
 
 }

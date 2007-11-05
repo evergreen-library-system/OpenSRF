@@ -16,13 +16,13 @@
 from osrf.json import *
 from osrf.log import *
 from osrf.ex import *
-from osrf.ses import osrfFindSession, osrfClientSession, osrfServerSession
+from osrf.ses import osrfSession, osrfClientSession, osrfServerSession
 from osrf.const import *
 from time import time
 
 
 def osrfPushStack(netMessage):
-   ses = osrfFindSession(netMessage.thread)
+   ses = osrfSession.findSession(netMessage.thread)
 
    if not ses:
       # This is an incoming request from a client, create a new server session

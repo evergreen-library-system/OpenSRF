@@ -193,7 +193,7 @@ void osrfHashFree( osrfHash* hash ) {
 	}
 
 	osrfListFree(hash->hash);
-	osrfStringArrayFree(hash->keys);
+    OSRF_STRING_ARRAY_FREE(hash->keys);
 	free(hash);
 }
 
@@ -201,7 +201,6 @@ void osrfHashFree( osrfHash* hash ) {
 
 osrfHashIterator* osrfNewHashIterator( osrfHash* hash ) {
 	if(!hash) return NULL;
-	//osrfHashIterator* itr = safe_malloc(sizeof(osrfHashIterator));
 	osrfHashIterator* itr;
 	OSRF_MALLOC(itr, sizeof(osrfHashIterator));
 	itr->hash = hash;
@@ -214,8 +213,7 @@ void* osrfHashIteratorNext( osrfHashIterator* itr ) {
 	if(!(itr && itr->hash)) return NULL;
 	if( itr->currentIdx >= itr->keys->size ) return NULL;
 	free(itr->current);
-	itr->current = strdup(
-			osrfStringArrayGetString(itr->keys, itr->currentIdx++));
+	itr->current = strdup(osrfStringArrayGetString(itr->keys, itr->currentIdx++));
 	char* val = osrfHashGet( itr->hash, itr->current );
 	return val;
 }
@@ -223,14 +221,12 @@ void* osrfHashIteratorNext( osrfHashIterator* itr ) {
 void osrfHashIteratorFree( osrfHashIterator* itr ) {
 	if(!itr) return;
 	free(itr->current);
-	//osrfStringArrayFree(itr->keys);
 	free(itr);
 }
 
 void osrfHashIteratorReset( osrfHashIterator* itr ) {
 	if(!itr) return;
 	free(itr->current);
-	//osrfStringArrayFree(itr->keys);
 	itr->keys = osrfHashKeysInc(itr->hash);
 	itr->currentIdx = 0;
 	itr->current = NULL;

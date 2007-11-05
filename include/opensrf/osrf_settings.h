@@ -12,8 +12,7 @@
 #include <opensrf/utils.h>
 #include <opensrf/osrf_app_session.h>
 
-#include <objson/object.h>
-#include <objson/json_parser.h>
+#include <opensrf/osrf_json.h>
 
 typedef struct { 
 	char* hostname; 
@@ -21,11 +20,11 @@ typedef struct {
 } osrf_host_config;
 
 
-osrf_host_config* osrf_settings_new_host_config(char* hostname);
+osrf_host_config* osrf_settings_new_host_config(const char* hostname);
 void osrf_settings_free_host_config(osrf_host_config*);
-char* osrf_settings_host_value(char* path, ...);
-jsonObject* osrf_settings_host_value_object(char* format, ...);
-int osrf_settings_retrieve(char* hostname);
+char* osrf_settings_host_value(const char* path, ...);
+jsonObject* osrf_settings_host_value_object(const char* format, ...);
+int osrf_settings_retrieve(const char* hostname);
 
 #endif
 

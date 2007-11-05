@@ -14,7 +14,7 @@
 # -----------------------------------------------------------------------
 
 from osrf.conf import osrfConfig, osrfConfigValue, osrfConfigValueNoEx
-from osrf.net import osrfNetwork, osrfSetNetworkHandle
+from osrf.net import osrfNetwork, osrfSetNetworkHandle, osrfGetNetworkHandle
 from osrf.stack import osrfPushStack
 from osrf.log import *
 from osrf.set import osrfLoadSettings
@@ -23,6 +23,10 @@ import sys
 
 def osrfConnect(configFile, configContext):
     """ Connects to the opensrf network """
+
+    if osrfGetNetworkHandle():
+        ''' This thread already has a handle '''
+        return
 
     # parse the config file
     configParser = osrfConfig(configFile, configContext)
@@ -46,6 +50,8 @@ def osrfConnect(configFile, configContext):
 
     # load the domain-wide settings file
     osrfLoadSettings(osrfConfigValue('domains.domain'))
+
+
 
 
 

@@ -201,7 +201,7 @@ $client->status( new OpenSRF::DomainObject::oilsContinueStatus );
 =head1 ABSTRACT
 
 Implements the STATUS_CONTINUE message, informing the client that it should
-continue to wait for a response to it's request.
+continue to wait for a response to its request.
 
 =head1 SEE ALSO
 
@@ -316,11 +316,11 @@ $client->send( 'ERROR', OpenSRF::DomainObject::oilsException->new( status => "AR
 
 The base class for Exception messages sent between client and server.  This
 is implemented on top of the C<OpenSRF::DomainObject::oilsResponse> class, and 
-sets the default B<status> to C<Exception occured> and B<statusCode> to C<STATUS_BADREQUEST>.
+sets the default B<status> to C<Exception occurred> and B<statusCode> to C<STATUS_BADREQUEST>.
 
 =cut
 
-$status = 'Exception occured';
+$status = 'Exception occurred';
 $statusCode = STATUS_INTERNALSERVERERROR;
 
 #-------------------------------------------------------------------------------
@@ -372,7 +372,7 @@ OpenSRF::Utils::JSON->register_class_hint( hint => 'osrfMethodException', name =
 
 =head1 NAME
 
-OpenSRF::DomainObject::oilsMehtodException
+OpenSRF::DomainObject::oilsMethodException
 
 =head1 SYNOPSIS
 
@@ -387,7 +387,7 @@ $client->send( 'ERROR', new OpenSRF::DomainObject::oilsMethodException );
 
 =head1 ABSTRACT
 
-The class for Exceptions that occur durring the B<CONNECT> phase of a session.  This
+The class for Exceptions that occur during the B<CONNECT> phase of a session.  This
 is implemented on top of the C<OpenSRF::DomainObject::oilsException> class, and 
 sets the default B<status> to C<Connect Request Failed> and B<statusCode> to C<STATUS_NOTFOUND>.
 
@@ -398,7 +398,7 @@ B<OpenSRF::DomainObject::oilsException>
 =cut
 
 
-$status = 'A server error occured during method execution';
+$status = 'A server error occurred during method execution';
 $statusCode = STATUS_INTERNALSERVERERROR;
 
 # -------------------------------------------

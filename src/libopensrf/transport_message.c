@@ -238,7 +238,7 @@ char* message_to_xml( const transport_message* msg ) {
 		xmlAddChild( message_node, error_node );
 		xmlNewProp( error_node, BAD_CAST "type", BAD_CAST msg->error_type );
 		char code_buf[16];
-		memset( code_buf, 0, 16);
+		osrf_clearbuf( code_buf, sizeof(code_buf));
 		sprintf(code_buf, "%d", msg->error_code );
 		xmlNewProp( error_node, BAD_CAST "code", BAD_CAST code_buf  );
 	}
@@ -303,6 +303,7 @@ void jid_get_username( const char* jid, char buf[], int size ) {
 		if( jid[i] == 64 ) { /*ascii @*/
 			if(i > size)  i = size;
 			strncpy( buf, jid, i );
+			buf[i] = '\0'; // strncpy doesn't provide the nul
 			return;
 		}
 	}
@@ -319,6 +320,7 @@ void jid_get_resource( const char* jid, char buf[], int size)  {
 			int rlen = len - (i+1);
 			if(rlen > size) rlen = size;
 			strncpy( buf, start, rlen );
+			buf[rlen] = '\0'; // strncpy doesn't provide the nul
 		}
 	}
 }
@@ -343,6 +345,7 @@ void jid_get_domain( const char* jid, char buf[], int size ) {
 		int dlen = index2 - index1;
 		if(dlen > size) dlen = size;
 		memcpy( buf, jid + index1, dlen );
+		buf[dlen] = '\0'; // memcpy doesn't provide the nul
 	}
 }
 

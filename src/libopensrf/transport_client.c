@@ -23,7 +23,7 @@ int main( int argc, char** argv ) {
 		if( recv->body ) {
 			int len = strlen(recv->body);
 			char buf[len + 20];
-			memset( buf, 0, len + 20); 
+			osrf_clearbuf( buf, 0, sizeof(buf)); 
 			sprintf( buf, "Echoing...%s", recv->body );
 			send = message_init( buf, "Echoing Stuff", "12345", recv->sender, "" );
 		} else {

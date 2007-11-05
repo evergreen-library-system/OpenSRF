@@ -41,6 +41,18 @@ GNU General Public License for more details.
 		memset( ptr, 0, size );\
 	} while(0)
 
+#ifndef NDEBUG
+// The original ... replace with noop once no more errors occur in NDEBUG mode
+#define osrf_clearbuf( s, n ) memset( s, 0, n )
+#else
+#define osrf_clearbuf( s, n ) \
+	do { \
+		char * clearbuf_temp_s = (s); \
+		size_t clearbuf_temp_n = (n); \
+		memset( clearbuf_temp_s, '!', clearbuf_temp_n ); \
+		clearbuf_temp_s[ clearbuf_temp_n - 1 ] = '\0'; \
+	} while( 0 )
+#endif
 
 #define OSRF_BUFFER_ADD(gb, data) \
 	do {\
@@ -63,6 +75,10 @@ GNU General Public License for more details.
 				buffer_add_char(gb, c);\
 		}\
 	}while(0)
+
+#define OSRF_BUFFER_RESET(gb) \
+    memset(gb->buf, 0, gb->size);\
+    gb->n_used = 0;
 
 	
 
@@ -155,6 +171,7 @@ int set_proc_title( char* format, ... );
 int daemonize();
 
 void* safe_malloc(int size);
+void* safe_calloc(int size);
 
 // ---------------------------------------------------------------------------------
 // Generic growing buffer. Add data all you want

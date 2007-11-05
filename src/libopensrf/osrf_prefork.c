@@ -210,7 +210,7 @@ void prefork_child_process_request(prefork_child* child, char* data) {
 
 		/* if no data was reveived within the timeout interval */
 		if( !recvd && (end - start) >= keepalive ) {
-			osrfLogInfo(OSRF_LOG_MARK, "No request was reveived in %d seconds, exiting stateful session", keepalive);
+			osrfLogInfo(OSRF_LOG_MARK, "No request was received in %d seconds, exiting stateful session", keepalive);
 			osrfAppSessionStatus( 
 					session, 
 					OSRF_STATUS_TIMEOUT, 
@@ -547,9 +547,9 @@ void check_children( prefork_simple* forker, int forever ) {
 
 			/* now suck off the data */
 			char buf[64];
-			memset( buf, 0, 64);
+			osrf_clearbuf( buf, sizeof(buf) );
 			if( (n=read(cur_child->read_status_fd, buf, 63))  < 0 ) {
-				osrfLogWarning( OSRF_LOG_MARK, "Read error afer select in child status read with errno %d", errno);
+				osrfLogWarning( OSRF_LOG_MARK, "Read error after select in child status read with errno %d", errno);
 			}
 
 			osrfLogDebug( OSRF_LOG_MARK,  "Read %d bytes from status buffer: %s", n, buf );
@@ -566,7 +566,7 @@ void prefork_child_wait( prefork_child* child ) {
 	int i,n;
 	growing_buffer* gbuf = buffer_init( READ_BUFSIZE );
 	char buf[READ_BUFSIZE];
-	memset( buf, 0, READ_BUFSIZE );
+	osrf_clearbuf( buf, sizeof(buf) );
 
 	for( i = 0; i < child->max_requests; i++ ) {
 
@@ -579,7 +579,7 @@ void prefork_child_wait( prefork_child* child ) {
 			if(!gotdata)
 				set_fl(child->read_data_fd, O_NONBLOCK );
 			buffer_add( gbuf, buf );
-			memset( buf, 0, READ_BUFSIZE );
+			osrf_clearbuf( buf, sizeof(buf) );
 			gotdata = 1;
 		}
 

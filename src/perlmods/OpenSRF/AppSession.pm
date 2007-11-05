@@ -156,6 +156,14 @@ sub last_sent_payload {
 	return $self->{'last_sent_payload'};
 }
 
+sub session_locale {
+	my( $self, $type ) = @_;
+	if( $type ) {
+		return $self->{'session_locale'} = $type;
+	}
+	return $self->{'session_locale'};
+}
+
 sub last_sent_type {
 	my( $self, $type ) = @_;
 	if( $type ) {
@@ -192,9 +200,6 @@ sub stateless {
 }
 
 # When we're a client and we want to connect to a remote service
-# create( $app, username => $user, secret => $passwd );
-#    OR
-# create( $app, sysname => $user, secret => $shared_secret );
 sub create {
 	my $class = shift;
 	$class = ref($class) || $class;
@@ -202,6 +207,7 @@ sub create {
 	my $app = shift;
         my $api_level = shift;
 	my $quiet = shift;
+	my $locale = shift;
 
 	$api_level = 1 if (!defined($api_level));
 			        
@@ -237,6 +243,7 @@ sub create {
 			   session_id  => $sess_id,
 			   remote_id   => $r_id,
 			   raise_error   => $quiet ? 0 : 1,
+			   session_locale   => $locale,
 			   api_level   => $api_level,
 			   orig_remote_id   => $r_id,
 				peer_handle => $peer_handle,
@@ -494,6 +501,7 @@ sub send {
 	
 		$msg->api_level($self->api_level);
 		$msg->payload($payload) if $payload;
+		$msg->sender_locale($self->session_locale) if $self->session_locale;
 	
 		push @doc, $msg;
 
@@ -742,7 +750,7 @@ sub recv {
 	$logger->debug( "Number of matched responses: " . @list, DEBUG );
 	$self->queue_wait(0); # check for statuses
 	
-	return $list[0] unless (wantarray);
+	return $list[0] if (!wantarray);
 	return @list;
 }
 

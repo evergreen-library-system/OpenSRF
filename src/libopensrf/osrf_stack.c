@@ -67,7 +67,7 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg, char* my_s
 
 	osrf_app_session_set_remote( session, msg->sender );
 	osrf_message* arr[OSRF_MAX_MSGS_PER_PACKET];
-	memset(arr, 0, OSRF_MAX_MSGS_PER_PACKET );
+	memset(arr, 0, sizeof(arr));
 	int num_msgs = osrf_message_deserialize(msg->body, arr, OSRF_MAX_MSGS_PER_PACKET);
 
 	osrfLogDebug( OSRF_LOG_MARK,  "We received %d messages from %s", num_msgs, msg->sender );
@@ -92,7 +92,7 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg, char* my_s
 
 			} else {
 				osrfLogWarning( OSRF_LOG_MARK, " * Jabber Error is for top level remote id [%s], no one "
-						"to send my message too!!!", session->remote_id );
+						"to send my message to!!!", session->remote_id );
 			}
 		}
 

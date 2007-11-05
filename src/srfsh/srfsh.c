@@ -47,7 +47,7 @@ static int parse_request( char* request );
 static int handle_router( char* words[] );
 
 /* utility method for print time data */
-/* static int handle_time( char* words[] ); */
+static int handle_time( char* words[] ); 
 
 /* handles app level requests */
 static int handle_request( char* words[], int relay );
@@ -80,8 +80,7 @@ int main( int argc, char* argv[] ) {
 	char* home = getenv("HOME");
 	int l = strlen(home) + 36;
 	char fbuf[l];
-	memset(fbuf, 0, l);
-	sprintf(fbuf,"%s/.srfsh.xml",home);
+	snprintf(fbuf, sizeof(fbuf), "%s/.srfsh.xml", home);
 	
 	if(!access(fbuf, R_OK)) {
 		if( ! osrf_system_bootstrap_client(fbuf, "srfsh") ) {
@@ -182,33 +181,18 @@ int main( int argc, char* argv[] ) {
 		write_history(history_file);
 
 	free(request);
+	free(login_session);
 
 	osrf_system_shutdown();
 	return 0;
 }
-
-/*
-static void sig_child_handler( int s ) {
-	child_dead = 1;
-}
-*/
-
-/*
-void sig_int_handler( int s ) {
-	printf("\n");
-	caught_sigint = 1;
-	signal(SIGINT,sig_int_handler);
-}
-*/
 
 static int load_history( void ) {
 
 	char* home = getenv("HOME");
 	int l = strlen(home) + 24;
 	char fbuf[l];
-
-	memset(fbuf, 0, l);
-	sprintf(fbuf,"%s/.srfsh_history",home);
+	snprintf(fbuf, sizeof(fbuf), "%s/.srfsh_history", home);
 	history_file = strdup(fbuf);
 
 	if(!access(history_file, W_OK | R_OK )) {
@@ -279,10 +263,8 @@ static int parse_request( char* request ) {
 	if( !strcmp(words[0],"router") ) 
 		ret_val = handle_router( words );
 
-	/*
 	else if( !strcmp(words[0],"time") ) 
 		ret_val = handle_time( words );
-		*/
 
 	else if (!strcmp(words[0],"request"))
 		ret_val = handle_request( words, 0 );
@@ -337,14 +319,14 @@ static int handle_introspect(char* words[]) {
 		static const char text[] = "request %s opensrf.system.method %s";
 		len = sizeof( text ) + strlen( words[1] ) + strlen( words[2] );
 		char buf[len];
-		sprintf( buf, text, words[1], words[2] );
+		snprintf( buf, sizeof(buf), text, words[1], words[2] );
 		return parse_request( buf );
 
 	} else {
 		static const char text[] = "request %s opensrf.system.method.all";
 		len = sizeof( text ) + strlen( words[1] );
 		char buf[len];
-		sprintf( buf, text, words[1] );
+		snprintf( buf, sizeof(buf), text, words[1] );
 		return parse_request( buf );
 
 	}
@@ -363,17 +345,14 @@ static int handle_login( char* words[]) {
 		int orgloci = (orgloc) ? atoi(orgloc) : 0;
 		if(!type) type = "opac";
 
-		char buf[256];
-		memset(buf,0,256);
+		char login_text[] = "request open-ils.auth open-ils.auth.authenticate.init \"%s\"";
+		size_t len = sizeof( login_text ) + strlen(username) + 1;
 
-		char buf2[256];
-		memset(buf2,0,256);
+		char buf[len];
+		snprintf( buf, sizeof(buf), login_text, username );
+		parse_request(buf);
 
-		sprintf( buf, 
-				"request open-ils.auth open-ils.auth.authenticate.init \"%s\"", username );
-		parse_request(buf); 
-
-		char* hash;
+		const char* hash;
 		if(last_result && last_result->_result_content) {
 			jsonObject* r = last_result->_result_content;
 			hash = jsonObjectGetString(r);
@@ -382,18 +361,11 @@ static int handle_login( char* words[]) {
 
 		char* pass_buf = md5sum(password);
 
-		char both_buf[256];
-		memset(both_buf,0,256);
-		sprintf(both_buf,"%s%s",hash, pass_buf);
+		size_t both_len = strlen( hash ) + strlen( pass_buf ) + 1;
+		char both_buf[both_len];
+		snprintf(both_buf, sizeof(both_buf), "%s%s", hash, pass_buf);
 
 		char* mess_buf = md5sum(both_buf);
-
-		/*
-		sprintf( buf2, "request open-ils.auth open-ils.auth.authenticate.complete "
-				"{ \"username\" : \"%s\", \"password\" : \"%s\", "
-				"\"type\" : \"%s\", \"org\" : %d, \"workstation\": \"%s\"}", 
-				username, mess_buf, type, orgloci, workstation );
-				*/
 
 		growing_buffer* argbuf = buffer_init(64);
 		buffer_fadd(argbuf, 
@@ -411,19 +383,26 @@ static int handle_login( char* words[]) {
 		parse_request( argbuf->buf );
 		buffer_free(argbuf);
 
-		jsonObject* x = last_result->_result_content;
+		if( login_session != NULL )
+			free( login_session );
+
+		const jsonObject* x = last_result->_result_content;
 		double authtime = 0;
 		if(x) {
-			char* authtoken = jsonObjectGetString(
-					jsonObjectGetKey(jsonObjectGetKey(x,"payload"), "authtoken"));
+			const char* authtoken = jsonObjectGetString(
+					jsonObjectGetKeyConst(jsonObjectGetKeyConst(x,"payload"), "authtoken"));
 			authtime  = jsonObjectGetNumber(
-					jsonObjectGetKey(jsonObjectGetKey(x,"payload"), "authtime"));
-			if(authtoken) login_session = strdup(authtoken);
-			else login_session = NULL;
+					jsonObjectGetKeyConst(jsonObjectGetKeyConst(x,"payload"), "authtime"));
+
+			if(authtoken)
+				login_session = strdup(authtoken);
+			else
+				login_session = NULL;
 		}
 		else login_session = NULL;
 
-		printf("Login Session: %s.  Session timeout: %f\n", login_session, authtime );
+		printf("Login Session: %s.  Session timeout: %f\n",
+			   (login_session ? login_session : "(none)"), authtime );
 		
 		return 1;
 
@@ -487,8 +466,19 @@ static int handle_print( char* words[]) {
 			}
 		}
 
+		if(!strcmp(variable,"raw_print")) {
+			if(raw_print) {
+				printf("raw_print = true\n");
+				return 1;
+			} else {
+				printf("raw_print = false\n");
+				return 1;
+			}
+		}
+
 		if(!strcmp(variable,"login")) {
-			printf("login session = %s\n", login_session );
+			printf("login session = %s\n",
+				   login_session ? login_session : "(none)" );
 			return 1;
 		}
 
@@ -558,7 +548,7 @@ int send_request( char* server,
 	jsonObject* params = NULL;
 	if( !relay ) {
 		if( buffer != NULL && buffer->n_used > 0 ) 
-			params = json_parse_string(buffer->buf);
+			params = jsonParseString(buffer->buf);
 	} else {
 		if(!last_result || ! last_result->_result_content) { 
 			printf("We're not going to call 'relay' with no result params\n");
@@ -616,22 +606,25 @@ int send_request( char* server,
 	
 				char* content;
 	
-				if( pretty_print && omsg->_result_content ) {
+				if( pretty_print ) {
 					char* j = jsonObjectToJSON(omsg->_result_content);
 					//content = json_printer(j); 
 					content = jsonFormatString(j);
 					free(j);
-				} else
-					content = jsonObjectGetString(omsg->_result_content);
-	
+				} else {
+					const char * temp_content = jsonObjectGetString(omsg->_result_content);
+					if( ! temp_content )
+						temp_content = "[null]";
+					content = strdup( temp_content );
+				}
+				
 				printf( "\nReceived Data: %s\n", content ); 
 				free(content);
 	
 			} else {
 
 				char code[16];
-				memset(code, 0, 16);
-				sprintf( code, "%d", omsg->status_code );
+				snprintf( code, sizeof(code), "%d", omsg->status_code );
 				buffer_add( resp_buffer, code );
 
 				printf( "\nReceived Exception:\nName: %s\nStatus: %s\nStatus: %s\n", 
@@ -654,9 +647,14 @@ int send_request( char* server,
 					//content = json_printer(j); 
 					content = jsonFormatString(j);
 					free(j);
-				} else
-					content = jsonObjectGetString(omsg->_result_content);
-	
+				} else {
+					const char * temp_content = jsonObjectGetString(omsg->_result_content);
+					if( temp_content )
+						content = strdup( temp_content );
+					else
+						content = NULL;
+				}
+
 				buffer_add( resp_buffer, "\nReceived Data: " ); 
 				buffer_add( resp_buffer, content );
 				buffer_add( resp_buffer, "\n" );
@@ -670,8 +668,7 @@ int send_request( char* server,
 				buffer_add( resp_buffer, omsg->status_text );
 				buffer_add( resp_buffer, "\nStatus: " );
 				char code[16];
-				memset(code, 0, 16);
-				sprintf( code, "%d", omsg->status_code );
+				snprintf( code, sizeof(code), "%d", omsg->status_code );
 				buffer_add( resp_buffer, code );
 			}
 		}
@@ -705,30 +702,15 @@ int send_request( char* server,
 
 }
 
-/*
 static int handle_time( char* words[] ) {
-
-	if( ! words[1] ) {
-
-		char buf[36];
-		memset(buf,0,36);
-		get_timestamp(buf);
-		printf( "%s\n", buf );
-		return 1;
-	}
-
-	if( words[1] ) {
-		time_t epoch = (time_t)atoi( words[1] );
-		char* localtime = strdup( ctime( &epoch ) );
-		printf( "%s => %s", words[1], localtime );
-		free(localtime);
-		return 1;
-	}
-
-	return 0;
-
+	if(!words[1]) {
+		printf("%f\n", get_timestamp_millis());
+    } else {
+        time_t epoch = (time_t) atoi(words[1]);
+		printf("%s", ctime(&epoch));
+    }
+	return 1;
 }
-*/
 
 		
 
@@ -737,9 +719,10 @@ static int router_query_servers( const char* router_server ) {
 	if( ! router_server || strlen(router_server) == 0 ) 
 		return 0;
 
-	char rbuf[256];
-	memset(rbuf,0,256);
-	sprintf(rbuf,"router@%s/router", router_server );
+	const static char router_text[] = "router@%s/router";
+	size_t len = sizeof( router_text ) + strlen( router_server ) + 1;
+	char rbuf[len];
+	snprintf(rbuf, sizeof(rbuf), router_text, router_server );
 		
 	transport_message* send = 
 		message_init( "servers", NULL, NULL, rbuf, NULL );
@@ -775,47 +758,47 @@ static int print_help( void ) {
 			"---------------------------------------------------------------------------------\n"
 			"Commands:\n"
 			"---------------------------------------------------------------------------------\n"
-			"help			- Display this message\n"
-			"!<command> [args] - Forks and runs the given command in the shell\n"
+			"help                   - Display this message\n"
+			"!<command> [args]      - Forks and runs the given command in the shell\n"
 		/*
 			"time			- Prints the current time\n"
-			"time <timestamp>	- Formats seconds since epoch into readable format\n"	
+			"time <timestamp>	- Formats seconds since epoch into readable format\n"
 		*/
 			"set <variable> <value> - set a srfsh variable (e.g. set pretty_print true )\n"
-			"print <variable>		- Displays the value of a srfsh variable\n"
+			"print <variable>       - Displays the value of a srfsh variable\n"
 			"---------------------------------------------------------------------------------\n"
 
 			"router query servers <server1 [, server2, ...]>\n"
-			"	- Returns stats on connected services\n"
+			"       - Returns stats on connected services\n"
 			"\n"
 			"\n"
 			"request <service> <method> [ <json formatted string of params> ]\n"
-			"	- Anything passed in will be wrapped in a json array,\n"
-			"		so add commas if there is more than one param\n"
+			"       - Anything passed in will be wrapped in a json array,\n"
+			"               so add commas if there is more than one param\n"
 			"\n"
 			"\n"
 			"relay <service> <method>\n"
-			"	- Performs the requested query using the last received result as the param\n"
+			"       - Performs the requested query using the last received result as the param\n"
 			"\n"
 			"\n"
 			"math_bench <num_batches> [0|1|2]\n"
-			"	- 0 means don't reconnect, 1 means reconnect after each batch of 4, and\n"
-			"		 2 means reconnect after every request\n"
+			"       - 0 means don't reconnect, 1 means reconnect after each batch of 4, and\n"
+			"                2 means reconnect after every request\n"
 			"\n"
 			"introspect <service>\n"
-			"	- prints the API for the service\n"
+			"       - prints the API for the service\n"
 			"\n"
 			"\n"
 			"---------------------------------------------------------------------------------\n"
 			" Commands for Open-ILS\n"
 			"---------------------------------------------------------------------------------\n"
 			"login <username> <password>\n"
-			"	-	Logs into the 'server' and displays the session id\n"
-			"	- To view the session id later, enter: print login\n"
+			"       - Logs into the 'server' and displays the session id\n"
+			"       - To view the session id later, enter: print login\n"
 			"---------------------------------------------------------------------------------\n"
 			"\n"
 			"\n"
-			"Note: long output is piped through 'less'.  To search in 'less', type: /<search>\n"
+			"Note: long output is piped through 'less'. To search in 'less', type: /<search>\n"
 			"---------------------------------------------------------------------------------\n"
 			"\n"
 			);
@@ -850,7 +833,7 @@ static int do_math( int count, int style ) {
 	osrf_app_session* session = osrf_app_client_session_init(  "opensrf.math" );
 	osrf_app_session_connect(session);
 
-	jsonObject* params = json_parse_string("[]");
+	jsonObject* params = jsonParseString("[]");
 	jsonObjectPush(params,jsonNewObject("1"));
 	jsonObjectPush(params,jsonNewObject("2"));
 
@@ -858,7 +841,7 @@ static int do_math( int count, int style ) {
 	char* answers[] = { "3", "-1", "2", "0.500000" };
 
 	float times[ count * 4 ];
-	memset(times,0,count*4);
+	memset(times, 0, sizeof(times));
 
 	int k;
 	for(k=0;k!=100;k++) {

@@ -45,10 +45,9 @@ public abstract class Session {
         xmsg.setTo(remoteNode);
         xmsg.setThread(thread);
         xmsg.setBody(new JSONWriter(Arrays.asList(new Message[] {omsg})).write());
-        XMPPSession ses = XMPPSession.getGlobalSession();
 
         try {
-            XMPPSession.getGlobalSession().send(xmsg);
+            XMPPSession.getThreadSession().send(xmsg);
         } catch(XMPPException e) {
             connectState = ConnectState.DISCONNECTED;
             throw new SessionException("Error sending message to " + remoteNode, e);
@@ -63,7 +62,7 @@ public abstract class Session {
     public static void waitForMessage(long millis) throws SessionException, MethodException {
         try {
             Stack.processXMPPMessage(
-                XMPPSession.getGlobalSession().recv(millis));
+                XMPPSession.getThreadSession().recv(millis));
         } catch(XMPPException e) {
             throw new SessionException("Error waiting for message", e);
         }

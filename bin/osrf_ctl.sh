@@ -12,9 +12,17 @@ OPT_PID_DIR=""
 
 function usage {
 	echo "";
-	echo "usage: $0 -d <pid_dir> -c <c_config> -a <action>";
+	echo "usage: $0 [OPTION]... -c <c_config> -a <action>";
 	echo "";
-	echo "Actions include:"
+	echo "Mandatory parameters:";
+	echo -e "  -a\t\taction to perform";
+	echo -e "  -c\t\tfull path to C configuration file (opensrf_core.xml)";
+	echo "";
+	echo "Optional parameters:";
+	echo -e "  -d\t\tstore PID files in this directory";
+	echo -e "  -l\t\taccept 'localhost' as the fully-qualified domain name";
+	echo "";
+	echo "Actions include:";
 	echo -e "\tstart_router"
 	echo -e "\tstop_router"
 	echo -e "\trestart_router"
@@ -31,9 +39,10 @@ function usage {
 	echo -e "\tstart_all"
 	echo -e "\trestart_all"
 	echo "";
-    echo "Example:";
-    echo "  $0 -c opensrf_core.xml -a restart_all";
-    echo "";
+	echo "Examples:";
+	echo "  $0 -c opensrf_core.xml -a restart_all";
+	echo "  $0 -l -c opensrf_core.xml -a restart_all";
+	echo "";
 	exit;
 }
 
@@ -41,11 +50,12 @@ function usage {
 # ---------------------------------------------------------------------------
 # Load the command line options and set the global vars
 # ---------------------------------------------------------------------------
-while getopts  "c:a:d:h" flag; do
+while getopts  "c:a:d:lh" flag; do
 	case $flag in	
 		"a")		OPT_ACTION="$OPTARG";;
 		"c")		OPT_CONFIG="$OPTARG";;
 		"d")		OPT_PID_DIR="$OPTARG";;
+		"l")		export OSRF_HOSTNAME="localhost";;
 		"h"|*)	usage;;
 	esac;
 done

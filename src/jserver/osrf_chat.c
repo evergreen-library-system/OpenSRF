@@ -279,7 +279,7 @@ int osrfChatSend( osrfChatServer* cs, osrfChatNode* node, char* toAddr, char* fr
 
 	int l = strlen(toAddr);
 	char dombuf[l];
-	bzero(dombuf, l);
+	memset(dombuf, 0, sizeof(dombuf));
 	jid_get_domain( toAddr, dombuf, l );	
 
 	if( eq( dombuf, cs->domain ) ) { /* this is to a user we host */
@@ -595,8 +595,7 @@ int osrfChatHandleNewConnection( osrfChatNode* node, const char* name, const xml
 
 char* osrfChatMkAuthKey() {
 	char keybuf[112];
-	bzero(keybuf, 112);
-	snprintf(keybuf, 111, "%d%ld%s", (int) time(NULL), (long) getpid(), getenv("HOSTNAME"));
+	snprintf(keybuf, sizeof(keybuf), "%d%ld%s", (int) time(NULL), (long) getpid(), getenv("HOSTNAME"));
 	return strdup(shahash(keybuf));
 }
 

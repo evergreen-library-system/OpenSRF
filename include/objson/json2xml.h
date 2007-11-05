@@ -1,11 +1,10 @@
-
-#include <string.h>
-#include <stdio.h>
-
-/* the JSON parser, so we can read the response we're XMLizing */
-#include <objson/object.h>
-#include <objson/json_parser.h>
-#include <opensrf/utils.h>
-
-char* jsonObjectToXML(jsonObject*);
+/*
+ * Header to support legacy objson library
+ */
+#ifndef OBJSON_JSON2XML_H
+#define OBJSON_JSON2XML_H
+#include <opensrf/osrf_json.h>
+#include <opensrf/osrf_json_xml.h>
+#include <opensrf/osrf_legacy_json.h>
+#endif
 

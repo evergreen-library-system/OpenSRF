@@ -1,4 +1,5 @@
 package OpenSRF::Utils::Logger;
+# vim:ts=4:noet:
 use strict;
 use vars qw($AUTOLOAD @EXPORT_OK %EXPORT_TAGS);
 use Exporter;
@@ -29,7 +30,7 @@ push @EXPORT_OK, '$logger';
 %EXPORT_TAGS = ( level => [ qw/ NONE ERROR WARN INFO DEBUG INTERNAL / ], logger => [ '$logger' ] );
 
 my $config;							# config handle
-my $loglevel;						# global log level
+my $loglevel = INFO();				# global log level
 my $logfile;						# log file
 my $facility;						# syslog facility
 my $actfac;							# activity log syslog facility
@@ -101,8 +102,12 @@ sub set_config {
         $actfile = $config->bootstrap->actlog || $config->bootstrap->logfile;
     }
 
-
-	$isclient = (OpenSRF::Utils::Config->current->bootstrap->client =~ /^true$/iog) ?  1 : 0;
+	my $client = OpenSRF::Utils::Config->current->bootstrap->client();
+	if (!$client) {
+		$isclient = 0;
+		return;
+	}
+	$isclient = ($client =~ /^true$/iog) ?  1 : 0;
 }
 
 sub _fac_to_const {

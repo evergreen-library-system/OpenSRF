@@ -19,7 +19,7 @@ GNU General Public License for more details.
 #include <opensrf/xml_utils.h>
 #include <opensrf/utils.h>
 #include <opensrf/string_array.h>
-#include <objson/object.h>
+#include <opensrf/osrf_json.h>
 
 typedef struct {
 	jsonObject* config;

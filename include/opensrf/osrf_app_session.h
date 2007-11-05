@@ -9,8 +9,7 @@
 #include <opensrf/osrf_hash.h>
 #include <opensrf/osrf_list.h>
 
-#include <objson/object.h>
-#include <objson/json_parser.h>
+#include <opensrf/osrf_json.h>
 
 
 
@@ -76,6 +75,9 @@ struct osrf_app_session_struct {
 	/** SERVER or CLIENT */
 	enum OSRF_SESSION_TYPE type;
 
+	/** the current locale for this session **/
+	char* session_locale;
+
 	/* let the user use the session to store their own session data */
 	void* userData;
 
@@ -100,6 +102,9 @@ osrf_app_session* osrf_app_client_session_init( char* remote_service );
 osrf_app_session* osrf_app_server_session_init( 
 		char* session_id, char* our_app, char* remote_id );
 
+/** sets the default locale for a session **/
+char* osrf_app_session_set_locale( osrf_app_session*, const char* );
+
 /** returns a session from the global session hash */
 osrf_app_session* osrf_app_session_find_session( char* session_id );
 
@@ -114,6 +119,14 @@ int osrfAppSessionMakeRequest(
 int osrf_app_session_make_req( 
 		osrf_app_session* session, jsonObject* params, 
 		char* method_name, int protocol, string_array* param_strings);
+
+int osrfAppSessionMakeLocaleRequest(
+		osrf_app_session* session, jsonObject* params, 
+		char* method_name, int protocol, string_array* param_strings, char* locale);
+
+int osrf_app_session_make_locale_req( 
+		osrf_app_session* session, jsonObject* params, 
+		char* method_name, int protocol, string_array* param_strings, char* locale);
 
 /** Sets the given request to complete state */
 void osrf_app_session_set_complete( osrf_app_session* session, int request_id );

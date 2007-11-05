@@ -119,7 +119,7 @@ void osrfRouterHandleIncoming( osrfRouter* router ) {
 			/* if the sender is not a trusted server, drop the message */
 			int len = strlen(msg->sender) + 1;
 			char domain[len];
-			bzero(domain, len);
+			memset(domain, 0, sizeof(domain));
 			jid_get_domain( msg->sender, domain, len - 1 );
 
 			if(osrfStringArrayContains( router->trustedServers, domain)) 
@@ -150,7 +150,7 @@ int osrfRouterClassHandleIncoming( osrfRouter* router, char* classname, osrfRout
 			/* if the client is not from a trusted domain, drop the message */
 			int len = strlen(msg->sender) + 1;
 			char domain[len];
-			bzero(domain, len);
+			memset(domain, 0, sizeof(domain));
 			jid_get_domain( msg->sender, domain, len - 1 );
 
 			if(osrfStringArrayContains( router->trustedClients, domain)) {
@@ -486,7 +486,7 @@ int osrfRouterHandleAppRequest( osrfRouter* router, transport_message* msg ) {
 
 	int T = 32;
 	osrfMessage* arr[T];
-	memset(arr, 0, T );
+	memset(arr, 0, sizeof(arr));
 
 	int num_msgs = osrf_message_deserialize( msg->body, arr, T );
 	osrfMessage* omsg = NULL;
@@ -520,7 +520,7 @@ int osrfRouterRespondConnect( osrfRouter* router, transport_message* msg, osrfMe
 
 	osrfMessage* success = osrf_message_init( STATUS, omsg->thread_trace, omsg->protocol );
 
-	osrfLogDebug( OSRF_LOG_MARK, "router recevied a CONNECT message from %s", msg->sender );
+	osrfLogDebug( OSRF_LOG_MARK, "router received a CONNECT message from %s", msg->sender );
 
 	osrf_message_set_status_info( 
 		success, "osrfConnectStatus", "Connection Successful", OSRF_STATUS_OK );

@@ -89,7 +89,7 @@ int osrfTransportGroupSendMatch( osrfTransportGroup* grp, transport_message* msg
 	if(!(grp && msg)) return -1;
 
 	char domain[256];
-	bzero(domain, 256);
+	osrf_clearbuf(domain, sizeof(domain));
 	jid_get_domain( msg->recipient, domain, 255 );
 
 	osrfTransportGroupNode* node = osrfHashGet(grp->nodes, domain);
@@ -108,15 +108,15 @@ int osrfTransportGroupSend( osrfTransportGroup* grp, transport_message* msg ) {
 	int bufsize = 256;
 
 	char domain[bufsize];
-	bzero(domain, bufsize);
+	osrf_clearbuf(domain, sizeof(domain));
 	jid_get_domain( msg->recipient, domain, bufsize - 1 );
 
 	char msgrecip[bufsize];
-	bzero(msgrecip, bufsize);
+	osrf_clearbuf(msgrecip, sizeof(msgrecip));
 	jid_get_username(msg->recipient, msgrecip, bufsize - 1);
 
 	char msgres[bufsize];
-	bzero(msgres, bufsize);
+	osrf_clearbuf(msgres, sizeof(msgres));
 	jid_get_resource(msg->recipient, msgres, bufsize - 1);
 
 	char* firstdomain = NULL;
@@ -149,8 +149,7 @@ int osrfTransportGroupSend( osrfTransportGroup* grp, transport_message* msg ) {
 		/* update the recipient domain if necessary */
 
 		if(updateRecip) {
-			bzero(newrcp, 1024);
-			sprintf(newrcp, "%s@%s/%s", msgrecip, node->domain, msgres);
+			snprintf(newrcp, sizeof(newrcp), "%s@%s/%s", msgrecip, node->domain, msgres);
 			free(msg->recipient);
 			msg->recipient = strdup(newrcp);
 		}

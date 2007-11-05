@@ -3,7 +3,7 @@
 #include <opensrf/osrf_app_session.h>
 #include <opensrf/osrf_hash.h>
 
-#include <objson/object.h>
+#include <opensrf/osrf_json.h>
 #include <stdio.h>
 #include <dlfcn.h>
 

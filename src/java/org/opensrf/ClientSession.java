@@ -51,7 +51,7 @@ public class ClientSession extends Session {
         /** create a random thread */
         long time = new Date().getTime();
         Random rand = new Random(time);
-        setThread(rand.nextInt()+""+rand.nextInt()+""+time);
+        setThread(rand.nextInt()+""+rand.nextInt()+""+time+Thread.currentThread().getId());
 
         nextId = 0;
         requests = new HashMap<Integer, Request>();
@@ -115,6 +115,7 @@ public class ClientSession extends Session {
         Request req = findRequest(msg.getId());
         if(req == null) {
             /** LOG that we've received a result to a non-existant request */
+            System.err.println(msg.getId() +" has no corresponding request");
             return;
         }
         OSRFObject payload = (OSRFObject) msg.get("payload");
@@ -144,6 +145,20 @@ public class ClientSession extends Session {
         Request req = findRequest(reqId);
         if(req == null) return;
         req.setComplete();
+    }
+
+    public static Object atomicRequest(String service, String method, Object[] params) throws MethodException {
+        try {
+            ClientSession session = new ClientSession(service);
+            Request osrfRequest = session.request(method, params);
+            Result result = osrfRequest.recv(600000);
+            if(result.getStatusCode() != 200) 
+                throw new MethodException( 
+                    "Request "+service+":"+method+":"+" failed with status code " + result.getStatusCode());
+            return result.getContent();
+        } catch(Exception e) {
+            throw new MethodException(e);
+        }
     }
 }
 

@@ -2,6 +2,9 @@ package org.opensrf.net.xmpp;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Map;
+import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -20,6 +23,8 @@ public class XMPPSession {
         "<username>%s</username><password>%s</password><resource>%s</resource></query></iq>";
 
     public static final String JABBER_DISCONNECT = "</stream:stream>";
+
+    private static Map threadConnections = new ConcurrentHashMap();
 
     /** jabber domain */
     private String host;
@@ -59,24 +64,65 @@ public class XMPPSession {
     /**
      * Returns the global, process-wide session
      */
+    /*
     public static XMPPSession getGlobalSession() {
         return globalSession;
+    }
+    */
+
+    public static XMPPSession getThreadSession() {
+        return (XMPPSession) threadConnections.get(new Long(Thread.currentThread().getId()));
+    }
+
+    /**
+     * Sets the given session as the global session for the current thread
+     * @param ses The session
+     */
+    public static void setThreadSession(XMPPSession ses) {
+        /* every time we create a new connection, clean up any dead threads. 
+         * this is cheaper than cleaning up the dead threads at every access. */
+        cleanupThreadSessions();
+        threadConnections.put(new Long(Thread.currentThread().getId()), ses);
+    }
+
+    /**
+     * Analyzes the threadSession data to see if there are any sessions
+     * whose controlling thread has gone away.  
+     */
+    private static void cleanupThreadSessions() {
+        Thread threads[] = new Thread[Thread.activeCount()]; 
+        Thread.enumerate(threads);
+        for(Iterator i = threadConnections.keySet().iterator(); i.hasNext(); ) {
+            boolean found = false;
+            Long id = (Long) i.next();
+            for(Thread t : threads) {
+                if(t.getId() == id.longValue()) {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found) 
+                threadConnections.remove(id);
+        }
     }
 
     /**
      * Sets the global, process-wide section
      */
+    /*
     public static void setGlobalSession(XMPPSession ses) {
         globalSession = ses;
     }
+    */
 
 
     /** true if this session is connected to the server */
     public boolean connected() {
         return (
-            reader != null && 
-            reader.getXMPPStreamState() == 
-                XMPPReader.XMPPStreamState.CONNECTED);
+                reader != null && 
+                reader.getXMPPStreamState() == XMPPReader.XMPPStreamState.CONNECTED &&
+                !socket.isClosed()
+            );
     }
 
 
@@ -113,29 +159,33 @@ public class XMPPSession {
         thread.setDaemon(true);
         thread.start();
 
-        /* send the initial jabber message */
-        sendConnect();
-        reader.waitCoreEvent(10000);
+        synchronized(reader) {
+            /* send the initial jabber message */
+            sendConnect();
+            reader.waitCoreEvent(10000);
+        }
         if( reader.getXMPPStreamState() != XMPPReader.XMPPStreamState.CONNECT_RECV ) 
             throw new XMPPException("unable to connect to jabber server");
 
-        /* send the basic auth message */
-        sendBasicAuth(); /* XXX add support for other auth mechanisms */
-        reader.waitCoreEvent(10000);
-        if(!connected())
+        synchronized(reader) {
+            /* send the basic auth message */
+            sendBasicAuth(); 
+            reader.waitCoreEvent(10000);
+        }
+        if(!connected()) 
             throw new XMPPException("Authentication failed");
     }
 
     /** Sends the initial jabber message */
     private void sendConnect() {
-        writer.printf(JABBER_CONNECT, host);
         reader.setXMPPStreamState(XMPPReader.XMPPStreamState.CONNECT_SENT);
+        writer.printf(JABBER_CONNECT, host);
     }
 
     /** Send the basic auth message */
     private void sendBasicAuth() {
-        writer.printf(JABBER_BASIC_AUTH, username, password, resource);
         reader.setXMPPStreamState(XMPPReader.XMPPStreamState.AUTH_SENT);
+        writer.printf(JABBER_BASIC_AUTH, username, password, resource);
     }
 
 
@@ -186,14 +236,17 @@ public class XMPPSession {
         } else {
 
             while(timeout >= 0) { /* wait at most 'timeout' milleseconds for a message to arrive */
+                msg = reader.popMessageQueue();
+                if( msg != null ) return msg;
                 timeout -= reader.waitCoreEvent(timeout);
                 msg = reader.popMessageQueue();
                 if( msg != null ) return msg;
                 checkConnected();
+                if(timeout == 0) break;
             }
         }
 
-        return null;
+        return reader.popMessageQueue();
     }
 
 
