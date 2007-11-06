@@ -1,4 +1,5 @@
 #!/usr/bin/python2.4
+# vim:et:ts=4
 import os, sys, time, readline, atexit, re
 from string import *
 from osrf.system import osrfConnect
@@ -99,7 +100,7 @@ def handle_help():
 
 
 # -------------------------------------------------------------------
-# performs an opesnrf request
+# performs an opensrf request
 # -------------------------------------------------------------------
 def handle_request(parts):
     service = parts.pop(0)
@@ -221,7 +222,14 @@ def do_connect():
 def load_plugins():
     # Load the user defined external plugins
     # XXX Make this a real module interface, with tab-complete words, commands, etc.
-    plugins = osrfConfigValue('plugins')
+    try:
+        plugins = osrfConfigValue('plugins')
+
+    except:
+        # XXX standard srfsh.xml does not yet define <plugins> element
+        print_red("No plugins defined in /srfsh/plugins/plugin\n")
+        return
+
     plugins = osrfConfigValue('plugins.plugin')
     if not isinstance(plugins, list):
         plugins = [plugins]
