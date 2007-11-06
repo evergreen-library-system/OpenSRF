@@ -99,7 +99,7 @@ const char* osrf_message_set_default_locale( const char* locale );
 /* Get the current locale hint -- either the default or most recently received locale.
    Returns const char* to current_locale.
 */
-const char* osrf_message_get_current_locale(void);
+const char* osrf_message_get_last_locale(void);
 
 osrf_message* osrf_message_init( enum M_TYPE type, int thread_trace, int protocol );
 //void osrf_message_set_request_info( osrf_message*, char* param_name, json* params );
