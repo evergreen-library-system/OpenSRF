@@ -100,8 +100,8 @@ server how you see the world.
 sub sender_locale {
 	my $self = shift;
 	my $val = shift;
-	$self->{sender_locale} = $val if (defined $val);
-	return $self->{sender_locale};
+	$self->{locale} = $val if (defined $val);
+	return $self->{locale};
 }
 
 =head2 OpenSRF::DomainObject::oilsMessage->threadTrace( [$new_threadTrace] );
