@@ -261,6 +261,7 @@ sub _write_file {
 		or die "Cannot sysopen $logfile: $!";
 	binmode(SINK, ':utf8');
 	print SINK "[$year-$mon-$mday $hour:$min:$sec] $service $msg\n";
+	printf SINK "[%04d-%02d-%02d %02d:%02d:%02d] %s %s\n", $year, $mon, $mday, $hour, $min, $sec, $service, $msg;
 	close( SINK );
 }
 
