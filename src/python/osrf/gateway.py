@@ -1,8 +1,8 @@
 from xml.dom import minidom
 from xml.sax import handler, make_parser, saxutils
-from json import *
-from net_obj import *
-from log import *
+from osrf.json import *
+from osrf.net_obj import *
+from osrf.log import *
 import urllib, urllib2, sys, re
 
 defaultHost = None
