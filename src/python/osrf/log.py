@@ -15,21 +15,33 @@
 
 import traceback, sys, os, re, threading
 from osrf.const import *
+logSema = threading.BoundedSemaphore(value=1)
 
-loglevel = 4
+
+loglevel = OSRF_LOG_DEBUG
+logtype = OSRF_LOG_TYPE_STDERR
+logfile = None
 
 def osrfInitLog(level, facility=None, file=None):
     """Initialize the logging subsystem."""
-    import syslog
-    global loglevel
-    if facility: 
-        osrfInitSyslog(facility, level)
-        syslog.syslog(syslog.LOG_DEBUG, "syslog initialized")
-    else:
-        if file:
-            sys.stderr.write("\n * file-based logging not implemented yet\n")
-            
+    global loglevel, logtype, logfile
+
     loglevel = level
+
+    if facility: 
+        try:
+            import syslog
+        except ImportError:
+            sys.stderr.write("syslog not found, logging to stderr\n")
+            return
+
+        logtype = OSRF_LOG_TYPE_SYSLOG
+        osrfInitSyslog(facility, level)
+        return
+        
+    if file:
+        logtype = OSRF_LOG_TYPE_FILE
+        logfile = file
 
 
 # -----------------------------------------------------------------------
@@ -46,6 +58,7 @@ frgx = re.compile('/.*/')
 
 def __osrfLog(level, msg):
     """Builds the log message and passes the message off to the logger."""
+    global loglevel, logtype
 
     try:
         import syslog
@@ -54,36 +67,71 @@ def __osrfLog(level, msg):
             sys.stderr.write('ERR ' + msg)
         return
         
-    global loglevel
     if int(level) > int(loglevel): return
 
     # find the caller info for logging the file and line number
     tb = traceback.extract_stack(limit=3)
     tb = tb[0]
     lvl = 'DEBG'
-    slvl = syslog.LOG_DEBUG
 
-    if level == OSRF_LOG_INTERNAL: lvl = 'INT '; slvl=syslog.LOG_DEBUG
-    if level == OSRF_LOG_INFO: lvl = 'INFO'; slvl=syslog.LOG_INFO
-    if level == OSRF_LOG_WARN: lvl = 'WARN'; slvl=syslog.LOG_WARNING
-    if level == OSRF_LOG_ERR:  lvl = 'ERR '; slvl=syslog.LOG_ERR
-
-
-    # XXX when file logging is implemented, wrap io in a semaphore for thread safety
+    if level == OSRF_LOG_INTERNAL: lvl = 'INT '
+    if level == OSRF_LOG_INFO: lvl = 'INFO'
+    if level == OSRF_LOG_WARN: lvl = 'WARN'
+    if level == OSRF_LOG_ERR:  lvl = 'ERR '
 
     file = frgx.sub('',tb[0])
     msg = '[%s:%d:%s:%s:%s] %s' % (lvl, os.getpid(), file, tb[1], threading.currentThread().getName(), msg)
+
+    if logtype == OSRF_LOG_TYPE_SYSLOG:
+        __logSyslog(level, msg)
+    else:
+        if logtype == OSRF_LOG_TYPE_FILE:
+            __logFile(msg)
+        else:
+            sys.stderr.write("%s\n" % msg)
+
+    if level == OSRF_LOG_ERR and logtype != OSRF_LOG_TYPE_STDERR:
+        sys.stderr.write(msg + '\n')
+
+def __logSyslog(level, msg):
+    ''' Logs the message to syslog '''
+    import syslog
+
+    slvl = syslog.LOG_DEBUG
+    if level == OSRF_LOG_INTERNAL: slvl=syslog.LOG_DEBUG
+    if level == OSRF_LOG_INFO: slvl = syslog.LOG_INFO
+    if level == OSRF_LOG_WARN: slvl = syslog.LOG_WARNING
+    if level == OSRF_LOG_ERR:  slvl = syslog.LOG_ERR
+
+    sys.stderr.write("logging at level: %s\n" % str(slvl))
     syslog.syslog(slvl, msg)
 
-    if level == OSRF_LOG_ERR:
-        sys.stderr.write(msg + '\n')
+def __logFile(msg):
+    ''' Logs the message to a file. '''
+
+    global logfile, logtype
+
+    f = None
+    try:
+        f = open(logfile, 'a')
+    except:
+        sys.stderr.write("cannot open log file for writing: %s\n", logfile)
+        logtype = OSRF_LOG_TYPE_STDERR
+        return
+    try:
+        logSema.acquire()
+        f.write("%s\n" % msg)
+    finally:
+        logSema.release()
+        
+    f.close()
+    
 
 
 def osrfInitSyslog(facility, level):
     """Connect to syslog and set the logmask based on the level provided."""
 
     import syslog
-
     level = int(level)
 
     if facility == 'local0': facility = syslog.LOG_LOCAL0
@@ -93,14 +141,7 @@ def osrfInitSyslog(facility, level):
     if facility == 'local4': facility = syslog.LOG_LOCAL4
     if facility == 'local5': facility = syslog.LOG_LOCAL5
     if facility == 'local6': facility = syslog.LOG_LOCAL6
-    # XXX add other facility maps if necessary
-    syslog.openlog(sys.argv[0], 0, facility)
+    # add other facility maps if necessary...
 
-    # this is redundant...
-    mask = syslog.LOG_UPTO(syslog.LOG_ERR)
-    if level >= 1: mask |= syslog.LOG_MASK(syslog.LOG_WARNING)
-    if level >= 2: mask |= syslog.LOG_MASK(syslog.LOG_NOTICE)
-    if level >= 3: mask |= syslog.LOG_MASK(syslog.LOG_INFO)
-    if level >= 4: mask |= syslog.LOG_MASK(syslog.LOG_DEBUG)
-    syslog.setlogmask(mask)
+    syslog.openlog(sys.argv[0], 0, facility)
 

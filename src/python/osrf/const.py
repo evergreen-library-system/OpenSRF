@@ -24,6 +24,9 @@ OSRF_LOG_WARN	= 2
 OSRF_LOG_INFO	= 3
 OSRF_LOG_DEBUG = 4
 OSRF_LOG_INTERNAL = 5
+OSRF_LOG_TYPE_FILE = 1
+OSRF_LOG_TYPE_SYSLOG = 2
+OSRF_LOG_TYPE_STDERR = 3
 
 # -----------------------------------------------------------------------
 # Session states
