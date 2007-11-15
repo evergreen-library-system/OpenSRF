@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/python
 # vim:et:ts=4
 import os, sys, time, readline, atexit, re
 from string import *
