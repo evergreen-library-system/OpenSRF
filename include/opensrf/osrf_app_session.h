@@ -93,46 +93,46 @@ typedef struct osrf_app_session_struct osrfAppSession;
 // -------------------------------------------------------------------------- 
 
 /** Allocates a initializes a new app_session */
-osrf_app_session* osrfAppSessionClientInit( char* remote_service );
-osrf_app_session* osrf_app_client_session_init( char* remote_service );
+osrf_app_session* osrfAppSessionClientInit( const char* remote_service );
+osrf_app_session* osrf_app_client_session_init( const char* remote_service );
 
 /** Allocates and initializes a new server session.  The global session cache
   * is checked to see if this session already exists, if so, it's returned 
   */
 osrf_app_session* osrf_app_server_session_init( 
-		char* session_id, char* our_app, char* remote_id );
+		const char* session_id, const char* our_app, const char* remote_id );
 
 /** sets the default locale for a session **/
 char* osrf_app_session_set_locale( osrf_app_session*, const char* );
 
 /** returns a session from the global session hash */
-osrf_app_session* osrf_app_session_find_session( char* session_id );
+osrf_app_session* osrf_app_session_find_session( const char* session_id );
 
 /** Builds a new app_request object with the given payload andn returns
   * the id of the request.  This id is then used to perform work on the
   * requeset.
   */
 int osrfAppSessionMakeRequest(
-		osrf_app_session* session, jsonObject* params, 
-		char* method_name, int protocol, string_array* param_strings);
+		osrf_app_session* session, const jsonObject* params, 
+		const char* method_name, int protocol, string_array* param_strings);
 
 int osrf_app_session_make_req( 
-		osrf_app_session* session, jsonObject* params, 
-		char* method_name, int protocol, string_array* param_strings);
+		osrf_app_session* session, const jsonObject* params, 
+		const char* method_name, int protocol, string_array* param_strings);
 
 int osrfAppSessionMakeLocaleRequest(
-		osrf_app_session* session, jsonObject* params, 
-		char* method_name, int protocol, string_array* param_strings, char* locale);
+		osrf_app_session* session, const jsonObject* params, const char* method_name,
+		int protocol, string_array* param_strings, char* locale);
 
 int osrf_app_session_make_locale_req( 
-		osrf_app_session* session, jsonObject* params, 
-		char* method_name, int protocol, string_array* param_strings, char* locale);
+		osrf_app_session* session, const jsonObject* params, const char* method_name,
+		int protocol, string_array* param_strings, char* locale);
 
 /** Sets the given request to complete state */
 void osrf_app_session_set_complete( osrf_app_session* session, int request_id );
 
 /** Returns true if the given request is complete */
-int osrf_app_session_request_complete( osrf_app_session* session, int request_id );
+int osrf_app_session_request_complete( const osrf_app_session* session, int request_id );
 
 /** Does a recv call on the given request */
 osrf_message* osrfAppSessionRequestRecv(
@@ -150,7 +150,7 @@ int osrf_app_session_request_resend( osrf_app_session*, int request_id );
 void osrf_app_session_reset_remote( osrf_app_session* );
 
 /** Sets the remote target to 'remote_id' */
-void osrf_app_session_set_remote( osrf_app_session* session, char* remote_id );
+void osrf_app_session_set_remote( osrf_app_session* session, const char* remote_id );
 
 /** pushes the given message into the result list of the app_request
   * whose request_id matches the messages thread_trace 
@@ -235,8 +235,9 @@ int _osrf_app_session_send( osrf_app_session*, osrf_message* msg );
 
 int osrfAppSessionSendBatch( osrf_app_session*, osrf_message* msgs[], int size );
 
-int osrfAppRequestRespond( osrfAppSession* ses, int requestId, jsonObject* data ); 
-int osrfAppRequestRespondComplete( osrfAppSession* ses, int requestId, jsonObject* data ); 
+int osrfAppRequestRespond( osrfAppSession* ses, int requestId, const jsonObject* data ); 
+int osrfAppRequestRespondComplete(
+		osrfAppSession* ses, int requestId, const jsonObject* data ); 
 
 int osrfAppSessionStatus( osrfAppSession* ses, int type, char* name, int reqId, char* message );
 

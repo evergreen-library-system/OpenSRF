@@ -1,12 +1,12 @@
 #include <opensrf/osrf_application.h>
 
-osrfHash* __osrfAppHash = NULL;
+static osrfHash* _osrfAppHash = NULL;
 
-int osrfAppRegisterApplication( char* appName, char* soFile ) {
+int osrfAppRegisterApplication( const char* appName, const char* soFile ) {
 	if(!appName || ! soFile) return -1;
 	char* error;
 
-	if(!__osrfAppHash) __osrfAppHash = osrfNewHash();
+	if(!_osrfAppHash) _osrfAppHash = osrfNewHash();
 
 	osrfLogInfo( OSRF_LOG_MARK, "Registering application %s with file %s", appName, soFile );
 
@@ -22,7 +22,7 @@ int osrfAppRegisterApplication( char* appName, char* soFile ) {
 	}
 
 	app->methods = osrfNewHash();
-	osrfHashSet( __osrfAppHash, app, appName );
+	osrfHashSet( _osrfAppHash, app, appName );
 
 	/* see if we can run the initialize method */
 	int (*init) (void);
@@ -57,7 +57,7 @@ int osrfAppRegisterApplication( char* appName, char* soFile ) {
 }
 
 
-void osrfAppSetOnExit(osrfApplication* app, char* appName) {
+void osrfAppSetOnExit(osrfApplication* app, const char* appName) {
 	if(!(app && appName)) return;
 
 	/* see if we can run the initialize method */
@@ -75,7 +75,7 @@ void osrfAppSetOnExit(osrfApplication* app, char* appName) {
 }
 
 
-int osrfAppRunChildInit(char* appname) {
+int osrfAppRunChildInit(const char* appname) {
 	osrfApplication* app = _osrfAppFindApplication(appname);
 	if(!app) return -1;
 
@@ -101,7 +101,7 @@ int osrfAppRunChildInit(char* appname) {
 
 
 void osrfAppRunExitCode() { 
-	osrfHashIterator* itr = osrfNewHashIterator(__osrfAppHash);
+	osrfHashIterator* itr = osrfNewHashIterator(_osrfAppHash);
 	osrfApplication* app;
 	while( (app = osrfHashIteratorNext(itr)) ) {
 		if( app->onExit ) {
@@ -112,8 +112,8 @@ void osrfAppRunExitCode() {
 }
 
 
-int osrfAppRegisterMethod( char* appName, char* methodName, 
-		char* symbolName, char* notes, int argc, int options ) {
+int osrfAppRegisterMethod( const char* appName, const char* methodName, 
+		const char* symbolName, const char* notes, int argc, int options ) {
 
 	return osrfAppRegisterExtendedMethod(
 			appName,
@@ -127,8 +127,8 @@ int osrfAppRegisterMethod( char* appName, char* methodName,
 
 }
 
-int osrfAppRegisterExtendedMethod( char* appName, char* methodName, 
-		char* symbolName, char* notes, int argc, int options, void * user_data ) {
+int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName, 
+		const char* symbolName, const char* notes, int argc, int options, void * user_data ) {
 
 	if( !appName || ! methodName  ) return -1;
 
@@ -160,8 +160,8 @@ int osrfAppRegisterExtendedMethod( char* appName, char* methodName,
 
 
 
-osrfMethod* _osrfAppBuildMethod( char* methodName, 
-	char* symbolName, char* notes, int argc, int options, void* user_data ) {
+osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symbolName,
+		const char* notes, int argc, int options, void* user_data ) {
 
 	osrfMethod* method					= safe_malloc(sizeof(osrfMethod));
 
@@ -185,7 +185,7 @@ osrfMethod* _osrfAppBuildMethod( char* methodName,
 }
 
 
-int __osrfAppRegisterSysMethods( char* app ) {
+int __osrfAppRegisterSysMethods( const char* app ) {
 
 	osrfAppRegisterMethod( 
 			app, OSRF_SYSMETHOD_INTROSPECT, NULL, 
@@ -206,23 +206,23 @@ int __osrfAppRegisterSysMethods( char* app ) {
 	return 0;
 }
 
-osrfApplication* _osrfAppFindApplication( char* name ) {
+osrfApplication* _osrfAppFindApplication( const char* name ) {
 	if(!name) return NULL;
-	return (osrfApplication*) osrfHashGet(__osrfAppHash, name);
+	return (osrfApplication*) osrfHashGet(_osrfAppHash, name);
 }
 
-osrfMethod* __osrfAppFindMethod( osrfApplication* app, char* methodName ) {
+osrfMethod* __osrfAppFindMethod( osrfApplication* app, const char* methodName ) {
 	if(!app || ! methodName) return NULL;
 	return (osrfMethod*) osrfHashGet( app->methods, methodName );
 }
 
-osrfMethod* _osrfAppFindMethod( char* appName, char* methodName ) {
+osrfMethod* _osrfAppFindMethod( const char* appName, const char* methodName ) {
 	if(!appName || ! methodName) return NULL;
 	return __osrfAppFindMethod( _osrfAppFindApplication(appName), methodName );
 }
 
 
-int osrfAppRunMethod( char* appName, char* methodName, 
+int osrfAppRunMethod( const char* appName, const char* methodName, 
 		osrfAppSession* ses, int reqId, jsonObject* params ) {
 
 	if( !(appName && methodName && ses) ) return -1;
@@ -285,15 +285,15 @@ int osrfAppRunMethod( char* appName, char* methodName,
 }
 
 
-int osrfAppRespond( osrfMethodContext* ctx, jsonObject* data ) {
+int osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data ) {
 	return _osrfAppRespond( ctx, data, 0 );
 }
 
-int osrfAppRespondComplete( osrfMethodContext* context, jsonObject* data ) {
+int osrfAppRespondComplete( osrfMethodContext* context, const jsonObject* data ) {
 	return _osrfAppRespond( context, data, 1 );
 }
 
-int _osrfAppRespond( osrfMethodContext* ctx, jsonObject* data, int complete ) {
+int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int complete ) {
 	if(!(ctx && ctx->method)) return -1;
 
 	if( ctx->method->options & OSRF_METHOD_ATOMIC ) {
@@ -346,7 +346,7 @@ int __osrfAppPostProcess( osrfMethodContext* ctx, int retcode ) {
 	return 0;
 }
 
-int osrfAppRequestRespondException( osrfAppSession* ses, int request, char* msg, ... ) {
+int osrfAppRequestRespondException( osrfAppSession* ses, int request, const char* msg, ... ) {
 	if(!ses) return -1;
 	if(!msg) msg = "";
 	VA_LIST_TO_STRING(msg);
@@ -356,11 +356,11 @@ int osrfAppRequestRespondException( osrfAppSession* ses, int request, char* msg,
 }
 
 
-static void __osrfAppSetIntrospectMethod( osrfMethodContext* ctx, osrfMethod* method, jsonObject* resp ) {
+static void _osrfAppSetIntrospectMethod( osrfMethodContext* ctx, const osrfMethod* method, jsonObject* resp ) {
 	if(!(ctx && resp)) return;
 
 	jsonObjectSetKey(resp, "api_name",	jsonNewObject(method->name));
-	jsonObjectSetKey(resp, "method",		jsonNewObject(method->symbol));
+	jsonObjectSetKey(resp, "method",	jsonNewObject(method->symbol));
 	jsonObjectSetKey(resp, "service",	jsonNewObject(ctx->session->remote_service));
 	jsonObjectSetKey(resp, "notes",		jsonNewObject(method->notes));
 	jsonObjectSetKey(resp, "argc",		jsonNewNumberObject(method->argc));
@@ -425,7 +425,7 @@ int osrfAppIntrospect( osrfMethodContext* ctx ) {
 			if( (len = strlen(methodSubstring)) <= strlen(method->name) ) {
 				if( !strncmp( method->name, methodSubstring, len) ) {
 					resp = jsonNewObject(NULL);
-					__osrfAppSetIntrospectMethod( ctx, method, resp );
+					_osrfAppSetIntrospectMethod( ctx, method, resp );
 					osrfAppRespond(ctx, resp);
 					jsonObjectFree(resp);
 				}
@@ -449,7 +449,7 @@ int osrfAppIntrospectAll( osrfMethodContext* ctx ) {
 		osrfMethod* method;
 		while( (method = osrfHashIteratorNext(itr)) ) {
 			resp = jsonNewObject(NULL);
-			__osrfAppSetIntrospectMethod( ctx, method, resp );
+			_osrfAppSetIntrospectMethod( ctx, method, resp );
 			osrfAppRespond(ctx, resp);
 			jsonObjectFree(resp);
 		}
@@ -464,7 +464,7 @@ int osrfAppEcho( osrfMethodContext* ctx ) {
 	OSRF_METHOD_VERIFY_CONTEXT(ctx);
 	int i;
 	for( i = 0; i < ctx->params->size; i++ ) {
-		jsonObject* str = jsonObjectGetIndex(ctx->params,i);
+		const jsonObject* str = jsonObjectGetIndex(ctx->params,i);
 		osrfAppRespond(ctx, str);
 	}
 	return 1;

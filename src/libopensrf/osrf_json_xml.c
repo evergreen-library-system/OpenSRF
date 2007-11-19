@@ -13,7 +13,7 @@ struct osrfXMLGatewayParserStruct {
 typedef struct osrfXMLGatewayParserStruct osrfXMLGatewayParser;
 
 /** returns the attribute value with the given attribute name */
-static char* getXMLAttr(const xmlChar** atts, char* attr_name) {
+static char* getXMLAttr(const xmlChar** atts, const char* attr_name) {
     int i;
     if (atts != NULL) {
         for(i = 0; (atts[i] != NULL); i++) {
@@ -228,13 +228,12 @@ jsonObject* jsonXMLToJSONObject(const char* xml) {
 
 
 
-static char* _escape_xml (char*);
+static char* _escape_xml (const char*);
 static int _recurse_jsonObjectToXML(jsonObject*, growing_buffer*);
 
-char* jsonObjectToXML(jsonObject* obj) {
+char* jsonObjectToXML(const jsonObject* obj) {
 
 	growing_buffer * res_xml;
-	char * output;
 
 	res_xml = buffer_init(1024);
 
@@ -242,19 +241,13 @@ char* jsonObjectToXML(jsonObject* obj) {
 		return strdup("<null/>");
 	
 	_recurse_jsonObjectToXML( obj, res_xml );
-	output = buffer_data(res_xml);
-	
-	buffer_free(res_xml);
-
-	return output;
+	return buffer_release(res_xml);
 
 }
 
-int _recurse_jsonObjectToXML(jsonObject* obj, growing_buffer* res_xml) {
+int _recurse_jsonObjectToXML(const jsonObject* obj, growing_buffer* res_xml) {
 
 	char * hint = NULL;
-	char * bool_val = NULL;
-	int i = 0;
 	
 	if (obj->classname)
 		hint = strdup(obj->classname);
@@ -268,18 +261,17 @@ int _recurse_jsonObjectToXML(jsonObject* obj, growing_buffer* res_xml) {
 
 	} else if(obj->type == JSON_BOOL) {
 
+		const char* bool_val;
 		if (obj->value.b)
-			bool_val = strdup("true");
+			bool_val = "true";
 		else
-			bool_val = strdup("false");
+			bool_val = "false";
 
 		if (hint)
 			buffer_fadd(res_xml, "<boolean value=\"%s\" class_hint=\"%s\"/>", bool_val, hint);
 		else
 			buffer_fadd(res_xml, "<boolean value=\"%s\"/>", bool_val);
 
-		free(bool_val);
-                
 	} else if (obj->type == JSON_STRING) {
 		if (hint) {
 			char * t = _escape_xml(jsonObjectGetString(obj));
@@ -312,7 +304,7 @@ int _recurse_jsonObjectToXML(jsonObject* obj, growing_buffer* res_xml) {
 		else
                		buffer_add(res_xml,"<array>");
 
-	       	for ( i = 0; i!= obj->size; i++ )
+	       	for ( int i = 0; i!= obj->size; i++ )
 			_recurse_jsonObjectToXML(jsonObjectGetIndex(obj,i), res_xml);
 
 		buffer_add(res_xml,"</array>");
@@ -325,7 +317,7 @@ int _recurse_jsonObjectToXML(jsonObject* obj, growing_buffer* res_xml) {
 			buffer_add(res_xml,"<object>");
 
 		jsonIterator* itr = jsonNewIterator(obj);
-		jsonObject* tmp;
+		const jsonObject* tmp;
 		while( (tmp = jsonIteratorNext(itr)) ) {
 			buffer_fadd(res_xml,"<element key=\"%s\">",itr->key);
 			_recurse_jsonObjectToXML(tmp, res_xml);
@@ -342,8 +334,7 @@ int _recurse_jsonObjectToXML(jsonObject* obj, growing_buffer* res_xml) {
 	return 1;
 }
 
-char* _escape_xml (char* text) {
-	char* out;
+char* _escape_xml (const char* text) {
 	growing_buffer* b = buffer_init(256);
 	int len = strlen(text);
 	int i;
@@ -357,9 +348,7 @@ char* _escape_xml (char* text) {
 		else
 			buffer_add_char(b,text[i]);
 	}
-	out = buffer_data(b);
-	buffer_free(b);
-	return out;
+	return buffer_release(b);
 }
 
 #endif

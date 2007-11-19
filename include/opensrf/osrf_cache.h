@@ -30,7 +30,7 @@ GNU General Public License for more details.
   @param maxCacheSeconds The maximum amount of time an object / string may
 	be cached.  Negative number means there is no limit
   */
-int osrfCacheInit( char* serverStrings[], int size, time_t maxCacheSeconds );
+int osrfCacheInit( const char* serverStrings[], int size, time_t maxCacheSeconds );
 
 
 /**
@@ -58,25 +58,25 @@ int osrfCachePutString( char* key, const char* value, time_t seconds);
   @param key The cache key
   @return The object (which must be freed) if it exists, otherwise returns NULL
   */
-jsonObject* osrfCacheGetObject( char* key, ... );
+jsonObject* osrfCacheGetObject( const char* key, ... );
 
 /**
   Grabs a string from the cache.
   @param key The cache key
   @return The string (which must be freed) if it exists, otherwise returns NULL
   */
-char* osrfCacheGetString( char* key, ... );
+char* osrfCacheGetString( const char* key, ... );
 
 /**
   Removes the item with the given key from the cache.
   @return 0 on success, -1 on error.
   */
-int osrfCacheRemove( char* key, ... );
+int osrfCacheRemove( const char* key, ... );
 
 /**
  * Sets the expire time to 'seconds' for the given key
  */
-int osrfCacheSetExpire( time_t seconds, char* key, ... );
+int osrfCacheSetExpire( time_t seconds, const char* key, ... );
 
 
 

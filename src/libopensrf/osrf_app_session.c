@@ -21,6 +21,7 @@ osrf_app_request* _osrf_app_request_init(
 	req->complete		= 0;
 	req->payload		= msg;
 	req->result			= NULL;
+	req->reset_timeout  = 0;
 
 	return req;
 
@@ -182,7 +183,7 @@ char* osrf_app_session_set_locale( osrf_app_session* session, const char* locale
 }
 
 /** returns a session from the global session hash */
-osrf_app_session* osrf_app_session_find_session( char* session_id ) {
+osrf_app_session* osrf_app_session_find_session( const char* session_id ) {
 	if(session_id) return osrfHashGet(osrfAppSessionCache, session_id);
 	return NULL;
 }
@@ -196,13 +197,13 @@ void _osrf_app_session_push_session( osrf_app_session* session ) {
 	osrfHashSet( osrfAppSessionCache, session, session->session_id );
 }
 
-/** Allocates a initializes a new app_session */
+/** Allocates and initializes a new app_session */
 
-osrf_app_session* osrfAppSessionClientInit( char* remote_service ) {
+osrf_app_session* osrfAppSessionClientInit( const char* remote_service ) {
 	return osrf_app_client_session_init( remote_service );
 }
 
-osrf_app_session* osrf_app_client_session_init( char* remote_service ) {
+osrf_app_session* osrf_app_client_session_init( const char* remote_service ) {
 
 	if (!remote_service) {
 		osrfLogWarning( OSRF_LOG_MARK, "No remote service specified in osrf_app_client_session_init");
@@ -281,12 +282,16 @@ osrf_app_session* osrf_app_client_session_init( char* remote_service ) {
 	session->state = OSRF_SESSION_DISCONNECTED;
 	session->type = OSRF_SESSION_CLIENT;
 	//session->next = NULL;
+
+	session->userData = NULL;
+	session->userDataFree = NULL;
+	
 	_osrf_app_session_push_session( session );
 	return session;
 }
 
 osrf_app_session* osrf_app_server_session_init( 
-		char* session_id, char* our_app, char* remote_id ) {
+		const char* session_id, const char* our_app, const char* remote_id ) {
 
 	osrfLogDebug( OSRF_LOG_MARK, "Initing server session with session id %s, service %s,"
 			" and remote_id %s", session_id, our_app, remote_id );
@@ -324,6 +329,9 @@ osrf_app_session* osrf_app_server_session_init(
 	session->state = OSRF_SESSION_DISCONNECTED;
 	session->type = OSRF_SESSION_SERVER;
 
+	session->userData = NULL;
+	session->userDataFree = NULL;
+	
 	_osrf_app_session_push_session( session );
 	return session;
 
@@ -351,32 +359,32 @@ void _osrf_app_session_free( osrf_app_session* session ){
 }
 
 int osrfAppSessionMakeRequest(
-		osrf_app_session* session, jsonObject* params, 
-		char* method_name, int protocol, string_array* param_strings ) {
+		osrf_app_session* session, const jsonObject* params, 
+		const char* method_name, int protocol, string_array* param_strings ) {
 
 	return osrf_app_session_make_locale_req( session, params, 
 			method_name, protocol, param_strings, NULL );
 }
 
 int osrfAppSessionMakeLocaleRequest(
-		osrf_app_session* session, jsonObject* params, 
-		char* method_name, int protocol, string_array* param_strings, char* locale ) {
+		osrf_app_session* session, const jsonObject* params, const char* method_name,
+		int protocol, string_array* param_strings, char* locale ) {
 
 	return osrf_app_session_make_locale_req( session, params, 
 			method_name, protocol, param_strings, locale );
 }
 
 int osrf_app_session_make_req( 
-		osrf_app_session* session, jsonObject* params, 
-		char* method_name, int protocol, string_array* param_strings) {
+		osrf_app_session* session, const jsonObject* params, 
+		const char* method_name, int protocol, string_array* param_strings) {
 
 	return osrf_app_session_make_locale_req(session, params,
 			method_name, protocol, param_strings, NULL);
 }
 
 int osrf_app_session_make_locale_req( 
-		osrf_app_session* session, jsonObject* params, 
-		char* method_name, int protocol, string_array* param_strings, char* locale ) {
+		osrf_app_session* session, const jsonObject* params, const char* method_name,
+		int protocol, string_array* param_strings, char* locale ) {
 	if(session == NULL) return -1;
 
 	osrfLogMkXid();
@@ -424,7 +432,7 @@ void osrf_app_session_set_complete( osrf_app_session* session, int request_id ) 
 	if(req) req->complete = 1;
 }
 
-int osrf_app_session_request_complete( osrf_app_session* session, int request_id ) {
+int osrf_app_session_request_complete( const osrf_app_session* session, int request_id ) {
 	if(session == NULL)
 		return 0;
 	osrf_app_request* req = OSRF_LIST_GET_INDEX( session->request_queue, request_id );
@@ -446,7 +454,7 @@ void osrf_app_session_reset_remote( osrf_app_session* session ){
 	session->remote_id = strdup(session->orig_remote_id);
 }
 
-void osrf_app_session_set_remote( osrf_app_session* session, char* remote_id ) {
+void osrf_app_session_set_remote( osrf_app_session* session, const char* remote_id ) {
 	if(session == NULL)
 		return;
 	if( session->remote_id )
@@ -619,10 +627,8 @@ int _osrf_app_session_send( osrf_app_session* session, osrf_message* msg ){
   */
 int osrf_app_session_queue_wait( osrf_app_session* session, int timeout, int* recvd ){
 	if(session == NULL) return 0;
-	int ret_val = 0;
 	osrfLogDebug(OSRF_LOG_MARK,  "AppSession in queue_wait with timeout %d", timeout );
-	ret_val = osrf_stack_entry_point(session->transport_handle, timeout, recvd);
-	return ret_val;
+	return osrf_stack_entry_point(session->transport_handle, timeout, recvd);
 }
 
 /** Disconnects (if client) and removes the given session from the global session cache 
@@ -663,7 +669,7 @@ osrf_message* osrf_app_session_request_recv(
 
 
 
-int osrfAppRequestRespond( osrfAppSession* ses, int requestId, jsonObject* data ) {
+int osrfAppRequestRespond( osrfAppSession* ses, int requestId, const jsonObject* data ) {
 	if(!ses || ! data ) return -1;
 
 	osrf_message* msg = osrf_message_init( RESULT, requestId, 1 );
@@ -681,7 +687,7 @@ int osrfAppRequestRespond( osrfAppSession* ses, int requestId, jsonObject* data 
 
 
 int osrfAppRequestRespondComplete( 
-		osrfAppSession* ses, int requestId, jsonObject* data ) {
+		osrfAppSession* ses, int requestId, const jsonObject* data ) {
 
 	osrf_message* payload = osrf_message_init( RESULT, requestId, 1 );
 	osrf_message_set_status_info( payload, NULL, "OK", OSRF_STATUS_OK );

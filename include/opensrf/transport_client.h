@@ -50,7 +50,7 @@ transport_client* client_init( const char* server, int port, const char* unix_pa
 // success, 0 otherwise.
 // ---------------------------------------------------------------------------
 int client_connect( transport_client* client, 
-		char* username, char* password, char* resource, 
+		const char* username, const char* password, const char* resource,
 		int connect_timeout, enum TRANSPORT_AUTH_TYPE auth_type );
 
 
@@ -71,7 +71,7 @@ int client_send_message( transport_client* client, transport_message* msg );
 // ---------------------------------------------------------------------------
 // Returns 1 if this client is currently connected to the server, 0 otherwise
 // ---------------------------------------------------------------------------
-int client_connected( transport_client* client );
+int client_connected( const transport_client* client );
 
 // ---------------------------------------------------------------------------
 // This is the message handler required by transport_session.  This handler

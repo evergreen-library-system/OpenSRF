@@ -165,10 +165,10 @@ GNU General Public License for more details.
 	truncation may occurr.
  */
 int init_proc_title( int argc, char* argv[] );
-int set_proc_title( char* format, ... );
+int set_proc_title( const char* format, ... );
 
 
-int daemonize();
+int daemonize( void );
 
 void* safe_malloc(int size);
 void* safe_calloc(int size);
@@ -188,10 +188,10 @@ growing_buffer* buffer_init( int initial_num_bytes);
 // XXX This isn't defined in utils.c!! removing for now...
 //int buffer_addchar(growing_buffer* gb, char c);
 
-int buffer_add(growing_buffer* gb, char* c);
+int buffer_add(growing_buffer* gb, const char* c);
 int buffer_fadd(growing_buffer* gb, const char* format, ... );
 int buffer_reset( growing_buffer* gb);
-char* buffer_data( growing_buffer* gb);
+char* buffer_data( const growing_buffer* gb);
 char* buffer_release( growing_buffer* gb );
 int buffer_free( growing_buffer* gb );
 int buffer_add_char(growing_buffer* gb, char c);
@@ -226,11 +226,11 @@ int clr_fl( int fd, int flags );
 
 
 // Utility method
-double get_timestamp_millis();
+double get_timestamp_millis( void );
 
 
 /* returns true if the whole string is a number */
-int stringisnum(char* s);
+int stringisnum(const char* s);
 
 /* reads a file and returns the string version of the file
 	user is responsible for freeing the returned char*
@@ -243,7 +243,7 @@ char* file_to_string(const char* filename);
   Calculates the md5 of the text provided.
   The returned string must be freed by the caller.
   */
-char* md5sum( char* text, ... );
+char* md5sum( const char* text, ... );
 
 
 /**

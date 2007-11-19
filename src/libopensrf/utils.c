@@ -64,7 +64,7 @@ int init_proc_title( int argc, char* argv[] ) {
 	return 0;
 }
 
-int set_proc_title( char* format, ... ) {
+int set_proc_title( const char* format, ... ) {
 	VA_LIST_TO_STRING(format);
 	osrf_clearbuf( *(global_argv), global_argv_size);
 	return snprintf( *(global_argv), global_argv_size, VA_BUF );
@@ -72,7 +72,7 @@ int set_proc_title( char* format, ... ) {
 
 
 /* utility method for profiling */
-double get_timestamp_millis() {
+double get_timestamp_millis( void ) {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	double time	= (int)tv.tv_sec	+ ( ((double)tv.tv_usec / 1000000) );
@@ -186,7 +186,7 @@ int buffer_fadd(growing_buffer* gb, const char* format, ... ) {
 }
 
 
-int buffer_add(growing_buffer* gb, char* data) {
+int buffer_add(growing_buffer* gb, const char* data) {
 	if(!(gb && data)) return 0;
 
 	int data_len = strlen( data );
@@ -248,7 +248,7 @@ int buffer_free( growing_buffer* gb ) {
 	return 1;
 }
 
-char* buffer_data( growing_buffer *gb) {
+char* buffer_data( const growing_buffer *gb) {
 	return strdup( gb->buf );
 }
 
@@ -379,7 +379,7 @@ char* uescape( const char* string, int size, int full_escape ) {
 
 
 // A function to turn a process into a daemon 
-int daemonize() {
+int daemonize( void ) {
 	pid_t f = fork();
 
 	if (f == -1) {
@@ -413,7 +413,7 @@ int daemonize() {
 /* Return 1 if the string represents an integer,  */
 /* as recognized by strtol(); Otherwise return 0. */
 
-int stringisnum(char* s) {
+int stringisnum(const char* s) {
 	char* w;
 	strtol(s, &w, 10);
 	return *w ? 0 : 1;
@@ -449,7 +449,7 @@ char* file_to_string(const char* filename) {
 }
 
 
-char* md5sum( char* text, ... ) {
+char* md5sum( const char* text, ... ) {
 
 	struct md5_ctx ctx;
 	unsigned char digest[16];

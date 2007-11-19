@@ -1,6 +1,6 @@
 #include <opensrf/transport_session.h>
 
-
+static char* get_xml_attr( const xmlChar** atts, const char* attr_name );
 
 // ---------------------------------------------------------------------------------
 // returns a built and allocated transport_session object.
@@ -25,7 +25,9 @@ transport_session* init_transport(  const char* server,
 	session->status_buffer		= buffer_init( JABBER_STATUS_BUFSIZE );
 	session->recipient_buffer	= buffer_init( JABBER_JID_BUFSIZE );
 	session->message_error_type = buffer_init( JABBER_JID_BUFSIZE );
-	session->session_id			= buffer_init( 64 ); 
+	session->session_id			= buffer_init( 64 );
+
+	session->message_error_code = 0;
 
 	/* for OpenSRF extensions */
 	session->router_to_buffer		= buffer_init( JABBER_JID_BUFSIZE );
@@ -34,6 +36,7 @@ transport_session* init_transport(  const char* server,
 	session->router_class_buffer	= buffer_init( JABBER_JID_BUFSIZE );
 	session->router_command_buffer	= buffer_init( JABBER_JID_BUFSIZE );
 
+	session->router_broadcast   = 0;
 
 	if(	session->body_buffer		== NULL || session->subject_buffer	 == NULL	||
 			session->thread_buffer	== NULL || session->from_buffer		 == NULL	||
@@ -43,12 +46,35 @@ transport_session* init_transport(  const char* server,
 			session->session_id == NULL ) { 
 
 		osrfLogError(OSRF_LOG_MARK,  "init_transport(): buffer_init returned NULL" );
+		buffer_free( session->body_buffer );
+		buffer_free( session->subject_buffer );
+		buffer_free( session->thread_buffer );
+		buffer_free( session->from_buffer );
+		buffer_free( session->status_buffer );
+		buffer_free( session->recipient_buffer );
+		buffer_free( session->router_to_buffer );
+		buffer_free( session->router_from_buffer );
+		buffer_free( session->router_class_buffer );
+		buffer_free( session->router_command_buffer );
+		buffer_free( session->session_id );
+		free( session );
 		return 0;
 	}
 
 
 	/* initialize the jabber state machine */
 	session->state_machine = (jabber_machine*) safe_malloc( sizeof(jabber_machine) );
+	session->state_machine->connected        = 0;
+	session->state_machine->connecting       = 0;
+	session->state_machine->in_message       = 0;
+	session->state_machine->in_message_body  = 0;
+	session->state_machine->in_thread        = 0;
+	session->state_machine->in_subject       = 0;
+	session->state_machine->in_error         = 0;
+	session->state_machine->in_message_error = 0;
+	session->state_machine->in_iq            = 0;
+	session->state_machine->in_presence      = 0;
+	session->state_machine->in_status        = 0;
 
 	/* initialize the sax push parser */
 	session->parser_ctxt = xmlCreatePushParserCtxt(SAXHandler, session, "", 0, NULL);
@@ -57,6 +83,8 @@ transport_session* init_transport(  const char* server,
 	session->sock_mgr = (socket_manager*) safe_malloc( sizeof(socket_manager) );
 
 	session->sock_mgr->data_received = &grab_incoming;
+	session->sock_mgr->on_socket_closed = NULL;
+	session->sock_mgr->socket = NULL;
 	session->sock_mgr->blob	= session;
 	
 	session->port = port;
@@ -66,6 +94,7 @@ transport_session* init_transport(  const char* server,
 	else session->unix_path = NULL;
 
 	session->sock_id = 0;
+	session->message_callback = NULL;
 
 	return session;
 }
@@ -420,7 +449,13 @@ void startElementHandler(
 	}
 }
 
-char* get_xml_attr( const xmlChar** atts, char* attr_name ) {
+// ------------------------------------------------------------------
+// Returns the value of the given XML attribute
+// The xmlChar** construct is commonly returned from SAX event
+// handlers.  Pass that in with the name of the attribute you want
+// to retrieve.
+// ------------------------------------------------------------------
+static char* get_xml_attr( const xmlChar** atts, const char* attr_name ) {
 	int i;
 	if (atts != NULL) {
 		for(i = 0;(atts[i] != NULL);i++) {
@@ -480,22 +515,22 @@ void endElementHandler( void *session, const xmlChar *name) {
 		return;
 	}
 	
-	if( strcmp( (char*) name, "body" ) == 0 ) {
+	if( strcmp( (const char*) name, "body" ) == 0 ) {
 		ses->state_machine->in_message_body = 0;
 		return;
 	}
 
-	if( strcmp( (char*) name, "subject" ) == 0 ) {
+	if( strcmp( (const char*) name, "subject" ) == 0 ) {
 		ses->state_machine->in_subject = 0;
 		return;
 	}
 
-	if( strcmp( (char*) name, "thread" ) == 0 ) {
+	if( strcmp( (const char*) name, "thread" ) == 0 ) {
 		ses->state_machine->in_thread = 0;
 		return;
 	}
 	
-	if( strcmp( (char*) name, "iq" ) == 0 ) {
+	if( strcmp( (const char*) name, "iq" ) == 0 ) {
 		ses->state_machine->in_iq = 0;
 		if( ses->message_error_code > 0 ) {
 			osrfLogWarning( OSRF_LOG_MARK,  "Error in IQ packet: code %d",  ses->message_error_code );
@@ -505,7 +540,7 @@ void endElementHandler( void *session, const xmlChar *name) {
 		return;
 	}
 
-	if( strcmp( (char*) name, "presence" ) == 0 ) {
+	if( strcmp( (const char*) name, "presence" ) == 0 ) {
 		ses->state_machine->in_presence = 0;
 		/*
 		if( ses->presence_callback ) {
@@ -516,17 +551,17 @@ void endElementHandler( void *session, const xmlChar *name) {
 		return;
 	}
 
-	if( strcmp( (char*) name, "status" ) == 0 ) {
+	if( strcmp( (const char*) name, "status" ) == 0 ) {
 		ses->state_machine->in_status = 0;
 		return;
 	}
 
-	if( strcmp( (char*) name, "error" ) == 0 ) {
+	if( strcmp( (const char*) name, "error" ) == 0 ) {
 		ses->state_machine->in_message_error = 0;
 		return;
 	}
 
-	if( strcmp( (char*) name, "error:error" ) == 0 ) {
+	if( strcmp( (const char*) name, "error:error" ) == 0 ) {
 		ses->state_machine->in_error = 0;
 		return;
 	}
@@ -557,7 +592,7 @@ void characterHandler(
 		void *session, const xmlChar *ch, int len) {
 
 	char data[len+1];
-	strncpy( data, (char*) ch, len );
+	strncpy( data, (const char*) ch, len );
 	data[len] = 0;
 
 	//printf( "Handling characters: %s\n", data );

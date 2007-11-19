@@ -190,14 +190,6 @@ transport_session* init_transport( const char* server, int port,
 	const char* unix_path, void* user_data, int component );
 
 // ------------------------------------------------------------------
-// Returns the value of the given XML attribute
-// The xmlChar** construct is commonly returned from SAX event
-// handlers.  Pass that in with the name of the attribute you want
-// to retrieve.
-// ------------------------------------------------------------------
-char* get_xml_attr( const xmlChar** atts, char* attr_name );
-
-// ------------------------------------------------------------------
 // Waits  at most 'timeout' seconds  for data to arrive from the 
 // TCP handler. A timeout of -1 means to wait indefinitely.
 // ------------------------------------------------------------------

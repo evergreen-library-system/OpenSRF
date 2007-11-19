@@ -12,8 +12,8 @@
 #define ROUTER_REQUEST_STATS_CLASS_SUMMARY "opensrf.router.info.stats.class.summary"
 
 osrfRouter* osrfNewRouter( 
-		char* domain, char* name, 
-		char* resource, char* password, int port, 
+		const char* domain, const char* name, 
+		const char* resource, const char* password, int port,
 		osrfStringArray* trustedClients, osrfStringArray* trustedServers ) {
 
 	if(!( domain && name && resource && password && port && trustedClients && trustedServers )) return NULL;
@@ -132,7 +132,8 @@ void osrfRouterHandleIncoming( osrfRouter* router ) {
 	}
 }
 
-int osrfRouterClassHandleIncoming( osrfRouter* router, char* classname, osrfRouterClass* class ) {
+int osrfRouterClassHandleIncoming( osrfRouter* router, const char* classname,
+		osrfRouterClass* class ) {
 	if(!(router && class)) return -1;
 
 	transport_message* msg;
@@ -220,7 +221,7 @@ int osrfRouterHandleMessage( osrfRouter* router, transport_message* msg ) {
 
 
 
-osrfRouterClass* osrfRouterAddClass( osrfRouter* router, char* classname ) {
+osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* classname ) {
 	if(!(router && router->classes && classname)) return NULL;
 
 	osrfRouterClass* class = safe_malloc(sizeof(osrfRouterClass));
@@ -231,9 +232,14 @@ osrfRouterClass* osrfRouterAddClass( osrfRouter* router, char* classname ) {
 
 	class->connection = client_init( router->domain, router->port, NULL, 0 );
 
-	if(!client_connect( class->connection, router->name, 
+	if(!client_connect( class->connection, router->name,
 			router->password, classname, 10, AUTH_DIGEST ) ) {
-		osrfRouterClassFree( classname, class );
+				// We cast away the constness of classname.  Though ugly, this
+				// cast is benign because osrfRouterClassFree doesn't actually
+				// write through the pointer.  We can't readily change its
+				// signature because it is used for a function pointer, and
+				// we would have to change other signatures the same way.
+				osrfRouterClassFree( (char *) classname, class );
 		return NULL;
 	}
 	
@@ -242,7 +248,7 @@ osrfRouterClass* osrfRouterAddClass( osrfRouter* router, char* classname ) {
 }
 
 
-int osrfRouterClassAddNode( osrfRouterClass* rclass, char* remoteId ) {
+int osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId ) {
 	if(!(rclass && rclass->nodes && remoteId)) return -1;
 
 	osrfLogInfo( OSRF_LOG_MARK, "Adding router node for remote id %s", remoteId );
@@ -260,8 +266,8 @@ int osrfRouterClassAddNode( osrfRouterClass* rclass, char* remoteId ) {
 	? return NULL if it's the last node ?
  */
 
-transport_message* osrfRouterClassHandleBounce( 
-		osrfRouter* router, char* classname, osrfRouterClass* rclass, transport_message* msg ) {
+transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
+		const char* classname, osrfRouterClass* rclass, transport_message* msg ) {
 
 	osrfLogDebug( OSRF_LOG_MARK, "osrfRouterClassHandleBounce()");
 
@@ -356,7 +362,7 @@ int osrfRouterClassHandleMessage(
 }
 
 
-int osrfRouterRemoveClass( osrfRouter* router, char* classname ) {
+int osrfRouterRemoveClass( osrfRouter* router, const char* classname ) {
 	if(!(router && router->classes && classname)) return -1;
 	osrfLogInfo( OSRF_LOG_MARK, "Removing router class %s", classname );
 	osrfHashRemove( router->classes, classname );
@@ -365,7 +371,7 @@ int osrfRouterRemoveClass( osrfRouter* router, char* classname ) {
 
 
 int osrfRouterClassRemoveNode( 
-		osrfRouter* router, char* classname, char* remoteId ) {
+		osrfRouter* router, const char* classname, const char* remoteId ) {
 
 	if(!(router && router->classes && classname && remoteId)) return 0;
 
@@ -433,13 +439,13 @@ void osrfRouterFree( osrfRouter* router ) {
 
 
 
-osrfRouterClass* osrfRouterFindClass( osrfRouter* router, char* classname ) {
+osrfRouterClass* osrfRouterFindClass( osrfRouter* router, const char* classname ) {
 	if(!( router && router->classes && classname )) return NULL;
 	return (osrfRouterClass*) osrfHashGet( router->classes, classname );
 }
 
 
-osrfRouterNode* osrfRouterClassFindNode( osrfRouterClass* rclass, char* remoteId ) {
+osrfRouterNode* osrfRouterClassFindNode( osrfRouterClass* rclass, const char* remoteId ) {
 	if(!(rclass && remoteId))  return NULL;
 	return (osrfRouterNode*) osrfHashGet( rclass->nodes, remoteId );
 }
@@ -689,7 +695,7 @@ int osrfRouterHandleMethodNFound(
 
 
 int osrfRouterHandleAppResponse( osrfRouter* router, 
-	transport_message* msg, osrfMessage* omsg, jsonObject* response ) {
+	transport_message* msg, osrfMessage* omsg, const jsonObject* response ) {
 
 	if( response ) { /* send the response message */
 

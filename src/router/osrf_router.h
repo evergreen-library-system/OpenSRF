@@ -62,8 +62,9 @@ typedef struct __osrfRouterNodeStruct osrfRouterNode;
   @param trustedServers The array of server domains that we allow to register, etc. with ust.
   @return The allocated router or NULL on memory error
   */
-osrfRouter* osrfNewRouter( char* domain, char* name, char* resource, 
-	char* password, int port, osrfStringArray* trustedClients, osrfStringArray* trustedServers );
+osrfRouter* osrfNewRouter( const char* domain, const char* name, const char* resource, 
+	const char* password, int port, osrfStringArray* trustedClients,
+	osrfStringArray* trustedServers );
 
 /**
   Connects the given router to the network
@@ -85,7 +86,7 @@ void osrfRouterRun( osrfRouter* router );
   @param classname The name of the class this node handles.
   @return 0 on success, -1 on connection error.
   */
-osrfRouterClass* osrfRouterAddClass( osrfRouter* router, char* classname );
+osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* classname );
 
 /**
   Adds a new server node to the given class.
@@ -93,7 +94,7 @@ osrfRouterClass* osrfRouterAddClass( osrfRouter* router, char* classname );
   @param remoteId The remote login of this node
   @return 0 on success, -1 on generic error
   */
-int osrfRouterClassAddNode( osrfRouterClass* rclass, char* remoteId );
+int osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId );
 
 
 /**
@@ -113,7 +114,7 @@ int osrfRouterClassHandleMessage( osrfRouter* router,
 /**
   Removes a given class from the router, freeing as it goes
   */
-int osrfRouterRemoveClass( osrfRouter* router, char* classname );
+int osrfRouterRemoveClass( osrfRouter* router, const char* classname );
 
 /**
   Removes the given node from the class.  Also, if this is that last node in the set,
@@ -122,7 +123,8 @@ int osrfRouterRemoveClass( osrfRouter* router, char* classname );
   @return 1 on successful remove with class removal
   @return -1 error on removal
  */
-int osrfRouterClassRemoveNode( osrfRouter* router, char* classname, char* remoteId );
+int osrfRouterClassRemoveNode( osrfRouter* router, const char* classname,
+		const char* remoteId );
 
 /**
   Frees a router class object
@@ -145,12 +147,12 @@ void osrfRouterFree( osrfRouter* router );
 /**
   Finds the class associated with the given class name in the list of classes
   */
-osrfRouterClass* osrfRouterFindClass( osrfRouter* router, char* classname );
+osrfRouterClass* osrfRouterFindClass( osrfRouter* router, const char* classname );
 
 /**
   Finds the router node within this class with the given remote id 
   */
-osrfRouterNode* osrfRouterClassFindNode( osrfRouterClass* rclass, char* remoteId );
+osrfRouterNode* osrfRouterClassFindNode( osrfRouterClass* rclass, const char* remoteId );
 
 
 /**
@@ -173,15 +175,16 @@ void osrfRouterHandleIncoming( osrfRouter* router );
 	Utility method for handling incoming requests to a router class,
 	makes sure sender is a trusted client
 	*/
-int osrfRouterClassHandleIncoming( osrfRouter* router, char* classname,  osrfRouterClass* class );
+int osrfRouterClassHandleIncoming( osrfRouter* router,
+		const char* classname,  osrfRouterClass* class );
 
 /* handles case where router node is not longer reachable.  copies over the
 	data from the last sent message and returns a newly crafted suitable for treating
 	as a newly inconing message.  Removes the dead node and If there are no more
 	nodes to send the new message to, returns NULL.
 	*/
-transport_message* osrfRouterClassHandleBounce(
-		osrfRouter* router, char* classname, osrfRouterClass* rclass, transport_message* msg );
+transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
+		const char* classname, osrfRouterClass* rclass, transport_message* msg );
 
 
 
@@ -215,7 +218,7 @@ int osrfRouterRespondConnect( osrfRouter* router, transport_message* msg, osrfMe
 int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* msg, osrfMessage* omsg );
 
 int osrfRouterHandleAppResponse( osrfRouter* router, 
-		transport_message* msg, osrfMessage* omsg, jsonObject* response );
+		transport_message* msg, osrfMessage* omsg, const jsonObject* response );
 
 
 int osrfRouterHandleMethodNFound( osrfRouter* router, transport_message* msg, osrfMessage* omsg );

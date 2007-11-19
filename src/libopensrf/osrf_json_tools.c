@@ -14,16 +14,11 @@ GNU General Public License for more details.
 */
 
 #include <opensrf/osrf_json.h>
+#include <opensrf/osrf_json_utils.h>
 
-jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClass );
+static jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClass );
 
-
-jsonObject* jsonObjectFindPath( const jsonObject* obj, char* path, ...);
-jsonObject* _jsonObjectFindPathRecurse(const jsonObject* obj, char* root, char* path);
-jsonObject* __jsonObjectFindPathRecurse(const jsonObject* obj, char* root);
-
-
-static char* __tabs(int count) {
+static char* _tabs(int count) {
 	growing_buffer* buf = buffer_init(24);
 	int i;
 	for(i=0;i<count;i++) OSRF_BUFFER_ADD(buf, "  ");
@@ -44,25 +39,25 @@ char* jsonFormatString( const char* string ) {
 
 		if( c == '{' || c == '[' ) {
 
-			tab = __tabs(++depth);
+			tab = _tabs(++depth);
 			buffer_fadd( buf, "%c\n%s", c, tab);
 			free(tab);
 
 		} else if( c == '}' || c == ']' ) {
 
-			tab = __tabs(--depth);
+			tab = _tabs(--depth);
 			buffer_fadd( buf, "\n%s%c", tab, c);
 			free(tab);
 
 			if(string[i+1] != ',') {
-				tab = __tabs(depth);
+				tab = _tabs(depth);
 				buffer_fadd( buf, "%s", tab );	
 				free(tab);
 			}
 
 		} else if( c == ',' ) {
 
-			tab = __tabs(depth);
+			tab = _tabs(depth);
 			buffer_fadd(buf, ",\n%s", tab);
 			free(tab);
 
@@ -130,7 +125,7 @@ jsonObject* jsonObjectEncodeClass( const jsonObject* obj ) {
 	return _jsonObjectEncodeClass( obj, 0 );
 }
 
-jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClass ) {
+static jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClass ) {
 
 	//if(!obj) return NULL;
 	if(!obj) return jsonNewObject(NULL);
@@ -210,7 +205,7 @@ jsonObject* jsonObjectFindPath( const jsonObject* obj, char* format, ...) {
 
 	t = NULL;
 	do { 
-		obj = jsonObjectGetKey(obj, token);
+		obj = jsonObjectGetKeyConst(obj, token);
 	} while( (token = strtok_r(NULL, "/", &tt)) && obj);
 
 	return jsonObjectClone(obj);
@@ -269,7 +264,7 @@ jsonObject* __jsonObjectFindPathRecurse(const jsonObject* obj, char* root) {
 
 	/* if the current object has a node that matches, add it */
 
-	jsonObject* o = jsonObjectGetKey(obj, root);
+	const jsonObject* o = jsonObjectGetKeyConst(obj, root);
 	if(o) jsonObjectPush( arr, jsonObjectClone(o) );
 
 	jsonObject* tmp = NULL;

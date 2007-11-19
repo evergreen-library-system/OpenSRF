@@ -120,7 +120,7 @@ typedef struct _osrfMethodContextStruct osrfMethodContext;
   @param soFile The library (.so) file that implements this application
   @return 0 on success, -1 on error
   */
-int osrfAppRegisterApplication( char* appName, char* soFile );
+int osrfAppRegisterApplication( const char* appName, const char* soFile );
 
 /**
   Register a method
@@ -134,22 +134,22 @@ int osrfAppRegisterApplication( char* appName, char* soFile );
   @param streaming True if this is a streaming method that requires an atomic version
   @return 0 on success, -1 on error
   */
-int osrfAppRegisterMethod( char* appName, char* methodName, 
-		char* symbolName, char* notes, int argc, int options );
+int osrfAppRegisterMethod( const char* appName, const char* methodName, 
+		const char* symbolName, const char* notes, int argc, int options );
 
 
-int osrfAppRegisterExtendedMethod( char* appName, char* methodName, 
-		char* symbolName, char* notes, int argc, int options, void* );
+int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName, 
+		const char* symbolName, const char* notes, int argc, int options, void* );
 
-osrfMethod* _osrfAppBuildMethod( char* methodName, 
-		char* symbolName, char* notes, int argc, int options, void* );
+osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symbolName,
+		const char* notes, int argc, int options, void* );
 
 /**
   Finds the given app in the list of apps
   @param name The name of the application
   @return The application pointer or NULL if there is no such application
   */
-osrfApplication* _osrfAppFindApplication( char* name );
+osrfApplication* _osrfAppFindApplication( const char* name );
 
 /**
   Finds the given method for the given app
@@ -158,7 +158,7 @@ osrfApplication* _osrfAppFindApplication( char* name );
   @return A method pointer or NULL if no such method 
   exists for the given application
   */
-osrfMethod* _osrfAppFindMethod( char* appName, char* methodName );
+osrfMethod* _osrfAppFindMethod( const char* appName, const char* methodName );
 
 /**
   Finds the given method for the given app
@@ -167,7 +167,7 @@ osrfMethod* _osrfAppFindMethod( char* appName, char* methodName );
   @return A method pointer or NULL if no such method 
   exists for the given application
   */
-osrfMethod* __osrfAppFindMethod( osrfApplication* app, char* methodName );
+osrfMethod* __osrfAppFindMethod( osrfApplication* app, const char* methodName );
 
 
 /**
@@ -178,7 +178,7 @@ osrfMethod* __osrfAppFindMethod( osrfApplication* app, char* methodName );
   @params reqId The request id for this request
   @param params The method parameters
   */
-int osrfAppRunMethod( char* appName, char* methodName, 
+int osrfAppRunMethod( const char* appName, const char* methodName, 
 		osrfAppSession* ses, int reqId, jsonObject* params );
 
 
@@ -197,7 +197,7 @@ int __osrfAppRunSystemMethod(osrfMethodContext* context);
 /**
   Registers all of the system methods for this app so that they may be
   treated the same as other methods */
-int __osrfAppRegisterSysMethods( char* app );
+int __osrfAppRegisterSysMethods( const char* app );
 
 
 
@@ -208,14 +208,14 @@ int __osrfAppRegisterSysMethods( char* app );
   @param msg The debug message to send to the client
   @return 0 on successfully sending of the message, -1 otherwise
   */
-int osrfAppRequestRespondException( osrfAppSession* ses, int request, char* msg, ... );
+int osrfAppRequestRespondException( osrfAppSession* ses, int request, const char* msg, ... );
 
 int __osrfAppPostProcess( osrfMethodContext* context, int retcode );
 
 
-int osrfAppRespond( osrfMethodContext* context, jsonObject* data );
-int _osrfAppRespond( osrfMethodContext* context, jsonObject* data, int complete );
-int osrfAppRespondComplete( osrfMethodContext* context, jsonObject* data );
+int osrfAppRespond( osrfMethodContext* context, const jsonObject* data );
+int _osrfAppRespond( osrfMethodContext* context, const jsonObject* data, int complete );
+int osrfAppRespondComplete( osrfMethodContext* context, const jsonObject* data );
 
 /* OSRF_METHOD_ATOMIC and/or OSRF_METHOD_CACHABLE and/or 0 for no special options */
 //int osrfAppProcessMethodOptions( char* method );
@@ -227,8 +227,8 @@ int osrfAppEcho( osrfMethodContext* ctx );
 
 /**
  * Tells the backend process to run its child init function */
-int osrfAppRunChildInit(char* appname);
-void osrfAppSetOnExit(osrfApplication* app, char* appName);
+int osrfAppRunChildInit(const char* appname);
+void osrfAppSetOnExit(osrfApplication* app, const char* appName);
 void osrfAppRunExitCode();
 
 

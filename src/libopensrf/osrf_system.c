@@ -56,7 +56,7 @@ static int _osrfSystemInitCache( void ) {
 
 		if( cacheServers->type == JSON_ARRAY ) {
 			int i;
-			char* servers[cacheServers->size];
+			const char* servers[cacheServers->size];
 			for( i = 0; i != cacheServers->size; i++ ) {
 				servers[i] = jsonObjectGetString( jsonObjectGetIndex(cacheServers, i) );
 				osrfLogInfo( OSRF_LOG_MARK, "Adding cache server %s", servers[i]);
@@ -64,7 +64,7 @@ static int _osrfSystemInitCache( void ) {
 			osrfCacheInit( servers, cacheServers->size, atoi(maxCache) );
 
 		} else {
-			char* servers[] = { jsonObjectGetString(cacheServers) };		
+			const char* servers[] = { jsonObjectGetString(cacheServers) };		
 			osrfLogInfo( OSRF_LOG_MARK, "Adding cache server %s", servers[0]);
 			osrfCacheInit( servers, 1, atoi(maxCache) );
 		}
@@ -116,7 +116,7 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 			osrfStringArrayAdd(arr, jsonObjectGetString(apps));
 
 		} else {
-			jsonObject* app;
+			const jsonObject* app;
 			while( (app = jsonObjectGetIndex(apps, i++)) ) 
 				osrfStringArrayAdd(arr, jsonObjectGetString(app));
 		}

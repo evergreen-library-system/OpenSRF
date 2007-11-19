@@ -50,12 +50,10 @@ transport_client* client_init( const char* server, int port, const char* unix_pa
 	if(server == NULL) return NULL;
 
 	/* build and clear the client object */
-	size_t c_size = sizeof( transport_client);
-	transport_client* client = safe_malloc( c_size );
+	transport_client* client = safe_malloc( sizeof( transport_client) );
 
 	/* build and clear the message list */
-	size_t l_size = sizeof( transport_message_list );
-	client->m_list = safe_malloc( l_size );
+	client->m_list = safe_malloc( sizeof( transport_message_list ) );
 
 	client->m_list->next = NULL;
 	client->m_list->message = NULL;
@@ -73,7 +71,7 @@ transport_client* client_init( const char* server, int port, const char* unix_pa
 
 
 int client_connect( transport_client* client, 
-		char* username, char* password, char* resource, 
+		const char* username, const char* password, const char* resource, 
 		int connect_timeout, enum TRANSPORT_AUTH_TYPE  auth_type ) {
 	if(client == NULL) return 0; 
 	return session_connect( client->session, username, 
@@ -86,7 +84,7 @@ int client_disconnect( transport_client* client ) {
 	return session_disconnect( client->session );
 }
 
-int client_connected( transport_client* client ) {
+int client_connected( const transport_client* client ) {
 	if(client == NULL) return 0;
 	return client->session->state_machine->connected;
 }
@@ -184,9 +182,8 @@ void client_message_handler( void* client, transport_message* msg ){
 
 	transport_client* cli = (transport_client*) client;
 
-	size_t len = sizeof(transport_message_node);
-	transport_message_node* node = 
-		(transport_message_node*) safe_malloc(len);
+	transport_message_node* node = safe_malloc( sizeof( transport_message_node) );
+	node->next = NULL;
 	node->type = MESSAGE_LIST_ITEM;
 	node->message = msg;
 

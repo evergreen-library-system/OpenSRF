@@ -47,8 +47,8 @@ int osrfMathRun( osrfMethodContext* ctx ) {
 
 	OSRF_METHOD_VERIFY_CONTEXT(ctx);	
 
-	jsonObject* x = jsonObjectGetIndex(ctx->params, 0);
-	jsonObject* y = jsonObjectGetIndex(ctx->params, 1);
+	const jsonObject* x = jsonObjectGetIndex(ctx->params, 0);
+	const jsonObject* y = jsonObjectGetIndex(ctx->params, 1);
 
 	if( x && y ) {
 

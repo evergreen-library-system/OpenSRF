@@ -49,10 +49,10 @@ int osrfVersion( osrfMethodContext* ctx ) {
 		return 0;
 	}
 
-	jsonObject* serv = jsonObjectGetIndex(ctx->params, 0);
-	jsonObject* meth = jsonObjectGetIndex(ctx->params, 1);
-	char* service = jsonObjectGetString(serv);
-	char* methd = jsonObjectGetString(meth);
+	const jsonObject* serv = jsonObjectGetIndex(ctx->params, 0);
+	const jsonObject* meth = jsonObjectGetIndex(ctx->params, 1);
+	const char* service = jsonObjectGetString(serv);
+	const char* methd = jsonObjectGetString(meth);
 
 	if( service && methd ) {
 		/* shove the additional params into an array */
