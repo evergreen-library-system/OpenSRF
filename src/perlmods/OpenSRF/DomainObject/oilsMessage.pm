@@ -185,7 +185,7 @@ sub handler {
 	my $api_level = $self->api_level || 1;
 	my $tT = $self->threadTrace;
 
-    $logger->debug("Message locale is $locale", DEBUG);
+    $log->debug("Message locale is $locale", DEBUG);
 
 	$session->last_message_type($mtype);
 	$session->last_message_api_level($api_level);
