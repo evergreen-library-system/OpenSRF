@@ -544,6 +544,7 @@ sub send {
 	$self->{peer_handle}->send( 
 					to     => $self->remote_id,
 				   thread => $self->session_id,
+				   locale => $self->session_locale,
 				   body   => $json );
 
 	if( $disconnect) {

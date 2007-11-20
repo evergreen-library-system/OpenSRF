@@ -406,6 +406,7 @@ sub send {
 	my $thread = $params{'thread'} || "";
 	my $router_command = $params{'router_command'} || "";
 	my $router_class = $params{'router_class'} || "";
+	my $locale = $params{'locale'} || "";
 
 	my $msg = OpenSRF::Transport::SlimJabber::MessageWrapper->new;
 
@@ -414,7 +415,8 @@ sub send {
 	$msg->setBody( $body );
 	$msg->set_router_command( $router_command );
 	$msg->set_router_class( $router_class );
-   $msg->set_osrf_xid($logger->get_osrf_xid);
+	$msg->set_locale( $locale );
+    $msg->set_osrf_xid($logger->get_osrf_xid);
 
 	$logger->transport( 
 			"JabberClient Sending message to $to with thread $thread and body: \n$body", INTERNAL );

@@ -122,5 +122,16 @@ sub get_osrf_xid {
    $self->{msg_node}->getAttribute('osrf_xid');
 }
 
+sub set_locale {
+   my( $self, $xid ) = @_;
+   $self->{msg_node}->setAttribute( locale => $xid );
+}
+
+
+sub get_locale {
+   my $self = shift;
+   $self->{msg_node}->getAttribute('locale');
+}
+
 
 1;
