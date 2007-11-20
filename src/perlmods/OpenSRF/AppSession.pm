@@ -509,7 +509,7 @@ sub send {
 
 	
 		$logger->info( "AppSession sending ".$msg->type." to ".$self->remote_id.
-			" with threadTrace [".$msg->threadTrace."] and locale [".$msg->sender_locale."]" );
+			" with threadTrace [".$msg->threadTrace."]");
 
 	}
 	
