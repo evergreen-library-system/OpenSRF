@@ -369,7 +369,7 @@ jsonObject* jsonObjectEncodeClass( const jsonObject* obj );
 
 /**
  *	Generates an XML representation of a JSON object */
-char* jsonObjectToXML(jsonObject*);
+char* jsonObjectToXML(const jsonObject*);
 
 
 /*

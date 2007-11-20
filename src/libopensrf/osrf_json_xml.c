@@ -229,7 +229,7 @@ jsonObject* jsonXMLToJSONObject(const char* xml) {
 
 
 static char* _escape_xml (const char*);
-static int _recurse_jsonObjectToXML(jsonObject*, growing_buffer*);
+static int _recurse_jsonObjectToXML(const jsonObject*, growing_buffer*);
 
 char* jsonObjectToXML(const jsonObject* obj) {
 
@@ -304,8 +304,9 @@ int _recurse_jsonObjectToXML(const jsonObject* obj, growing_buffer* res_xml) {
 		else
                		buffer_add(res_xml,"<array>");
 
-	       	for ( int i = 0; i!= obj->size; i++ )
-			_recurse_jsonObjectToXML(jsonObjectGetIndex(obj,i), res_xml);
+        int i;
+        for ( i = 0; i!= obj->size; i++ )
+		    _recurse_jsonObjectToXML(jsonObjectGetIndex(obj,i), res_xml);
 
 		buffer_add(res_xml,"</array>");
 
