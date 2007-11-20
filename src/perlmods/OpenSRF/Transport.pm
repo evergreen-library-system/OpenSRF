@@ -87,7 +87,6 @@ sub handler {
 	# Extract message information
 	my $remote_id	= $helper->get_remote_id();
 	my $sess_id	= $helper->get_sess_id();
-	my $locale	= $helper->get_locale();
 	my $body	= $helper->get_body();
 	my $type	= $helper->get_msg_type();
 
@@ -152,9 +151,6 @@ sub handler {
 			return 1;
 		}
 	}
-
-    # set the locale for the session, if passed
-    $app_session->session_locale($locale) if ($locale);
 
 	# cycle through and pass each oilsMessage contained in the message
 	# up to the message layer for processing.
