@@ -21,6 +21,7 @@ our %EXPORT_TAGS = ( state => [ qw/CONNECTING INIT_CONNECTED CONNECTED DISCONNEC
 );
 
 my $logger = "OpenSRF::Utils::Logger";
+my $_last_locale = 'en-US';
 
 our %_CACHE;
 our @_RESEND_QUEUE;
@@ -159,6 +160,7 @@ sub last_sent_payload {
 sub session_locale {
 	my( $self, $type ) = @_;
 	if( $type ) {
+        $_last_locale = $type if ($self->endpoint == SERVER);
 		return $self->{'session_locale'} = $type;
 	}
 	return $self->{'session_locale'};
@@ -207,7 +209,7 @@ sub create {
 	my $app = shift;
         my $api_level = shift;
 	my $quiet = shift;
-	my $locale = shift;
+	my $locale = shift || $_last_locale;
 
 	$api_level = 1 if (!defined($api_level));
 			        
