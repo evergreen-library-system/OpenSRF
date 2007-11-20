@@ -235,8 +235,6 @@ sub create {
 	}
 
 	my $self = bless { app_name    => $app,
-				#client_auth => $auth,
-			   #recv_queue  => [],
 			   request_queue  => [],
 			   endpoint    => CLIENT,
 			   state       => DISCONNECTED,#since we're init'ing
@@ -501,13 +499,15 @@ sub send {
 	
 		$msg->api_level($self->api_level);
 		$msg->payload($payload) if $payload;
-		$msg->sender_locale($self->session_locale) if $self->session_locale;
+
+        my $locale = $self->session_locale;
+		$msg->sender_locale($locale) if ($locale);
 	
 		push @doc, $msg;
 
 	
 		$logger->info( "AppSession sending ".$msg->type." to ".$self->remote_id.
-			" with threadTrace [".$msg->threadTrace."]" );
+			" with threadTrace [".$msg->threadTrace."] and locale [".$msg->locale."]" );
 
 	}
 	
@@ -544,7 +544,6 @@ sub send {
 	$self->{peer_handle}->send( 
 					to     => $self->remote_id,
 				   thread => $self->session_id,
-				   locale => $self->session_locale,
 				   body   => $json );
 
 	if( $disconnect) {
