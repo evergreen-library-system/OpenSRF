@@ -10,7 +10,7 @@ sub new {
 	my( $class, $message ) = @_;
 	$class = ref( $class ) || $class;
 	my $self = {};
-	$self->{'msg'} = ${$class . '::ex_msg_header'} ." \n$message";
+	$self->{'msg'} = ${$class . '::ex_msg_header'} .": $message";
 	return bless( $self, $class );
 }	
 
@@ -70,24 +70,25 @@ sub throw() {
 
 
 sub stringify() {
-
 	my $self = shift;
-	my $ctime = localtime();
-	my( $package, $file, $line) = get_caller();
-	my $name = ref( $self );
+	my($package, $file, $line) = get_caller();
+	my $name = ref($self);
 	my $msg = $self->message();
 
-	$msg =~ s/^/Mess: /mg;
+    my ($sec,$min,$hour,$mday,$mon,$year) = localtime();
+    $year += 1900; $mon += 1;
+    my $date = sprintf(
+        '%s-%0.2d-%0.2dT%0.2d:%0.2d:%0.2d',
+        $year, $mon, $mday, $hour, $min, $sec);
 
-	return "  * ! EXCEPTION ! * \nTYPE: $name\n$msg\n".
-		"Loc.: $line $package \nLoc.: $file \nTime: $ctime\n";
+    return "Exception: $name $date $package $file:$line $msg\n";
 }
 
 
 # --- determine the originating caller of this exception
 sub get_caller() {
 
-	$package = caller();
+	my $package = caller();
 	my $x = 0;
 	while( $package->isa( "Error" ) || $package =~ /^Error::/ ) { 
 		$package = caller( ++$x );
