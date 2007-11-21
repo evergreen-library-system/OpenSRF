@@ -57,7 +57,7 @@ def osrfXMLNodeToObject(xmlNode):
         # If the node has no element children, clean up the text content 
         # and use that as the data
         xmlNode = xmlNode.childNodes[0] # extract the text node
-        data = re.compile('^\s*').sub('', str(xmlNode.nodeValue))
+        data = re.compile('^\s*').sub('', unicode(xmlNode.nodeValue))
         data = re.compile('\s*$').sub('', data)
 
         obj[nodeName] = data

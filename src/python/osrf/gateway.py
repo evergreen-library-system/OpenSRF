@@ -25,7 +25,7 @@ class GatewayRequest:
             response =urllib2.urlopen(request)
         except urllib2.HTTPError, e:
             # log this?
-            sys.stderr.write('%s => %s?%s\n' % (str(e), self.buildURL(), params))
+            sys.stderr.write('%s => %s?%s\n' % (unicode(e), self.buildURL(), params))
             raise e
             
         return self.handleResponse(response)
@@ -95,7 +95,7 @@ class XMLGatewayRequest(GatewayRequest):
         try:
             parser.parse(response)
         except Exception, e:
-            osrfLogErr('Error parsing gateway XML: %s' % str(e))
+            osrfLogErr('Error parsing gateway XML: %s' % unicode(e))
             return None
 
         return handler.getResult()
