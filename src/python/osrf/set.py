@@ -18,7 +18,7 @@ from osrf.const import *
 from osrf.ex import *
 
 # global settings config object
-__conifg = None
+__config = None
 
 def osrfSettingsValue(path, idx=0):
 	global __config
