@@ -22,74 +22,75 @@ from time import time
 
 
 def osrfPushStack(netMessage):
-   ses = osrfSession.findSession(netMessage.thread)
+    ses = osrfSession.findSession(netMessage.thread)
 
-   if not ses:
-      # This is an incoming request from a client, create a new server session
-      pass
+    if not ses:
+        # This is an incoming request from a client, create a new server session
+        osrfLogErr("server-side sessions don't exist yet")
+        pass
 
-   ses.setRemoteId(netMessage.sender)
+    ses.setRemoteId(netMessage.sender)
 
-   oMessages = osrfJSONToObject(netMessage.body)
+    oMessages = osrfJSONToObject(netMessage.body)
 
-   osrfLogInternal("osrfPushStack(): received %d messages" % len(oMessages))
+    osrfLogInternal("osrfPushStack(): received %d messages" % len(oMessages))
 
-   # Pass each bundled opensrf message to the message handler
-   t = time()
-   for m in oMessages:
-      osrfHandleMessage(ses, m)
-   t = time() - t
+    # Pass each bundled opensrf message to the message handler
+    t = time()
+    for m in oMessages:
+        osrfHandleMessage(ses, m)
+    t = time() - t
 
-   if isinstance(ses, osrfServerSession):
-      osrfLogInfo("Message processing duration %f" % t)
+    if isinstance(ses, osrfServerSession):
+        osrfLogInfo("Message processing duration %f" % t)
 
 def osrfHandleMessage(session, message):
 
-   osrfLogInternal("osrfHandleMessage(): processing message of type %s" % message.type())
+    osrfLogInternal("osrfHandleMessage(): processing message of type %s" % message.type())
 
-   if isinstance(session, osrfClientSession):
-      
-      if message.type() == OSRF_MESSAGE_TYPE_RESULT:
-         session.pushResponseQueue(message)
-         return
+    if isinstance(session, osrfClientSession):
 
-      if message.type() == OSRF_MESSAGE_TYPE_STATUS:
+        if message.type() == OSRF_MESSAGE_TYPE_RESULT:
+            session.pushResponseQueue(message)
+            return
 
-         statusCode = int(message.payload().statusCode())
-         statusText = message.payload().status()
-         osrfLogInternal("osrfHandleMessage(): processing STATUS,  statusCode =  %d" % statusCode)
+        if message.type() == OSRF_MESSAGE_TYPE_STATUS:
 
-         if statusCode == OSRF_STATUS_COMPLETE:
+            statusCode = int(message.payload().statusCode())
+            statusText = message.payload().status()
+            osrfLogInternal("osrfHandleMessage(): processing STATUS,  statusCode =  %d" % statusCode)
+
+        if statusCode == OSRF_STATUS_COMPLETE:
             # The server has informed us that this request is complete
             req = session.findRequest(message.threadTrace())
             if req: 
-               osrfLogInternal("marking request as complete: %d" % req.id)
-               req.setComplete()
+                osrfLogInternal("marking request as complete: %d" % req.id)
+                req.setComplete()
             return
 
-         if statusCode == OSRF_STATUS_OK:
+        if statusCode == OSRF_STATUS_OK:
             # We have connected successfully
             osrfLogDebug("Successfully connected to " + session.service)
             session.state = OSRF_APP_SESSION_CONNECTED
             return
 
-         if statusCode == OSRF_STATUS_CONTINUE:
+        if statusCode == OSRF_STATUS_CONTINUE:
             # server is telling us to reset our wait timeout and keep waiting for a response
             session.resetRequestTimeout(message.threadTrace())
             return;
 
-         if statusCode == OSRF_STATUS_TIMEOUT:
+        if statusCode == OSRF_STATUS_TIMEOUT:
             osrfLogDebug("The server did not receive a request from us in time...")
             session.state = OSRF_APP_SESSION_DISCONNECTED
             return
 
-         if statusCode == OSRF_STATUS_NOTFOUND:
+        if statusCode == OSRF_STATUS_NOTFOUND:
             osrfLogErr("Requested method was not found on the server: %s" % statusText)
             session.state = OSRF_APP_SESSION_DISCONNECTED
             raise osrfServiceException(statusText)
 
-         raise osrfProtocolException("Unknown message status: %d" % statusCode)
-      
-         
-   
-   
+        raise osrfProtocolException("Unknown message status: %d" % statusCode)
+
+
+
+
