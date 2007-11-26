@@ -48,7 +48,7 @@ struct osrf_app_session_struct {
 	transport_client* transport_handle;
 	/** Cache of active app_request objects */
 
-	//osrf_app_request* request_queue;
+	//osrfAppRequest* request_queue;
 
 	osrfList* request_queue;
 
@@ -93,153 +93,94 @@ typedef struct osrf_app_session_struct osrfAppSession;
 // -------------------------------------------------------------------------- 
 
 /** Allocates a initializes a new app_session */
-osrf_app_session* osrfAppSessionClientInit( const char* remote_service );
-osrf_app_session* osrf_app_client_session_init( const char* remote_service );
+osrfAppSession* osrfAppSessionClientInit( const char* remote_service );
+osrfAppSession* osrf_app_client_session_init( const char* remote_service );
 
 /** Allocates and initializes a new server session.  The global session cache
   * is checked to see if this session already exists, if so, it's returned 
   */
-osrf_app_session* osrf_app_server_session_init( 
+osrfAppSession* osrf_app_server_session_init(
 		const char* session_id, const char* our_app, const char* remote_id );
 
 /** sets the default locale for a session **/
-char* osrf_app_session_set_locale( osrf_app_session*, const char* );
+char* osrf_app_session_set_locale( osrfAppSession*, const char* );
 
 /** returns a session from the global session hash */
-osrf_app_session* osrf_app_session_find_session( const char* session_id );
+osrfAppSession* osrf_app_session_find_session( const char* session_id );
 
 /** Builds a new app_request object with the given payload andn returns
   * the id of the request.  This id is then used to perform work on the
   * requeset.
   */
 int osrfAppSessionMakeRequest(
-		osrf_app_session* session, const jsonObject* params, 
+		osrfAppSession* session, const jsonObject* params,
 		const char* method_name, int protocol, string_array* param_strings);
 
 int osrf_app_session_make_req( 
-		osrf_app_session* session, const jsonObject* params, 
+		osrfAppSession* session, const jsonObject* params,
 		const char* method_name, int protocol, string_array* param_strings);
 
-int osrfAppSessionMakeLocaleRequest(
-		osrf_app_session* session, const jsonObject* params, const char* method_name,
-		int protocol, string_array* param_strings, char* locale);
-
-int osrf_app_session_make_locale_req( 
-		osrf_app_session* session, const jsonObject* params, const char* method_name,
-		int protocol, string_array* param_strings, char* locale);
-
 /** Sets the given request to complete state */
-void osrf_app_session_set_complete( osrf_app_session* session, int request_id );
+void osrf_app_session_set_complete( osrfAppSession* session, int request_id );
 
 /** Returns true if the given request is complete */
-int osrf_app_session_request_complete( const osrf_app_session* session, int request_id );
+int osrf_app_session_request_complete( const osrfAppSession* session, int request_id );
 
 /** Does a recv call on the given request */
 osrf_message* osrfAppSessionRequestRecv(
-		osrf_app_session* session, int request_id, int timeout );
+		osrfAppSession* session, int request_id, int timeout );
 osrf_message* osrf_app_session_request_recv( 
-		osrf_app_session* session, int request_id, int timeout );
+		osrfAppSession* session, int request_id, int timeout );
 
 /** Removes the request from the request set and frees the reqest */
-void osrf_app_session_request_finish( osrf_app_session* session, int request_id );
+void osrf_app_session_request_finish( osrfAppSession* session, int request_id );
 
 /** Resends the orginal request with the given request id */
-int osrf_app_session_request_resend( osrf_app_session*, int request_id );
+int osrf_app_session_request_resend( osrfAppSession*, int request_id );
 
 /** Resets the remote connection target to that of the original*/
-void osrf_app_session_reset_remote( osrf_app_session* );
+void osrf_app_session_reset_remote( osrfAppSession* );
 
 /** Sets the remote target to 'remote_id' */
-void osrf_app_session_set_remote( osrf_app_session* session, const char* remote_id );
+void osrf_app_session_set_remote( osrfAppSession* session, const char* remote_id );
 
 /** pushes the given message into the result list of the app_request
   * whose request_id matches the messages thread_trace 
   */
-int osrf_app_session_push_queue( osrf_app_session*, osrf_message* msg );
+int osrf_app_session_push_queue( osrfAppSession*, osrf_message* msg );
 
 /** Attempts to connect to the remote service. Returns 1 on successful 
   * connection, 0 otherwise.
   */
-int osrf_app_session_connect( osrf_app_session* );
-int osrfAppSessionConnect( osrf_app_session* );
+int osrf_app_session_connect( osrfAppSession* );
+int osrfAppSessionConnect( osrfAppSession* );
 
 /** Sends a disconnect message to the remote service.  No response is expected */
-int osrf_app_session_disconnect( osrf_app_session* );
+int osrf_app_session_disconnect( osrfAppSession* );
 
 /**  Waits up to 'timeout' seconds for some data to arrive.
   * Any data that arrives will be processed according to its
   * payload and message type.  This method will return after
   * any data has arrived.
   */
-int osrf_app_session_queue_wait( osrf_app_session*, int timeout, int* recvd );
+int osrf_app_session_queue_wait( osrfAppSession*, int timeout, int* recvd );
 
 /** Disconnects (if client), frees any attached app_reuqests, removes the session from the 
   * global session cache and frees the session.  Needless to say, only call this when the
   * session is completey done.
   */
-void osrf_app_session_destroy ( osrf_app_session* );
+void osrf_app_session_destroy ( osrfAppSession* );
 void osrfAppSessionFree( osrfAppSession* );
 
-
-
-// --------------------------------------------------------------------------
-// --------------------------------------------------------------------------
-// Request functions
-// --------------------------------------------------------------------------
-
-/** Allocations and initializes a new app_request object */
-osrf_app_request* _osrf_app_request_init( osrf_app_session* session, osrf_message* msg );
-
-/** Frees memory used by an app_request object */
-void _osrf_app_request_free( void * req );
-
-/** Pushes the given message onto the list of 'responses' to this request */
-void _osrf_app_request_push_queue( osrf_app_request*, osrf_message* payload );
-
-/** Checks the receive queue for messages.  If any are found, the first
-  * is popped off and returned.  Otherwise, this method will wait at most timeout 
-  * seconds for a message to appear in the receive queue.  Once it arrives it is returned.
-  * If no messages arrive in the timeout provided, null is returned.
-  */
-osrf_message* _osrf_app_request_recv( osrf_app_request* req, int timeout );
-
-/** Resend this requests original request message */
-int _osrf_app_request_resend( osrf_app_request* req );
-
-
 /* tells the request to reset it's wait timeout */
-void osrf_app_session_request_reset_timeout( osrf_app_session* session, int req_id );
+void osrf_app_session_request_reset_timeout( osrfAppSession* session, int req_id );
 
-// --------------------------------------------------------------------------
-// --------------------------------------------------------------------------
-// Session functions 
-// --------------------------------------------------------------------------
-
-/** Returns the app_request with the given thread_trace (request_id) */
-osrf_app_request* _osrf_app_session_get_request( osrf_app_session*, int thread_trace );
-
-/** frees memory held by a session. Note: We delete all requests in the request list */
-void _osrf_app_session_free( osrf_app_session* );
-
-/** adds a session to the global session cache */
-void _osrf_app_session_push_session( osrf_app_session* );
-
-/** Adds an app_request to the request set */
-void _osrf_app_session_push_request( osrf_app_session*, osrf_app_request* req );
-
-/** Removes an app_request from this session request set, freeing the request object */
-void _osrf_app_session_remove_request( osrf_app_session*, osrf_app_request* req );
-
-/** Send the given message */
-int _osrf_app_session_send( osrf_app_session*, osrf_message* msg );
-
-int osrfAppSessionSendBatch( osrf_app_session*, osrf_message* msgs[], int size );
-
-int osrfAppRequestRespond( osrfAppSession* ses, int requestId, const jsonObject* data ); 
+int osrfAppRequestRespond( osrfAppSession* ses, int requestId, const jsonObject* data );
 int osrfAppRequestRespondComplete(
 		osrfAppSession* ses, int requestId, const jsonObject* data ); 
 
-int osrfAppSessionStatus( osrfAppSession* ses, int type, char* name, int reqId, char* message );
+int osrfAppSessionStatus( osrfAppSession* ses, int type,
+		const char* name, int reqId, const char* message );
 
 void osrfAppSessionCleanup();
 
