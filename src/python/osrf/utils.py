@@ -26,43 +26,56 @@ def osrfXMLNodeToObject(xmlNode):
 
     for nodeChild in xmlNode.childNodes:
         if nodeChild.nodeType == xmlNode.ELEMENT_NODE:
-
-            # If a node has element children, create a new sub-object 
-            # for this node, attach an array for each type of child
-            # and recursively collect the children data into the array(s)
-
-            if not obj.has_key(nodeName):
-                obj[nodeName] = {}
-
-            sub_obj = osrfXMLNodeToObject(nodeChild);
-
-            if not obj[nodeName].has_key(nodeChild.nodeName):
-                # we've encountered 1 sub-node with nodeChild's name
-                obj[nodeName][nodeChild.nodeName] = sub_obj[nodeChild.nodeName]
-
-            else:
-                if isinstance(obj[nodeName][nodeChild.nodeName], list):
-                    # we already have multiple sub-nodes with nodeChild's name
-                    obj[nodeName][nodeChild.nodeName].append(sub_obj[nodeChild.nodeName])
-
-                else:
-                    # we already have 1 sub-node with nodeChild's name, make 
-                    # it a list and append the current node
-                    val = obj[nodeName][nodeChild.nodeName]
-                    obj[nodeName][nodeChild.nodeName] = [ val, sub_obj[nodeChild.nodeName] ]
-
+            subObj = osrfXMLNodeToObject(nodeChild);
+            __appendChildNode(obj, nodeName, nodeChild.nodeName, subObj)
             done = True
 
-    if not done:
-        # If the node has no element children, clean up the text content 
-        # and use that as the data
-        xmlNode = xmlNode.childNodes[0] # extract the text node
-        data = re.compile('^\s*').sub('', unicode(xmlNode.nodeValue))
-        data = re.compile('\s*$').sub('', data)
+    for attr in xmlNode.attributes.values():
+        __appendChildNode(obj, nodeName, attr.name, dict([(attr.name, attr.value)]))
+        
 
-        obj[nodeName] = data
+    if not done and len(xmlNode.childNodes) > 0:
+        # If the node has no element children, clean up the text 
+        # content and use that as the data
+        textNode = xmlNode.childNodes[0] # extract the text node
+        data = unicode(textNode.nodeValue).replace('^\s*','')
+        data = data.replace('\s*$','')
+
+        if nodeName in obj:
+            # the current element contains attributes and text
+            obj[nodeName]['#text'] = data
+        else:
+            # the current element contains text only
+            obj[nodeName] = data
 
     return obj
+
+
+def __appendChildNode(obj, nodeName, childName, subObj):
+    """ If a node has element children, create a new sub-object 
+        for this node, attach an array for each type of child
+        and recursively collect the children data into the array(s) """
+
+    if not obj.has_key(nodeName):
+        obj[nodeName] = {}
+
+    if not obj[nodeName].has_key(childName):
+        # we've encountered 1 sub-node with nodeChild's name
+        if childName in subObj:
+            obj[nodeName][childName] = subObj[childName]
+        else:
+            obj[nodeName][childName] = None
+
+    else:
+        if isinstance(obj[nodeName][childName], list):
+            # we already have multiple sub-nodes with nodeChild's name
+            obj[nodeName][childName].append(subObj[childName])
+
+        else:
+            # we already have 1 sub-node with nodeChild's name, make 
+            # it a list and append the current node
+            val = obj[nodeName][childName]
+            obj[nodeName][childName] = [ val, subObj[childName] ]
 
 
 def osrfObjectFindPath(obj, path, idx=None):
