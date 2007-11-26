@@ -103,7 +103,6 @@ def __logSyslog(level, msg):
     if level == OSRF_LOG_WARN: slvl = syslog.LOG_WARNING
     if level == OSRF_LOG_ERR:  slvl = syslog.LOG_ERR
 
-    sys.stderr.write("logging at level: %s\n" % str(slvl))
     syslog.syslog(slvl, msg)
 
 def __logFile(msg):
