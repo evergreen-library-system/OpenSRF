@@ -128,7 +128,6 @@ class osrfNetwork(JabberClient):
         If a message is received in 'timeout' seconds, the message is passed to 
         the recvCallback is called and True is returned.  Otherwise, false is returned."""
 
-        msg = None
         if len(self.queue) == 0:
             while timeout >= 0 and len(self.queue) == 0:
                 starttime = time.time()
@@ -141,11 +140,13 @@ class osrfNetwork(JabberClient):
                 if not act: self.idle()
 
         # if we've acquired a message, handle it
+        msg = None
         if len(self.queue) > 0:
-            self.recvCallback(self.queue.pop(0))
-            return True
+            msg = self.queue.pop(0)
+            if self.recvCallback:
+                self.recvCallback(msg)
 
-        return False
+        return msg
 
 
 
