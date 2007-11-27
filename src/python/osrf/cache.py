@@ -7,6 +7,7 @@ Requires memcache: ftp://ftp.tummy.com/pub/python-memcached/
 '''
 
 _client = None
+defaultTimeout = 0
 
 class CacheException(Exception):
     def __init__(self, info):
@@ -28,7 +29,10 @@ class CacheClient(object):
                 raise CacheException("not connected to any memcache servers.  try CacheClient.connect(servers)")
             self.client = _client
 
-    def put(self, key, val, timeout=0):
+    def put(self, key, val, timeout=None):
+        global defaultTimeout
+        if timeout is None:
+            timeout = defaultTimeout
         self.client.set(key, osrfObjectToJSON(val), timeout)
 
     def get(self, key):
