@@ -131,12 +131,10 @@ class osrfNetwork(JabberClient):
         if len(self.queue) == 0:
             while timeout >= 0 and len(self.queue) == 0:
                 starttime = time.time()
-                osrfLogInternal("going into stream loop at " + str(starttime))
                 act = self.get_stream().loop_iter(timeout)
                 endtime = time.time() - starttime
                 timeout -= endtime
-                osrfLogInternal("exiting stream loop after %s seconds" % str(endtime))
-                osrfLogInternal("act = %s : queue length = %d" % (act, len(self.queue)) )
+                osrfLogInternal("exiting stream loop after %s seconds. act=%s, queue size=%d" % (str(endtime),act, len(self.queue)))
                 if not act: self.idle()
 
         # if we've acquired a message, handle it
