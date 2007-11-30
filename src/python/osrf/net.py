@@ -112,7 +112,6 @@ class osrfNetwork(JabberClient):
     
     def message_received(self, stanza):
         """Handler for received messages."""
-        osrfLogInternal("jabber received a message of type %s" % stanza.get_type())
         if stanza.get_type()=="headline":
             return True
         # check for errors
