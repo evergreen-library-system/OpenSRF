@@ -8,6 +8,7 @@ from osrf.conf import osrfConfigValue
 from osrf.set import osrfSettingsValue
 from osrf.const import *
 from osrf.net import *
+from osrf.log import *
 
 
 ''' 
@@ -17,7 +18,7 @@ Example Apache mod_python config:
 
 <Location /osrf-http-translator>
    SetHandler mod_python
-   PythonPath "['/path/to/translator-dir'] + sys.path"
+   PythonPath "['/path/to/osrf-python'] + sys.path"
    PythonHandler osrf.http_translator
    PythonOption OSRF_CONFIG /path/to/opensrf_core.xml
    PythonOption OSRF_CONFIG_CONTEXT gateway
@@ -105,6 +106,7 @@ class HTTPTranslator(object):
         self.thread = apreq.headers_in.get(OSRF_HTTP_HEADER_THREAD) or "%s%s" % (os.getpid(), time.time())
         self.timeout = apreq.headers_in.get(OSRF_HTTP_HEADER_TIMEOUT) or 1200
         self.multipart = str(apreq.headers_in.get(OSRF_HTTP_HEADER_MULTIPART)).lower() == 'true'
+        self.disconnectOnly = False
 
         # generate a random multipart delimiter
         m = md5.new()
@@ -122,12 +124,19 @@ class HTTPTranslator(object):
             return apache.HTTP_BAD_REQUEST
         if not self.setToAddr():
             return apache.HTTP_BAD_REQUEST
+        if not self.parseRequest():
+            return apache.HTTP_BAD_REQUEST
 
         while self.handle.recv(0):
             pass # drop stale messages
 
+
         netMsg = osrfNetworkMessage(to=self.to, thread=self.thread, body=self.body)
         self.handle.send(netMsg)
+
+        if self.disconnectOnly:
+            osrfLogDebug("exiting early on DISCONNECT")
+            return apache.OK
 
         firstWrite = True
         while not self.complete:
@@ -161,12 +170,29 @@ class HTTPTranslator(object):
 
         return apache.OK
 
+    def parseRequest(self):
+        ''' If this is solely a DISCONNECT message, we set self.disconnectOnly to true
+            @return True if the body parses correctly, False otherwise
+        '''
+        osrfMsgs = osrfJSONToObject(self.body)
+        if not osrfMsgs:
+            return False
+        
+        if len(osrfMsgs) == 1 and osrfMsgs[0].type() == OSRF_MESSAGE_TYPE_DISCONNECT:
+            self.disconnectOnly = True
+
+        return True
+
+
     def setToAddr(self):
         ''' Determines the TO address.  Returns false if 
-            the address is missing or ambiguous. '''
+            the address is missing or ambiguous. 
+            Also returns false if an explicit TO is specified and the
+            thread/IP/TO combination is not found in the session cache
+            '''
         if self.service:
             if self.to:
-                # specifying both a SERVICE and a TO is not allowed
+                osrfLogWarn("specifying both SERVICE and TO is not allowed")
                 return False
             self.to = "%s@%s/%s" % (ROUTER_NAME, OSRF_DOMAIN, self.service)
             return True
@@ -177,6 +203,7 @@ class HTTPTranslator(object):
                 obj = self.cache.get(self.thread)
                 if obj and obj['ip'] == self.remoteHost and obj['jid'] == self.to:
                     return True
+        osrfLogWarn("client [%s] attempted to send directly [%s] without a session" % (self.remoteHost, self.to))
         return False
 
         
@@ -188,6 +215,9 @@ class HTTPTranslator(object):
         else:
             self.apreq.content_type = JSON_CONTENT_TYPE
         self.cache.put(self.thread, {'ip':self.remoteHost, 'jid': netMsg.sender}, CACHE_TIME)
+
+        osrfLogDebug("caching session [%s] for host [%s] and server drone [%s]" % (
+            self.thread, self.remoteHost, netMsg.sender))
 
 
 
@@ -206,7 +236,7 @@ class HTTPTranslator(object):
             code = int(lastMsg.payload().statusCode())
 
             if code == OSRF_STATUS_TIMEOUT:
-                # remove any existing thread cache for this session and drop the message
+                osrfLogDebug("removing cached session [%s] and dropping TIMEOUT message" % netMsg.thread)
                 self.cache.delete(netMsg.thread)
                 return False 
 
