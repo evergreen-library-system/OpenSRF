@@ -41,8 +41,6 @@ sub add_1 {
 	my ($result) = $meth->run('add',@args);
 
 	return $result;
-	
-	return send_request( "add", @args );
 }
 
 __PACKAGE__->register_method( method => 'sub_1', api_name => 'sub' );
@@ -55,8 +53,6 @@ sub sub_1 {
 	my ($result) = $meth->run('sub',@args);
 
 	return $result;
-	
-	return send_request( "sub", @args );
 }
 
 __PACKAGE__->register_method( method => 'mult_1', api_name => 'mult' );
@@ -69,8 +65,6 @@ sub mult_1 {
 	my ($result) = $meth->run('mult',@args);
 
 	return $result;
-	
-	return send_request( "mult", @args );
 }
 
 __PACKAGE__->register_method( method => 'div_1', api_name => 'div' );
@@ -83,8 +77,6 @@ sub div_1 {
 	my ($result) = $meth->run('div',@args);
 
 	return $result;
-	
-	return send_request( "div", @args );
 }
 
 
