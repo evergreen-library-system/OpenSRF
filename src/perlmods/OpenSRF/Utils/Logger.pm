@@ -64,6 +64,7 @@ sub set_config {
 	if( !defined($config) ) {
 		$loglevel = INFO();
 		warn "*** Logger found no config.  Using STDERR ***\n";
+		return;
 	}
 
 	$loglevel =  $config->bootstrap->loglevel; 
