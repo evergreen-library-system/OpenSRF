@@ -102,11 +102,18 @@ sub handler {
 	my $app_session = OpenSRF::AppSession->find( $sess_id );
 	if( $app_session and $app_session->endpoint == $app_session->SERVER() and
 			$app_session->remote_id ne $remote_id ) {
-		$logger->transport( "Backend Gone or invalid sender", INTERNAL );
-		my $res = OpenSRF::DomainObject::oilsBrokenSession->new();
-		$res->status( "Backend Gone or invalid sender, Reconnect" );
-		$app_session->status( $res );
-		return 1;
+
+	    my $c = OpenSRF::Utils::SettingsClient->new();
+        if($c->config_value("apps", $app_session->service, "migratable")) {
+            $logger->debug("service is migratable, new client is $remote_id");
+        } else {
+
+		    $logger->warn("Backend Gone or invalid sender");
+		    my $res = OpenSRF::DomainObject::oilsBrokenSession->new();
+		    $res->status( "Backend Gone or invalid sender, Reconnect" );
+		    $app_session->status( $res );
+		    return 1;
+        }
 	} 
 
 	# Retrieve or build the app_session as appropriate (server_build decides which to do)
