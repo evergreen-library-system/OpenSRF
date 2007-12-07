@@ -1,9 +1,8 @@
 #!/usr/bin/python
 # vim:et:ts=4
 import os, sys, time, readline, atexit, re
-from string import *
+import osrf.json
 from osrf.system import osrfConnect
-from osrf.json import *
 from osrf.ses import osrfClientSession
 from osrf.conf import osrfConfigValue
 
@@ -19,9 +18,9 @@ def do_loop():
             line = raw_input("\033[01;32msrfsh\033[01;34m% \033[00m")
             if not len(line): 
                 continue
-            if lower(line) == 'exit' or lower(line) == 'quit': 
+            if str.lower(line) == 'exit' or str.lower(line) == 'quit': 
                 break
-            parts = split(line)
+            parts = str.split(line)
 
             command = parts[0]
         
@@ -109,7 +108,7 @@ def handle_request(parts):
     params = None
 
     try:
-        params = osrfJSONToObject(jstr)
+        params = osrf.json.osrfJSONToObject(jstr)
     except:
         print "Error parsing JSON: %s" % jstr
         return
@@ -130,9 +129,9 @@ def handle_request(parts):
 
         otp = get_var('SRFSH_OUTPUT')
         if otp == 'pretty':
-            print "\n" + osrfDebugNetworkObject(resp.content())
+            print "\n" + osrf.json.osrfDebugNetworkObject(resp.content())
         else:
-            print osrfFormatJSON(osrfObjectToJSON(resp.content()))
+            print osrf.json.osrfFormatJSON(osrfObjectToJSON(resp.content()))
 
     req.cleanup()
     ses.cleanup()
@@ -240,8 +239,8 @@ def load_plugins():
         print_green("Loading module %s..." % name)
 
         try:
-            str = 'from %s import %s\n%s()' % (name, init, init)
-            exec(str)
+            string = 'from %s import %s\n%s()' % (name, init, init)
+            exec(string)
             print_red('OK\n')
 
         except Exception, e:
@@ -261,15 +260,15 @@ def get_var(key):
     except: return ''
     
     
-def print_green(str):
+def print_green(string):
     sys.stdout.write("\033[01;32m")
-    sys.stdout.write(str)
+    sys.stdout.write(string)
     sys.stdout.write("\033[00m")
     sys.stdout.flush()
 
-def print_red(str):
+def print_red(string):
     sys.stdout.write("\033[01;31m")
-    sys.stdout.write(str)
+    sys.stdout.write(string)
     sys.stdout.write("\033[00m")
     sys.stdout.flush()
 
