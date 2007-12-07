@@ -23,7 +23,8 @@ all: 	prep \
 	router \
 	srfsh \
 	jserver \
-	gateway
+	gateway \
+	java
 
 install: 	install-prep \
 		opensrf-install \
@@ -33,7 +34,8 @@ install: 	install-prep \
 		jserver-install \
 		javascript-install \
 		perl-install \
-		python25-install
+		python25-install \
+		java-install
 
 
 # --------------------------------------------------------------------------------
@@ -62,6 +64,10 @@ gateway:	opensrf
 jserver:	opensrf
 	@echo $@
 	make -C jserver
+
+
+java:	prep
+	if [ -n "$(OSRF_INSTALL_JAVA)" ]; then echo $@; cd java && . deps.inc && make; fi;
 
 
 # --------------------------------------------------------------------------------
@@ -123,6 +129,8 @@ python25-install:	install-prep
 	@echo $@
 	cp -r python/* $(PYTHON25DIR)/
 
+java-install:
+	if [ -n "$(OSRF_INSTALL_JAVA)" ]; then echo $@; cd java && . deps.inc && make install; fi;
 
 # --------------------------------------------------------------------------------
 # CLEAN	
@@ -134,6 +142,7 @@ clean:
 	make -C jserver clean
 	make -C srfsh clean
 	make -C c-apps clean
+	make -C java clean
 	/bin/rm -rf $(TMPDIR) *.o
 
 

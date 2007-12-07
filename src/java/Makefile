@@ -1,42 +1,32 @@
-# dependencies
-STAX=stax-api-1.0.1.jar
-WSTX=wstx-lgpl-3.2.1.jar
-MEMCACHE=java_memcached-release_1.5.1.jar
-JSON=json.zip
-
-STAX_URL=http://woodstox.codehaus.org/$(STAX)
-WSTX_URL=http://woodstox.codehaus.org/3.2.1/$(WSTX)
-MEMCACHE_URL=http://img.whalin.com/memcached/jdk5/standard/$(MEMCACHE)
-JSON_URL=http://www.json.org/java/$(JSON)
-
-
 JAVAC=javac -J-Xmx256m
 JAVA=java -Xmx256m 
 JAVA_LIBDIR = .lib
-JAVA_LIBS = .:$(JAVA_LIBDIR):ext/$(WSTX):ext/$(STAX):ext/$(MEMCACHE)
+JAVA_LIBS = .:$(OSRF_JAVA_DEPSDIR)/$(WSTX):$(OSRF_JAVA_DEPSDIR)/$(STAX):$(OSRF_JAVA_DEPSDIR)/$(MEMCACHE):$(OSRF_JAVA_DEPSDIR)/$(JSON)
 JAVA_SRC = \
 	org/opensrf/net/xmpp/*.java \
 	org/opensrf/util/*.java \
 	org/opensrf/*.java \
 	org/opensrf/test/*.java 
 
-
 #------------------------------------------------------------------
 
-all:	jar
+all:	verify_deps dirs jar
 
+verify_deps:
+	@if [ ! -e "$(OSRF_JAVA_DEPSDIR)/$(WSTX)" ]; then echo -e "\nmissing dependency $(WSTX)!\n" && exit 1; fi
+	@if [ ! -e "$(OSRF_JAVA_DEPSDIR)/$(STAX)" ]; then echo -e "\nmissing dependency $(STAX)!\n" && exit 1; fi
+	@if [ ! -e "$(OSRF_JAVA_DEPSDIR)/$(MEMCACHE)" ]; then echo -e "\nmissing dependency $(MEMCACHE)!\n" && exit 1; fi
+	@if [ ! -e "$(OSRF_JAVA_DEPSDIR)/$(JSON)" ]; then echo -e "\nmissing dependency $(JSON)!\n" && exit 1; fi
 
 dirs:
 	mkdir -p $(JAVA_LIBDIR)
 
-opensrf:	deps
+opensrf:
 	$(JAVAC) -d $(JAVA_LIBDIR) -cp $(JAVA_LIBS) $(JAVA_SRC) 2>&1 
 
 jar:	opensrf
 	rm -f opensrf.jar
-	echo "creating opensrf.jar"
-	jar cf opensrf.jar -C .lib org
-	rm -r $(JAVA_LIBDIR)
+	jar cf opensrf.jar -C $(JAVA_LIBDIR) org
 
 # only prints the first 30 lines of errors
 slim:
@@ -52,24 +42,19 @@ check:
 run:
 	$(JAVA) -cp $(JAVA_LIBS):opensrf.jar $(JAVA_EXE) $(JAVA_ARGS)
 
-deps:
-	mkdir -p ext
-	mkdir -p $(JAVA_LIBDIR)
-	if [ ! -f ext/$(STAX) ]; then wget '$(STAX_URL)' -O ext/$(STAX); fi 
-	if [ ! -f ext/wstx-lgpl-3.2.1.jar ]; then wget '$(WSTX_URL)' -O ext/$(WSTX); fi
-	if [ ! -f ext/java_memcached-release_1.5.1.jar ]; then wget '$(MEMCACHE_URL)' -O ext/$(MEMCACHE); fi
-	if [ ! -f .tmp/$(JSON) ]; then mkdir -p .tmp && cd .tmp && wget '$(JSON_URL)' && unzip $(JSON); fi
-	$(JAVAC) -d $(JAVA_LIBDIR) .tmp/org/json/*.java
-
 docs:
 	find . -name *.java > files;
 	javadoc -classpath $(JAVA_LIBS) -d doc @files;
 	rm files;
 
+install:
+	mkdir -p $(LIBDIR)/java
+	cp opensrf.jar $(LIBDIR)/java
+
 clean:	
-	rm -rf $(JAVA_LIBDIR) opensrf.jar
+	rm -fr opensrf.jar $(JAVA_LIBDIR)
 
 dep_clean:
-	rm -rf ext .tmp
+	rm -rf deps
 
  	
