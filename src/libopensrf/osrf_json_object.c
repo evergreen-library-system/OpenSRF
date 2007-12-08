@@ -43,6 +43,7 @@ GNU General Public License for more details.
 static int unusedObjCapture = 0;
 static int unusedObjRelease = 0;
 static int mallocObjCreate = 0;
+static int currentListLen = 0;
 
 union unusedObjUnion{
 
@@ -81,6 +82,7 @@ jsonObject* jsonNewObject(const char* data) {
 		o = (jsonObject*) freeObjList;
 		freeObjList = freeObjList->next;
         unusedObjRelease++;
+        currentListLen--;
 	} else {
 		OSRF_MALLOC( o, sizeof(jsonObject) );
         mallocObjCreate++;
@@ -168,8 +170,9 @@ void jsonObjectFree( jsonObject* o ) {
 	freeObjList = unused;
 
     unusedObjCapture++;
+    currentListLen++;
     if (unusedObjCapture > 1 && !(unusedObjCapture % 1000))
-        osrfLogDebug( OSRF_LOG_MARK, "Objects malloc()'d: %d, Reusable objects captured: %d, Objects reused: %d", mallocObjCreate, unusedObjCapture, unusedObjRelease );
+        osrfLogDebug( OSRF_LOG_MARK, "Objects malloc()'d: %d, Reusable objects captured: %d, Objects reused: %d, Current List Length: %d", mallocObjCreate, unusedObjCapture, unusedObjRelease, currentListLen );
 }
 
 static void _jsonFreeHashItem(char* key, void* item){
