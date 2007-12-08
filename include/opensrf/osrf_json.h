@@ -201,6 +201,11 @@ jsonObject* jsonNewBoolObject(int val);
 void jsonObjectFree( jsonObject* o );
 
 /**
+ * Returns all unused jsonObjects to the heap
+ */
+void jsonObjectFreeUnused( void );
+
+/**
  * Forces the given object to become an array (if it isn't already one) 
  * and pushes the new object into the array
  */
@@ -223,7 +228,7 @@ char* jsonObjectToJSONRaw( const jsonObject* obj );
 /**
  * Retrieves the object at the given key
  */
-jsonObject* jsonObjectGetKey( const jsonObject* obj, const char* key );
+jsonObject* jsonObjectGetKey( jsonObject* obj, const char* key );
 const jsonObject* jsonObjectGetKeyConst( const jsonObject* obj, const char* key );
 
 
@@ -297,7 +302,7 @@ void jsonObjectSetNumber(jsonObject* dest, double num);
 void jsonObjectSetClass(jsonObject* dest, const char* classname );
 const char* jsonObjectGetClass(const jsonObject* dest);
 
-int jsonBoolIsTrue( jsonObject* boolObj );
+int jsonBoolIsTrue( const jsonObject* boolObj );
 
 void jsonSetBool(jsonObject* bl, int val);
 

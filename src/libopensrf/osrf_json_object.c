@@ -14,6 +14,7 @@ GNU General Public License for more details.
 */
 
 #include <limits.h>
+#include <opensrf/log.h>
 #include <opensrf/osrf_json.h>
 #include <opensrf/osrf_json_utils.h>
 
@@ -39,17 +40,60 @@ GNU General Public License for more details.
 		_obj_->value.l->freeItem = _jsonFreeListItem;\
 }
 
+static int unusedObjCapture = 0;
+static int unusedObjRelease = 0;
+
+union unusedObjUnion{
+
+	union unusedObjUnion* next;
+	jsonObject obj;
+};
+typedef union unusedObjUnion unusedObj;
+
+// We maintain a free list of jsonObjects that are available
+// for use, in order to reduce the churning through
+// malloc() and free().
+
+static unusedObj* freeObjList = NULL;
+
 static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf );
+
+/**
+ * Return all unused jsonObjects to the heap
+ * @return Nothing
+ */
+void jsonObjectFreeUnused( void ) {
+
+	unusedObj* temp;
+	while( freeObjList ) {
+		temp = freeObjList->next;
+		free( freeObjList );
+		freeObjList = temp;
+	}
+}
 
 jsonObject* jsonNewObject(const char* data) {
 
 	jsonObject* o;
-	OSRF_MALLOC(o, sizeof(jsonObject));
-	o->type = JSON_NULL;
+
+	if( freeObjList ) {
+		o = (jsonObject*) freeObjList;
+		freeObjList = freeObjList->next;
+        unusedObjRelease++;
+	}
+	else
+		OSRF_MALLOC( o, sizeof(jsonObject) );
+
+	o->size = 0;
+	o->classname = NULL;
+	o->parent = NULL;
 
 	if(data) {
 		o->type = JSON_STRING;
 		o->value.s = strdup(data);
+	} else {
+		o->type = JSON_NULL;
+		o->value.s = NULL;
 	}
 
 	return o;
@@ -58,15 +102,28 @@ jsonObject* jsonNewObject(const char* data) {
 jsonObject* jsonNewObjectFmt(const char* data, ...) {
 
 	jsonObject* o;
-	OSRF_MALLOC(o, sizeof(jsonObject));
-	o->type = JSON_NULL;
+
+	if( freeObjList ) {
+		o = (jsonObject*) freeObjList;
+		freeObjList = freeObjList->next;
+	}
+	else
+		OSRF_MALLOC( o, sizeof(jsonObject) );
+
+	o->size = 0;
+	o->classname = NULL;
+	o->parent = NULL;
 
 	if(data) {
 		VA_LIST_TO_STRING(data);
 		o->type = JSON_STRING;
 		o->value.s = strdup(VA_BUF);
 	}
-
+	else {
+		o->type = JSON_NULL;
+		o->value.s = NULL;
+	}
+	
 	return o;
 }
 
@@ -100,7 +157,17 @@ void jsonObjectFree( jsonObject* o ) {
 		case JSON_ARRAY	: osrfListFree(o->value.l); break;
 		case JSON_STRING	: free(o->value.s); break;
 	}
-	free(o);
+
+	// Stick the old jsonObject onto a free list
+	// for potential reuse
+	
+	unusedObj* unused = (unusedObj*) o;
+	unused->next = freeObjList;
+	freeObjList = unused;
+
+    unusedObjCapture++;
+    if (unusedObjCapture > 1 && !(unusedObjCapture % 1000))
+        osrfLogDebug( OSRF_LOG_MARK, "Reusable objects captured: %d, Objects reused: %d", unusedObjCapture, unusedObjRelease );
 }
 
 static void _jsonFreeHashItem(char* key, void* item){
@@ -152,7 +219,7 @@ unsigned long jsonObjectSetKey( jsonObject* o, const char* key, jsonObject* newo
 	return o->size;
 }
 
-jsonObject* jsonObjectGetKey( const jsonObject* obj, const char* key ) {
+jsonObject* jsonObjectGetKey( jsonObject* obj, const char* key ) {
 	if(!(obj && obj->type == JSON_HASH && obj->value.h && key)) return NULL;
 	return osrfHashGet( obj->value.h, key);
 }
@@ -390,7 +457,7 @@ jsonObject* jsonObjectClone( const jsonObject* o ) {
     return result;
 }
 
-int jsonBoolIsTrue( jsonObject* boolObj ) {
+int jsonBoolIsTrue( const jsonObject* boolObj ) {
     if( boolObj && boolObj->type == JSON_BOOL && boolObj->value.b )
         return 1;
     return 0;
