@@ -110,9 +110,12 @@ jsonObject* jsonNewObjectFmt(const char* data, ...) {
 	if( freeObjList ) {
 		o = (jsonObject*) freeObjList;
 		freeObjList = freeObjList->next;
-	}
-	else
+        unusedObjRelease++;
+        currentListLen--;
+	} else {
 		OSRF_MALLOC( o, sizeof(jsonObject) );
+        mallocObjCreate++;
+    }
 
 	o->size = 0;
 	o->classname = NULL;
