@@ -81,7 +81,7 @@ struct jsonParserContextStruct {
 	growing_buffer* buffer;		/* used to hold JSON strings, number, true, false, and null sequences */
 	growing_buffer* utfbuf;		/* holds the current unicode characters */
 	void* userData;				/* opaque user pointer.  we ignore this */
-	struct jsonParserHandlerStruct* handler; /* the event handler struct */
+	const struct jsonParserHandlerStruct* handler; /* the event handler struct */
 };
 typedef struct jsonParserContextStruct jsonParserContext;
 
@@ -132,7 +132,7 @@ typedef struct _jsonIteratorStruct jsonIterator;
  * and ignored by the parser
  * @return An allocated parser context, NULL on error
  */
-jsonParserContext* jsonNewParser( jsonParserHandler* handler, void* userData);
+jsonParserContext* jsonNewParser( const jsonParserHandler* handler, void* userData);
 
 /**
  * Deallocates a parser context

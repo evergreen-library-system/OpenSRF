@@ -22,7 +22,7 @@ GNU General Public License for more details.
 static void (*jsonClientErrorCallback) (const char*) = NULL;
 
 /* these are the handlers for our internal parser */
-static jsonParserHandler jsonInternalParserHandlerStruct = {
+static const jsonParserHandler jsonInternalParserHandler = {
 	_jsonHandleStartObject,
 	_jsonHandleObjectKey,
 	_jsonHandleEndObject,
@@ -34,19 +34,34 @@ static jsonParserHandler jsonInternalParserHandlerStruct = {
 	_jsonHandleNumber,
 	_jsonHandleError
 };
-static jsonParserHandler* 
-	jsonInternalParserHandler = &jsonInternalParserHandlerStruct; 
 
+static jsonParserContext staticContext;
+static int staticContextInUse = 0;       // boolean
 
-jsonParserContext* jsonNewParser( jsonParserHandler* handler, void* userData) {
+static jsonInternalParser staticParser;
+static int staticParserInUse = 0;        // boolean
+
+jsonParserContext* jsonNewParser( const jsonParserHandler* handler, void* userData) {
 	jsonParserContext* ctx;
-	OSRF_MALLOC(ctx, sizeof(jsonParserContext));
+
+	// Use the static instance of jsonParserContext,
+	// if it's available
+	
+	if( staticContextInUse )
+		OSRF_MALLOC(ctx, sizeof(jsonParserContext));
+	else {
+		ctx = &staticContext;
+		staticContextInUse = 1;
+	}
+
 	ctx->stateStack			= osrfNewList();
 	ctx->buffer					= buffer_init(512);
 	ctx->utfbuf					= buffer_init(5);
 	ctx->handler				= handler;
 	ctx->state					= 0;
 	ctx->index					= 0;
+	ctx->chunksize				= 0;
+	ctx->flags					= 0;
 	ctx->chunk					= NULL;
 	ctx->userData				= userData;
 	return ctx;
@@ -57,7 +72,14 @@ void jsonParserFree( jsonParserContext* ctx ) {
 	buffer_free(ctx->buffer);
 	buffer_free(ctx->utfbuf);
 	osrfListFree(ctx->stateStack);
-	free(ctx);
+
+	// if the jsonParserContext was allocated
+	// dynamically, then free it
+	
+	if( &staticContext == ctx )
+		staticContextInUse = 0;
+	else
+		free(ctx);
 }
 
 
@@ -500,10 +522,22 @@ int jsonParseChunk( jsonParserContext* ctx, const char* data, int datalen, int f
 
 jsonInternalParser* _jsonNewInternalParser() {
 	jsonInternalParser* p;
-	OSRF_MALLOC(p, sizeof(jsonInternalParser));
-	p->ctx = jsonNewParser( jsonInternalParserHandler, p );
+
+	// Use the static instance of jsonInternalParser,
+	// if it's available
+	
+	if( staticParserInUse )
+		OSRF_MALLOC(p, sizeof(jsonInternalParser));
+	else {
+		p = &staticParser;
+		staticParserInUse = 1;
+	}
+
+	p->ctx = jsonNewParser( &jsonInternalParserHandler, p );
 	p->obj		= NULL;
+	p->current  = NULL;
 	p->lastkey	= NULL;
+	p->handleError = NULL;
 	return p;
 }
 
@@ -511,7 +545,14 @@ void _jsonInternalParserFree(jsonInternalParser* p) {
 	if(!p) return;
 	jsonParserFree(p->ctx);
 	free(p->lastkey);
-	free(p);
+
+	// if the jsonInternalParser was allocated
+	// dynamically, then free it
+	
+	if( &staticParser == p )
+		staticParserInUse = 0;
+	else
+		free(p);
 }
 
 static jsonObject* _jsonParseStringImpl(const char* str, void (*errorHandler) (const char*) ) {
