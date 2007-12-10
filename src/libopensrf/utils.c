@@ -27,12 +27,11 @@ inline void* safe_malloc( int size ) {
 }
 
 inline void* safe_calloc( int size ) {
-	void* ptr = (void*) malloc( size );
+	void* ptr = (void*) calloc( 1, size );
 	if( ptr == NULL ) {
 		osrfLogError( OSRF_LOG_MARK, "Out of Memory" );
 		exit(99);
 	}
-	memset( ptr, 0, size );
 	return ptr;
 }
 
@@ -161,6 +160,49 @@ growing_buffer* buffer_init(int num_initial_bytes) {
 }
 
 
+/* Expand the internal buffer of a growing_buffer so that it */
+/* will accommodate a specified string length.  Return 0 if  */
+/* successful, or 1 otherwise. */
+
+/* Note that we do not check to see if the buffer is already */
+/* big enough.  It is the responsibility of the calling      */
+/* function to call this only when necessary. */
+
+static int buffer_expand( growing_buffer* gb, size_t total_len ) {
+
+	// Make sure the request is not excessive
+	
+	if( total_len >= BUFFER_MAX_SIZE ) {
+		fprintf(stderr, "Buffer reached MAX_SIZE of %lu",
+				(unsigned long) BUFFER_MAX_SIZE );
+		buffer_free( gb );
+		return 1;
+	}
+
+	// Pick a big enough buffer size, but don't exceed a maximum
+	
+	while( total_len >= gb->size ) {
+		gb->size *= 2;
+	}
+
+	if( gb->size > BUFFER_MAX_SIZE )
+		gb->size = BUFFER_MAX_SIZE;
+
+	// Allocate and populate the new buffer
+	
+	char* new_data;
+	OSRF_MALLOC( new_data, gb->size );
+	memcpy( new_data, gb->buf, gb->n_used );
+	new_data[ gb->n_used ] = '\0';
+
+	// Replace the old buffer
+	
+	free( gb->buf );
+	gb->buf = new_data;
+	return 0;
+}
+
+
 int buffer_fadd(growing_buffer* gb, const char* format, ... ) {
 
 	if(!gb || !format) return 0; 
@@ -196,22 +238,8 @@ int buffer_add(growing_buffer* gb, const char* data) {
 	int total_len = data_len + gb->n_used;
 
 	if( total_len >= gb->size ) {
-		while( total_len >= gb->size ) {
-			gb->size *= 2;
-		}
-	
-		if( gb->size > BUFFER_MAX_SIZE ) {
-			osrfLogError( OSRF_LOG_MARK, "Buffer reached MAX_SIZE of %d", BUFFER_MAX_SIZE );
-			buffer_free( gb );
-			return 0;
-		}
-	
-		char* new_data;
-		OSRF_MALLOC(new_data, gb->size );
-	
-		strcpy( new_data, gb->buf );
-		free( gb->buf );
-		gb->buf = new_data;
+		if( buffer_expand( gb, total_len ) )
+			return -1;
 	}
 
 	strcat( gb->buf, data );
@@ -221,11 +249,11 @@ int buffer_add(growing_buffer* gb, const char* data) {
 
 
 int buffer_reset( growing_buffer *gb){
-	if( gb == NULL ) { return 0; }
-	if( gb->buf == NULL ) { return 0; }
+	if( gb == NULL ) { return -1; }
+	if( gb->buf == NULL ) { return -1; }
 	osrf_clearbuf( gb->buf, sizeof(gb->buf) );
 	gb->n_used = 0;
-	return 1;
+	return gb->n_used;
 }
 
 /* Return a pointer to the text within a growing_buffer, */
@@ -265,14 +293,22 @@ char* buffer_data( const growing_buffer *gb) {
 	}while(0)
 	*/
 
-int buffer_add_char(growing_buffer* gb, char c) {
-	char buf[2];
-	buf[0] = c;
-	buf[1] = '\0';
-	buffer_add(gb, buf);
-	return 1;
-}
+int buffer_add_char(growing_buffer* gb, char c ) {
+	if(gb && gb->buf) {
 
+		int total_len = gb->n_used + 1;
+
+		if( total_len >= gb->size ) {
+			if( buffer_expand( gb, total_len ) )
+				return -1;
+		}
+	
+		gb->buf[ gb->n_used ]   = c;
+		gb->buf[ ++gb->n_used ] = '\0';
+	}
+	
+	return gb->n_used;
+}
 
 
 char* uescape( const char* string, int size, int full_escape ) {
