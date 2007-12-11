@@ -91,14 +91,25 @@ void jsonSetGlobalErrorHandler(void (*errorHandler) (const char*)) {
 int _jsonParserError( jsonParserContext* ctx, char* err, ... ) {
 	if( ctx->handler->handleError ) {
 		VA_LIST_TO_STRING(err);
+
+		// Determine the beginning and ending points of a JSON
+		// fragment to display, from the vicinity of the error
+
 		int pre	= ctx->index - 15;
+		if( pre < 0 ) pre = 0;
 		int post= ctx->index + 15;
-		while( pre < 0 ) pre++;
-		while( post >= ctx->chunksize ) post--;
-		int l = post - pre;
-		char buf[l];
-		snprintf(buf, sizeof(buf), ctx->chunk + pre);
-		ctx->handler->handleError( ctx->userData, 
+		if( post >= ctx->chunksize ) post = ctx->chunksize - 1;
+
+		// Copy the fragment into a buffer
+		
+		int len = post - pre + 1;  // length of fragment
+		char buf[len + 1];
+		memcpy( buf, ctx->chunk + pre, len );
+		buf[ len ] = '\0';
+
+		// Issue an error message
+
+		ctx->handler->handleError( ctx->userData,
 			"*JSON Parser Error\n - char  = %c\n "
 			"- index = %d\n - near  => %s\n - %s", 
 			ctx->chunk[ctx->index], ctx->index, buf, VA_BUF );
