@@ -32,7 +32,7 @@ GNU General Public License for more details.
 
 #define JSON_LOG_MARK __FILE__,__LINE__
 
-#define JSON_NUMBER_CHARS "0123456789.+-e"
+#define JSON_NUMBER_CHARS "0123456789.+-eE"
 
 /**
  * These are the callbacks through which the top level parser 
