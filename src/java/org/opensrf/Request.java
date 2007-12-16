@@ -130,4 +130,8 @@ public class Request {
     public void setComplete() {
         complete = true;
     }
+
+    public boolean isComplete() {
+        return complete;
+    }
 }
