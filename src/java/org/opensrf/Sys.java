@@ -9,6 +9,20 @@ import java.net.InetAddress;
 
 public class Sys {
 
+    private static void initLogger(Config config) {
+        if(Logger.instance() == null) {
+            try {
+                String logFile = config.getString("/logfile");
+                int logLevel = config.getInt("/loglevel");
+                Logger.init( (short) config.getInt("/loglevel"), new FileLogger(logFile));
+                /** add syslog support... */
+            } catch(Exception e) {
+                /* by default, log to stderr at WARN level */
+                Logger.init(Logger.WARN, new Logger()); 
+            }
+        }
+    }
+
     /**
      * Connects to the OpenSRF network so that client sessions may communicate.
      * @param configFile The OpenSRF config file 
@@ -19,8 +33,6 @@ public class Sys {
     public static void bootstrapClient(String configFile, String configContext) 
             throws ConfigException, SessionException  {
 
-        if(Logger.instance() == null) /* provide a sane default logger */
-            Logger.init(Logger.WARN, new Logger()); 
 
         /** see if the current thread already has a connection */
         XMPPSession existing = XMPPSession.getThreadSession();
@@ -31,6 +43,8 @@ public class Sys {
         Config config = new Config(configContext);
         config.parse(configFile);
         Config.setConfig(config); /* set this as the global config */
+
+        initLogger(config);
 
         /** Collect the network connection info from the config */
         String username = config.getString("/username");
@@ -46,6 +60,7 @@ public class Sys {
         } catch(java.net.UnknownHostException e) {}
         res += "_"+Math.abs(new Random(new Date().getTime()).nextInt()) 
             + "_t"+ Thread.currentThread().getId();
+
 
 
         try {
