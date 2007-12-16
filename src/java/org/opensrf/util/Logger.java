@@ -14,6 +14,7 @@ public class Logger {
     public static final short WARN  = 2;
     public static final short INFO  = 3;
     public static final short DEBUG = 4;
+    public static final short INTERNAL = 5;
 
     /** The global log instance */
     private static Logger instance;
@@ -70,6 +71,15 @@ public class Logger {
         instance.log(DEBUG, msg);
     }
 
+    /**
+     * Logs an internal message
+     * @param msg The message to log
+     */
+    public static void internal(String msg) {
+        instance.log(INTERNAL, msg);
+    }
+
+
     /** 
      * Appends the text representation of the log level
      * @param sb The stringbuffer to append to
@@ -81,6 +91,8 @@ public class Logger {
                 sb.append("DEBG"); break;
             case INFO:
                 sb.append("INFO"); break;
+            case INTERNAL:
+                sb.append("INT "); break;
             case WARN:
                 sb.append("WARN"); break;
             case ERROR:
@@ -102,6 +114,8 @@ public class Logger {
 
         sb.append(" [");
         appendLevelString(sb, level);
+        sb.append(":");
+        sb.append(Thread.currentThread().getId());
         sb.append("] ");
         sb.append(msg);
         return sb.toString();

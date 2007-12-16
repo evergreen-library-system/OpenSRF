@@ -58,6 +58,10 @@ public class Stack {
     }
 
     private static void processOSRFMessage(Session ses, Message msg) throws MethodException {
+
+        Logger.debug("received id=" + msg.getId() + 
+            " type=" + msg.getType() + " payload=" + msg.getPayload());
+
         if( ses instanceof ClientSession ) 
             processResponse((ClientSession) ses, msg);
         else

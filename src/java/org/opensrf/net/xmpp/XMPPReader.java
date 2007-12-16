@@ -7,6 +7,7 @@ import java.util.Queue;
 import java.io.InputStream;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.Date;
+import org.opensrf.util.Logger;
 
 import com.ctc.wstx.stax.WstxInputFactory;
 
@@ -210,6 +211,8 @@ public class XMPPReader implements Runnable {
                            msg.setTo(msgTo);
                            msg.setBody(msgBody.toString());
                            msg.setThread(msgThread.toString());
+
+                           Logger.internal("xmpp message from="+msgFrom+" " + msg.getBody());
 
                            msgQueue.offer(msg);
                            resetBuffers(); 

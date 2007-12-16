@@ -4,6 +4,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.List;
 import java.util.Date;
 import org.opensrf.net.xmpp.XMPPException;
+import org.opensrf.util.Logger;
 
 public class Request {
     
@@ -91,8 +92,8 @@ public class Request {
                 /** wait up to millis milliseconds for a result.  waitForMessage() 
                  * will return if a response to any request arrives, so we keep track
                  * of how long we've been waiting in total for a response to 
-                 * this request
-                 */
+                 * this request */
+
                 long start = new Date().getTime();
                 session.waitForMessage(millis);
                 millis -= new Date().getTime() - start;
