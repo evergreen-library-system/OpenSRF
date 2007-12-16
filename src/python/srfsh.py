@@ -5,6 +5,7 @@ import osrf.json
 import osrf.system
 import osrf.ses
 import osrf.conf
+import osrf.log
 
 
 # -------------------------------------------------------------------
@@ -115,7 +116,6 @@ def handle_request(parts):
 
     ses = osrf.ses.ClientSession(service)
 
-    end = None
     start = time.time()
 
     req = ses.request2(method, tuple(params))
@@ -123,10 +123,10 @@ def handle_request(parts):
 
     while True:
         resp = req.recv(timeout=120)
-        if not end:
-            total = time.time() - start
+        osrf.log.log_internal("Looping through receive request")
         if not resp:
             break
+        total = time.time() - start
 
         otp = get_var('SRFSH_OUTPUT')
         if otp == 'pretty':

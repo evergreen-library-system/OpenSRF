@@ -29,7 +29,7 @@ import random, os, time, threading
 # -----------------------------------------------------------------------
 # Go ahead and register the common network objects
 # -----------------------------------------------------------------------
-osrf.net_obj.NetworkRegisterHint('osrfMessage', ['threadTrace', 'type', 'payload'], 'hash')
+osrf.net_obj.NetworkRegisterHint('osrfMessage', ['threadTrace', 'locale', 'type', 'payload'], 'hash')
 osrf.net_obj.NetworkRegisterHint('osrfMethod', ['method', 'params'], 'hash')
 osrf.net_obj.NetworkRegisterHint('osrfResult', ['status', 'statusCode', 'content'], 'hash')
 osrf.net_obj.NetworkRegisterHint('osrfConnectStatus', ['status', 'statusCode'], 'hash')
@@ -46,6 +46,7 @@ class Session(object):
         # by default, we're connected to no one
         self.state = OSRF_APP_SESSION_DISCONNECTED
         self.remote_id = None
+        self.locale = None
 
     def find_session(threadTrace):
         return Session.session_cache.get(threadTrace)
@@ -62,7 +63,9 @@ class Session(object):
         net_msg = osrf.net.NetworkMessage(
             recipient      = self.remote_id,
             body    = osrf.json.to_json([omessage]),
-            thread = self.thread )
+            thread = self.thread,
+            locale = self.locale,
+        )
 
         handle = osrf.net.get_network_handle()
         handle.send(net_msg)
@@ -205,7 +208,7 @@ class Request(object):
         A request is made and any resulting respones are 
         collected for the client."""
 
-    def __init__(self, session, rid, method=None, params=[]):
+    def __init__(self, session, rid, method=None, params=[], locale='en-US'):
 
         self.session = session # my session handle
         self.rid     = rid # my unique request ID
@@ -217,6 +220,7 @@ class Request(object):
         self.send_time = 0 # local time the request was put on the wire
         self.complete_time =  0 # time the server told us the request was completed
         self.first_response_time = 0 # time it took for our first reponse to be received
+        self.locale = locale
 
     def send(self):
         """Sends a request message"""
@@ -231,7 +235,8 @@ class Request(object):
         message = osrf.net_obj.NetworkObject.osrfMessage( {
             'threadTrace' : self.rid,
             'type' : OSRF_MESSAGE_TYPE_REQUEST,
-            'payload' : method
+            'payload' : method,
+            'locale' : self.locale
         } )
 
         self.send_time = time.time()

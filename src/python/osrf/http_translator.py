@@ -137,7 +137,7 @@ class HTTPTranslator(object):
 
 
         net_msg = NetworkMessage(recipient=self.recipient, thread=self.thread, \
-            body=self.body)
+            body=self.body, locale=self.locale)
         self.handle.send(net_msg)
 
         if self.disconnect_only:

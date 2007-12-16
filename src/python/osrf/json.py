@@ -1,6 +1,7 @@
 import simplejson, types 
 from osrf.net_obj import NetworkObject, parse_net_object
 from osrf.const import OSRF_JSON_PAYLOAD_KEY, OSRF_JSON_CLASS_KEY
+import osrf.log
 
 class NetworkEncoder(simplejson.JSONEncoder):
     def default(self, obj):
@@ -43,7 +44,7 @@ def to_json_raw(obj):
 
 def __tabs(depth):
     space = ''
-    while range(depth):
+    for i in range(depth):
         space += '   '
     return space
 
@@ -55,14 +56,16 @@ def debug_net_object(obj, depth=1):
 
     debug_str = ''
     if isinstance(obj, NetworkObject):
+        osrf.log.log_internal("Returning key/value pairs for NetworkObject")
         reg = obj.get_registry()
         keys = list(reg.keys) # clone it, so sorting won't break the original
         keys.sort()
 
         for k in keys:
 
-            key = k
-            while len(key) < 24: key += '.' # pad the names to make the values line up somewhat
+            key = str(k)
+            while len(key) < 24:
+                key += '.' # pad the names to make the values line up somewhat
             val = getattr(obj, k)()
 
             subobj = val and not (isinstance(val, unicode) or \
@@ -71,6 +74,7 @@ def debug_net_object(obj, depth=1):
             debug_str += __tabs(depth) + key + ' = '
 
             if subobj:
+                osrf.log.log_internal("Returning key/value pairs for subobject")
                 debug_str += '\n'
                 val = debug_net_object(val, depth+1)
 
@@ -79,6 +83,7 @@ def debug_net_object(obj, depth=1):
             if not subobj: debug_str += '\n'
 
     else:
+        osrf.log.log_internal("Pretty-printing NetworkObject")
         debug_str = pprint(to_json(obj))
     return debug_str
 

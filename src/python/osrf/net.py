@@ -61,7 +61,6 @@ class NetworkMessage(object):
                 self.sender = message.xmlnode.prop('router_from')
             else:
                 self.sender = message.get_from().as_utf8()
-            self.locale = None # XXX fix me good
         else:
             if args.has_key('sender'):
                 self.sender = args['sender']
@@ -71,8 +70,6 @@ class NetworkMessage(object):
                 self.body = args['body']
             if args.has_key('thread'):
                 self.thread = args['thread']
-            if args.has_key('locale'):
-                self.thread = args['locale']
 
 class Network(JabberClient):
     def __init__(self, **args):
