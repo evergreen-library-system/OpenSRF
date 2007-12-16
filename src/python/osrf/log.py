@@ -14,7 +14,9 @@
 # -----------------------------------------------------------------------
 
 import traceback, sys, os, re, threading
-from osrf.const import *
+from osrf.const import OSRF_LOG_DEBUG, OSRF_LOG_ERR, OSRF_LOG_INFO, \
+    OSRF_LOG_INTERNAL, OSRF_LOG_TYPE_FILE, OSRF_LOG_TYPE_STDERR, \
+    OSRF_LOG_TYPE_SYSLOG, OSRF_LOG_WARN
 LOG_SEMAPHORE = threading.BoundedSemaphore(value=1)
 
 
@@ -49,16 +51,16 @@ def initialize(level, facility=None, logfile=None):
 # -----------------------------------------------------------------------
 # Define wrapper functions for the log levels
 # -----------------------------------------------------------------------
-def log_internal(s):
-    __log(OSRF_LOG_INTERNAL, s)
-def logDebug(s):
-    __log(OSRF_LOG_DEBUG, s)
-def log_info(s):
-    __log(OSRF_LOG_INFO, s)
-def log_warn(s):
-    __log(OSRF_LOG_WARN, s)
-def logError(s):
-    __log(OSRF_LOG_ERR, s)
+def log_internal(debug_str):
+    __log(OSRF_LOG_INTERNAL, debug_str)
+def log_debug(debug_str):
+    __log(OSRF_LOG_DEBUG, debug_str)
+def log_info(debug_str):
+    __log(OSRF_LOG_INFO, debug_str)
+def log_warn(debug_str):
+    __log(OSRF_LOG_WARN, debug_str)
+def log_error(debug_str):
+    __log(OSRF_LOG_ERR, debug_str)
 
 def __log(level, msg):
     """Builds the log message and passes the message off to the logger."""
@@ -120,7 +122,7 @@ def __log_syslog(level, msg):
 def __log_file(msg):
     ''' Logs the message to a file. '''
 
-    global LOG_FILE, LOG_TYPE
+    global LOG_TYPE
 
     logfile = None
     try:

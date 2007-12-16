@@ -7,8 +7,9 @@ import osrf.json
 import osrf.conf
 import osrf.set
 import sys
-from osrf.const import *
-from osrf.net import get_network_handle
+from osrf.const import OSRF_MESSAGE_TYPE_DISCONNECT, OSRF_STATUS_CONTINUE, \
+    OSRF_STATUS_TIMEOUT, OSRF_MESSAGE_TYPE_STATUS,
+import osrf.net
 import osrf.log
 
 
@@ -141,7 +142,7 @@ class HTTPTranslator(object):
         self.handle.send(net_msg)
 
         if self.disconnect_only:
-            osrf.log.logDebug("exiting early on DISCONNECT")
+            osrf.log.log_debug("exiting early on DISCONNECT")
             return apache.OK
 
         first_write = True
@@ -228,7 +229,7 @@ class HTTPTranslator(object):
         self.cache.put(self.thread, \
             {'ip':self.remote_host, 'jid': net_msg.sender}, CACHE_TIME)
 
-        osrf.log.logDebug("caching session [%s] for host [%s] and server "
+        osrf.log.log_debug("caching session [%s] for host [%s] and server "
             " drone [%s]" % (self.thread, self.remote_host, net_msg.sender))
 
 
@@ -248,7 +249,7 @@ class HTTPTranslator(object):
             code = int(last_msg.payload().statusCode())
 
             if code == OSRF_STATUS_TIMEOUT:
-                osrf.log.logDebug("removing cached session [%s] and "
+                osrf.log.log_debug("removing cached session [%s] and "
                     "dropping TIMEOUT message" % net_msg.thread)
                 self.cache.delete(net_msg.thread)
                 return False 

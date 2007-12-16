@@ -29,11 +29,11 @@ import random, os, time, threading
 # -----------------------------------------------------------------------
 # Go ahead and register the common network objects
 # -----------------------------------------------------------------------
-osrf.net_obj.NetworkRegisterHint('osrfMessage', ['threadTrace', 'locale', 'type', 'payload'], 'hash')
-osrf.net_obj.NetworkRegisterHint('osrfMethod', ['method', 'params'], 'hash')
-osrf.net_obj.NetworkRegisterHint('osrfResult', ['status', 'statusCode', 'content'], 'hash')
-osrf.net_obj.NetworkRegisterHint('osrfConnectStatus', ['status', 'statusCode'], 'hash')
-osrf.net_obj.NetworkRegisterHint('osrfMethodException', ['status', 'statusCode'], 'hash')
+osrf.net_obj.register_hint('osrfMessage', ['threadTrace', 'locale', 'type', 'payload'], 'hash')
+osrf.net_obj.register_hint('osrfMethod', ['method', 'params'], 'hash')
+osrf.net_obj.register_hint('osrfResult', ['status', 'statusCode', 'content'], 'hash')
+osrf.net_obj.register_hint('osrfConnectStatus', ['status', 'statusCode'], 'hash')
+osrf.net_obj.register_hint('osrfMethodException', ['status', 'statusCode'], 'hash')
 
 
 class Session(object):
@@ -127,7 +127,7 @@ class ClientSession(Session):
         if self.state != OSRF_APP_SESSION_CONNECTED:
             self.reset_remote_id()
 
-        osrf.log.logDebug("Sending request %s -> %s " % (self.service, method))
+        osrf.log.log_debug("Sending request %s -> %s " % (self.service, method))
         req = Request(self, self.next_id, method, arr, self.locale)
         self.requests[str(self.next_id)] = req
         self.next_id += 1
@@ -190,7 +190,7 @@ class ClientSession(Session):
     def push_response_queue(self, message):
         """Pushes the message payload onto the response queue 
             for the request associated with the message's ID."""
-        osrf.log.logDebug("pushing %s" % message.payload())
+        osrf.log.log_debug("pushing %s" % message.payload())
         try:
             self.find_request(message.threadTrace()).pushResponse(message.payload())
         except Exception, e: 
@@ -201,7 +201,7 @@ class ClientSession(Session):
         try:
             return self.requests[str(rid)]
         except KeyError:
-            osrf.log.logDebug('find_request(): non-existent request %s' % str(rid))
+            osrf.log.log_debug('find_request(): non-existent request %s' % str(rid))
             return None
 
 
@@ -269,13 +269,13 @@ class Request(object):
         if len(self.queue) > 0:
             if not self.first_response_time:
                 self.first_response_time = now
-                osrf.log.logDebug("time elapsed before first response: %f" \
+                osrf.log.log_debug("time elapsed before first response: %f" \
                     % (self.first_response_time - self.send_time))
 
         if self.complete:
             if not self.complete_time:
                 self.complete_time = now
-                osrf.log.logDebug("time elapsed before complete: %f" \
+                osrf.log.log_debug("time elapsed before complete: %f" \
                     % (self.complete_time - self.send_time))
         # -----------------------------------------------------------------
 

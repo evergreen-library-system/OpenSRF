@@ -83,7 +83,7 @@ class Network(JabberClient):
             threading.currentThread().getName().lower()
         self.jid = JID(args['username'], args['host'], resource)
 
-        osrf.log.logDebug("initializing network with JID %s and host=%s, "
+        osrf.log.log_debug("initializing network with JID %s and host=%s, "
             "port=%s, username=%s" % (self.jid.as_utf8(), args['host'], \
             args['port'], args['username']))
 

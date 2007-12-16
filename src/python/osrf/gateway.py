@@ -2,7 +2,7 @@ from xml.dom import minidom
 from xml.sax import handler, make_parser, saxutils
 from osrf.json import to_object
 from osrf.net_obj import NetworkObject, new_object_from_hint
-from osrf.log import logError
+import osrf.log
 import urllib, urllib2, sys, re
 
 defaultHost = None
@@ -95,7 +95,7 @@ class XMLGatewayRequest(GatewayRequest):
         try:
             parser.parse(response)
         except Exception, e:
-            logError('Error parsing gateway XML: %s' % unicode(e))
+            osrf.log.log_error('Error parsing gateway XML: %s' % unicode(e))
             return None
 
         return handler.getResult()

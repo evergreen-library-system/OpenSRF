@@ -29,7 +29,7 @@ def push(net_msg):
 
     if not ses:
         # This is an incoming request from a client, create a new server session
-        osrf.log.logError("server-side sessions don't exist yet")
+        osrf.log.log_error("server-side sessions don't exist yet")
 
     ses.set_remote_id(net_msg.sender)
 
@@ -75,7 +75,7 @@ def handle_message(session, message):
 
         if status_code == OSRF_STATUS_OK:
             # We have connected successfully
-            osrf.log.logDebug("Successfully connected to " + session.service)
+            osrf.log.log_debug("Successfully connected to " + session.service)
             session.state = OSRF_APP_SESSION_CONNECTED
             return
 
@@ -85,12 +85,12 @@ def handle_message(session, message):
             return
 
         if status_code == OSRF_STATUS_TIMEOUT:
-            osrf.log.logDebug("The server did not receive a request from us in time...")
+            osrf.log.log_debug("The server did not receive a request from us in time...")
             session.state = OSRF_APP_SESSION_DISCONNECTED
             return
 
         if status_code == OSRF_STATUS_NOTFOUND:
-            osrf.log.logError("Requested method was not found on the server: %s" % status_text)
+            osrf.log.log_error("Requested method was not found on the server: %s" % status_text)
             session.state = OSRF_APP_SESSION_DISCONNECTED
             raise osrf.ex.OSRFServiceException(status_text)
 

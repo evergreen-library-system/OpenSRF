@@ -54,12 +54,14 @@ class NetworkObject(object):
             of data, cycle through and load the data '''
 
         self._data = {}
-        if len(data) == 0: return
+        if len(data) == 0:
+            return
 
         reg = self.get_registry()
         if reg.protocol == 'array':
             for entry in range(len(reg.keys)):
-                if len(data) > entry: break
+                if len(data) > entry:
+                    break
                 self.set_field(reg.keys[entry], data[entry])
 
     def get_data(self):
@@ -89,7 +91,7 @@ def new_object_from_hint(hint):
     except AttributeError:
         return NetworkObject.__unknown()
 
-def __makeNetworkAccessor(cls, key):
+def __make_network_accessor(cls, key):
     ''' Creates and accessor/mutator method for the given class.  
         'key' is the name the method will have and represents
         the field on the object whose data we are accessing ''' 
@@ -100,7 +102,7 @@ def __makeNetworkAccessor(cls, key):
     setattr(cls, key, accessor)
 
 
-def NetworkRegisterHint(hint, keys, type='hash'):
+def register_hint(hint, keys, type='hash'):
     ''' Registers a new network-serializable object class.
 
         'hint' is the class hint
@@ -122,7 +124,7 @@ def NetworkRegisterHint(hint, keys, type='hash'):
 
     # assign an accessor/mutator for each field on the object
     for k in keys:
-        __makeNetworkAccessor(cls, k)
+        __make_network_accessor(cls, k)
 
     # attach our new class to the NetworkObject 
     # class so others can access it
@@ -133,7 +135,7 @@ def NetworkRegisterHint(hint, keys, type='hash'):
 
 
 # create a unknown object to handle unregistred types
-NetworkRegisterHint('__unknown', [], 'hash')
+register_hint('__unknown', [], 'hash')
 
 # -------------------------------------------------------------------
 # Define the custom object parsing behavior 

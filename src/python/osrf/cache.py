@@ -53,7 +53,7 @@ class CacheClient(object):
     @staticmethod
     def connect(svrs):
         global _client
-        osrf.log.logDebug("cache: connecting to servers %s" % str(svrs))
+        osrf.log.log_debug("cache: connecting to servers %s" % str(svrs))
         _client = memcache.Client(svrs, debug=1)
 
 
