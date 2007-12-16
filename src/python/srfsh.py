@@ -1,12 +1,33 @@
 #!/usr/bin/python
 # vim:et:ts=4
+"""
+srfsh.py - provides a basic shell for issuing OpenSRF requests
+
+  help
+    - show this menu
+
+  math_bench <count>
+    - runs <count> opensrf.math requests and reports the average time
+
+  request <service> <method> [<param1>, <param2>, ...]
+    - performs an opensrf request
+
+  set VAR=<value>
+    - sets an environment variable
+
+  Environment variables:
+    SRFSH_OUTPUT = pretty - print pretty JSON and key/value pairs for network objects
+                 = raw - print formatted JSON 
+
+    SRFSH_LOCALE = <locale> - request responses to be returned in locale <locale> if available
+"""
+
 import os, sys, time, readline, atexit, re
 import osrf.json
 import osrf.system
 import osrf.ses
 import osrf.conf
 import osrf.log
-
 
 # -------------------------------------------------------------------
 # main listen loop
@@ -61,7 +82,8 @@ def do_loop():
 # Set env variables to control behavior
 # -------------------------------------------------------------------
 def handle_set(parts):
-    pattern = re.compile('(.*)=(.*)').match(parts[0])
+    cmd = "".join(parts)
+    pattern = re.compile('(.*)=(.*)').match(cmd)
     key = pattern.group(1)
     val = pattern.group(2)
     set_var(key, val)
@@ -78,26 +100,7 @@ def handle_get(parts):
 # Prints help info
 # -------------------------------------------------------------------
 def handle_help():
-    print """
-  help
-    - show this menu
-
-  math_bench <count>
-    - runs <count> opensrf.math requests and reports the average time
-
-  request <service> <method> [<param1>, <param2>, ...]
-    - performs an opensrf request
-
-  set VAR=<value>
-    - sets an environment variable
-
-  Environment variables:
-    SRFSH_OUTPUT = pretty - print pretty JSON and key/value pairs for network objects
-                 = raw - print formatted JSON 
-    """
-
-        
-
+    print __doc__
 
 # -------------------------------------------------------------------
 # performs an opensrf request
@@ -105,6 +108,7 @@ def handle_help():
 def handle_request(parts):
     service = parts.pop(0)
     method = parts.pop(0)
+    locale = __get_locale()
     jstr = '[%s]' % "".join(parts)
     params = None
 
@@ -114,7 +118,7 @@ def handle_request(parts):
         print "Error parsing JSON: %s" % jstr
         return
 
-    ses = osrf.ses.ClientSession(service)
+    ses = osrf.ses.ClientSession(service, locale=locale)
 
     start = time.time()
 
@@ -254,10 +258,12 @@ def set_vars():
     if not get_var('SRFSH_OUTPUT'):
         set_var('SRFSH_OUTPUT', 'pretty')
 
+    # XXX Do we need to differ between LANG and LC_MESSAGES?
+    if not get_var('SRFSH_LOCALE'):
+        set_var('SRFSH_LOCALE', get_var('LC_ALL'))
 
 def set_var(key, val):
     os.environ[key] = val
-
 
 def get_var(key):
     try:
@@ -265,6 +271,29 @@ def get_var(key):
     except:
         return ''
     
+def __get_locale():
+    """
+    Return the defined locale for this srfsh session.
+
+    A locale in OpenSRF is currently defined as a [a-z]{2}-[A-Z]{2} pattern.
+    This function munges the LC_ALL setting to conform to that pattern; for
+    example, trimming en_CA.UTF-8 to en-CA.
+
+    >>> import srfsh
+    >>> srfsh.set_var('SRFSH_LOCALE', 'zz-ZZ')
+    >>> print __get_locale()
+    zz-ZZ
+    >>> srfsh.set_var('SRFSH_LOCALE', 'en_CA.UTF-8')
+    >>> print __get_locale()
+    en-CA
+    """
+
+    env_locale = get_var('SRFSH_LOCALE')
+    pattern = re.compile(r'^\s*([a-z]+)[^a-zA-Z]([A-Z]+)').search(env_locale)
+    lang = pattern.group(1)
+    region = pattern.group(2)
+    locale = "%s-%s" % (lang, region)
+    return locale
     
 def print_green(string):
     sys.stdout.write("\033[01;32m")
@@ -279,14 +308,12 @@ def print_red(string):
     sys.stdout.flush()
 
 
+if __name__ == '__main__':
 
-
-# Kick it off
-set_vars()
-setup_readline()
-do_connect()
-load_plugins()
-do_loop()
-
-
+    # Kick it off
+    set_vars()
+    setup_readline()
+    do_connect()
+    load_plugins()
+    do_loop()
 

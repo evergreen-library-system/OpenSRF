@@ -77,13 +77,16 @@ class Session(object):
 class ClientSession(Session):
     """Client session object.  Use this to make server requests."""
 
-    def __init__(self, service):
+    def __init__(self, service, locale='en_US'):
         
         # call superclass constructor
         Session.__init__(self)
 
         # the remote service we want to make requests of
         self.service = service
+
+        # the locale we want requests to be returned in
+        self.locale = locale
 
         # find the remote service handle <router>@<domain>/<service>
         domain = osrf.conf.get('domains.domain', 0)
@@ -125,7 +128,7 @@ class ClientSession(Session):
             self.reset_remote_id()
 
         osrf.log.logDebug("Sending request %s -> %s " % (self.service, method))
-        req = Request(self, self.next_id, method, arr)
+        req = Request(self, self.next_id, method, arr, self.locale)
         self.requests[str(self.next_id)] = req
         self.next_id += 1
         req.send()
