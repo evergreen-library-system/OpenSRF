@@ -38,16 +38,16 @@ class CacheClient(object):
         if timeout is None:
             timeout = defaultTimeout
         json = to_json(val)
-        osrf.log.osrfLogInternal("cache: %s => %s" % (str(key), json))
+        osrf.log.log_internal("cache: %s => %s" % (str(key), json))
         return self.client.set(str(key), json, timeout)
 
     def get(self, key):
         obj = self.client.get(str(key))
-        osrf.log.osrfLogInternal("cache: fetching %s => %s" % (str(key), obj))
+        osrf.log.log_internal("cache: fetching %s => %s" % (str(key), obj))
         return to_object(obj or "null")
 
     def delete(self, key):
-        osrf.log.osrfLogInternal("cache: deleting %s" % str(key))
+        osrf.log.log_internal("cache: deleting %s" % str(key))
         self.client.delete(str(key))
 
     @staticmethod

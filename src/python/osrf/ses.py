@@ -53,7 +53,7 @@ class Session(object):
 
     def wait(self, timeout=120):
         """Wait up to <timeout> seconds for data to arrive on the network"""
-        osrf.log.osrfLogInternal("Session.wait(%d)" % timeout)
+        osrf.log.log_internal("Session.wait(%d)" % timeout)
         handle = osrf.net.get_network_handle()
         handle.recv(timeout)
 
@@ -174,12 +174,12 @@ class ClientSession(Session):
     
     def set_remote_id(self, remoteid):
         self.remote_id = remoteid
-        osrf.log.osrfLogInternal("Setting request remote ID to %s" % self.remote_id)
+        osrf.log.log_internal("Setting request remote ID to %s" % self.remote_id)
 
     def reset_remote_id(self):
         """Recovers the original remote id"""
         self.remote_id = self.orig_remote_id
-        osrf.log.osrfLogInternal("Resetting remote ID to %s" % self.remote_id)
+        osrf.log.log_internal("Resetting remote ID to %s" % self.remote_id)
 
     def push_response_queue(self, message):
         """Pushes the message payload onto the response queue 
@@ -188,7 +188,7 @@ class ClientSession(Session):
         try:
             self.find_request(message.threadTrace()).pushResponse(message.payload())
         except Exception, e: 
-            osrf.log.osrfLogWarn("pushing respond to non-existent request %s : %s" % (message.threadTrace(), e))
+            osrf.log.log_warn("pushing respond to non-existent request %s : %s" % (message.threadTrace(), e))
 
     def find_request(self, rid):
         """Returns the original request matching this message's threadTrace."""

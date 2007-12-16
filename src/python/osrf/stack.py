@@ -35,7 +35,7 @@ def push(net_msg):
 
     omessages = osrf.json.to_object(net_msg.body)
 
-    osrf.log.osrfLogInternal("push(): received %d messages" \
+    osrf.log.log_internal("push(): received %d messages" \
         % len(omessages))
 
     # Pass each bundled opensrf message to the message handler
@@ -45,11 +45,11 @@ def push(net_msg):
     duration = time.time() - start
 
     if isinstance(ses, osrf.ses.ServerSession):
-        osrf.log.osrfLogInfo("Message processing duration %f" % duration)
+        osrf.log.log_info("Message processing duration %f" % duration)
 
 def handle_message(session, message):
 
-    osrf.log.osrfLogInternal("handle_message(): processing message of "
+    osrf.log.log_internal("handle_message(): processing message of "
         "type %s" % message.type())
 
     if isinstance(session, osrf.ses.ClientSession):
@@ -62,14 +62,14 @@ def handle_message(session, message):
 
             status_code = int(message.payload().statusCode())
             status_text = message.payload().status()
-            osrf.log.osrfLogInternal("handle_message(): processing STATUS, "
+            osrf.log.log_internal("handle_message(): processing STATUS, "
                 "status_code =  %d" % status_code)
 
         if status_code == OSRF_STATUS_COMPLETE:
             # The server has informed us that this request is complete
             req = session.find_request(message.threadTrace())
             if req: 
-                osrf.log.osrfLogInternal("marking request as complete: %d" % req.rid)
+                osrf.log.log_internal("marking request as complete: %d" % req.rid)
                 req.set_complete()
             return
 

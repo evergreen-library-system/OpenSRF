@@ -200,7 +200,7 @@ class HTTPTranslator(object):
             '''
         if self.service:
             if self.recipient:
-                osrf.log.osrfLogWarn("specifying both SERVICE and TO is not allowed")
+                osrf.log.log_warn("specifying both SERVICE and TO is not allowed")
                 return False
             self.recipient = "%s@%s/%s" % \
                 (ROUTER_NAME, OSRF_DOMAIN, self.service)
@@ -213,7 +213,7 @@ class HTTPTranslator(object):
                 if obj and obj['ip'] == self.remote_host and \
                     obj['jid'] == self.recipient:
                     return True
-        osrf.log.osrfLogWarn("client [%s] attempted to send directly "
+        osrf.log.log_warn("client [%s] attempted to send directly "
             "[%s] without a session" % (self.remote_host, self.recipient))
         return False
 

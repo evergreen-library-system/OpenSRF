@@ -49,18 +49,18 @@ def initialize(level, facility=None, logfile=None):
 # -----------------------------------------------------------------------
 # Define wrapper functions for the log levels
 # -----------------------------------------------------------------------
-def osrfLogInternal(s):
-    __osrfLog(OSRF_LOG_INTERNAL, s)
+def log_internal(s):
+    __log(OSRF_LOG_INTERNAL, s)
 def logDebug(s):
-    __osrfLog(OSRF_LOG_DEBUG, s)
-def osrfLogInfo(s):
-    __osrfLog(OSRF_LOG_INFO, s)
-def osrfLogWarn(s):
-    __osrfLog(OSRF_LOG_WARN, s)
+    __log(OSRF_LOG_DEBUG, s)
+def log_info(s):
+    __log(OSRF_LOG_INFO, s)
+def log_warn(s):
+    __log(OSRF_LOG_WARN, s)
 def logError(s):
-    __osrfLog(OSRF_LOG_ERR, s)
+    __log(OSRF_LOG_ERR, s)
 
-def __osrfLog(level, msg):
+def __log(level, msg):
     """Builds the log message and passes the message off to the logger."""
     global LOG_LEVEL, LOG_TYPE
 

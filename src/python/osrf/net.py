@@ -111,14 +111,14 @@ class Network(JabberClient):
         self.receive_callback = func
 
     def session_started(self):
-        osrf.log.osrfLogInfo("Successfully connected to the opensrf network")
+        osrf.log.log_info("Successfully connected to the opensrf network")
         self.authenticated()
         self.stream.set_message_handler("normal", self.message_received)
         self.isconnected = True
 
     def send(self, message):
         """Sends the provided network message."""
-        osrf.log.osrfLogInternal("jabber sending to %s: %s" % \
+        osrf.log.log_internal("jabber sending to %s: %s" % \
             (message.recipient, message.body))
         msg = Message(None, None, message.recipient, None, None, None, \
             message.body, message.thread)
@@ -129,7 +129,7 @@ class Network(JabberClient):
         if stanza.get_type()=="headline":
             return True
         # check for errors
-        osrf.log.osrfLogInternal("jabber received message from %s : %s" 
+        osrf.log.log_internal("jabber received message from %s : %s" 
             % (stanza.get_from().as_utf8(), stanza.get_body()))
         self.queue.append(NetworkMessage(stanza))
         return True
@@ -149,7 +149,7 @@ class Network(JabberClient):
                 act = self.get_stream().loop_iter(timeout)
                 endtime = time.time() - starttime
                 timeout -= endtime
-                osrf.log.osrfLogInternal("exiting stream loop after %s seconds. "
+                osrf.log.log_internal("exiting stream loop after %s seconds. "
                     "act=%s, queue size=%d" % (str(endtime), act, len(self.queue)))
                 if not act:
                     self.idle()
