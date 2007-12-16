@@ -13,83 +13,88 @@
 # GNU General Public License for more details.
 # -----------------------------------------------------------------------
 
-from osrf.json import *
-from osrf.log import *
-from osrf.ex import *
-from osrf.ses import osrfSession, osrfClientSession, osrfServerSession
-from osrf.const import *
-from time import time
+import osrf.json
+import osrf.log
+import osrf.ex
+import osrf.ses
+from osrf.const import OSRF_APP_SESSION_CONNECTED, \
+    OSRF_APP_SESSION_DISCONNECTED, OSRF_MESSAGE_TYPE_RESULT, \
+    OSRF_MESSAGE_TYPE_STATUS, OSRF_STATUS_COMPLETE, OSRF_STATUS_CONTINUE, \
+    OSRF_STATUS_NOTFOUND, OSRF_STATUS_OK, OSRF_STATUS_TIMEOUT
+import time
 
 
-def osrfPushStack(netMessage):
-    ses = osrfSession.findSession(netMessage.thread)
+def push(net_msg):
+    ses = osrf.ses.Session.find_session(net_msg.thread)
 
     if not ses:
         # This is an incoming request from a client, create a new server session
-        osrfLogErr("server-side sessions don't exist yet")
-        pass
+        osrf.log.logError("server-side sessions don't exist yet")
 
-    ses.setRemoteId(netMessage.sender)
+    ses.set_remote_id(net_msg.sender)
 
-    oMessages = osrfJSONToObject(netMessage.body)
+    omessages = osrf.json.to_object(net_msg.body)
 
-    osrfLogInternal("osrfPushStack(): received %d messages" % len(oMessages))
+    osrf.log.osrfLogInternal("push(): received %d messages" \
+        % len(omessages))
 
     # Pass each bundled opensrf message to the message handler
-    t = time()
-    for m in oMessages:
-        osrfHandleMessage(ses, m)
-    t = time() - t
+    start = time.time()
+    for msg in omessages:
+        handle_message(ses, msg)
+    duration = time.time() - start
 
-    if isinstance(ses, osrfServerSession):
-        osrfLogInfo("Message processing duration %f" % t)
+    if isinstance(ses, osrf.ses.ServerSession):
+        osrf.log.osrfLogInfo("Message processing duration %f" % duration)
 
-def osrfHandleMessage(session, message):
+def handle_message(session, message):
 
-    osrfLogInternal("osrfHandleMessage(): processing message of type %s" % message.type())
+    osrf.log.osrfLogInternal("handle_message(): processing message of "
+        "type %s" % message.type())
 
-    if isinstance(session, osrfClientSession):
+    if isinstance(session, osrf.ses.ClientSession):
 
         if message.type() == OSRF_MESSAGE_TYPE_RESULT:
-            session.pushResponseQueue(message)
+            session.push_response_queue(message)
             return
 
         if message.type() == OSRF_MESSAGE_TYPE_STATUS:
 
-            statusCode = int(message.payload().statusCode())
-            statusText = message.payload().status()
-            osrfLogInternal("osrfHandleMessage(): processing STATUS,  statusCode =  %d" % statusCode)
+            status_code = int(message.payload().statusCode())
+            status_text = message.payload().status()
+            osrf.log.osrfLogInternal("handle_message(): processing STATUS, "
+                "status_code =  %d" % status_code)
 
-        if statusCode == OSRF_STATUS_COMPLETE:
+        if status_code == OSRF_STATUS_COMPLETE:
             # The server has informed us that this request is complete
-            req = session.findRequest(message.threadTrace())
+            req = session.find_request(message.threadTrace())
             if req: 
-                osrfLogInternal("marking request as complete: %d" % req.id)
-                req.setComplete()
+                osrf.log.osrfLogInternal("marking request as complete: %d" % req.rid)
+                req.set_complete()
             return
 
-        if statusCode == OSRF_STATUS_OK:
+        if status_code == OSRF_STATUS_OK:
             # We have connected successfully
-            osrfLogDebug("Successfully connected to " + session.service)
+            osrf.log.logDebug("Successfully connected to " + session.service)
             session.state = OSRF_APP_SESSION_CONNECTED
             return
 
-        if statusCode == OSRF_STATUS_CONTINUE:
+        if status_code == OSRF_STATUS_CONTINUE:
             # server is telling us to reset our wait timeout and keep waiting for a response
-            session.resetRequestTimeout(message.threadTrace())
-            return;
+            session.reset_request_timeout(message.threadTrace())
+            return
 
-        if statusCode == OSRF_STATUS_TIMEOUT:
-            osrfLogDebug("The server did not receive a request from us in time...")
+        if status_code == OSRF_STATUS_TIMEOUT:
+            osrf.log.logDebug("The server did not receive a request from us in time...")
             session.state = OSRF_APP_SESSION_DISCONNECTED
             return
 
-        if statusCode == OSRF_STATUS_NOTFOUND:
-            osrfLogErr("Requested method was not found on the server: %s" % statusText)
+        if status_code == OSRF_STATUS_NOTFOUND:
+            osrf.log.logError("Requested method was not found on the server: %s" % status_text)
             session.state = OSRF_APP_SESSION_DISCONNECTED
-            raise osrfServiceException(statusText)
+            raise osrf.ex.OSRFServiceException(status_text)
 
-        raise osrfProtocolException("Unknown message status: %d" % statusCode)
+        raise osrf.ex.OSRFProtocolException("Unknown message status: %d" % status_code)
 
 
 

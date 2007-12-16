@@ -1,4 +1,5 @@
 from osrf.const import OSRF_JSON_PAYLOAD_KEY, OSRF_JSON_CLASS_KEY
+import re
 from xml.sax import saxutils
 
 
@@ -7,32 +8,33 @@ from xml.sax import saxutils
 # -----------------------------------------------------------
 
 # Global object registry 
-objectRegistry = {}
+OBJECT_REGISTRY = {}
 
-class osrfNetworkRegistry(object):
+class NetworkRegistry(object):
     ''' Network-serializable objects must be registered.  The class
         hint maps to a set (ordered in the case of array-base objects)
         of field names (keys).  
         '''
 
-    def __init__(self, hint, keys, wireProtocol):
-        global objectRegistry
+    def __init__(self, hint, keys, protocol):
+        global OBJECT_REGISTRY
         self.hint = hint
         self.keys = keys
-        self.wireProtocol = wireProtocol
-        objectRegistry[hint] = self
+        self.protocol = protocol
+        OBJECT_REGISTRY[hint] = self
     
-    def getRegistry(hint):
-        global objectRegistry
-        return objectRegistry.get(hint)
-    getRegistry = staticmethod(getRegistry)
+    def get_registry(hint):
+        global OBJECT_REGISTRY
+        return OBJECT_REGISTRY.get(hint)
+
+    get_registry = staticmethod(get_registry)
 
 
 # -----------------------------------------------------------
 # Define the base class for all network-serializable objects
 # -----------------------------------------------------------
 
-class osrfNetworkObject(object):
+class NetworkObject(object):
     ''' Base class for all network serializable objects '''
 
     # link to our registry object for this registered class
@@ -45,50 +47,47 @@ class osrfNetworkObject(object):
         self._data = data
         if not data: self._data = {}
         if isinstance(data, list):
-            self.importArrayData(list)
+            self.import_array_data(list)
 
-    def importArrayData(self, data):
+    def import_array_data(self, data):
         ''' If an array-based object is created with an array
             of data, cycle through and load the data '''
 
         self._data = {}
         if len(data) == 0: return
 
-        reg = self.getRegistry()
-        if reg.wireProtocol == 'array':
-            for i in range(len(reg.keys)):
-                if len(data) > i: break
-                self.setField(reg.keys[i], data[i])
+        reg = self.get_registry()
+        if reg.protocol == 'array':
+            for entry in range(len(reg.keys)):
+                if len(data) > entry: break
+                self.set_field(reg.keys[entry], data[entry])
 
-    def getData(self):
+    def get_data(self):
         ''' Returns the full dataset for this object as a dict '''
         return self._data
 
-    def setField(self, field, value):
+    def set_field(self, field, value):
         self._data[field] = value
 
-    def getField(self, field):
+    def get_field(self, field):
         return self._data.get(field)
 
-    def getRegistry(cls):
+    def get_registry(cls):
         ''' Returns the registry object for this registered class '''
         return cls.registry
-    getRegistry = classmethod(getRegistry)
+    get_registry = classmethod(get_registry)
 
 
-def osrfNewObjectFromHint(hint):
+def new_object_from_hint(hint):
     ''' Given a hint, this will create a new object of that 
         type and return it.  If this hint is not registered,
-        an object of type osrfNetworkObject.__unknown is returned'''
+        an object of type NetworkObject.__unknown is returned'''
     try:
         obj = None
-        exec('obj = osrfNetworkObject.%s()' % hint)
+        exec('obj = NetworkObject.%s()' % hint)
         return obj
     except AttributeError:
-        return osrfNetworkObject.__unknown()
-
-
-
+        return NetworkObject.__unknown()
 
 def __makeNetworkAccessor(cls, key):
     ''' Creates and accessor/mutator method for the given class.  
@@ -96,12 +95,12 @@ def __makeNetworkAccessor(cls, key):
         the field on the object whose data we are accessing ''' 
     def accessor(self, *args):
         if len(args) != 0:
-            self.setField(key, args[0])
-        return self.getField(key)
+            self.set_field(key, args[0])
+        return self.get_field(key)
     setattr(cls, key, accessor)
 
 
-def osrfNetworkRegisterHint(hint, keys, type='hash'):
+def NetworkRegisterHint(hint, keys, type='hash'):
     ''' Registers a new network-serializable object class.
 
         'hint' is the class hint
@@ -112,10 +111,10 @@ def osrfNetworkRegisterHint(hint, keys, type='hash'):
         '''
 
     # register the class with the global registry
-    registry = osrfNetworkRegistry(hint, keys, type)
+    registry = NetworkRegistry(hint, keys, type)
 
     # create the new class locally with the given hint name
-    exec('class %s(osrfNetworkObject):\n\tpass' % hint)
+    exec('class %s(NetworkObject):\n\tpass' % hint)
 
     # give the new registered class a local handle
     cls = None
@@ -125,71 +124,71 @@ def osrfNetworkRegisterHint(hint, keys, type='hash'):
     for k in keys:
         __makeNetworkAccessor(cls, k)
 
-    # attach our new class to the osrfNetworkObject 
+    # attach our new class to the NetworkObject 
     # class so others can access it
-    setattr(osrfNetworkObject, hint , cls)
+    setattr(NetworkObject, hint , cls)
     cls.registry = registry
 
 
 
 
 # create a unknown object to handle unregistred types
-osrfNetworkRegisterHint('__unknown', [], 'hash')
+NetworkRegisterHint('__unknown', [], 'hash')
 
 # -------------------------------------------------------------------
 # Define the custom object parsing behavior 
 # -------------------------------------------------------------------
-def parseNetObject(obj):
+def parse_net_object(obj):
     
     try:
-
         hint = obj[OSRF_JSON_CLASS_KEY]
-        subObj = obj[OSRF_JSON_PAYLOAD_KEY]
-        reg = osrfNetworkRegistry.getRegistry(hint)
+        sub_object = obj[OSRF_JSON_PAYLOAD_KEY]
+        reg = NetworkRegistry.get_registry(hint)
 
         obj = {}
 
-        if reg.wireProtocol == 'array':
-            for i in range(len(reg.keys)):
-                if len(subObj) > i:
-                    obj[reg.keys[i]] = parseNetObject(subObj[i])
+        if reg.protocol == 'array':
+            for entry in range(len(reg.keys)):
+                if len(sub_object) > entry:
+                    obj[reg.keys[entry]] = parse_net_object(sub_object[entry])
                 else:
-                    obj[reg.keys[i]] = None
+                    obj[reg.keys[entry]] = None
         else:
-            for k in reg.keys:
-                obj[k] = parseNetObject(subObj.get(k))
+            for key in reg.keys:
+                obj[key] = parse_net_object(sub_object.get(key))
 
-        estr = 'obj = osrfNetworkObject.%s(obj)' % hint
+        estr = 'obj = NetworkObject.%s(obj)' % hint
         try:
             exec(estr)
-        except e:
+        except:
             # this object has not been registered, shove it into the default container
-            obj = osrfNetworkObject.__unknown(obj)
+            obj = NetworkObject.__unknown(obj)
 
         return obj
 
-    except: pass
+    except:
+        pass
 
     # the current object does not have a class hint
     if isinstance(obj, list):
-        for i in range(len(obj)):
-            obj[i] = parseNetObject(obj[i])
+        for entry in range(len(obj)):
+            obj[entry] = parse_net_object(obj[entry])
 
     else:
         if isinstance(obj, dict):
-            for k,v in obj.iteritems():
-                obj[k] = parseNetObject(v)
+            for key, value in obj.iteritems():
+                obj[key] = parse_net_object(value)
 
-    return obj;
+    return obj
 
 
-def osrfObjectToXML(obj):
+def to_xml(obj):
     """ Returns the XML representation of an internal object."""
     chars = []
-    __osrfObjectToXML(obj, chars)
+    __to_xml(obj, chars)
     return ''.join(chars)
 
-def __osrfObjectToXML(obj, chars):
+def __to_xml(obj, chars):
     """ Turns an internal object into OpenSRF XML """
 
     if obj is None:
@@ -208,49 +207,77 @@ def __osrfObjectToXML(obj, chars):
         chars.append('<number>%f</number>' % obj)
         return
 
-    classHint = None
+    if isinstance(obj, NetworkObject): 
 
-    if isinstance(obj, osrfNetworkObject): 
-
-        registry = obj.getRegistry()
-        data = obj.getData()
+        registry = obj.get_registry()
+        data = obj.get_data()
         hint = saxutils.escape(registry.hint)
 
-        if registry.wireProtocol == 'array':
+        if registry.protocol == 'array':
             chars.append("<array class_hint='%s'>" % hint)
-            for k in registry.keys:
-                __osrfObjectToXML(data.get(k), chars)
+            for key in registry.keys:
+                __to_xml(data.get(key), chars)
             chars.append('</array>')
 
         else:
-            if registry.wireProtocol == 'hash':
+            if registry.protocol == 'hash':
                 chars.append("<object class_hint='%s'>" % hint)
-                for k,v in data.items():
-                    chars.append("<element key='%s'>" % saxutils.escape(k))
-                    __osrfObjectToXML(v, chars)
+                for key, value in data.items():
+                    chars.append("<element key='%s'>" % saxutils.escape(key))
+                    __to_xml(value, chars)
                     chars.append('</element>')
                 chars.append('</object>')
                 
 
     if isinstance(obj, list):
         chars.append('<array>')
-        for i in obj:
-            __osrfObjectToXML(i, chars)
+        for entry in obj:
+            __to_xml(entry, chars)
         chars.append('</array>')
         return
 
     if isinstance(obj, dict):
         chars.append('<object>')
-        for k,v in obj.items():
-            chars.append("<element key='%s'>" % saxutils.escape(k))
-            __osrfObjectToXML(v, chars)
+        for key, value in obj.items():
+            chars.append("<element key='%s'>" % saxutils.escape(key))
+            __to_xml(value, chars)
             chars.append('</element>')
         chars.append('</object>')
         return
 
     if isinstance(obj, bool):
         val = 'false'
-        if obj: val = 'true'
+        if obj:
+            val = 'true'
         chars.append("<boolean value='%s'/>" % val)
         return
 
+def find_object_path(obj, path, idx=None):
+    """Searches an object along the given path for a value to return.
+
+    Path separators can be '/' or '.', '/' is tried first."""
+
+    parts = []
+
+    if re.search('/', path):
+        parts = path.split('/')
+    else:
+        parts = path.split('.')
+
+    for part in parts:
+        try:
+            val = obj[part]
+        except:
+            return None
+        if isinstance(val, str): 
+            return val
+        if isinstance(val, list):
+            if idx != None:
+                return val[idx]
+            return val
+        if isinstance(val, dict):
+            obj = val
+        else:
+            return val
+
+    return obj

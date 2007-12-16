@@ -2,9 +2,9 @@
 # vim:et:ts=4
 import os, sys, time, readline, atexit, re
 import osrf.json
-from osrf.system import osrfConnect
-from osrf.ses import osrfClientSession
-from osrf.conf import osrfConfigValue
+import osrf.system
+import osrf.ses
+import osrf.conf
 
 
 # -------------------------------------------------------------------
@@ -60,9 +60,9 @@ def do_loop():
 # Set env variables to control behavior
 # -------------------------------------------------------------------
 def handle_set(parts):
-    m = re.compile('(.*)=(.*)').match(parts[0])
-    key = m.group(1)
-    val = m.group(2)
+    pattern = re.compile('(.*)=(.*)').match(parts[0])
+    key = pattern.group(1)
+    val = pattern.group(2)
     set_var(key, val)
     print "%s = %s" % (key, val)
 
@@ -104,16 +104,16 @@ def handle_help():
 def handle_request(parts):
     service = parts.pop(0)
     method = parts.pop(0)
-    jstr = '[%s]' % join(parts)
+    jstr = '[%s]' % "".join(parts)
     params = None
 
     try:
-        params = osrf.json.osrfJSONToObject(jstr)
+        params = osrf.json.to_object(jstr)
     except:
         print "Error parsing JSON: %s" % jstr
         return
 
-    ses = osrfClientSession(service)
+    ses = osrf.ses.ClientSession(service)
 
     end = None
     start = time.time()
@@ -125,13 +125,14 @@ def handle_request(parts):
         resp = req.recv(timeout=120)
         if not end:
             total = time.time() - start
-        if not resp: break
+        if not resp:
+            break
 
         otp = get_var('SRFSH_OUTPUT')
         if otp == 'pretty':
-            print "\n" + osrf.json.osrfDebugNetworkObject(resp.content())
+            print "\n" + osrf.json.debug_net_object(resp.content())
         else:
-            print osrf.json.osrfFormatJSON(osrfObjectToJSON(resp.content()))
+            print osrf.json.pprint(osrf.json.to_json(resp.content()))
 
     req.cleanup()
     ses.cleanup()
@@ -144,16 +145,18 @@ def handle_request(parts):
 def handle_math_bench(parts):
 
     count = int(parts.pop(0))
-    ses = osrfClientSession('opensrf.math')
+    ses = osrf.ses.ClientSession('opensrf.math')
     times = []
 
-    for i in range(100):
-        if i % 10: sys.stdout.write('.')
-        else: sys.stdout.write( str( i / 10 ) )
-    print "";
+    for cnt in range(100):
+        if cnt % 10:
+            sys.stdout.write('.')
+        else:
+            sys.stdout.write( str( cnt / 10 ) )
+    print ""
 
 
-    for i in range(count):
+    for cnt in range(count):
     
         starttime = time.time()
         req = ses.request('add', 1, 2)
@@ -168,12 +171,13 @@ def handle_math_bench(parts):
             print "What happened? %s" % str(resp.content())
     
         req.cleanup()
-        if not ( (i+1) % 100):
-            print ' [%d]' % (i+1)
+        if not ( (cnt + 1) % 100):
+            print ' [%d]' % (cnt + 1)
     
     ses.cleanup()
     total = 0
-    for i in times: total += i
+    for cnt in times:
+        total += cnt 
     print "\naverage time %f" % (total / len(times))
 
 
@@ -215,21 +219,21 @@ def setup_readline():
 def do_connect():
     file = os.path.join(get_var('HOME'), ".srfsh.xml")
     print_green("Connecting to opensrf...")
-    osrfConnect(file, 'srfsh')
+    osrf.system.connect(file, 'srfsh')
     print_red('OK\n')
 
 def load_plugins():
     # Load the user defined external plugins
     # XXX Make this a real module interface, with tab-complete words, commands, etc.
     try:
-        plugins = osrfConfigValue('plugins')
+        plugins = osrf.conf.get('plugins')
 
     except:
         # XXX standard srfsh.xml does not yet define <plugins> element
         print_red("No plugins defined in /srfsh/plugins/plugin\n")
         return
 
-    plugins = osrfConfigValue('plugins.plugin')
+    plugins = osrf.conf.get('plugins.plugin')
     if not isinstance(plugins, list):
         plugins = [plugins]
 
@@ -256,8 +260,10 @@ def set_var(key, val):
 
 
 def get_var(key):
-    try: return os.environ[key]
-    except: return ''
+    try:
+        return os.environ[key]
+    except:
+        return ''
     
     
 def print_green(string):

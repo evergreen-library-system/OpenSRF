@@ -17,39 +17,39 @@
 # exception is little more than a name.
 # -----------------------------------------------------------------------
 
-class osrfException(Exception):
-	"""Root class for exceptions."""
-	def __init__(self, info=None):
-		self.info = info;
-	def __str__(self):
-		return self.info
+class OSRFException(Exception):
+    """Root class for exceptions."""
+    def __init__(self, info=None):
+        self.info = info;
+    def __str__(self):
+        return self.info
 
 
-class osrfNetworkException(osrfException):
-	def __str__(self):
-		str = "\nUnable to communicate with the OpenSRF network"
-		if self.info:
-			str = str + '\n' + repr(self.info)
-		return str
+class NetworkException(OSRFException):
+    def __str__(self):
+        str = "\nUnable to communicate with the OpenSRF network"
+        if self.info:
+            str = str + '\n' + repr(self.info)
+        return str
 
-class osrfProtocolException(osrfException):
-	"""Raised when something happens during opensrf network stack processing."""
-	pass
+class OSRFProtocolException(OSRFException):
+    """Raised when something happens during opensrf network stack processing."""
+    pass
 
-class osrfServiceException(osrfException):
-	"""Raised when there was an error communicating with a remote service."""
-	pass
+class OSRFServiceException(OSRFException):
+    """Raised when there was an error communicating with a remote service."""
+    pass
 
-class osrfConfigException(osrfException):
-	"""Invalid config option requested."""
-	pass
+class OSRFConfigException(OSRFException):
+    """Invalid config option requested."""
+    pass
 
-class osrfNetworkObjectException(osrfException):
-	pass
-	
-class osrfJSONParseException(osrfException):
-	"""Raised when a JSON parsing error occurs."""
-	pass
+class OSRFNetworkObjectException(OSRFException):
+    pass
+    
+class OSRFJSONParseException(OSRFException):
+    """Raised when a JSON parsing error occurs."""
+    pass
 
 
 

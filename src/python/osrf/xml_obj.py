@@ -1,113 +1,81 @@
-import xml.dom.minidom, re
+import xml.dom.minidom
 
-def osrfXMLFileToObject(filename):
+def xml_file_to_object(filename):
     """Turns the contents of an XML file into a Python object"""
     doc = xml.dom.minidom.parse(filename)
-    obj = osrfXMLNodeToObject(doc.documentElement)
+    obj = xml_node_to_object(doc.documentElement)
     doc.unlink()
     return obj
 
-def osrfXMLStringToObject(string):
+def xml_string_to_object(string):
     """Turns an XML string into a Python object"""
     doc = xml.dom.minidom.parseString(string)
-    obj = osrfXMLNodeToObject(doc.documentElement)
+    obj = xml_node_to_object(doc.documentElement)
     doc.unlink()
     return obj
 
-def osrfXMLNodeToObject(xmlNode):
+def xml_node_to_object(xml_node):
     """Turns an XML node into a Python object"""
     obj = {}
 
-    if xmlNode.nodeType != xmlNode.ELEMENT_NODE:
+    if xml_node.nodeType != xml_node.ELEMENT_NODE:
         return obj
 
     done = False
-    nodeName = xmlNode.nodeName
+    node_name = xml_node.nodeName
 
-    for nodeChild in xmlNode.childNodes:
-        if nodeChild.nodeType == xmlNode.ELEMENT_NODE:
-            subObj = osrfXMLNodeToObject(nodeChild);
-            __appendChildNode(obj, nodeName, nodeChild.nodeName, subObj)
+    for node_child in xml_node.childNodes:
+        if node_child.nodeType == xml_node.ELEMENT_NODE:
+            sub_obj = xml_node_to_object(node_child)
+            __append_child_node(obj, node_name, node_child.nodeName, sub_obj)
             done = True
 
-    for attr in xmlNode.attributes.values():
-        __appendChildNode(obj, nodeName, attr.name, dict([(attr.name, attr.value)]))
+    for attr in xml_node.attributes.values():
+        __append_child_node(obj, node_name, attr.name,
+            dict([(attr.name, attr.value)]))
         
 
-    if not done and len(xmlNode.childNodes) > 0:
+    if not done and len(xml_node.childNodes) > 0:
         # If the node has no element children, clean up the text 
         # content and use that as the data
-        textNode = xmlNode.childNodes[0] # extract the text node
-        data = unicode(textNode.nodeValue).replace('^\s*','')
+        text_node = xml_node.childNodes[0] # extract the text node
+        data = unicode(text_node.nodeValue).replace('^\s*','')
         data = data.replace('\s*$','')
 
-        if nodeName in obj:
+        if node_name in obj:
             # the current element contains attributes and text
-            obj[nodeName]['#text'] = data
+            obj[node_name]['#text'] = data
         else:
             # the current element contains text only
-            obj[nodeName] = data
+            obj[node_name] = data
 
     return obj
 
 
-def __appendChildNode(obj, nodeName, childName, subObj):
+def __append_child_node(obj, node_name, child_name, sub_obj):
     """ If a node has element children, create a new sub-object 
         for this node, attach an array for each type of child
         and recursively collect the children data into the array(s) """
 
-    if not obj.has_key(nodeName):
-        obj[nodeName] = {}
+    if not obj.has_key(node_name):
+        obj[node_name] = {}
 
-    if not obj[nodeName].has_key(childName):
-        # we've encountered 1 sub-node with nodeChild's name
-        if childName in subObj:
-            obj[nodeName][childName] = subObj[childName]
+    if not obj[node_name].has_key(child_name):
+        # we've encountered 1 sub-node with node_child's name
+        if child_name in sub_obj:
+            obj[node_name][child_name] = sub_obj[child_name]
         else:
-            obj[nodeName][childName] = None
+            obj[node_name][child_name] = None
 
     else:
-        if isinstance(obj[nodeName][childName], list):
-            # we already have multiple sub-nodes with nodeChild's name
-            obj[nodeName][childName].append(subObj[childName])
+        if isinstance(obj[node_name][child_name], list):
+            # we already have multiple sub-nodes with node_child's name
+            obj[node_name][child_name].append(sub_obj[child_name])
 
         else:
-            # we already have 1 sub-node with nodeChild's name, make 
+            # we already have 1 sub-node with node_child's name, make 
             # it a list and append the current node
-            val = obj[nodeName][childName]
-            obj[nodeName][childName] = [ val, subObj[childName] ]
+            val = obj[node_name][child_name]
+            obj[node_name][child_name] = [ val, sub_obj[child_name] ]
 
-
-def osrfObjectFindPath(obj, path, idx=None):
-    """Searches an object along the given path for a value to return.
-
-    Path separaters can be '/' or '.', '/' is tried first."""
-
-    parts = []
-
-    if re.search('/', path):
-        parts = path.split('/')
-    else:
-        parts = path.split('.')
-
-    for part in parts:
-        try:
-            o = obj[part]
-        except Exception:
-            return None
-        if isinstance(o,str): 
-            return o
-        if isinstance(o,list):
-            if( idx != None ):
-                return o[idx]
-            return o
-        if isinstance(o,dict):
-            obj = o
-        else:
-            return o
-
-    return obj
-
-
-            
 

@@ -14,11 +14,12 @@
 # -----------------------------------------------------------------------
 
 
-from osrf.utils import *
-from osrf.ex import *
+import osrf.net_obj
+import osrf.ex
+import osrf.xml_obj
 import re
 
-class osrfConfig(object):
+class Config(object):
     """Loads and parses the bootstrap config file"""
 
     config = None
@@ -30,8 +31,8 @@ class osrfConfig(object):
 
     #def parseConfig(self,file=None):
     def parseConfig(self):
-        self.data = osrfXMLFileToObject(self.file)
-        osrfConfig.config = self
+        self.data = osrf.xml_obj.xml_file_to_object(self.file)
+        Config.config = self
     
     def getValue(self, key, idx=None):
         if self.context:
@@ -40,23 +41,23 @@ class osrfConfig(object):
             else:
                 key = "%s.%s" % (self.context, key)
 
-        val = osrfObjectFindPath(self.data, key, idx)
+        val = osrf.net_obj.find_object_path(self.data, key, idx)
         if not val:
-            raise osrfConfigException("Config value not found: " + key)
+            raise osrf.ex.OSRFConfigException("Config value not found: " + key)
         return val
 
 
-def osrfConfigValue(key, idx=None):
+def get(key, idx=None):
     """Returns a bootstrap config value.
 
     key -- A string representing the path to the value in the config object
         e.g.  "domains.domain", "username"
     idx -- Optional array index if the searched value is an array member
     """
-    return osrfConfig.config.getValue(key, idx)
+    return Config.config.getValue(key, idx)
                 
 
-def osrfConfigValueNoEx(key, idx=None):
+def get_no_ex(key, idx=None):
     """ Returns a bootstrap config value without throwing an exception
         if the item is not found. 
 
@@ -65,7 +66,7 @@ def osrfConfigValueNoEx(key, idx=None):
     idx -- Optional array index if the searched value is an array member
     """
     try:
-        return osrfConfig.config.getValue(key, idx)
+        return Config.config.getValue(key, idx)
     except:
         return None
 

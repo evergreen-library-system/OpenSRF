@@ -1,6 +1,6 @@
 import memcache
-from osrf.json import osrfObjectToJSON, osrfJSONToObject
-from osrf.log import *
+from osrf.json import to_json, to_object
+import osrf.log
 
 '''
 Abstracted OpenSRF caching interface.
@@ -27,30 +27,33 @@ class CacheClient(object):
             self.client = memcache.Client(server, debug=1)
         else:
             if not _client:
-                raise CacheException("not connected to any memcache servers.  try CacheClient.connect(servers)")
+                raise CacheException(
+                    "not connected to any memcache servers."
+                    "try CacheClient.connect(servers)"
+                )
             self.client = _client
 
     def put(self, key, val, timeout=None):
         global defaultTimeout
         if timeout is None:
             timeout = defaultTimeout
-        s = osrfObjectToJSON(val)
-        osrfLogInternal("cache: %s => %s" % (str(key), s))
-        return self.client.set(str(key), s, timeout)
+        json = to_json(val)
+        osrf.log.osrfLogInternal("cache: %s => %s" % (str(key), json))
+        return self.client.set(str(key), json, timeout)
 
     def get(self, key):
-        o = self.client.get(str(key))
-        osrfLogInternal("cache: fetching %s => %s" % (str(key), o))
-        return osrfJSONToObject(o or "null")
+        obj = self.client.get(str(key))
+        osrf.log.osrfLogInternal("cache: fetching %s => %s" % (str(key), obj))
+        return to_object(obj or "null")
 
     def delete(self, key):
-        osrfLogInternal("cache: deleting %s" % str(key))
+        osrf.log.osrfLogInternal("cache: deleting %s" % str(key))
         self.client.delete(str(key))
 
     @staticmethod
     def connect(svrs):
         global _client
-        osrfLogDebug("cache: connecting to servers %s" % str(svrs))
+        osrf.log.logDebug("cache: connecting to servers %s" % str(svrs))
         _client = memcache.Client(svrs, debug=1)
 
 

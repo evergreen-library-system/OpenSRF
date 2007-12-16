@@ -1,8 +1,8 @@
 from xml.dom import minidom
 from xml.sax import handler, make_parser, saxutils
-from osrf.json import *
-from osrf.net_obj import *
-from osrf.log import *
+from osrf.json import to_object
+from osrf.net_obj import NetworkObject, new_object_from_hint
+from osrf.log import logError
 import urllib, urllib2, sys, re
 
 defaultHost = None
@@ -63,7 +63,7 @@ class JSONGatewayRequest(GatewayRequest):
 
     def handleResponse(self, response):
         s = response.read()
-        obj = osrfJSONToObject(s)
+        obj = to_object(s)
         if obj['status'] != 200:
             sys.stderr.write('JSON gateway returned status %d:\n%s\n' % (obj['status'], s))
             return None
@@ -75,7 +75,7 @@ class JSONGatewayRequest(GatewayRequest):
         return p[0]
 
     def encodeParam(self, param):
-        return osrfObjectToJSON(param)
+        return osrf.json.to_json(param)
 
 class XMLGatewayRequest(GatewayRequest):
 
@@ -95,13 +95,13 @@ class XMLGatewayRequest(GatewayRequest):
         try:
             parser.parse(response)
         except Exception, e:
-            osrfLogErr('Error parsing gateway XML: %s' % unicode(e))
+            logError('Error parsing gateway XML: %s' % unicode(e))
             return None
 
         return handler.getResult()
 
     def encodeParam(self, param):
-        return osrfObjectToXML(param);
+        return osrf.net_obj.to_xml(param);
 
 class XMLGatewayParser(handler.ContentHandler):
 
@@ -144,7 +144,7 @@ class XMLGatewayParser(handler.ContentHandler):
 
         hint = self.__getAttr(attrs, 'class_hint')
         if hint:
-            obj = osrfNewObjectFromHint(hint)
+            obj = new_object_from_hint(hint)
             self.appendChild(obj)
             self.objStack.append(obj)
             if name == 'array':
@@ -183,10 +183,10 @@ class XMLGatewayParser(handler.ContentHandler):
             if isinstance(parent, dict):
                 parent[self.keyStack.pop()] = child
             else:
-                if isinstance(parent, osrfNetworkObject):
+                if isinstance(parent, NetworkObject):
                     key = None
-                    if parent.getRegistry().wireProtocol == 'array':
-                        keys = parent.getRegistry().keys
+                    if parent.get_registry().protocol == 'array':
+                        keys = parent.get_registry().keys
                         i = self.posStack.pop()
                         key = keys[i]
                         if i+1 < len(keys):
@@ -194,7 +194,7 @@ class XMLGatewayParser(handler.ContentHandler):
                     else:
                         key = self.keyStack.pop()
 
-                    parent.setField(key, child)
+                    parent.set_field(key, child)
 
     def endElement(self, name):
         if name == 'array' or name == 'object':

@@ -2,13 +2,14 @@ import os, time, md5, random
 from mod_python import apache, util
 
 import osrf.cache
-from osrf.system import osrfConnect
-from osrf.json import osrfJSONToObject
-from osrf.conf import osrfConfigValue
-from osrf.set import osrfSettingsValue
+import osrf.system
+import osrf.json
+import osrf.conf
+import osrf.set
+import sys
 from osrf.const import *
-from osrf.net import *
-from osrf.log import *
+from osrf.net import get_network_handle
+import osrf.log
 
 
 ''' 
@@ -37,41 +38,42 @@ OSRF_HTTP_HEADER_SERVICE = 'X-OpenSRF-service'
 OSRF_HTTP_HEADER_MULTIPART = 'X-OpenSRF-multipart'
 
 MULTIPART_CONTENT_TYPE = 'multipart/x-mixed-replace;boundary="%s"'
-JSON_CONTENT_TYPE = 'text/plain';
+JSON_CONTENT_TYPE = 'text/plain'
 CACHE_TIME = 300
 
 ROUTER_NAME = None
 OSRF_DOMAIN = None
 
-# If true, all data sent to the client is also written to stderr (apache error log)
+# If DEBUG_WRITE = True, all data sent to the client is also written
+# to stderr (apache error log)
 DEBUG_WRITE = False
 
-def _dbg(s):
+def _dbg(msg):
     ''' testing only '''
-    sys.stderr.write("%s\n\n" % str(s))
+    sys.stderr.write("%s\n\n" % str(msg))
     sys.stderr.flush()
 
 
-initComplete = False
-def childInit(req):
-    ''' At time of writing, mod_python doesn't support a childInit handler,
+INIT_COMPLETE = False
+def child_init(req):
+    ''' At time of writing, mod_python doesn't support a child_init handler,
         so this function is called once per process to initialize 
         the opensrf connection '''
 
-    global initComplete, ROUTER_NAME, OSRF_DOMAIN
-    if initComplete: 
+    global INIT_COMPLETE, ROUTER_NAME, OSRF_DOMAIN
+    if INIT_COMPLETE: 
         return
 
     ops = req.get_options()
     conf = ops['OSRF_CONFIG']
     ctxt = ops.get('OSRF_CONFIG_CONTEXT') or 'opensrf'
-    osrfConnect(conf, ctxt)
+    osrf.system.connect(conf, ctxt)
 
-    ROUTER_NAME = osrfConfigValue('router_name')
-    OSRF_DOMAIN = osrfConfigValue('domains.domain')
-    initComplete = True
+    ROUTER_NAME = osrf.conf.get('router_name')
+    OSRF_DOMAIN = osrf.conf.get('domains.domain')
+    INIT_COMPLETE = True
 
-    servers = osrfSettingsValue('cache.global.servers.server')
+    servers = osrf.set.get('cache.global.servers.server')
     if not isinstance(servers, list):
         servers = [servers]
     osrf.cache.CacheClient.connect(servers)
@@ -79,7 +81,7 @@ def childInit(req):
 
 def handler(req):
     ''' Create the translator and tell it to process the request. '''
-    childInit(req)
+    child_init(req)
     return HTTPTranslator(req).process()
 
 class HTTPTranslator(object):
@@ -98,21 +100,24 @@ class HTTPTranslator(object):
 
         self.messages = []
         self.complete = False
-        self.handle = osrfGetNetworkHandle()
-        self.handle.setRecvCallback(None)
+        self.handle = osrf.net.get_network_handle()
+        self.handle.set_receive_callback(None)
 
-        self.to = apreq.headers_in.get(OSRF_HTTP_HEADER_TO)
+        self.recipient = apreq.headers_in.get(OSRF_HTTP_HEADER_TO)
         self.service = apreq.headers_in.get(OSRF_HTTP_HEADER_SERVICE)
-        self.thread = apreq.headers_in.get(OSRF_HTTP_HEADER_THREAD) or "%s%s" % (os.getpid(), time.time())
+        self.thread = apreq.headers_in.get(OSRF_HTTP_HEADER_THREAD) or \
+            "%s%s" % (os.getpid(), time.time())
         self.timeout = apreq.headers_in.get(OSRF_HTTP_HEADER_TIMEOUT) or 1200
-        self.multipart = str(apreq.headers_in.get(OSRF_HTTP_HEADER_MULTIPART)).lower() == 'true'
-        self.disconnectOnly = False
+        self.multipart = str( \
+            apreq.headers_in.get(OSRF_HTTP_HEADER_MULTIPART)).lower() == 'true'
+        self.disconnect_only = False
 
         # generate a random multipart delimiter
-        m = md5.new()
-        m.update("%f%d%d" % (time.time(), os.getpid(), random.randint(100,10000000)))
-        self.delim = m.hexdigest()
-        self.remoteHost = self.apreq.get_remote_host(apache.REMOTE_NOLOOKUP)
+        mpart = md5.new()
+        mpart.update("%f%d%d" % (time.time(), os.getpid(), \
+            random.randint(100, 10000000)))
+        self.delim = mpart.hexdigest()
+        self.remote_host = self.apreq.get_remote_host(apache.REMOTE_NOLOOKUP)
         self.cache = osrf.cache.CacheClient()
 
 
@@ -122,106 +127,113 @@ class HTTPTranslator(object):
             return apache.OK
         if not self.body:
             return apache.HTTP_BAD_REQUEST
-        if not self.setToAddr():
+        if not self.set_to_addr():
             return apache.HTTP_BAD_REQUEST
-        if not self.parseRequest():
+        if not self.parse_request():
             return apache.HTTP_BAD_REQUEST
 
         while self.handle.recv(0):
             pass # drop stale messages
 
 
-        netMsg = osrfNetworkMessage(to=self.to, thread=self.thread, body=self.body)
-        self.handle.send(netMsg)
+        net_msg = NetworkMessage(recipient=self.recipient, thread=self.thread, \
+            body=self.body)
+        self.handle.send(net_msg)
 
-        if self.disconnectOnly:
-            osrfLogDebug("exiting early on DISCONNECT")
+        if self.disconnect_only:
+            osrf.log.logDebug("exiting early on DISCONNECT")
             return apache.OK
 
-        firstWrite = True
+        first_write = True
         while not self.complete:
 
-            netMsg = self.handle.recv(self.timeout)
-            if not netMsg: 
+            net_msg = self.handle.recv(self.timeout)
+            if not net_msg: 
                 return apache.GATEWAY_TIME_OUT
 
-            if not self.checkStatus(netMsg):
+            if not self.check_status(net_msg):
                 continue 
 
-            if firstWrite:
-                self.initHeaders(netMsg)
-                firstWrite = False
+            if first_write:
+                self.init_headers(net_msg)
+                first_write = False
 
             if self.multipart:
-                self.respondChunk(netMsg)
+                self.respond_chunk(net_msg)
             else:
-                self.messages.append(netMsg.body)
+                self.messages.append(net_msg.body)
 
+                # condense the sets of arrays into a single array of messages
                 if self.complete:
-
-                    # condense the sets of arrays into a single array of messages
                     json = self.messages.pop(0)
                     while len(self.messages) > 0:
-                        m = self.messages.pop(0)
-                        json = "%s,%s" % (json[0:len(json)-1], m[1:])
+                        msg = self.messages.pop(0)
+                        json = "%s,%s" % (json[0:len(json)-1], msg[1:])
                         
                     self.write("%s" % json)
 
 
         return apache.OK
 
-    def parseRequest(self):
-        ''' If this is solely a DISCONNECT message, we set self.disconnectOnly to true
-            @return True if the body parses correctly, False otherwise
+    def parse_request(self):
         '''
-        osrfMsgs = osrfJSONToObject(self.body)
-        if not osrfMsgs:
+        If this is solely a DISCONNECT message, we set self.disconnect_only
+        to true
+        @return True if the body parses correctly, False otherwise
+        '''
+        osrf_msgs = osrf.json.to_object(self.body)
+        if not osrf_msgs:
             return False
         
-        if len(osrfMsgs) == 1 and osrfMsgs[0].type() == OSRF_MESSAGE_TYPE_DISCONNECT:
-            self.disconnectOnly = True
+        if len(osrf_msgs) == 1 and \
+            osrf_msgs[0].type() == OSRF_MESSAGE_TYPE_DISCONNECT:
+            self.disconnect_only = True
 
         return True
 
 
-    def setToAddr(self):
+    def set_to_addr(self):
         ''' Determines the TO address.  Returns false if 
             the address is missing or ambiguous. 
             Also returns false if an explicit TO is specified and the
             thread/IP/TO combination is not found in the session cache
             '''
         if self.service:
-            if self.to:
-                osrfLogWarn("specifying both SERVICE and TO is not allowed")
+            if self.recipient:
+                osrf.log.osrfLogWarn("specifying both SERVICE and TO is not allowed")
                 return False
-            self.to = "%s@%s/%s" % (ROUTER_NAME, OSRF_DOMAIN, self.service)
+            self.recipient = "%s@%s/%s" % \
+                (ROUTER_NAME, OSRF_DOMAIN, self.service)
             return True
         else:
-            if self.to:
-                # If the client specifies a specific TO address, verify it's the same
-                # address that was cached with the previous request.  
+            if self.recipient:
+                # If the client specifies a specific TO address, verify it's
+                # the same address that was cached with the previous request.  
                 obj = self.cache.get(self.thread)
-                if obj and obj['ip'] == self.remoteHost and obj['jid'] == self.to:
+                if obj and obj['ip'] == self.remote_host and \
+                    obj['jid'] == self.recipient:
                     return True
-        osrfLogWarn("client [%s] attempted to send directly [%s] without a session" % (self.remoteHost, self.to))
+        osrf.log.osrfLogWarn("client [%s] attempted to send directly "
+            "[%s] without a session" % (self.remote_host, self.recipient))
         return False
 
         
-    def initHeaders(self, netMsg):
-        self.apreq.headers_out[OSRF_HTTP_HEADER_FROM] = netMsg.sender
+    def init_headers(self, net_msg):
+        self.apreq.headers_out[OSRF_HTTP_HEADER_FROM] = net_msg.sender
         if self.multipart:
             self.apreq.content_type = MULTIPART_CONTENT_TYPE % self.delim
             self.write("--%s\n" % self.delim)
         else:
             self.apreq.content_type = JSON_CONTENT_TYPE
-        self.cache.put(self.thread, {'ip':self.remoteHost, 'jid': netMsg.sender}, CACHE_TIME)
+        self.cache.put(self.thread, \
+            {'ip':self.remote_host, 'jid': net_msg.sender}, CACHE_TIME)
 
-        osrfLogDebug("caching session [%s] for host [%s] and server drone [%s]" % (
-            self.thread, self.remoteHost, netMsg.sender))
+        osrf.log.logDebug("caching session [%s] for host [%s] and server "
+            " drone [%s]" % (self.thread, self.remote_host, net_msg.sender))
 
 
 
-    def checkStatus(self, netMsg): 
+    def check_status(self, net_msg): 
         ''' Checks the status of the server response. 
             If we received a timeout message, we drop it.
             if it's any other non-continue status, we mark this session as
@@ -229,15 +241,16 @@ class HTTPTranslator(object):
             @return False if there is no data to return to the caller 
             (dropped message, eg. timeout), True otherwise '''
 
-        osrfMsgs = osrfJSONToObject(netMsg.body)
-        lastMsg = osrfMsgs.pop()
+        osrf_msgs = osrf.json.to_object(net_msg.body)
+        last_msg = osrf_msgs.pop()
 
-        if lastMsg.type() == OSRF_MESSAGE_TYPE_STATUS:
-            code = int(lastMsg.payload().statusCode())
+        if last_msg.type() == OSRF_MESSAGE_TYPE_STATUS:
+            code = int(last_msg.payload().statusCode())
 
             if code == OSRF_STATUS_TIMEOUT:
-                osrfLogDebug("removing cached session [%s] and dropping TIMEOUT message" % netMsg.thread)
-                self.cache.delete(netMsg.thread)
+                osrf.log.logDebug("removing cached session [%s] and "
+                    "dropping TIMEOUT message" % net_msg.thread)
+                self.cache.delete(net_msg.thread)
                 return False 
 
             if code != OSRF_STATUS_CONTINUE:
@@ -246,7 +259,7 @@ class HTTPTranslator(object):
         return True
 
 
-    def respondChunk(self, resp):
+    def respond_chunk(self, resp):
         ''' Writes a single multipart-delimited chunk of data '''
 
         self.write("Content-type: %s\n\n" % JSON_CONTENT_TYPE)

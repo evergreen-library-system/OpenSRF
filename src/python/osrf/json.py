@@ -1,20 +1,20 @@
 import simplejson, types 
-from osrf.net_obj import *
+from osrf.net_obj import NetworkObject, parse_net_object
 from osrf.const import OSRF_JSON_PAYLOAD_KEY, OSRF_JSON_CLASS_KEY
 
-class osrfJSONNetworkEncoder(simplejson.JSONEncoder):
+class NetworkEncoder(simplejson.JSONEncoder):
     def default(self, obj):
 
-        if isinstance(obj, osrfNetworkObject):
-            reg = obj.getRegistry()
-            data = obj.getData()
+        if isinstance(obj, NetworkObject):
+            reg = obj.get_registry()
+            data = obj.get_data()
 
             # re-encode the object as an array if necessary
-            if reg.wireProtocol == 'array':
-                d = []
-                for k in reg.keys:
-                    d.append(data.get(k)) 
-                data = d
+            if reg.protocol == 'array':
+                objarray = []
+                for key in reg.keys:
+                    objarray.append(data.get(key)) 
+                data = objarray
 
             return { 
                 OSRF_JSON_CLASS_KEY: reg.hint,
@@ -23,38 +23,39 @@ class osrfJSONNetworkEncoder(simplejson.JSONEncoder):
         return obj
 
 
-def osrfObjectToJSON(obj):
+def to_json(obj):
     """Turns a python object into a wrapped JSON object"""
-    return simplejson.dumps(obj, cls=osrfJSONNetworkEncoder)
+    return simplejson.dumps(obj, cls=NetworkEncoder)
 
 
-def osrfJSONToObject(json):
+def to_object(json):
     """Turns a JSON string into python objects"""
     obj = simplejson.loads(json)
-    return parseNetObject(obj)
+    return parse_net_object(obj)
 
-def osrfParseJSONRaw(json):
+def parse_json_raw(json):
     """Parses JSON the old fashioned way."""
     return simplejson.loads(json)
 
-def osrfToJSONRaw(obj):
+def to_json_raw(obj):
     """Stringifies an object as JSON with no additional logic."""
     return simplejson.dumps(obj)
 
-def __tabs(t):
-    r=''
-    for i in range(t): r += '   '
-    return r
+def __tabs(depth):
+    space = ''
+    while range(depth):
+        space += '   '
+    return space
 
-def osrfDebugNetworkObject(obj, t=1):
+def debug_net_object(obj, depth=1):
     """Returns a debug string for a given object.
 
-    If it's an osrfNetworkObject and has registered keys, key/value p
-    pairs are returned.  Otherwise formatted JSON is returned"""
+    If it's an NetworkObject and has registered keys, key/value pairs
+    are returned.  Otherwise formatted JSON is returned"""
 
-    s = ''
-    if isinstance(obj, osrfNetworkObject):
-        reg = obj.getRegistry()
+    debug_str = ''
+    if isinstance(obj, NetworkObject):
+        reg = obj.get_registry()
         keys = list(reg.keys) # clone it, so sorting won't break the original
         keys.sort()
 
@@ -64,24 +65,24 @@ def osrfDebugNetworkObject(obj, t=1):
             while len(key) < 24: key += '.' # pad the names to make the values line up somewhat
             val = getattr(obj, k)()
 
-            subobj = val and not (isinstance(val,unicode) or \
+            subobj = val and not (isinstance(val, unicode) or \
                 isinstance(val, int) or isinstance(val, float) or isinstance(val, long))
 
-            s += __tabs(t) + key + ' = '
+            debug_str += __tabs(depth) + key + ' = '
 
             if subobj:
-                s += '\n'
-                val = osrfDebugNetworkObject(val, t+1)
+                debug_str += '\n'
+                val = debug_net_object(val, depth+1)
 
-            s += str(val)
+            debug_str += str(val)
 
-            if not subobj: s += '\n'
+            if not subobj: debug_str += '\n'
 
     else:
-        s = osrfFormatJSON(osrfObjectToJSON(obj))
-    return s
+        debug_str = pprint(to_json(obj))
+    return debug_str
 
-def osrfFormatJSON(json):
+def pprint(json):
     """JSON pretty-printer"""
     r = ''
     t = 0
@@ -129,9 +130,3 @@ def osrfFormatJSON(json):
             r += c
 
     return r
-
-
-
-
-
-

@@ -13,31 +13,31 @@
 # GNU General Public License for more details.
 # -----------------------------------------------------------------------
 
-from osrf.utils import *
-from osrf.const import *
-from osrf.ex import *
+from osrf.const import OSRF_APP_SETTINGS, OSRF_METHOD_GET_HOST_CONFIG
+import osrf.ex
+import osrf.net_obj
 
 # global settings config object
 __config = None
 
-def osrfSettingsValue(path, idx=0):
-	global __config
-	val = osrfObjectFindPath(__config, path, idx)
-	if not val:
-		raise osrfConfigException("Config value not found: " + path)
-	return val
+def get(path, idx=0):
+    global __config
+    val = osrf.net_obj.find_object_path(__config, path, idx)
+    if not val:
+        raise osrf.ex.OSRFConfigException("Config value not found: " + path)
+    return val
 
 
-def osrfLoadSettings(hostname):
-	global __config
+def load(hostname):
+    global __config
 
-	from osrf.system import osrfConnect
-	from osrf.ses import osrfClientSession
+    from osrf.system import connect
+    from osrf.ses import ClientSession
 
-	ses = osrfClientSession(OSRF_APP_SETTINGS)
-	req = ses.request(OSRF_METHOD_GET_HOST_CONFIG, hostname)
-	resp = req.recv(timeout=30)
-	__config = resp.content()
-	req.cleanup()
-	ses.cleanup()
+    ses = ClientSession(OSRF_APP_SETTINGS)
+    req = ses.request(OSRF_METHOD_GET_HOST_CONFIG, hostname)
+    resp = req.recv(timeout=30)
+    __config = resp.content()
+    req.cleanup()
+    ses.cleanup()
 

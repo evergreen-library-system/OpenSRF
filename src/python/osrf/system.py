@@ -13,45 +13,41 @@
 # GNU General Public License for more details.
 # -----------------------------------------------------------------------
 
-from osrf.conf import osrfConfig, osrfConfigValue, osrfConfigValueNoEx
-from osrf.net import osrfNetwork, osrfSetNetworkHandle, osrfGetNetworkHandle
-from osrf.stack import osrfPushStack
-from osrf.log import *
-from osrf.set import osrfLoadSettings
+from osrf.conf import Config, get, get_no_ex
+from osrf.net import Network, set_network_handle, get_network_handle
+import osrf.stack
+import osrf.log
+import osrf.set
 import sys
 
 
-def osrfConnect(configFile, configContext):
+def connect(configFile, configContext):
     """ Connects to the opensrf network """
 
-    if osrfGetNetworkHandle():
+    if get_network_handle():
         ''' This thread already has a handle '''
         return
 
     # parse the config file
-    configParser = osrfConfig(configFile, configContext)
+    configParser = Config(configFile, configContext)
     configParser.parseConfig()
     
     # set up logging
-    osrfInitLog(
-        osrfConfigValue('loglevel'), 
-        osrfConfigValueNoEx('syslog'),
-        osrfConfigValueNoEx('logfile'))
+    osrf.log.initialize(
+        osrf.conf.get('loglevel'), 
+        osrf.conf.get_no_ex('syslog'),
+        osrf.conf.get_no_ex('logfile'))
 
     # connect to the opensrf network
-    network = osrfNetwork(
-        host=osrfConfigValue('domains.domain'),
-        port=osrfConfigValue('port'),
-        username=osrfConfigValue('username'), 
-        password=osrfConfigValue('passwd'))
-    network.setRecvCallback(osrfPushStack)
-    osrfSetNetworkHandle(network)
+    network = Network(
+        host = osrf.conf.get('domains.domain'),
+        port = osrf.conf.get('port'),
+        username = osrf.conf.get('username'), 
+        password = osrf.conf.get('passwd'))
+    network.set_receive_callback(osrf.stack.push)
+    osrf.net.set_network_handle(network)
     network.connect()
 
     # load the domain-wide settings file
-    osrfLoadSettings(osrfConfigValue('domains.domain'))
-
-
-
-
+    osrf.set.load(osrf.conf.get('domains.domain'))
 
