@@ -1,4 +1,7 @@
 import xml.dom.minidom
+import osrf.json
+from xml.sax import handler, make_parser, saxutils
+import urllib, re
 
 def xml_file_to_object(filename):
     """Turns the contents of an XML file into a Python object"""
@@ -77,5 +80,69 @@ def __append_child_node(obj, node_name, child_name, sub_obj):
             # it a list and append the current node
             val = obj[node_name][child_name]
             obj[node_name][child_name] = [ val, sub_obj[child_name] ]
+
+
+
+class XMLFlattener(handler.ContentHandler):
+    ''' Turns an XML string into a flattened dictionary of properties.
+
+        Example <doc><a><b>text1</b></a><c>text2</c><c>text3</c></doc> becomes
+        {
+            'doc.a.b' : 'text1',
+            'doc.c' : ['text2', 'text3']
+        }
+    '''
+
+    reg = re.compile('^\s*$')
+    class Handler(handler.ContentHandler):
+        def __init__(self):
+            self.result = {}
+            self.elements = []
+    
+        def startElement(self, name, attrs):
+            self.elements.append(name)
+
+        def characters(self, chars):
+            text = urllib.unquote_plus(chars)
+            if re.match(XMLFlattener.reg, text):
+                return
+            key = ''
+            for elm in self.elements:
+                key += elm + '.'
+            key = key[:-1]
+            
+            if key in self.result:
+                data = self.result[key]
+                if isinstance(data, list):
+                    data.append(text)
+                else:
+                    data = [data, text]
+                self.result[key] = data
+            else:
+                self.result[key] = text
+
+            
+        def endElement(self, name):
+            self.elements.pop()
+
+
+    def __init__(self, xml_str):
+        self.xml_str = xml_str
+
+    def parse(self):
+        ''' Parses the XML string and returns the dict of keys/values '''
+        sax_handler = XMLFlattener.Handler()
+        parser = make_parser()
+        parser.setContentHandler(sax_handler)
+        try:
+            import StringIO
+            parser.parse(StringIO.StringIO(self.xml_str))
+        except Exception, e:
+            osrf.log.log_error('Error parsing XML: %s' % unicode(e))
+            raise e
+
+        return sax_handler.result
+
+
 
 
