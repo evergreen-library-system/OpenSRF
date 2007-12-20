@@ -317,3 +317,56 @@ def AtomicRequest(service, method, *args):
 
 
 
+class MultiSession(object):
+    ''' Manages multiple requests.  With the current implementation, a 1 second 
+        lag time before the first response is practically guaranteed.  Use 
+        only for long running requests.
+
+        Another approach would be a threaded version, but that would require
+        build-up and breakdown of thread-specific xmpp connections somewhere.
+        conection pooling? 
+    '''
+    class Container(object):
+        def __init__(self, req):
+            self.req = req
+            self.id = None
+
+    def __init__(self):
+        self.complete = False
+        self.reqs = []
+
+    def request(self, service, method, *args):
+        ses = ClientSession(service)
+        cont = MultiSession.Container(ses.request(method, *args))
+        cont.id = len(self.reqs)
+        self.reqs.append(cont)
+
+    def recv(self, timeout=10):
+        ''' Returns a tuple of req_id, response '''
+        duration = 0
+        block_time = 1
+        while True:
+            for i in range(0, len(self.reqs)):
+                cont = self.reqs[i]
+                req = cont.req
+
+                res = req.recv(0)
+                if i == 0 and not res:
+                    res = req.recv(block_time)
+
+                if res: break
+
+            if res: break
+
+            duration += block_time
+            if duration >= timeout:
+                return None
+
+        if req.complete:
+            self.reqs.pop(self.reqs.index(cont))
+
+        if len(self.reqs) == 0:
+            self.complete = True
+
+        return cont.id, res.content()
+
