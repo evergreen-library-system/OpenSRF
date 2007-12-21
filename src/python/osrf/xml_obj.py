@@ -98,6 +98,7 @@ class XMLFlattener(handler.ContentHandler):
         def __init__(self):
             self.result = {}
             self.elements = []
+            self.use_json = None
     
         def startElement(self, name, attrs):
             self.elements.append(name)
@@ -112,26 +113,39 @@ class XMLFlattener(handler.ContentHandler):
             key = key[:-1]
             
             if key in self.result:
-                data = self.result[key]
+                data = self._decode(self.result[key])
                 if isinstance(data, list):
                     data.append(text)
                 else:
                     data = [data, text]
-                self.result[key] = data
+                self.result[key] = self._encode(data)
             else:
-                self.result[key] = text
+                self.result[key] = self._encode(text)
 
             
         def endElement(self, name):
             self.elements.pop()
 
+        def _decode(self, string):
+            if self.use_json:
+                return osrf.json.to_object(string)
+            return string
 
-    def __init__(self, xml_str):
+        def _encode(self, obj):
+            if self.use_json:
+                return osrf.json.to_json(obj)
+            return obj
+            
+
+
+    def __init__(self, xml_str, encode_as_json=False):
         self.xml_str = xml_str
+        self.use_json = encode_as_json
 
     def parse(self):
         ''' Parses the XML string and returns the dict of keys/values '''
         sax_handler = XMLFlattener.Handler()
+        sax_handler.use_json = self.use_json
         parser = make_parser()
         parser.setContentHandler(sax_handler)
         try:
