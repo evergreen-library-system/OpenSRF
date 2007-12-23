@@ -8,7 +8,7 @@ import osrf.conf
 import osrf.set
 import sys
 from osrf.const import OSRF_MESSAGE_TYPE_DISCONNECT, OSRF_STATUS_CONTINUE, \
-    OSRF_STATUS_TIMEOUT, OSRF_MESSAGE_TYPE_STATUS,
+    OSRF_STATUS_TIMEOUT, OSRF_MESSAGE_TYPE_STATUS
 import osrf.net
 import osrf.log
 

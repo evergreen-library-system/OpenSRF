@@ -1,12 +1,10 @@
 # TOP level 'src' makefile for OpenSRF
 
-
 export TMPDIR	= $(TMP)/opensrf
 export OPENSRF	= opensrf
 export BINDIR	= $(PREFIX)/bin
 export LIBDIR	= $(PREFIX)/lib
 export PERLDIR	= $(LIBDIR)/perl5
-export PYTHON25DIR	= $(LIBDIR)/python25
 export JSDIR	= $(LIBDIR)/javascript
 export INCLUDEDIR= $(PREFIX)/include
 
@@ -34,7 +32,7 @@ install: 	install-prep \
 		jserver-install \
 		javascript-install \
 		perl-install \
-		python25-install \
+		python-install \
 		java-install
 
 
@@ -81,7 +79,6 @@ install-prep:
 	mkdir -p $(BINDIR)
 	mkdir -p $(JSDIR)
 	mkdir -p $(PERLDIR)
-	mkdir -p $(PYTHON25DIR)
 	mkdir -p $(INCLUDEDIR)
 	mkdir -p $(ETCDIR)
 
@@ -125,9 +122,8 @@ perl-install:	install-prep
 	@echo $@
 	cp -r perlmods/* $(PERLDIR)/
 
-python25-install:	install-prep
-	@echo $@
-	cp -r python/* $(PYTHON25DIR)/
+python-install:
+	make -C python install
 
 java-install:
 	if [ -n "$(OSRF_INSTALL_JAVA)" ]; then echo $@; cd java && . deps.inc && make install; fi;
@@ -143,6 +139,7 @@ clean:
 	make -C srfsh clean
 	make -C c-apps clean
 	make -C java clean
+	make -C python clean
 	/bin/rm -rf $(TMPDIR) *.o
 
 
