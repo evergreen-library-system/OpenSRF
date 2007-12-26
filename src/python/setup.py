@@ -5,7 +5,7 @@ import os, os.path
 dir = os.path.dirname(__file__)
 
 setup(name='OpenSRF',
-    version='1.2',
+    version='1.0',
 # requires is not actually implemented in distutils
 #    requires=['memcache', 'pyxmpp', 'simplejson'],
     description='OpenSRF Python Modules',
