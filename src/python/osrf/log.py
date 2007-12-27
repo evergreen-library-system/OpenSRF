@@ -128,7 +128,7 @@ def __log_file(msg):
     try:
         logfile = open(LOG_FILE, 'a')
     except:
-        sys.stderr.write("cannot open log file for writing: %s\n", LOG_FILE)
+        sys.stderr.write("cannot open log file for writing: %s\n" % LOG_FILE)
         LOG_TYPE = OSRF_LOG_TYPE_STDERR
         return
     try:
