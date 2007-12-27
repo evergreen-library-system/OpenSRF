@@ -37,6 +37,7 @@ class CacheClient(object):
         global defaultTimeout
         if timeout is None:
             timeout = defaultTimeout
+        timeout = int(timeout)
         json = to_json(val)
         osrf.log.log_internal("cache: %s => %s" % (str(key), json))
         return self.client.set(str(key), json, timeout)
