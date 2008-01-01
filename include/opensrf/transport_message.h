@@ -28,7 +28,7 @@ struct transport_message_struct {
 	char* router_to;
 	char* router_class;
 	char* router_command;
-   char* osrf_xid;
+	char* osrf_xid;
 	int is_error;
 	char* error_type;
 	int error_code;
@@ -42,16 +42,17 @@ typedef struct transport_message_struct transport_message;
 // within this method.
 // Returns NULL on error
 // ---------------------------------------------------------------------------------
-transport_message* message_init( char* body, char* subject, 
-		char* thread, char* recipient, char* sender );
+transport_message* message_init( const char* body, const char* subject, 
+		const char* thread, const char* recipient, const char* sender );
 
 transport_message* new_message_from_xml( const char* msg_xml );
 
 
-void message_set_router_info( transport_message* msg, char* router_from,
-		char* router_to, char* router_class, char* router_command, int broadcast_enabled );
+void message_set_router_info( transport_message* msg, const char* router_from,
+		const char* router_to, const char* router_class, const char* router_command,
+		int broadcast_enabled );
 
-void message_set_osrf_xid( transport_message* msg, char* osrf_xid );
+void message_set_osrf_xid( transport_message* msg, const char* osrf_xid );
 
 // ---------------------------------------------------------------------------------
 // Formats the Jabber message as XML for encoding. 
@@ -93,7 +94,7 @@ void jid_get_resource( const char* jid, char buf[], int size );
 /** Puts the domain portion of the given jid into the pre-allocated buffer */
 void jid_get_domain( const char* jid, char buf[], int size );
 
-void set_msg_error( transport_message*, char* error_type, int error_code);
+void set_msg_error( transport_message*, const char* error_type, int error_code);
 
 
 #endif
