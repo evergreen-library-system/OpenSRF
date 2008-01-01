@@ -58,7 +58,7 @@ int osrf_prefork_run(char* appname) {
 
 	char* resc = va_list_to_string("%s_listener", appname);
 
-	if(!osrf_system_bootstrap_client_resc( NULL, NULL, resc )) {
+	if(!osrfSystemBootstrapClientResc( NULL, NULL, resc )) {
 		osrfLogError( OSRF_LOG_MARK, "Unable to bootstrap client for osrf_prefork_run()");
 		free(resc);
 		return -1;
@@ -137,7 +137,7 @@ int prefork_child_init_hook(prefork_child* child) {
 	 * so we can have our own */
 	osrfSystemIgnoreTransportClient();
 
-	if(!osrf_system_bootstrap_client_resc( NULL, NULL, resc)) {
+	if(!osrfSystemBootstrapClientResc( NULL, NULL, resc)) {
 		osrfLogError( OSRF_LOG_MARK, "Unable to bootstrap client for osrf_prefork_run()");
 		free(resc);
 		return -1;
