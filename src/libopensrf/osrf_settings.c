@@ -36,12 +36,12 @@ int osrf_settings_retrieve(const char* hostname) {
 
 	if(!config) {
 
-		osrf_app_session* session = osrf_app_client_session_init("opensrf.settings");
+		osrfAppSession* session = osrf_app_client_session_init("opensrf.settings");
 		jsonObject* params = jsonNewObject(NULL);
 		jsonObjectPush(params, jsonNewObject(hostname));
-		int req_id = osrf_app_session_make_req( 
+		int req_id = osrfAppSessionMakeRequest( 
 			session, params, "opensrf.settings.host_config.get", 1, NULL );
-		osrf_message* omsg = osrf_app_session_request_recv( session, req_id, 60 );
+		osrf_message* omsg = osrfAppSessionRequestRecv( session, req_id, 60 );
 		jsonObjectFree(params);
 
 		if(!omsg) {
@@ -61,7 +61,7 @@ int osrf_settings_retrieve(const char* hostname) {
 		}
 
 		osrf_app_session_request_finish( session, req_id );
-		osrf_app_session_destroy( session );
+		osrfAppSessionFree( session );
 
 		if(!config) {
 			osrfLogError( OSRF_LOG_MARK, "Unable to load config for host %s", hostname);
