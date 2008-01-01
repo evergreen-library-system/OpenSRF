@@ -115,7 +115,7 @@ int main( int argc, char* argv[] ) {
 	load_history();
 
 
-	client = osrf_system_get_transport_client();
+	client = osrfSystemGetTransportClient();
 
 	/* main process loop */
 	int newline_needed = 1;  /* used as boolean */
@@ -567,7 +567,7 @@ int send_request( char* server,
 		return 1;
 	}
 
-	osrf_app_session* session = osrf_app_client_session_init(server);
+	osrfAppSession* session = osrf_app_client_session_init(server);
 
 	if(!osrf_app_session_connect(session)) {
 		osrfLogWarning( OSRF_LOG_MARK,  "Unable to connect to remote service %s\n", server );
@@ -575,11 +575,11 @@ int send_request( char* server,
 	}
 
 	double start = get_timestamp_millis();
-	//int req_id = osrf_app_session_make_request( session, params, method, 1, NULL );
-	int req_id = osrf_app_session_make_req( session, params, method, 1, NULL );
+
+	int req_id = osrfAppSessionMakeRequest( session, params, method, 1, NULL );
 
 
-	osrf_message* omsg = osrf_app_session_request_recv( session, req_id, recv_timeout );
+	osrf_message* omsg = osrfAppSessionRequestRecv( session, req_id, recv_timeout );
 
 	if(!omsg) 
 		printf("\nReceived no data from server\n");
@@ -674,7 +674,7 @@ int send_request( char* server,
 		}
 
 
-		omsg = osrf_app_session_request_recv( session, req_id, recv_timeout );
+		omsg = osrfAppSessionRequestRecv( session, req_id, recv_timeout );
 
 	}
 
@@ -694,7 +694,7 @@ int send_request( char* server,
 
 	osrf_app_session_request_finish( session, req_id );
 	osrf_app_session_disconnect( session );
-	osrf_app_session_destroy( session );
+	osrfAppSessionFree( session );
 
 
 	return 1;
@@ -830,7 +830,7 @@ static int handle_math( char* words[] ) {
 
 static int do_math( int count, int style ) {
 
-	osrf_app_session* session = osrf_app_client_session_init(  "opensrf.math" );
+	osrfAppSession* session = osrf_app_client_session_init(  "opensrf.math" );
 	osrf_app_session_connect(session);
 
 	jsonObject* params = jsonParseString("[]");
@@ -863,8 +863,8 @@ static int do_math( int count, int style ) {
 			++running;
 
 			double start = get_timestamp_millis();
-			int req_id = osrf_app_session_make_req( session, params, methods[j], 1, NULL );
-			osrf_message* omsg = osrf_app_session_request_recv( session, req_id, 5 );
+			int req_id = osrfAppSessionMakeRequest( session, params, methods[j], 1, NULL );
+			osrf_message* omsg = osrfAppSessionRequestRecv( session, req_id, 5 );
 			double end = get_timestamp_millis();
 
 			times[(4*i) + j] = end - start;
@@ -898,7 +898,7 @@ static int do_math( int count, int style ) {
 			osrf_app_session_disconnect( session );
 	}
 
-	osrf_app_session_destroy( session );
+	osrfAppSessionFree( session );
 	jsonObjectFree(params);
 
 	int c;
