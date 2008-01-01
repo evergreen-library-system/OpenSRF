@@ -168,7 +168,7 @@ static jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClas
 	return newObj;
 }
 
-jsonObject* jsonParseFile( char* filename ) {
+jsonObject* jsonParseFile( const char* filename ) {
 	if(!filename) return NULL;
 	char* data = file_to_string(filename);
 	jsonObject* o = jsonParseString(data);
