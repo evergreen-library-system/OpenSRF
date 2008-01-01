@@ -217,7 +217,7 @@ osrfAppSession* osrf_app_client_session_init( const char* remote_service ) {
 
 	osrfAppSession* session = safe_malloc(sizeof(osrfAppSession));
 
-	session->transport_handle = osrf_system_get_transport_client();
+	session->transport_handle = osrfSystemGetTransportClient();
 	if( session->transport_handle == NULL ) {
 		osrfLogWarning( OSRF_LOG_MARK, "No transport client for service 'client'");
 		free( session );
@@ -306,7 +306,7 @@ osrfAppSession* osrf_app_server_session_init(
 
 	session = safe_malloc(sizeof(osrfAppSession));
 
-	session->transport_handle = osrf_system_get_transport_client();
+	session->transport_handle = osrfSystemGetTransportClient();
 	if( session->transport_handle == NULL ) {
 		osrfLogWarning( OSRF_LOG_MARK, "No transport client for service '%s'", our_app );
 		return NULL;
