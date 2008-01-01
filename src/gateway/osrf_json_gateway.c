@@ -138,7 +138,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	osrfLogDebug(OSRF_LOG_MARK, "osrf gateway: entered request handler");
 
 	/* verify we are connected */
-	if( !bootstrapped || !osrf_system_get_transport_client()) {
+	if( !bootstrapped || !osrfSystemGetTransportClient()) {
 		ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Cannot process request "
 				"because the OpenSRF JSON gateway has not been bootstrapped...");
 		usleep( 100000 ); /* 100 milliseconds */
@@ -263,7 +263,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 			while( (str = osrfStringArrayGetString(mparams, i++)) ) 
 				jsonObjectPush(arr, parseJSONFunc(str));
 
-			req_id = osrf_app_session_make_req( session, arr, method, api_level, NULL );
+			req_id = osrfAppSessionMakeRequest( session, arr, method, api_level, NULL );
 		} else {
 
 			/**
@@ -278,7 +278,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 					jsonObjectPush(jsonParams, jsonXMLToJSONObject(str));
 				}
 
-				req_id = osrf_app_session_make_req( session, jsonParams, method, api_level, NULL );
+				req_id = osrfAppSessionMakeRequest( session, jsonParams, method, api_level, NULL );
 				jsonObjectFree(jsonParams);
 			}
 		}
@@ -411,7 +411,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		else
 			ap_rputs( "}", r ); /* finish off the object */
 
-		osrf_app_session_destroy(session);
+		osrfAppSessionFree(session);
 	}
 
 	osrfLogInfo(OSRF_LOG_MARK, "Completed processing service=%s, method=%s", service, method);
