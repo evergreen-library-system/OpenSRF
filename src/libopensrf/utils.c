@@ -408,9 +408,7 @@ char* uescape( const char* string, int size, int full_escape ) {
 		idx++;
 	}
 
-	char* d = buffer_data(buf);
-	buffer_free(buf);
-	return d;
+	return buffer_release(buf);
 }
 
 
@@ -469,6 +467,7 @@ char* file_to_string(const char* filename) {
 	FILE* file = fopen(filename, "r");
 	if(!file) {
 		osrfLogError( OSRF_LOG_MARK, "Unable to open file [%s]", filename );
+		buffer_free(gb);
 		return NULL;
 	}
 
@@ -479,9 +478,7 @@ char* file_to_string(const char* filename) {
 
 	fclose(file);
 
-	char* data = buffer_data(gb);
-	buffer_free(gb);
-	return data;
+	return buffer_release(gb);
 }
 
 
