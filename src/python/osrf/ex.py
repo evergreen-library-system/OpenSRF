@@ -27,10 +27,10 @@ class OSRFException(Exception):
 
 class NetworkException(OSRFException):
     def __str__(self):
-        str = "\nUnable to communicate with the OpenSRF network"
+        msg = "\nUnable to communicate with the OpenSRF network"
         if self.info:
-            str = str + '\n' + repr(self.info)
-        return str
+            msg = msg + '\n' + unicode(self.info)
+        return msg
 
 class OSRFProtocolException(OSRFException):
     """Raised when something happens during opensrf network stack processing."""
