@@ -22,38 +22,31 @@ int osrf_prefork_run(char* appname) {
 	int maxr = 1000; 
 	int maxc = 10;
 	int minc = 3;
+    int kalive = 5;
 
 	osrfLogInfo( OSRF_LOG_MARK, "Loading config in osrf_forker for app %s", appname);
 
-	jsonObject* max_req = osrf_settings_host_value_object("/apps/%s/unix_config/max_requests", appname);
-	jsonObject* min_children = osrf_settings_host_value_object("/apps/%s/unix_config/min_children", appname);
-	jsonObject* max_children = osrf_settings_host_value_object("/apps/%s/unix_config/max_children", appname);
-
+	char* max_req = osrf_settings_host_value("/apps/%s/unix_config/max_requests", appname);
+	char* min_children = osrf_settings_host_value("/apps/%s/unix_config/min_children", appname);
+	char* max_children = osrf_settings_host_value("/apps/%s/unix_config/max_children", appname);
 	char* keepalive	= osrf_settings_host_value("/apps/%s/keepalive", appname);
-	time_t kalive;
-	if( keepalive ) {
-		kalive = atoi(keepalive);
-		free(keepalive);
-	} else {
-		kalive = 5; /* give it a default */
-	}
 
-	osrfLogInfo(OSRF_LOG_MARK, "keepalive setting = %d seconds", kalive);
+	if(!keepalive) osrfLogWarning( OSRF_LOG_MARK, "Keepalive is not defined, assuming %d", kalive);
+	else kalive = atoi(keepalive);
 
+	if(!max_req) osrfLogWarning( OSRF_LOG_MARK, "Max requests not defined, assuming %d", maxr);
+	else maxr = atoi(max_req);
 
-	
-	if(!max_req) osrfLogWarning( OSRF_LOG_MARK, "Max requests not defined, assuming 1000");
-	else maxr = (int) jsonObjectGetNumber(max_req);
+	if(!min_children) osrfLogWarning( OSRF_LOG_MARK, "Min children not defined, assuming %d", minc);
+	else minc = atoi(min_children);
 
-	if(!min_children) osrfLogWarning( OSRF_LOG_MARK, "Min children not defined, assuming 3");
-	else minc = (int) jsonObjectGetNumber(min_children);
+	if(!max_children) osrfLogWarning( OSRF_LOG_MARK, "Max children not defined, assuming %d", maxc);
+	else maxc = atoi(max_children);
 
-	if(!max_children) osrfLogWarning( OSRF_LOG_MARK, "Max children not defined, assuming 10");
-	else maxc = (int) jsonObjectGetNumber(max_children);
-
-	jsonObjectFree(max_req);
-	jsonObjectFree(min_children);
-	jsonObjectFree(max_children);
+    free(keepalive);
+	free(max_req);
+	free(min_children);
+	free(max_children);
 	/* --------------------------------------------------- */
 
 	char* resc = va_list_to_string("%s_listener", appname);
