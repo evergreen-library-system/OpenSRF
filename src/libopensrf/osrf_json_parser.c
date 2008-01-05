@@ -349,21 +349,29 @@ int _jsonParserHandleNumber( jsonParserContext* ctx ) {
 		return 1;
 	}
 
-	/* make me more strict */
-	char* err = NULL;
-	double d = strtod(ctx->buffer->buf, &err);
-	if(err && err[0] != '\0') 
-		return _jsonParserError(ctx, "Invalid number sequence");
+	if(ctx->handler->handleNumber)
+	{
+		if( jsonIsNumeric( ctx->buffer->buf ) )
+			ctx->handler->handleNumber( ctx->userData, ctx->buffer->buf );
+		else {
+			// The number string is not numeric according to JSON rules.
+			// Scrub it into an acceptable format.
+
+			char* scrubbed = jsonScrubNumber( ctx->buffer->buf );
+			if( !scrubbed )
+				return _jsonParserError(ctx, "Invalid number sequence");
+			else {
+				ctx->handler->handleNumber( ctx->userData, scrubbed );
+				free( scrubbed );
+			}
+		}
+	}
+	
+	ctx->index--; /* scooch back to the first non-digit number */
 	JSON_STATE_REMOVE(ctx, JSON_STATE_IN_NUMBER);
 	OSRF_BUFFER_RESET(ctx->buffer);
-	if(ctx->handler->handleNumber)
-		ctx->handler->handleNumber( ctx->userData, d );
-	ctx->index--; /* scooch back to the first non-digit number */
 	return 0;
 }
-
-
-
 
 int jsonParseChunk( jsonParserContext* ctx, const char* data, int datalen, int flags ) {
 
@@ -638,9 +646,10 @@ void _jsonHandleBool(void* ctx, int boolval) {
 	_jsonInsertParserItem(p, obj);
 }
 
-void _jsonHandleNumber(void* ctx, double num) {
+void _jsonHandleNumber(void* ctx, const char* numstr) {
+	jsonObject* obj = jsonNewNumberStringObject(numstr);
 	jsonInternalParser* p = (jsonInternalParser*) ctx;
-	_jsonInsertParserItem(p, jsonNewNumberObject(num));
+	_jsonInsertParserItem(p, obj);
 }
 
 void _jsonHandleError(void* ctx, char* str, ...) {

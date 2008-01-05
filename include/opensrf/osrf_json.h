@@ -94,7 +94,7 @@ struct jsonParserHandlerStruct {
 	void (*handleNull)			(void* userData);
 	void (*handleString)			(void* userData, char* string);
 	void (*handleBool)			(void* userData, int boolval);
-	void (*handleNumber)			(void* userData, double num);
+	void (*handleNumber)		(void* userData, const char* numstr);
 	void (*handleError)			(void* userData, char* err, ...);
 };
 typedef struct jsonParserHandlerStruct jsonParserHandler;
@@ -185,10 +185,14 @@ jsonObject* jsonNewObjectFmt(const char* data, ...);
 jsonObject* jsonNewObjectType(int type);
 
 /**
- * Creates a new number object
+ * Creates a new number object from a double
  */
 jsonObject* jsonNewNumberObject( double num );
 
+/**
+ * Creates a new number object from a numeric string
+ */
+jsonObject* jsonNewNumberStringObject( const char* numstr );
 
 /**
  * Creates a new json bool
@@ -297,6 +301,7 @@ void jsonObjectSetString(jsonObject* dest, const char* string);
 
 /* sets the number value for the object */
 void jsonObjectSetNumber(jsonObject* dest, double num);
+int jsonObjectSetNumberString(jsonObject* dest, const char* string);
 
 /* sets the class hint for this object */
 void jsonObjectSetClass(jsonObject* dest, const char* classname );
@@ -319,7 +324,26 @@ jsonObject* jsonObjectClone( const jsonObject* o );
 	*/
 char* jsonObjectToSimpleString( const jsonObject* o );
 
+/**
+ Allocate a buffer and format a specified numeric value into it,
+ with up to 30 decimal digits of precision.   Caller is responsible
+ for freeing the buffer.
+ **/
+char* doubleToString( double num );
 
+/**
+ Return 1 if the string is numeric, otherwise return 0.
+ This validation follows the rules defined by the grammar at:
+ http://www.json.org/
+ **/
+int jsonIsNumeric( const char* s );
+
+/**
+ Allocate and reformat a numeric string into one that is valid
+ by JSON rules.  If the string is not numeric, return NULL.
+ Caller is responsible for freeing the buffer.
+ **/
+char* jsonScrubNumber( const char* s );
 
 /* provides an XPATH style search interface (e.g. /some/node/here) and 
 	return the object at that location if one exists.  Naturally,  
