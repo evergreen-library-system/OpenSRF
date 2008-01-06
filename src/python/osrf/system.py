@@ -15,14 +15,17 @@
 
 from osrf.conf import Config, get, get_no_ex
 from osrf.net import Network, set_network_handle, get_network_handle
-import osrf.stack
-import osrf.log
-import osrf.set
+import osrf.stack, osrf.log, osrf.set, osrf.cache
 import sys
 
 
-def connect(configFile, configContext):
-    """ Connects to the opensrf network """
+def connect(configFile, configContext, init_cache=False):
+    """ Connects to the opensrf network 
+        @param configFile The OpenSRF config
+        @param configContext The path to the configuration element in the XML config.
+            e.g. 'config.opensrf'
+        @param init_cache If true, connect to the cache servers
+    """
 
     if get_network_handle():
         ''' This thread already has a handle '''
@@ -44,10 +47,25 @@ def connect(configFile, configContext):
         port = osrf.conf.get('port'),
         username = osrf.conf.get('username'), 
         password = osrf.conf.get('passwd'))
+
     network.set_receive_callback(osrf.stack.push)
     osrf.net.set_network_handle(network)
     network.connect()
 
     # load the domain-wide settings file
     osrf.set.load(osrf.conf.get('domains.domain'))
+
+    if init_cache:
+        connect_cache()
+
+
+def connect_cache():
+    ''' Initializes the cache connections '''
+    cache_servers = osrf.set.get('cache.global.servers.server')
+    if cache_servers:
+        if not isinstance(cache_servers, list):
+            cache_servers = [cache_servers]
+        if not osrf.cache.CacheClient.get_client():
+            osrf.cache.CacheClient.connect(cache_servers)
+
 
