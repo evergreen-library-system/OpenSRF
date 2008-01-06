@@ -20,17 +20,14 @@
 class OSRFException(Exception):
     """Root class for exceptions."""
     def __init__(self, info=None):
-        self.info = info;
+        self.msg = '%s: %s' % (self.__class__.__name__, info)
     def __str__(self):
-        return self.info
+        return self.msg
 
 
 class NetworkException(OSRFException):
-    def __str__(self):
-        msg = "\nUnable to communicate with the OpenSRF network"
-        if self.info:
-            msg = msg + '\n' + unicode(self.info)
-        return msg
+    def __init__(self):
+        OSRFException.__init__('Error communicating with the OpenSRF network')
 
 class OSRFProtocolException(OSRFException):
     """Raised when something happens during opensrf network stack processing."""
