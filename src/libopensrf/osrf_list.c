@@ -1,19 +1,28 @@
 #include <opensrf/osrf_list.h>
 
+#define OSRF_LIST_DEFAULT_SIZE 48 /* most opensrf lists are small... */
+#define OSRF_LIST_INC_SIZE 256
+//#define OSRF_LIST_MAX_SIZE 10240
+
 osrfList* osrfNewList() {
-	osrfList* list;
-	OSRF_MALLOC(list, sizeof(osrfList));
-	list->arrsize	= OSRF_LIST_DEFAULT_SIZE;
-	OSRF_MALLOC(list->arrlist, list->arrsize * sizeof(void*));
-	return list;
+	return osrfNewListSize( OSRF_LIST_DEFAULT_SIZE );
 }
 
 osrfList* osrfNewListSize( unsigned int size ) {
 	osrfList* list;
 	OSRF_MALLOC(list, sizeof(osrfList));
+	list->size = 0;
+	list->freeItem = NULL;
     if( size <= 0 ) size = 16;
 	list->arrsize	= size;
 	OSRF_MALLOC( list->arrlist, list->arrsize * sizeof(void*) );
+
+	// Nullify all pointers in the array
+
+	int i;
+	for( i = 0; i < list->arrsize; ++i )
+		list->arrlist[ i ] = NULL;
+	
 	return list;
 }
 
@@ -36,17 +45,22 @@ int osrfListPushFirst( osrfList* list, void* item ) {
 void* osrfListSet( osrfList* list, void* item, unsigned int position ) {
 	if(!list || position < 0) return NULL;
 
-	int i;
 	int newsize = list->arrsize;
-	void** newarr;
 
 	while( position >= newsize ) 
 		newsize += OSRF_LIST_INC_SIZE;
 
 	if( newsize > list->arrsize ) { /* expand the list if necessary */
+		void** newarr;
 		OSRF_MALLOC(newarr, newsize * sizeof(void*));
-		for( i = 0; i < list->arrsize; i++ ) 
+
+		// Copy the old pointers, and nullify the new ones
+		
+		int i;
+		for( i = 0; i < list->arrsize; i++ )
 			newarr[i] = list->arrlist[i];
+		for( ; i < newsize; i++ )
+			newarr[i] = NULL;
 		free(list->arrlist);
 		list->arrlist = newarr;
 		list->arrsize = newsize;

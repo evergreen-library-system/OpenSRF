@@ -26,7 +26,6 @@ int osrf_system_bootstrap_client( char* config_file, char* contextnode );
   @return 1 on successs, 0 on failure.
   */
 int osrfSystemBootstrapClientResc( char* configFile, char* contextNode, char* resource );
-int osrf_system_bootstrap_client_resc( char* config_file, char* contextnode, char* resource );
 
 /**
   Bootstrap the server.
@@ -39,7 +38,6 @@ int osrf_system_bootstrap_client_resc( char* config_file, char* contextnode, cha
 int osrfSystemBootstrap( char* hostName, char* configfile, char* contextNode );
 
 transport_client* osrfSystemGetTransportClient( void );
-transport_client* osrf_system_get_transport_client( void );
 
 /* disconnects and destroys the current client connection */
 int osrf_system_disconnect_client();

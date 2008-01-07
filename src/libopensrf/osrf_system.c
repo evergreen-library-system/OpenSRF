@@ -34,18 +34,9 @@ void osrfSystemIgnoreTransportClient() {
 	osrfGlobalTransportClient = NULL;
 }
 
-transport_client* osrf_system_get_transport_client( void ) {
-	return osrfGlobalTransportClient;
-}
-
 int osrf_system_bootstrap_client( char* config_file, char* contextnode ) {
-	return osrf_system_bootstrap_client_resc(config_file, contextnode, NULL);
+	return osrfSystemBootstrapClientResc(config_file, contextnode, NULL);
 }
-
-int osrfSystemBootstrapClientResc( char* config_file, char* contextnode, char* resource ) {
-	return osrf_system_bootstrap_client_resc( config_file, contextnode, resource );
-}
-
 
 static int _osrfSystemInitCache( void ) {
 
@@ -295,7 +286,7 @@ static ChildNode* seek_child( pid_t pid ) {
 /*----------- End of routines to manage list of children --*/
 
 
-int osrf_system_bootstrap_client_resc( char* config_file, char* contextnode, char* resource ) {
+int osrfSystemBootstrapClientResc( char* config_file, char* contextnode, char* resource ) {
 
 	int failure = 0;
 

@@ -39,7 +39,6 @@ struct osrf_app_request_struct {
 		timeout and set this variable back to false */
 	int reset_timeout;
 };
-typedef struct osrf_app_request_struct osrf_app_request;
 typedef struct osrf_app_request_struct osrfAppRequest;
 
 struct osrf_app_session_struct {
@@ -116,10 +115,6 @@ int osrfAppSessionMakeRequest(
 		osrfAppSession* session, const jsonObject* params,
 		const char* method_name, int protocol, string_array* param_strings);
 
-int osrf_app_session_make_req( 
-		osrfAppSession* session, const jsonObject* params,
-		const char* method_name, int protocol, string_array* param_strings);
-
 /** Sets the given request to complete state */
 void osrf_app_session_set_complete( osrfAppSession* session, int request_id );
 
@@ -128,8 +123,6 @@ int osrf_app_session_request_complete( const osrfAppSession* session, int reques
 
 /** Does a recv call on the given request */
 osrf_message* osrfAppSessionRequestRecv(
-		osrfAppSession* session, int request_id, int timeout );
-osrf_message* osrf_app_session_request_recv( 
 		osrfAppSession* session, int request_id, int timeout );
 
 /** Removes the request from the request set and frees the reqest */
@@ -167,9 +160,8 @@ int osrf_app_session_queue_wait( osrfAppSession*, int timeout, int* recvd );
 
 /** Disconnects (if client), frees any attached app_reuqests, removes the session from the 
   * global session cache and frees the session.  Needless to say, only call this when the
-  * session is completey done.
+  * session is completely done.
   */
-void osrf_app_session_destroy ( osrfAppSession* );
 void osrfAppSessionFree( osrfAppSession* );
 
 /* tells the request to reset it's wait timeout */

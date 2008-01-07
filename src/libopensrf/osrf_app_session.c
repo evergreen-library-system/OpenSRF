@@ -374,14 +374,6 @@ int osrfAppSessionMakeRequest(
 			method_name, protocol, param_strings, NULL );
 }
 
-int osrf_app_session_make_req(
-		osrfAppSession* session, const jsonObject* params,
-		const char* method_name, int protocol, string_array* param_strings) {
-
-	return osrfAppSessionMakeLocaleRequest(session, params,
-			method_name, protocol, param_strings, NULL);
-}
-
 static int osrfAppSessionMakeLocaleRequest(
 		osrfAppSession* session, const jsonObject* params, const char* method_name,
 		int protocol, string_array* param_strings, char* locale ) {
@@ -635,12 +627,7 @@ int osrf_app_session_queue_wait( osrfAppSession* session, int timeout, int* recv
 /** Disconnects (if client) and removes the given session from the global session cache 
   * ! This free's all attached app_requests ! 
   */
-void osrfAppSessionFree( osrfAppSession* ses ) {
-	osrf_app_session_destroy( ses );
-}
-
-
-void osrf_app_session_destroy( osrfAppSession* session ){
+void osrfAppSessionFree( osrfAppSession* session ){
 	if(session == NULL) return;
 
 	osrfLogDebug(OSRF_LOG_MARK,  "AppSession [%s] [%s] destroying self and deleting requests", 
@@ -657,10 +644,6 @@ void osrf_app_session_destroy( osrfAppSession* session ){
 }
 
 osrf_message* osrfAppSessionRequestRecv(
-		osrfAppSession* session, int req_id, int timeout ) {
-	return osrf_app_session_request_recv( session, req_id, timeout );
-}
-osrf_message* osrf_app_session_request_recv( 
 		osrfAppSession* session, int req_id, int timeout ) {
 	if(req_id < 0 || session == NULL)
 		return NULL;

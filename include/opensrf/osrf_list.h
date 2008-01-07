@@ -3,11 +3,6 @@
 
 #include <opensrf/utils.h>
 
-#define OSRF_LIST_DEFAULT_SIZE 48 /* most opensrf lists are small... */
-#define OSRF_LIST_INC_SIZE 256
-#define OSRF_LIST_MAX_SIZE 10240
-
-
 #define OSRF_LIST_GET_INDEX(l, i) (!l || i >= l->size) ? NULL: l->arrlist[i]
 
 /**
@@ -16,20 +11,20 @@
   then, it will be used on any item that needs to be freed, so don't mix data
   types in the list if you want magic freeing */
 
-struct __osrfListStruct {
+struct _osrfListStruct {
 	unsigned int size;			/* how many items in the list including NULL items between non-NULL items */	
 	void (*freeItem) (void* item);	/* callback for freeing stored items */
 	void** arrlist;
 	int arrsize; /* how big is the currently allocated array */
 };
-typedef struct __osrfListStruct osrfList;
+typedef struct _osrfListStruct osrfList;
 
 
-struct __osrfListIteratorStruct {
+struct _osrfListIteratorStruct {
 	const osrfList* list;
 	unsigned int current;
 };
-typedef struct __osrfListIteratorStruct osrfListIterator;
+typedef struct _osrfListIteratorStruct osrfListIterator;
 
 osrfList* osrfNewListSize( unsigned int size );
 
@@ -55,9 +50,6 @@ void osrfListIteratorReset( osrfListIterator* itr );
 
 /**
   Allocates a new list
-  @param compress If true, the list will compress empty slots on delete.  If item positionality
-  is not important, then using this feature is reccomended to keep the list from growing indefinitely.
-  if item positionality is not important.
   @return The allocated list
   */
 osrfList* osrfNewList();
@@ -81,7 +73,7 @@ void* osrfListPop( osrfList* list );
 
 /**
   Puts the given item into the list at the specified position.  If there
-  is already an item at the given position and the list has it's 
+  is already an item at the given position and the list has its 
   "freeItem" function defined, then it will be used to free said item.
   If no 'freeItem' callback is defined, then the displaced item will
   be returned;
@@ -123,10 +115,6 @@ void* osrfListRemove( osrfList* list, unsigned int position );
   @return the index of the item, or -1 if the item was not found
   */
 int osrfListFind( const osrfList* list, void* addr );
-
-
-void __osrfListSetSize( osrfList* list );
-
 
 /**
   @return The number of non-null items in the list
