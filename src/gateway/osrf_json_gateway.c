@@ -172,9 +172,9 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	mparams			= apacheGetParamValues( params, "param" ); /* free me */
 
 	if(format == NULL)
-		format = "json";
+		format = strdup( "json" );
 	if(input_format == NULL)
-		input_format = format;
+		input_format = strdup( format );
 
 	/* set the user defined timeout value */
 	int timeout = 60;
@@ -182,10 +182,13 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	if( tout ) {
 		timeout = atoi(tout);
 		osrfLogDebug(OSRF_LOG_MARK, "Client supplied timeout of %d", timeout);
+		free( tout );
 	}
 
-	if (a_l)
+	if (a_l) {
 		api_level = atoi(a_l);
+		free( a_l );
+	}
 
 	if (!strcasecmp(format, "xml")) {
 		isXML = 1;
@@ -194,6 +197,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		ap_set_content_type(r, "text/plain");
 	}
 
+	free( format );
 	int ret = OK;
 
 	/* ----------------------------------------------------------------- */
@@ -285,7 +289,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 
 
 		if( req_id == -1 ) {
-			osrfLogError(OSRF_LOG_MARK, "I am unable to communcate with opensrf..going away...");
+			osrfLogError(OSRF_LOG_MARK, "I am unable to communicate with opensrf..going away...");
 			/* we don't want to spawn an intense re-forking storm 
 			 * if there is no jabber server.. so give it some time before we die */
 			usleep( 100000 ); /* 100 milliseconds */
@@ -417,6 +421,10 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	osrfLogInfo(OSRF_LOG_MARK, "Completed processing service=%s, method=%s", service, method);
 	string_array_destroy(params);
 	string_array_destroy(mparams);
+	free( osrf_locale );
+	free( input_format );
+	free( method );
+	free( service );
 
 	osrfLogDebug(OSRF_LOG_MARK, "Gateway served %d requests", ++numserved);
 	osrfLogClearXid();
