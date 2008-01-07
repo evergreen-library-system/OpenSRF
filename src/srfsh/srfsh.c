@@ -534,7 +534,9 @@ static int handle_request( char* words[], int relay ) {
 			buffer_add(buffer, "]");
 		}
 
-		return send_request( server, method, buffer, relay );
+		int rc = send_request( server, method, buffer, relay );
+		buffer_free( buffer );
+		return rc;
 	} 
 
 	return 0;
