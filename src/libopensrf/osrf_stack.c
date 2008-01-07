@@ -1,13 +1,20 @@
 #include <opensrf/osrf_stack.h>
 #include <opensrf/osrf_application.h>
 
-osrf_message* _do_client( osrf_app_session*, osrf_message* );
-osrf_message* _do_server( osrf_app_session*, osrf_message* );
+/* the max number of oilsMessage blobs present in any one root packet */
+#define OSRF_MAX_MSGS_PER_PACKET 256
+// -----------------------------------------------------------------------------
+
+static int osrf_stack_process( transport_client* client, int timeout, int* msg_received );
+static int osrf_stack_message_handler( osrf_app_session* session, osrf_message* msg );
+static int osrf_stack_application_handler( osrf_app_session* session, osrf_message* msg );
+static osrf_message* _do_client( osrf_app_session*, osrf_message* );
+static osrf_message* _do_server( osrf_app_session*, osrf_message* );
 
 /* tell osrf_app_session where the stack entry is */
 int (*osrf_stack_entry_point) (transport_client*, int, int*)  = &osrf_stack_process;
 
-int osrf_stack_process( transport_client* client, int timeout, int* msg_received ) {
+static int osrf_stack_process( transport_client* client, int timeout, int* msg_received ) {
 	if( !client ) return -1;
 	transport_message* msg = NULL;
 	if(msg_received) *msg_received = 0;
@@ -34,7 +41,8 @@ int osrf_stack_process( transport_client* client, int timeout, int* msg_received
 // -----------------------------------------------------------------------------
 // Entry point into the stack
 // -----------------------------------------------------------------------------
-osrfAppSession* osrf_stack_transport_handler( transport_message* msg, char* my_service ) { 
+osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
+		const char* my_service ) {
 
 	if(!msg) return NULL;
 
@@ -60,8 +68,11 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg, char* my_s
 	if( !session && my_service ) 
 		session = osrf_app_server_session_init( msg->thread, my_service, msg->sender);
 
-	if( !session ) return NULL;
-
+	if( !session ) {
+		message_free( msg );
+		return NULL;
+	}
+	
 	if(!msg->is_error)
 		osrfLogDebug( OSRF_LOG_MARK, "Session [%s] found or built", session->session_id );
 
@@ -108,7 +119,7 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg, char* my_s
 	return session;
 }
 
-int osrf_stack_message_handler( osrf_app_session* session, osrf_message* msg ) {
+static int osrf_stack_message_handler( osrf_app_session* session, osrf_message* msg ) {
 	if(session == NULL || msg == NULL)
 		return 0;
 
@@ -133,7 +144,7 @@ int osrf_stack_message_handler( osrf_app_session* session, osrf_message* msg ) {
 /** If we return a message, that message should be passed up the stack, 
   * if we return NULL, we're finished for now...
   */
-osrf_message* _do_client( osrf_app_session* session, osrf_message* msg ) {
+static osrf_message* _do_client( osrf_app_session* session, osrf_message* msg ) {
 	if(session == NULL || msg == NULL)
 		return NULL;
 
@@ -201,7 +212,7 @@ osrf_message* _do_client( osrf_app_session* session, osrf_message* msg ) {
 /** If we return a message, that message should be passed up the stack, 
   * if we return NULL, we're finished for now...
   */
-osrf_message* _do_server( osrf_app_session* session, osrf_message* msg ) {
+static osrf_message* _do_server( osrf_app_session* session, osrf_message* msg ) {
 
 	if(session == NULL || msg == NULL) return NULL;
 
@@ -240,7 +251,7 @@ osrf_message* _do_server( osrf_app_session* session, osrf_message* msg ) {
 
 
 
-int osrf_stack_application_handler( osrf_app_session* session, osrf_message* msg ) {
+static int osrf_stack_application_handler( osrf_app_session* session, osrf_message* msg ) {
 	if(session == NULL || msg == NULL) return 0;
 
 	if(msg->m_type == RESULT && session->type == OSRF_SESSION_CLIENT) {
