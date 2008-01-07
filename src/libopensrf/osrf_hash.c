@@ -1,15 +1,36 @@
 #include <opensrf/osrf_hash.h>
 
+struct _osrfHashNodeStruct {
+	char* key;
+	void* item;
+};
+typedef struct _osrfHashNodeStruct osrfHashNode;
+
+/* 0x100 is a good size for small hashes */
+//#define OSRF_HASH_LIST_SIZE 0x100  /* size of the main hash list */
+#define OSRF_HASH_LIST_SIZE 0x10  /* size of the main hash list */
+
+/* used internally */
+#define OSRF_HASH_NODE_FREE(h, n) \
+	if(h && n) { \
+		if(h->freeItem) h->freeItem(n->key, n->item);\
+		free(n->key); free(n); \
+}
+
+static osrfHashNode* osrfNewHashNode(char* key, void* item);
+static void* osrfHashNodeFree(osrfHash*, osrfHashNode*);
+
 osrfHash* osrfNewHash() {
 	osrfHash* hash;
 	OSRF_MALLOC(hash, sizeof(osrfHash));
 	hash->hash		= osrfNewList();
+	hash->freeItem  = NULL;
+	hash->size      = 0;
 	hash->keys		= osrfNewStringArray(64);
 	return hash;
 }
 
-
-/* algorithm proposed by Donald E. Knuth 
+/* algorithm proposed by Donald E. Knuth
  * in The Art Of Computer Programming Volume 3 (more or less..)*/
 /*
 static unsigned int osrfHashMakeKey(char* str) {
@@ -67,7 +88,7 @@ static unsigned int osrfHashFindItem( osrfHash* hash, char* key, osrfList** l, o
 	return k;
 }
 
-osrfHashNode* osrfNewHashNode(char* key, void* item) {
+static osrfHashNode* osrfNewHashNode(char* key, void* item) {
 	if(!(key && item)) return NULL;
 	osrfHashNode* n;
 	OSRF_MALLOC(n, sizeof(osrfHashNode));
@@ -76,7 +97,7 @@ osrfHashNode* osrfNewHashNode(char* key, void* item) {
 	return n;
 }
 
-void* osrfHashNodeFree(osrfHash* hash, osrfHashNode* node) {
+static void* osrfHashNodeFree(osrfHash* hash, osrfHashNode* node) {
 	if(!(node && hash)) return NULL;
 	void* item = NULL;
 	if( hash->freeItem )
@@ -204,6 +225,7 @@ osrfHashIterator* osrfNewHashIterator( osrfHash* hash ) {
 	osrfHashIterator* itr;
 	OSRF_MALLOC(itr, sizeof(osrfHashIterator));
 	itr->hash = hash;
+	itr->currentIdx = 0;
 	itr->current = NULL;
 	itr->keys = osrfHashKeysInc(hash);
 	return itr;

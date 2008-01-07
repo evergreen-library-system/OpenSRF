@@ -5,44 +5,21 @@
 #include <opensrf/string_array.h>
 #include <opensrf/osrf_list.h>
 
-/* 0x100 is a good size for small hashes */
-//#define OSRF_HASH_LIST_SIZE 0x100  /* size of the main hash list */
-#define OSRF_HASH_LIST_SIZE 0x10  /* size of the main hash list */
-
-
-/* used internally */
-#define OSRF_HASH_NODE_FREE(h, n) \
-	if(h && n) { \
-		if(h->freeItem) h->freeItem(n->key, n->item);\
-		free(n->key); free(n); \
-	}
-
-
-struct __osrfHashStruct {
+struct _osrfHashStruct {
 	osrfList* hash; /* this hash */
 	void (*freeItem) (char* key, void* item);	/* callback for freeing stored items */
 	unsigned int size;
 	osrfStringArray* keys;
 };
-typedef struct __osrfHashStruct osrfHash;
+typedef struct _osrfHashStruct osrfHash;
 
-struct _osrfHashNodeStruct {
-	char* key;
-	void* item;
-};
-typedef struct _osrfHashNodeStruct osrfHashNode;
-
-
-struct __osrfHashIteratorStruct {
+struct _osrfHashIteratorStruct {
 	char* current;
 	int currentIdx;
 	osrfHash* hash;
 	osrfStringArray* keys;
 };
-typedef struct __osrfHashIteratorStruct osrfHashIterator;
-
-osrfHashNode* osrfNewHashNode(char* key, void* item);
-void* osrfHashNodeFree(osrfHash*, osrfHashNode*);
+typedef struct _osrfHashIteratorStruct osrfHashIterator;
 
 /**
   Allocates a new hash object
