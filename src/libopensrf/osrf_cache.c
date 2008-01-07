@@ -35,16 +35,14 @@ int osrfCachePutObject( char* key, const jsonObject* obj, time_t seconds ) {
 	if( !(key && obj) ) return -1;
 	char* s = jsonObjectToJSON( obj );
 	osrfLogInternal( OSRF_LOG_MARK, "osrfCachePut(): Putting object: %s", s);
-	if( seconds < 0 ) seconds = _osrfCacheMaxSeconds;
-
-	mc_set(_osrfCache, key, strlen(key), s, strlen(s), seconds, 0);
+    osrfCachePutString(key, s, seconds);
 	free(s);
 	return 0;
 }
 
 int osrfCachePutString( char* key, const char* value, time_t seconds ) {
 	if( !(key && value) ) return -1;
-	if( seconds < 0 ) seconds = _osrfCacheMaxSeconds;
+    seconds = (seconds <= 0 || seconds > _osrfCacheMaxSeconds) ? _osrfCacheMaxSeconds : seconds;
 	osrfLogInternal( OSRF_LOG_MARK, "osrfCachePutString(): Putting string: %s", value);
 	mc_set(_osrfCache, key, strlen(key), value, strlen(value), seconds, 0);
 	return 0;
