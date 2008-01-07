@@ -233,13 +233,11 @@ static int _recurse_jsonObjectToXML(const jsonObject*, growing_buffer*);
 
 char* jsonObjectToXML(const jsonObject* obj) {
 
-	growing_buffer * res_xml;
-
-	res_xml = buffer_init(1024);
-
 	if (!obj)
 		return strdup("<null/>");
 	
+	growing_buffer * res_xml = buffer_init(1024);
+
 	_recurse_jsonObjectToXML( obj, res_xml );
 	return buffer_release(res_xml);
 
@@ -335,7 +333,7 @@ int _recurse_jsonObjectToXML(const jsonObject* obj, growing_buffer* res_xml) {
 	return 1;
 }
 
-char* _escape_xml (const char* text) {
+static char* _escape_xml (const char* text) {
 	growing_buffer* b = buffer_init(256);
 	int len = strlen(text);
 	int i;

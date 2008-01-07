@@ -1,3 +1,6 @@
+#ifndef OSRF_JSON_XML_H
+#define OSRF_JSON_XML_H
+
 #ifdef OSRF_JSON_ENABLE_XML_UTILS
 
 #include <stdio.h>
@@ -23,4 +26,5 @@ char* jsonObjectToXML( const jsonObject*);
  */
 jsonObject* jsonXMLToJSONObject(const char* xml);
 
+#endif
 #endif
