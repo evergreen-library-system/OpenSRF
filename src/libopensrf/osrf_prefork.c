@@ -3,14 +3,74 @@
 #include <opensrf/osrf_application.h>
 #include <signal.h>
 
+//#define READ_BUFSIZE 4096
+#define READ_BUFSIZE 1024
+//#define MAX_BUFSIZE 10485760 /* 10M enough? ;) */
+#define ABS_MAX_CHILDREN 256
+
+struct prefork_simple_struct {
+	int max_requests;
+	int min_children;
+	int max_children;
+	int fd;
+	int data_to_child;
+	int data_to_parent;
+	int current_num_children;
+	int keepalive; /* keepalive time for stateful sessions */
+	char* appname;
+	struct prefork_child_struct* first_child;
+	transport_client* connection;
+};
+typedef struct prefork_simple_struct prefork_simple;
+
+struct prefork_child_struct {
+	pid_t pid;
+	int read_data_fd;
+	int write_data_fd;
+	int read_status_fd;
+	int write_status_fd;
+	int min_children;
+	int available;
+	int max_requests;
+	char* appname;
+	int keepalive;
+	struct prefork_child_struct* next;
+};
+
+typedef struct prefork_child_struct prefork_child;
+
+static prefork_simple* prefork_simple_init( transport_client* client,
+	int max_requests, int min_children, int max_children );
+static prefork_child* launch_child( prefork_simple* forker );
+static void prefork_launch_children( prefork_simple* forker );
+static void prefork_run(prefork_simple* forker);
+static void add_prefork_child( prefork_simple* forker, prefork_child* child );
+
+//static prefork_child* find_prefork_child( prefork_simple* forker, pid_t pid );
+
+static void del_prefork_child( prefork_simple* forker, pid_t pid );
+static void check_children( prefork_simple* forker, int forever );
+static void prefork_child_process_request(prefork_child*, char* data);
+static int prefork_child_init_hook(prefork_child*);
+static prefork_child* prefork_child_init(
+		int max_requests, int read_data_fd, int write_data_fd,
+		int read_status_fd, int write_status_fd );
+
+/* listens on the 'data_to_child' fd and wait for incoming data */
+static void prefork_child_wait( prefork_child* child );
+static int prefork_free( prefork_simple* );
+static int prefork_child_free( prefork_child* );
+static void osrf_prefork_register_routers( const char* appname );
+static void osrf_prefork_child_exit( prefork_child* );
+
+
 /* true if we just deleted a child.  This will allow us to make sure we're
 	not trying to use freed memory */
-int child_dead;
+static int child_dead;
 
-int main();
-void sigchld_handler( int sig );
+static void sigchld_handler( int sig );
 
-int osrf_prefork_run(char* appname) {
+int osrf_prefork_run(const char* appname) {
 
 	if(!appname) {
 		osrfLogError( OSRF_LOG_MARK, "osrf_prefork_run requires an appname to run!");
@@ -83,7 +143,7 @@ int osrf_prefork_run(char* appname) {
 
 }
 
-void osrf_prefork_register_routers( char* appname ) {
+static void osrf_prefork_register_routers( const char* appname ) {
 
 	osrfStringArray* arr = osrfNewStringArray(4);
 
@@ -113,7 +173,7 @@ void osrf_prefork_register_routers( char* appname ) {
 	osrfStringArrayFree(arr);
 }
 
-int prefork_child_init_hook(prefork_child* child) {
+static int prefork_child_init_hook(prefork_child* child) {
 
 	if(!child) return -1;
 	osrfLogDebug( OSRF_LOG_MARK, "Child init hook for child %d", child->pid);
@@ -149,7 +209,7 @@ int prefork_child_init_hook(prefork_child* child) {
 	return 0;
 }
 
-void prefork_child_process_request(prefork_child* child, char* data) {
+static void prefork_child_process_request(prefork_child* child, char* data) {
 	if( !child ) return;
 
 	transport_client* client = osrfSystemGetTransportClient();
@@ -220,7 +280,7 @@ void prefork_child_process_request(prefork_child* child, char* data) {
 }
 
 
-prefork_simple*  prefork_simple_init( transport_client* client, 
+static prefork_simple*  prefork_simple_init( transport_client* client, 
 		int max_requests, int min_children, int max_children ) {
 
 	if( min_children > max_children ) {
@@ -243,13 +303,19 @@ prefork_simple*  prefork_simple_init( transport_client* client,
 	prefork->max_requests = max_requests;
 	prefork->min_children = min_children;
 	prefork->max_children = max_children;
+	prefork->fd           = 0;
+	prefork->data_to_child = 0;
+	prefork->data_to_parent = 0;
+	prefork->current_num_children = 0;
+	prefork->keepalive    = 0;
+	prefork->appname      = NULL;
 	prefork->first_child = NULL;
 	prefork->connection = client;
 
 	return prefork;
 }
 
-prefork_child*  launch_child( prefork_simple* forker ) {
+static prefork_child* launch_child( prefork_simple* forker ) {
 
 	pid_t pid;
 	int data_fd[2];
@@ -315,12 +381,12 @@ prefork_child*  launch_child( prefork_simple* forker ) {
 	return NULL;
 }
 
-void osrf_prefork_child_exit(prefork_child* child) {
+static void osrf_prefork_child_exit(prefork_child* child) {
    osrfAppRunExitCode();
    exit(0);
 }
 
-void prefork_launch_children( prefork_simple* forker ) {
+static void prefork_launch_children( prefork_simple* forker ) {
 	if(!forker) return;
 	int c = 0;
 	while( c++ < forker->min_children )
@@ -328,7 +394,7 @@ void prefork_launch_children( prefork_simple* forker ) {
 }
 
 
-void sigchld_handler( int sig ) {
+static void sigchld_handler( int sig ) {
 	signal(SIGCHLD, sigchld_handler);
 	child_dead = 1;
 }
@@ -349,7 +415,7 @@ void reap_children( prefork_simple* forker ) {
 	child_dead = 0;
 }
 
-void prefork_run(prefork_simple* forker) {
+static void prefork_run(prefork_simple* forker) {
 
 	if( forker->first_child == NULL )
 		return;
@@ -477,7 +543,7 @@ void prefork_run(prefork_simple* forker) {
  * in the worst case it won't be slower and will do less logging...
  */
 
-void check_children( prefork_simple* forker, int forever ) {
+static void check_children( prefork_simple* forker, int forever ) {
 
 	//check_begin:
 
@@ -554,7 +620,7 @@ void check_children( prefork_simple* forker, int forever ) {
 }
 
 
-void prefork_child_wait( prefork_child* child ) {
+static void prefork_child_wait( prefork_child* child ) {
 
 	int i,n;
 	growing_buffer* gbuf = buffer_init( READ_BUFSIZE );
@@ -606,7 +672,7 @@ void prefork_child_wait( prefork_child* child ) {
 }
 
 
-void add_prefork_child( prefork_simple* forker, prefork_child* child ) {
+static void add_prefork_child( prefork_simple* forker, prefork_child* child ) {
 	
 	if( forker->first_child == NULL ) {
 		forker->first_child = child;
@@ -634,20 +700,20 @@ void add_prefork_child( prefork_simple* forker, prefork_child* child ) {
 	return;
 }
 
-prefork_child* find_prefork_child( prefork_simple* forker, pid_t pid ) {
+//static prefork_child* find_prefork_child( prefork_simple* forker, pid_t pid ) {
+//
+//	if( forker->first_child == NULL ) { return NULL; }
+//	prefork_child* start_child = forker->first_child;
+//	do {
+//		if( forker->first_child->pid == pid ) 
+//			return forker->first_child;
+//	} while( (forker->first_child = forker->first_child->next) != start_child );
+//
+//	return NULL;
+//}
 
-	if( forker->first_child == NULL ) { return NULL; }
-	prefork_child* start_child = forker->first_child;
-	do {
-		if( forker->first_child->pid == pid ) 
-			return forker->first_child;
-	} while( (forker->first_child = forker->first_child->next) != start_child );
 
-	return NULL;
-}
-
-
-void del_prefork_child( prefork_simple* forker, pid_t pid ) { 
+static void del_prefork_child( prefork_simple* forker, pid_t pid ) { 
 
 	if( forker->first_child == NULL ) { return; }
 
@@ -718,23 +784,28 @@ void del_prefork_child( prefork_simple* forker, pid_t pid ) {
 
 
 
-prefork_child* prefork_child_init( 
+static prefork_child* prefork_child_init( 
 	int max_requests, int read_data_fd, int write_data_fd, 
 	int read_status_fd, int write_status_fd ) {
 
 	prefork_child* child = (prefork_child*) safe_malloc(sizeof(prefork_child));
+	child->pid              = 0;
 	child->max_requests		= max_requests;
 	child->read_data_fd		= read_data_fd;
 	child->write_data_fd		= write_data_fd;
 	child->read_status_fd	= read_status_fd;
 	child->write_status_fd	= write_status_fd;
+	child->min_children     = 0;
 	child->available			= 1;
+	child->appname          = NULL;
+	child->keepalive        = 0;
+	child->next             = NULL;
 
 	return child;
 }
 
 
-int prefork_free( prefork_simple* prefork ) {
+static int prefork_free( prefork_simple* prefork ) {
 	
 	while( prefork->first_child != NULL ) {
 		osrfLogInfo( OSRF_LOG_MARK,  "Killing children and sleeping 1 to reap..." );
@@ -748,7 +819,7 @@ int prefork_free( prefork_simple* prefork ) {
 	return 1;
 }
 
-int prefork_child_free( prefork_child* child ) { 
+static int prefork_child_free( prefork_child* child ) { 
 	free(child->appname);
 	close(child->read_data_fd);
 	close(child->write_status_fd);
