@@ -22,7 +22,8 @@ all: 	prep \
 	srfsh \
 	jserver \
 	gateway \
-	java
+	java \
+	python-build
 
 install: 	install-prep \
 		opensrf-install \
@@ -67,6 +68,8 @@ jserver:	opensrf
 java:	prep
 	if [ -n "$(OSRF_INSTALL_JAVA)" ]; then echo $@; cd java && . deps.inc && make; fi;
 
+python-build:
+	make -C python build
 
 # --------------------------------------------------------------------------------
 # INSTALL
