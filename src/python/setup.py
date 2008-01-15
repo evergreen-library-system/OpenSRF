@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+
+# Bootstrap setuptools if not installed on the system
+import ez_setup
+ez_setup.use_setuptools()
+
 from setuptools import setup
 
 setup(name='OpenSRF',
@@ -17,6 +22,5 @@ setup(name='OpenSRF',
     license="GPL",
     url='http://www.open-ils.org/',
     packages=['osrf'],
-    package_dir={'': '.'},
-    scripts=['./srfsh.py']
+    scripts=['srfsh.py']
 )
