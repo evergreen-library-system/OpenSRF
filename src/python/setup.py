@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 
-# Bootstrap setuptools if not installed on the system
-import ez_setup
-ez_setup.use_setuptools()
-
 from setuptools import setup
 
 setup(name='OpenSRF',
     version='1.0',
     install_requires=[
-        'python_memcached>=1.40',
+        'python_memcached',
         'pyxmpp>=1.0.0',
         'simplejson>=1.7.1'
     ],
