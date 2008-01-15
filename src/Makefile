@@ -69,7 +69,7 @@ java:	prep
 	if [ -n "$(OSRF_INSTALL_JAVA)" ]; then echo $@; cd java && . deps.inc && make; fi;
 
 python-build:
-	make -C python build
+	if [ -n "$(OSRF_INSTALL_PYTHON)" ]; then echo $@; make -C python build; fi;
 
 # --------------------------------------------------------------------------------
 # INSTALL
@@ -126,7 +126,7 @@ perl-install:	install-prep
 	cp -r perlmods/* $(PERLDIR)/
 
 python-install:
-	make -C python install
+	if [ -n "$(OSRF_INSTALL_PYTHON)" ]; then echo $@; make -C python install; fi;
 
 java-install:
 	if [ -n "$(OSRF_INSTALL_JAVA)" ]; then echo $@; cd java && . deps.inc && make install; fi;
