@@ -38,6 +38,12 @@ def get_network_handle():
     """ Returns the thread-specific network connection handle."""
     return THREAD_SESSIONS.get(threading.currentThread().getName())
 
+def clear_network_handle():
+    ''' Disconnects the thread-specific handle and discards it '''
+    handle = THREAD_SESSIONS.get(threading.currentThread().getName())
+    if handle:
+        handle.disconnect()
+        del THREAD_SESSIONS[threading.currentThread().getName()]
 
 class NetworkMessage(object):
     """Network message
@@ -62,23 +68,32 @@ class NetworkMessage(object):
             else:
                 self.sender = message.get_from().as_utf8()
         else:
-            if args.has_key('sender'):
-                self.sender = args['sender']
-            if args.has_key('recipient'):
-                self.recipient = args['recipient']
-            if args.has_key('body'):
-                self.body = args['body']
-            if args.has_key('thread'):
-                self.thread = args['thread']
+            self.sender = args.get('sender')
+            self.recipient = args.get('recipient')
+            self.body = args.get('body')
+            self.thread = args.get('thread')
+            self.router_command = args.get('router_command')
+
+    def make_xmpp_msg(self):
+        ''' Creates a pyxmpp.message.Message and adds custom attributes '''
+
+        msg = Message(None, None, self.recipient, None, None, None, \
+            self.body, self.thread)
+        if self.router_command:
+            msg.xmlnode.newProp('router_command', self.router_command)
+        return msg
+
+    def to_xml(self):
+        ''' Turns this message into XML '''
+        return self.make_xmpp_msg().serialize()
+        
 
 class Network(JabberClient):
     def __init__(self, **args):
         self.isconnected = False
 
         # Create a unique jabber resource
-        resource = 'python'
-        if args.has_key('resource'):
-            resource = args['resource']
+        resource = args.get('resource') or 'python_client'
         resource += '_' + gethostname() + ':' + str(os.getpid()) + '_' + \
             threading.currentThread().getName().lower()
         self.jid = JID(args['username'], args['host'], resource)
@@ -115,10 +130,8 @@ class Network(JabberClient):
 
     def send(self, message):
         """Sends the provided network message."""
-        osrf.log.log_internal("jabber sending to %s: %s" % \
-            (message.recipient, message.body))
-        msg = Message(None, None, message.recipient, None, None, None, \
-            message.body, message.thread)
+        osrf.log.log_internal("jabber sending to %s: %s" % (message.recipient, message.body))
+        msg = message.make_xmpp_msg()
         self.stream.send(msg)
     
     def message_received(self, stanza):

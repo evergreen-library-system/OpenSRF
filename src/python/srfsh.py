@@ -223,7 +223,7 @@ def setup_readline():
 def do_connect():
     file = os.path.join(get_var('HOME'), ".srfsh.xml")
     print_green("Connecting to opensrf...")
-    osrf.system.connect(file, 'srfsh')
+    osrf.system.System.connect(config_file=file, config_context='srfsh')
     print_red('OK\n')
 
 def load_plugins():
@@ -247,7 +247,7 @@ def load_plugins():
         print_green("Loading module %s..." % name)
 
         try:
-            string = 'from %s import %s\n%s()' % (name, init, init)
+            string = 'import %s\n%s.%s()' % (name, name, init)
             exec(string)
             print_red('OK\n')
 
@@ -266,10 +266,7 @@ def set_var(key, val):
     os.environ[key] = val
 
 def get_var(key):
-    try:
-        return os.environ[key]
-    except:
-        return ''
+    return os.environ.get(key, '')
     
 def __get_locale():
     """
@@ -289,10 +286,14 @@ def __get_locale():
     """
 
     env_locale = get_var('SRFSH_LOCALE')
-    pattern = re.compile(r'^\s*([a-z]+)[^a-zA-Z]([A-Z]+)').search(env_locale)
-    lang = pattern.group(1)
-    region = pattern.group(2)
-    locale = "%s-%s" % (lang, region)
+    if env_locale:
+        pattern = re.compile(r'^\s*([a-z]+)[^a-zA-Z]([A-Z]+)').search(env_locale)
+        lang = pattern.group(1)
+        region = pattern.group(2)
+        locale = "%s-%s" % (lang, region)
+    else:
+        locale = 'en-US'
+
     return locale
     
 def print_green(string):

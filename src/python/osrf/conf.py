@@ -30,7 +30,7 @@ class Config(object):
         self.data = {}
 
     #def parseConfig(self,file=None):
-    def parseConfig(self):
+    def parse_config(self):
         self.data = osrf.xml_obj.xml_file_to_object(self.file)
         Config.config = self
     

@@ -192,7 +192,7 @@ class ClientSession(Session):
             for the request associated with the message's ID."""
         osrf.log.log_debug("pushing %s" % message.payload())
         try:
-            self.find_request(message.threadTrace()).pushResponse(message.payload())
+            self.find_request(message.threadTrace()).push_response(message.payload())
         except Exception, e: 
             osrf.log.log_warn("pushing respond to non-existent request %s : %s" % (message.threadTrace(), e))
 
@@ -203,6 +203,17 @@ class ClientSession(Session):
         except KeyError:
             osrf.log.log_debug('find_request(): non-existent request %s' % str(rid))
             return None
+
+    @staticmethod
+    def atomic_request(service, method, *args):
+        ses = ClientSession(service)
+        req = ses.request2(method, list(args))
+        resp = req.recv()
+        data = resp.content()
+        req.cleanup()
+        ses.cleanup()
+        return data
+
 
 
 
@@ -286,7 +297,7 @@ class Request(object):
 
         return None
 
-    def pushResponse(self, content):
+    def push_response(self, content):
         """Pushes a method response onto this requests response queue."""
         self.queue.append(content)
 
@@ -306,14 +317,6 @@ class ServerSession(Session):
     pass
 
 
-def AtomicRequest(service, method, *args):
-    ses = ClientSession(service)
-    req = ses.request2(method, list(args))
-    resp = req.recv()
-    data = resp.content()
-    req.cleanup()
-    ses.cleanup()
-    return data
 
 
 

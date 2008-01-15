@@ -14,8 +14,7 @@
 # -----------------------------------------------------------------------
 
 from osrf.const import OSRF_APP_SETTINGS, OSRF_METHOD_GET_HOST_CONFIG
-import osrf.ex
-import osrf.net_obj
+import osrf.ex, osrf.net_obj, osrf.ses
 
 # global settings config object
 __config = None
@@ -31,10 +30,7 @@ def get(path, idx=0):
 def load(hostname):
     global __config
 
-    from osrf.system import connect
-    from osrf.ses import ClientSession
-
-    ses = ClientSession(OSRF_APP_SETTINGS)
+    ses = osrf.ses.ClientSession(OSRF_APP_SETTINGS)
     req = ses.request(OSRF_METHOD_GET_HOST_CONFIG, hostname)
     resp = req.recv(timeout=30)
     __config = resp.content()

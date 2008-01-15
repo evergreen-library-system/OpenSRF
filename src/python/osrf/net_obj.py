@@ -7,8 +7,6 @@ from xml.sax import saxutils
 # Define the global network-class registry
 # -----------------------------------------------------------
 
-# Global object registry 
-OBJECT_REGISTRY = {}
 
 class NetworkRegistry(object):
     ''' Network-serializable objects must be registered.  The class
@@ -16,19 +14,18 @@ class NetworkRegistry(object):
         of field names (keys).  
         '''
 
+    # Global object registry 
+    registry = {}
+
     def __init__(self, hint, keys, protocol):
-        global OBJECT_REGISTRY
         self.hint = hint
         self.keys = keys
         self.protocol = protocol
-        OBJECT_REGISTRY[hint] = self
+        NetworkRegistry.registry[hint] = self
     
+    @staticmethod
     def get_registry(hint):
-        global OBJECT_REGISTRY
-        return OBJECT_REGISTRY.get(hint)
-
-    get_registry = staticmethod(get_registry)
-
+        return NetworkRegistry.registry.get(hint)
 
 # -----------------------------------------------------------
 # Define the base class for all network-serializable objects
@@ -74,11 +71,9 @@ class NetworkObject(object):
     def get_field(self, field):
         return self._data.get(field)
 
-    def get_registry(cls):
+    def get_registry(self):
         ''' Returns the registry object for this registered class '''
-        return cls.registry
-    get_registry = classmethod(get_registry)
-
+        return self.__class__.registry
 
 def new_object_from_hint(hint):
     ''' Given a hint, this will create a new object of that 
