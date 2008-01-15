@@ -142,7 +142,7 @@ clean:
 	make -C srfsh clean
 	make -C c-apps clean
 	make -C java clean
-	make -C python clean
+	if [ -n "$(OSRF_INSTALL_PYTHON)" ]; then echo $@; make -C python clean; fi;
 	/bin/rm -rf $(TMPDIR) *.o
 
 
