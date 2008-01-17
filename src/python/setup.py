@@ -6,8 +6,6 @@ setup(name='OpenSRF',
     version='1.0',
     install_requires=[
         'dnspython', # required by pyxmpp
-        'libxml2', # required by pyxmpp
-        'libxslt1',
         'python_memcached',
         'pyxmpp>=1.0.0',
         'simplejson>=1.7.1'
