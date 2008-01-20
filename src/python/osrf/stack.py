@@ -30,6 +30,7 @@ def push(net_msg):
     if not ses:
         # This is an incoming request from a client, create a new server session
         osrf.log.log_error("server-side sessions don't exist yet")
+        return
 
     ses.set_remote_id(net_msg.sender)
 

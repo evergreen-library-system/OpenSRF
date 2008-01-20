@@ -257,7 +257,7 @@ class Request(object):
         self.session.send(message)
 
     def recv(self, timeout=120):
-        """Waits up to <timeout> seconds for a response to this request.
+        """ Waits up to <timeout> seconds for a response to this request.
         
             If a message is received in time, the response message is returned.
             Returns None otherwise."""
@@ -265,10 +265,11 @@ class Request(object):
         self.session.wait(0)
 
         orig_timeout = timeout
-        while not self.complete and timeout >= 0 and len(self.queue) == 0:
+        while not self.complete and (timeout >= 0 or orig_timeout < 0) and len(self.queue) == 0:
             s = time.time()
             self.session.wait(timeout)
-            timeout -= time.time() - s
+            if orig_timeout >= 0:
+                timeout -= time.time() - s
             if self.reset_timeout:
                 self.reset_timeout = False
                 timeout = orig_timeout

@@ -14,12 +14,13 @@
 # -----------------------------------------------------------------------
 
 
+import os, time, threading
 from pyxmpp.jabber.client import JabberClient
 from pyxmpp.message import Message
 from pyxmpp.jid import JID
 from socket import gethostname
+import libxml2
 import osrf.log
-import os, time, threading
 
 THREAD_SESSIONS = {}
 
@@ -62,6 +63,7 @@ class NetworkMessage(object):
             self.body = message.get_body()
             self.thread = message.get_thread()
             self.recipient = message.get_to()
+            self.router_command = None
             if message.xmlnode.hasProp('router_from') and \
                 message.xmlnode.prop('router_from') != '':
                 self.sender = message.xmlnode.prop('router_from')
@@ -74,10 +76,17 @@ class NetworkMessage(object):
             self.thread = args.get('thread')
             self.router_command = args.get('router_command')
 
+    @staticmethod
+    def from_xml(xml):
+        doc=libxml2.parseDoc(xml)
+        msg = Message(doc.getRootElement())
+        return NetworkMessage(msg)
+        
+
     def make_xmpp_msg(self):
         ''' Creates a pyxmpp.message.Message and adds custom attributes '''
 
-        msg = Message(None, None, self.recipient, None, None, None, \
+        msg = Message(None, self.sender, self.recipient, None, None, None, \
             self.body, self.thread)
         if self.router_command:
             msg.xmlnode.newProp('router_command', self.router_command)
@@ -131,6 +140,7 @@ class Network(JabberClient):
     def send(self, message):
         """Sends the provided network message."""
         osrf.log.log_internal("jabber sending to %s: %s" % (message.recipient, message.body))
+        message.sender = self.jid.as_utf8()
         msg = message.make_xmpp_msg()
         self.stream.send(msg)
     
@@ -153,12 +163,18 @@ class Network(JabberClient):
         returned.
         """
 
+        forever = False
+        if timeout < 0:
+            forever = True
+            timeout = None
+
         if len(self.queue) == 0:
-            while timeout >= 0 and len(self.queue) == 0:
+            while (forever or timeout >= 0) and len(self.queue) == 0:
                 starttime = time.time()
                 act = self.get_stream().loop_iter(timeout)
                 endtime = time.time() - starttime
-                timeout -= endtime
+                if not forever:
+                    timeout -= endtime
                 osrf.log.log_internal("exiting stream loop after %s seconds. "
                     "act=%s, queue size=%d" % (str(endtime), act, len(self.queue)))
                 if not act:
