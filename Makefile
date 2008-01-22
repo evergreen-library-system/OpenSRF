@@ -1,3 +1,4 @@
+SHELL=/bin/bash
 all:
 	@echo -e "\n * Run 'make verbose' to see full make output\n"
 	source install.conf && make -s -C src all
