@@ -75,6 +75,16 @@ class NetworkObject(object):
         ''' Returns the registry object for this registered class '''
         return self.__class__.registry
 
+    def shallow_clone(self):
+        ''' Makes a shallow copy '''
+        reg = self.get_registry()
+        obj = new_object_from_hint(reg.hint)
+        for field in reg.keys:
+            obj.set_field(field, self.get_field(field))
+        return obj
+            
+
+
 def new_object_from_hint(hint):
     ''' Given a hint, this will create a new object of that 
         type and return it.  If this hint is not registered,
