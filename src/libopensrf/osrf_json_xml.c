@@ -102,6 +102,7 @@ static void startElementHandler(
         if(val && !strcmp(val, "true"))
             obj->value.b = 1;
         
+        appendChild(p, obj);
         return;
     }
 }
