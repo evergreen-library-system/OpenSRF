@@ -92,6 +92,11 @@ sub merge_perl {
 	return $base;
 }
 
+sub _check_for_int {
+	my $value = shift;
+	return 0+$value if ($value =~ /^\d{1,10}$/o);
+	return $value;
+}
 
 sub XML2perl {
 	my $node = shift;
@@ -101,12 +106,12 @@ sub XML2perl {
 
 	for my $attr ( ($node->attributes()) ) {
 		next unless($attr);
-		$output{$attr->nodeName} = $attr->value;
+		$output{$attr->nodeName} = _check_for_int($attr->value);
 	}
 
 	my @kids = $node->childNodes;
 	if (@kids == 1 && $kids[0]->nodeType == 3) {
-			return $kids[0]->textContent;
+			return _check_for_int($kids[0]->textContent);
 	} else {
 		for my $kid ( @kids ) {
 			next if ($kid->nodeName eq 'comment');
