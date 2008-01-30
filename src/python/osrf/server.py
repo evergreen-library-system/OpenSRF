@@ -164,8 +164,7 @@ class Controller(object):
             except socket.error, e:
                 if e.args[0] != errno.EAGAIN:
                     raise e
-            finally:
-                self.read_status.setblocking(1)
+            self.read_status.setblocking(1)
                 
         if pid:
             pid = int(pid)
