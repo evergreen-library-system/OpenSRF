@@ -245,8 +245,7 @@ int json_parse_json_number(char* string, unsigned long* index, jsonObject* obj, 
 	}
 
 	obj->type = JSON_NUMBER;
-	obj->value.n = strtod(buf->buf, NULL);
-	buffer_free(buf);
+	obj->value.s = buffer_release(buf);
 	return 0;
 }
 
@@ -744,18 +743,7 @@ char* legacy_jsonObjectToJSON( const jsonObject* obj ) {
 			break;
 
 		case JSON_NUMBER: {
-			double x = obj->value.n;
-
-			/* if the number does not need to be a double,
-				turn it into an int on the way out */
-			if( x == (int) x ) {
-				INT_TO_STRING((int)x);	
-				buffer_add(buf, INTSTR);
-
-			} else {
-				DOUBLE_TO_STRING(x);
-				buffer_add(buf, DOUBLESTR);
-			}
+			buffer_add(buf, obj->value.s);
 			break;
 		}
 
