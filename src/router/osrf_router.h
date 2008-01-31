@@ -1,3 +1,6 @@
+#ifndef OSRF_ROUTER_H
+#define OSRF_ROUTER_H
+
 #include <sys/select.h>
 #include <signal.h>
 #include <stdio.h>
@@ -16,7 +19,7 @@
 
 
 /* a router maintains a list of server classes */
-struct __osrfRouterStruct {
+struct _osrfRouterStruct {
 
 	osrfHash* classes;	/* our list of server classes */
 	char* domain;			/* our login domain */
@@ -31,25 +34,7 @@ struct __osrfRouterStruct {
 	transport_client* connection;
 };
 
-typedef struct __osrfRouterStruct osrfRouter;
-
-
-/* a class maintains a set of server nodes */
-struct __osrfRouterClassStruct {
-	osrfRouter* router; /* our router handle */
-	osrfHashIterator* itr;
-	osrfHash* nodes;
-	transport_client* connection;
-};
-typedef struct __osrfRouterClassStruct osrfRouterClass;
-
-/* represents a link to a single server's inbound connection */
-struct __osrfRouterNodeStruct {
-	char* remoteId;	/* send message to me via this login */
-	int count;			/* how many message have been sent to this node */
-	transport_message* lastMessage;
-};
-typedef struct __osrfRouterNodeStruct osrfRouterNode;
+typedef struct _osrfRouterStruct osrfRouter;
 
 /**
   Allocates a new router.  
@@ -80,146 +65,19 @@ void osrfRouterRun( osrfRouter* router );
 
 
 /**
-  Allocates and adds a new router class handler to the router's list of handlers.
-  Also connects the class handler to the network at <routername>@domain/<classname>
-  @param router The current router instance
-  @param classname The name of the class this node handles.
-  @return 0 on success, -1 on connection error.
-  */
-osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* classname );
-
-/**
-  Adds a new server node to the given class.
-  @param rclass The Router class to add the node to
-  @param remoteId The remote login of this node
-  @return 0 on success, -1 on generic error
-  */
-int osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId );
-
-
-/**
-  Handles top level router messages
-  @return 0 on success
-  */
-int osrfRouterHandleMessage( osrfRouter* router, transport_message* msg );
-
-
-/**
-  Handles class level requests
-  @return 0 on success
-  */
-int osrfRouterClassHandleMessage( osrfRouter* router, 
-		osrfRouterClass* rclass, transport_message* msg );
-
-/**
-  Removes a given class from the router, freeing as it goes
-  */
-int osrfRouterRemoveClass( osrfRouter* router, const char* classname );
-
-/**
-  Removes the given node from the class.  Also, if this is that last node in the set,
-  removes the class from the router 
-  @return 0 on successful removal with no class removal
-  @return 1 on successful remove with class removal
-  @return -1 error on removal
- */
-int osrfRouterClassRemoveNode( osrfRouter* router, const char* classname,
-		const char* remoteId );
-
-/**
-  Frees a router class object
-  Takes a void* since it is freed by the hash code
-  */
-void osrfRouterClassFree( char* classname, void* rclass );
-
-/**
-  Frees a router node object 
-  Takes a void* since it is freed by the list code
-  */
-void osrfRouterNodeFree( char* remoteId, void* node );
-
-
-/**
   Frees a router
   */
 void osrfRouterFree( osrfRouter* router );
 
 /**
-  Finds the class associated with the given class name in the list of classes
-  */
-osrfRouterClass* osrfRouterFindClass( osrfRouter* router, const char* classname );
-
-/**
-  Finds the router node within this class with the given remote id 
-  */
-osrfRouterNode* osrfRouterClassFindNode( osrfRouterClass* rclass, const char* remoteId );
-
-
-/**
-  Clears and populates the provided fd_set* with file descriptors
-  from the router's top level connection as well as each of the
-  router class connections
-  @return The largest file descriptor found in the filling process
-  */
-int __osrfRouterFillFDSet( osrfRouter* router, fd_set* set );
-
-
-
-/**
-  Utility method for handling incoming requests to the router
-  and making sure the sender is allowed.
-  */
-void osrfRouterHandleIncoming( osrfRouter* router );
-
-/**
-	Utility method for handling incoming requests to a router class,
-	makes sure sender is a trusted client
-	*/
-int osrfRouterClassHandleIncoming( osrfRouter* router,
-		const char* classname,  osrfRouterClass* class );
-
-/* handles case where router node is not longer reachable.  copies over the
-	data from the last sent message and returns a newly crafted suitable for treating
-	as a newly inconing message.  Removes the dead node and If there are no more
-	nodes to send the new message to, returns NULL.
-	*/
-transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
-		const char* classname, osrfRouterClass* rclass, transport_message* msg );
-
-
-
-/**
-  handles messages that don't have a 'router_command' set.  They are assumed to
-  be app request messages 
-  */
-int osrfRouterHandleAppRequest( osrfRouter* router, transport_message* msg );
-
-
-/**
   Handles connects, disconnects, etc.
   */
-int osrfRouterHandeStatusMessage( osrfRouter* router, transport_message* msg );
-
+//int osrfRouterHandeStatusMessage( osrfRouter* router, transport_message* msg );
 
 /**
   Handles REQUEST messages 
   */
-int osrfRouterHandleRequestMessage( osrfRouter* router, transport_message* msg );
+//int osrfRouterHandleRequestMessage( osrfRouter* router, transport_message* msg );
 
-
-
-int osrfRouterHandleAppRequest( osrfRouter* router, transport_message* msg );
-
-
-int osrfRouterRespondConnect( osrfRouter* router, transport_message* msg, osrfMessage* omsg );
-
-
-
-int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* msg, osrfMessage* omsg );
-
-int osrfRouterHandleAppResponse( osrfRouter* router, 
-		transport_message* msg, osrfMessage* omsg, const jsonObject* response );
-
-
-int osrfRouterHandleMethodNFound( osrfRouter* router, transport_message* msg, osrfMessage* omsg );
+#endif
 

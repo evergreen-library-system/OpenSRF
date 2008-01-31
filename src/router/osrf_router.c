@@ -1,5 +1,51 @@
 #include "osrf_router.h"
 
+/* a class maintains a set of server nodes */
+struct _osrfRouterClassStruct {
+	osrfRouter* router; /* our router handle */
+	osrfHashIterator* itr;
+	osrfHash* nodes;
+	transport_client* connection;
+};
+typedef struct _osrfRouterClassStruct osrfRouterClass;
+
+/* represents a link to a single server's inbound connection */
+struct _osrfRouterNodeStruct {
+	char* remoteId;	/* send message to me via this login */
+	int count;			/* how many message have been sent to this node */
+	transport_message* lastMessage;
+};
+typedef struct _osrfRouterNodeStruct osrfRouterNode;
+
+static osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* classname );
+static int osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId );
+static int osrfRouterHandleMessage( osrfRouter* router, transport_message* msg );
+static int osrfRouterClassHandleMessage( osrfRouter* router,
+		osrfRouterClass* rclass, transport_message* msg );
+static int osrfRouterRemoveClass( osrfRouter* router, const char* classname );
+static int osrfRouterClassRemoveNode( osrfRouter* router, const char* classname,
+		const char* remoteId );
+static void osrfRouterClassFree( char* classname, void* rclass );
+static void osrfRouterNodeFree( char* remoteId, void* node );
+static osrfRouterClass* osrfRouterFindClass( osrfRouter* router, const char* classname );
+static osrfRouterNode* osrfRouterClassFindNode( osrfRouterClass* rclass,
+		const char* remoteId );
+static int _osrfRouterFillFDSet( osrfRouter* router, fd_set* set );
+static void osrfRouterHandleIncoming( osrfRouter* router );
+static int osrfRouterClassHandleIncoming( osrfRouter* router,
+		const char* classname,  osrfRouterClass* class );
+static transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
+		const char* classname, osrfRouterClass* rclass, transport_message* msg );
+static int osrfRouterHandleAppRequest( osrfRouter* router, transport_message* msg );
+static int osrfRouterRespondConnect( osrfRouter* router, transport_message* msg,
+		osrfMessage* omsg );
+static int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* msg,
+		osrfMessage* omsg );
+static int osrfRouterHandleAppResponse( osrfRouter* router, 
+		transport_message* msg, osrfMessage* omsg, const jsonObject* response );
+static int osrfRouterHandleMethodNFound( osrfRouter* router, transport_message* msg,
+		osrfMessage* omsg );
+
 #define ROUTER_SOCKFD connection->session->sock_id
 #define ROUTER_REGISTER "register"
 #define ROUTER_UNREGISTER "unregister"
@@ -57,7 +103,7 @@ void osrfRouterRun( osrfRouter* router ) {
 	while(1) {
 
 		fd_set set;
-		int maxfd = __osrfRouterFillFDSet( router, &set );
+		int maxfd = _osrfRouterFillFDSet( router, &set );
 		int numhandled = 0;
 
 		if( (selectret = select(maxfd + 1, &set, NULL, NULL, NULL)) < 0 ) {
@@ -103,7 +149,11 @@ void osrfRouterRun( osrfRouter* router ) {
 }
 
 
-void osrfRouterHandleIncoming( osrfRouter* router ) {
+/**
+  Utility method for handling incoming requests to the router
+  and making sure the sender is allowed.
+ */
+static void osrfRouterHandleIncoming( osrfRouter* router ) {
 	if(!router) return;
 
 	transport_message* msg = NULL;
@@ -132,7 +182,11 @@ void osrfRouterHandleIncoming( osrfRouter* router ) {
 	}
 }
 
-int osrfRouterClassHandleIncoming( osrfRouter* router, const char* classname,
+/**
+	Utility method for handling incoming requests to a router class,
+	makes sure sender is a trusted client
+ */
+static int osrfRouterClassHandleIncoming( osrfRouter* router, const char* classname,
 		osrfRouterClass* class ) {
 	if(!(router && class)) return -1;
 
@@ -183,7 +237,11 @@ int osrfRouterClassHandleIncoming( osrfRouter* router, const char* classname,
 
 
 
-int osrfRouterHandleMessage( osrfRouter* router, transport_message* msg ) {
+/**
+  Handles top level router messages
+  @return 0 on success
+ */
+static int osrfRouterHandleMessage( osrfRouter* router, transport_message* msg ) {
 	if(!(router && msg)) return -1;
 
 	if( !msg->router_command || !strcmp(msg->router_command,"")) 
@@ -221,7 +279,14 @@ int osrfRouterHandleMessage( osrfRouter* router, transport_message* msg ) {
 
 
 
-osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* classname ) {
+/**
+  Allocates and adds a new router class handler to the router's list of handlers.
+  Also connects the class handler to the network at <routername>@domain/<classname>
+  @param router The current router instance
+  @param classname The name of the class this node handles.
+  @return 0 on success, -1 on connection error.
+ */
+static osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* classname ) {
 	if(!(router && router->classes && classname)) return NULL;
 
 	osrfRouterClass* class = safe_malloc(sizeof(osrfRouterClass));
@@ -248,7 +313,13 @@ osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* classname )
 }
 
 
-int osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId ) {
+/**
+  Adds a new server node to the given class.
+  @param rclass The Router class to add the node to
+  @param remoteId The remote login of this node
+  @return 0 on success, -1 on generic error
+ */
+static int osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId ) {
 	if(!(rclass && rclass->nodes && remoteId)) return -1;
 
 	osrfLogInfo( OSRF_LOG_MARK, "Adding router node for remote id %s", remoteId );
@@ -266,7 +337,12 @@ int osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId ) {
 	? return NULL if it's the last node ?
  */
 
-transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
+/* handles case where router node is not longer reachable.  copies over the
+	data from the last sent message and returns a newly crafted suitable for treating
+	as a newly inconing message.  Removes the dead node and If there are no more
+	nodes to send the new message to, returns NULL.
+	*/
+static transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
 		const char* classname, osrfRouterClass* rclass, transport_message* msg ) {
 
 	osrfLogDebug( OSRF_LOG_MARK, "osrfRouterClassHandleBounce()");
@@ -317,12 +393,14 @@ transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
 
 
 /**
+  Handles class level requests
   If we get a regular message, we send it to the next node in the list of nodes
   if we get an error, it's a bounce back from a previous attempt.  We take the
   body and thread from the last sent on the node that had the bounced message
   and propogate them on to the new message being sent
-  */
-int osrfRouterClassHandleMessage( 
+  @return 0 on success
+ */
+static int osrfRouterClassHandleMessage( 
 		osrfRouter* router, osrfRouterClass* rclass, transport_message* msg ) {
 	if(!(router && rclass && msg)) return -1;
 
@@ -362,7 +440,10 @@ int osrfRouterClassHandleMessage(
 }
 
 
-int osrfRouterRemoveClass( osrfRouter* router, const char* classname ) {
+/**
+  Removes a given class from the router, freeing as it goes
+ */
+static int osrfRouterRemoveClass( osrfRouter* router, const char* classname ) {
 	if(!(router && router->classes && classname)) return -1;
 	osrfLogInfo( OSRF_LOG_MARK, "Removing router class %s", classname );
 	osrfHashRemove( router->classes, classname );
@@ -370,7 +451,14 @@ int osrfRouterRemoveClass( osrfRouter* router, const char* classname ) {
 }
 
 
-int osrfRouterClassRemoveNode( 
+/**
+  Removes the given node from the class.  Also, if this is that last node in the set,
+  removes the class from the router 
+  @return 0 on successful removal with no class removal
+  @return 1 on successful remove with class removal
+  @return -1 error on removal
+ */
+static int osrfRouterClassRemoveNode( 
 		osrfRouter* router, const char* classname, const char* remoteId ) {
 
 	if(!(router && router->classes && classname && remoteId)) return 0;
@@ -394,7 +482,11 @@ int osrfRouterClassRemoveNode(
 }
 
 
-void osrfRouterClassFree( char* classname, void* c ) {
+/**
+  Frees a router class object
+  Takes a void* since it is freed by the hash code
+ */
+static void osrfRouterClassFree( char* classname, void* c ) {
 	if(!(classname && c)) return;
 	osrfRouterClass* rclass = (osrfRouterClass*) c;
 	client_disconnect( rclass->connection );	
@@ -413,7 +505,11 @@ void osrfRouterClassFree( char* classname, void* c ) {
 }
 
 
-void osrfRouterNodeFree( char* remoteId, void* n ) {
+/**
+  Frees a router node object 
+  Takes a void* since it is freed by the list code
+ */
+static void osrfRouterNodeFree( char* remoteId, void* n ) {
 	if(!n) return;
 	osrfRouterNode* node = (osrfRouterNode*) n;
 	free(node->remoteId);
@@ -439,19 +535,32 @@ void osrfRouterFree( osrfRouter* router ) {
 
 
 
-osrfRouterClass* osrfRouterFindClass( osrfRouter* router, const char* classname ) {
+/**
+  Finds the class associated with the given class name in the list of classes
+ */
+static osrfRouterClass* osrfRouterFindClass( osrfRouter* router, const char* classname ) {
 	if(!( router && router->classes && classname )) return NULL;
 	return (osrfRouterClass*) osrfHashGet( router->classes, classname );
 }
 
 
-osrfRouterNode* osrfRouterClassFindNode( osrfRouterClass* rclass, const char* remoteId ) {
+/**
+  Finds the router node within this class with the given remote id 
+ */
+static osrfRouterNode* osrfRouterClassFindNode( osrfRouterClass* rclass,
+		const char* remoteId ) {
 	if(!(rclass && remoteId))  return NULL;
 	return (osrfRouterNode*) osrfHashGet( rclass->nodes, remoteId );
 }
 
 
-int __osrfRouterFillFDSet( osrfRouter* router, fd_set* set ) {
+/**
+  Clears and populates the provided fd_set* with file descriptors
+  from the router's top level connection as well as each of the
+  router class connections
+  @return The largest file descriptor found in the filling process
+ */
+static int _osrfRouterFillFDSet( osrfRouter* router, fd_set* set ) {
 	if(!(router && router->classes && set)) return -1;
 
 	FD_ZERO(set);
@@ -486,9 +595,11 @@ int __osrfRouterFillFDSet( osrfRouter* router, fd_set* set ) {
 	return maxfd;
 }
 
-
-
-int osrfRouterHandleAppRequest( osrfRouter* router, transport_message* msg ) {
+/**
+  handles messages that don't have a 'router_command' set.  They are assumed to
+  be app request messages 
+ */
+static int osrfRouterHandleAppRequest( osrfRouter* router, transport_message* msg ) {
 
 	int T = 32;
 	osrfMessage* arr[T];
@@ -521,7 +632,8 @@ int osrfRouterHandleAppRequest( osrfRouter* router, transport_message* msg ) {
 	return 0;
 }
 
-int osrfRouterRespondConnect( osrfRouter* router, transport_message* msg, osrfMessage* omsg ) {
+static int osrfRouterRespondConnect( osrfRouter* router, transport_message* msg,
+		osrfMessage* omsg ) {
 	if(!(router && msg && omsg)) return -1;
 
 	osrfMessage* success = osrf_message_init( STATUS, omsg->thread_trace, omsg->protocol );
@@ -539,7 +651,7 @@ int osrfRouterRespondConnect( osrfRouter* router, transport_message* msg, osrfMe
 	client_send_message(router->connection, return_m);
 
 	free(data);
-	osrf_message_free(success);
+	osrfMessageFree(success);
 	message_free(return_m);
 
 	return 0;
@@ -547,7 +659,8 @@ int osrfRouterRespondConnect( osrfRouter* router, transport_message* msg, osrfMe
 
 
 
-int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* msg, osrfMessage* omsg ) {
+static int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* msg,
+		osrfMessage* omsg ) {
 
 	if(!(router && msg && omsg && omsg->method_name)) return -1;
 
@@ -573,12 +686,11 @@ int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* msg, osr
 
 		char* classname = jsonObjectToSimpleString( jsonObjectGetIndex( omsg->_params, 0 ) );
 
-		if (!classname) {
-			free(classname);
+		if (!classname)
 			return -1;
-		}
 
 		class = osrfHashGet(router->classes, classname);
+		free(classname);
 
 		osrfHashIterator* node_itr = osrfNewHashIterator(class->nodes);
 		while( (node = osrfHashIteratorNext(node_itr)) ) {
@@ -596,13 +708,12 @@ int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* msg, osr
 
 		char* classname = jsonObjectToSimpleString( jsonObjectGetIndex( omsg->_params, 0 ) );
 
-		if (!classname) {
-			free(classname);
+		if (!classname)
 			return -1;
-		}
 
 		jresponse = jsonParseString("{}");
 		class = osrfHashGet(router->classes, classname);
+		free(classname);
 
 		osrfHashIterator* node_itr = osrfNewHashIterator(class->nodes);
 		while( (node = osrfHashIteratorNext(node_itr)) ) {
@@ -672,10 +783,10 @@ int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* msg, osr
 
 
 
-int osrfRouterHandleMethodNFound( 
+static int osrfRouterHandleMethodNFound( 
 		osrfRouter* router, transport_message* msg, osrfMessage* omsg ) {
 
-	osrf_message* err = osrf_message_init( STATUS, omsg->thread_trace, 1);
+	osrfMessage* err = osrf_message_init( STATUS, omsg->thread_trace, 1);
 		osrf_message_set_status_info( err, 
 				"osrfMethodException", "Router method not found", OSRF_STATUS_NOTFOUND );
 
@@ -687,14 +798,14 @@ int osrfRouterHandleMethodNFound(
 		client_send_message(router->connection, tresponse );
 
 		free(data);
-		osrf_message_free( err );
+		osrfMessageFree( err );
 		message_free(tresponse);
 		return 0;
 }
 
 
 
-int osrfRouterHandleAppResponse( osrfRouter* router, 
+static int osrfRouterHandleAppResponse( osrfRouter* router, 
 	transport_message* msg, osrfMessage* omsg, const jsonObject* response ) {
 
 	if( response ) { /* send the response message */
@@ -721,7 +832,7 @@ int osrfRouterHandleAppResponse( osrfRouter* router,
 
 
 	/* now send the 'request complete' message */
-	osrf_message* status = osrf_message_init( STATUS, omsg->thread_trace, 1);
+	osrfMessage* status = osrf_message_init( STATUS, omsg->thread_trace, 1);
 	osrf_message_set_status_info( status, "osrfConnectStatus", "Request Complete", OSRF_STATUS_COMPLETE );
 
 	char* statusdata = osrf_message_serialize(status);
