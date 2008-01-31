@@ -557,29 +557,30 @@ int send_request( char* server,
 			return 1;
 		}
 		else {
-			jsonObject* o = jsonNewObject(NULL);
-			jsonObjectPush(o, last_result->_result_content );
-			params = o;
+			params = jsonNewObject(NULL);
+			jsonObjectPush(params, last_result->_result_content );
 		}
 	}
 
 
 	if(buffer->n_used > 0 && params == NULL) {
 		fprintf(stderr, "JSON error detected, not executing\n");
+		jsonObjectFree(params);
 		return 1;
 	}
 
-	osrfAppSession* session = osrf_app_client_session_init(server);
+	osrfAppSession* session = osrfAppSessionClientInit(server);
 
 	if(!osrf_app_session_connect(session)) {
 		osrfLogWarning( OSRF_LOG_MARK,  "Unable to connect to remote service %s\n", server );
+		jsonObjectFree(params);
 		return 1;
 	}
 
 	double start = get_timestamp_millis();
 
 	int req_id = osrfAppSessionMakeRequest( session, params, method, 1, NULL );
-
+	jsonObjectFree(params);
 
 	osrf_message* omsg = osrfAppSessionRequestRecv( session, req_id, recv_timeout );
 
@@ -603,7 +604,7 @@ int send_request( char* server,
 
 			if(omsg->_result_content) {
 	
-				osrf_message_free(last_result);
+				osrfMessageFree(last_result);
 				last_result = omsg;
 	
 				char* content;
@@ -639,7 +640,7 @@ int send_request( char* server,
 
 			if(omsg->_result_content) {
 	
-				osrf_message_free(last_result);
+				osrfMessageFree(last_result);
 				last_result = omsg;
 	
 				char* content;
@@ -832,7 +833,7 @@ static int handle_math( char* words[] ) {
 
 static int do_math( int count, int style ) {
 
-	osrfAppSession* session = osrf_app_client_session_init(  "opensrf.math" );
+	osrfAppSession* session = osrfAppSessionClientInit( "opensrf.math" );
 	osrf_app_session_connect(session);
 
 	jsonObject* params = jsonParseString("[]");
@@ -883,7 +884,7 @@ static int do_math( int count, int style ) {
 				}
 
 
-				osrf_message_free(omsg);
+				osrfMessageFree(omsg);
 		
 			} else { fprintf( stderr, "\nempty message for tt: %d\n", req_id ); }
 
