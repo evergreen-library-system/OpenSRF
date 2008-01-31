@@ -73,6 +73,10 @@ int osrfMathRun( osrfMethodContext* ctx ) {
 			free(a); free(b);
 			return 0;
 		}
+		else {
+			if(a) free(a);
+			if(b) free(b);
+		}
 	}
 
 	return -1;
