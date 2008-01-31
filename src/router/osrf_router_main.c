@@ -4,15 +4,22 @@
 #include "opensrf/log.h"
 #include <signal.h>
 
-osrfRouter* __osrfRouter = NULL;
+static osrfRouter* router = NULL;
 
-void routerSignalHandler( int signal ) {
-	osrfLogWarning( OSRF_LOG_MARK, "Received signal [%d], cleaning up...", signal );
+void routerSignalHandler( int signo ) {
+	osrfLogWarning( OSRF_LOG_MARK, "Received signal [%d], cleaning up...", signo );
 	osrfConfigCleanup();
-	osrfRouterFree(__osrfRouter);
+	osrfRouterFree(router);
+	router = NULL;
+
+	// Exit by re-raising the signal so that the parent
+	// process can detect it
+	
+	signal( signo, SIG_DFL );
+	raise( signo );
 }
 
-static int __setupRouter( char* config, char* context );
+static int setupRouter( char* config, char* context );
 
 
 int main( int argc, char* argv[] ) {
@@ -27,13 +34,13 @@ int main( int argc, char* argv[] ) {
 	init_proc_title( argc, argv );
 	set_proc_title( "OpenSRF Router" );
 
-	return __setupRouter( config, context );
+	int rc = setupRouter( config, context );
 	free(config);
 	free(context);
-
+	return rc ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
-int __setupRouter( char* config, char* context ) {
+int setupRouter( char* config, char* context ) {
 
 	osrfConfig* cfg = osrfConfigInit( config, context );
 	osrfConfigSetDefaultConfig(cfg);
@@ -52,7 +59,7 @@ int __setupRouter( char* config, char* context ) {
 	int llevel = 1;
 	if(level) llevel = atoi(level);
 
-	if(!log_file) { fprintf(stderr, "Log file needed\n"); return -1; }
+	if(!log_file) { fprintf(stderr, "Log file name not specified\n"); return -1; }
 
 	if(!strcmp(log_file, "syslog")) {
 		osrfLogInit( OSRF_LOG_TYPE_SYSLOG, "router", llevel );
@@ -87,10 +94,12 @@ int __setupRouter( char* config, char* context ) {
 
 	if( tclients->size == 0 || tservers->size == 0 ) {
 		osrfLogError( OSRF_LOG_MARK, "We need trusted servers and trusted client to run the router...");
+		osrfStringArrayFree( tservers );
+		osrfStringArrayFree( tclients );
 		return -1;
 	}
 
-	osrfRouter* router = osrfNewRouter( server, 
+	router = osrfNewRouter( server,
 			username, resource, password, iport, tclients, tservers );
 	
 	signal(SIGHUP,routerSignalHandler);
@@ -99,16 +108,23 @@ int __setupRouter( char* config, char* context ) {
 
 	if( (osrfRouterConnect(router)) != 0 ) {
 		fprintf(stderr, "!!!! Unable to connect router to jabber server %s... exiting", server );
+		osrfRouterFree(router);
 		return -1;
 	}
 
 	free(server); free(port); 
-	free(username); free(password); 
+	free(username); free(password);
+	free(resource);
 
-	__osrfRouter = router;
 	daemonize();
 	osrfRouterRun( router );
 
+	// Shouldn't get here, since osrfRouterRun()
+	// should go into an infinite loop
+
+	osrfRouterFree(router);
+	router = NULL;
+	
 	return -1;
 }
 
