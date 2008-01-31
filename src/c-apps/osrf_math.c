@@ -100,6 +100,10 @@ int osrfMathRun( osrfMethodContext* ctx ) {
 
 			osrfAppSessionFree(ses);
 		}
+		else {
+			if(a) free(a);
+			if(b) free(b);
+		}
 	}
 
 	return -1;
