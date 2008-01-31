@@ -2,11 +2,11 @@
 #include <time.h>
 
 /** Send the given message */
-static int _osrf_app_session_send( osrfAppSession*, osrf_message* msg );
+static int _osrf_app_session_send( osrfAppSession*, osrfMessage* msg );
 
 static int osrfAppSessionMakeLocaleRequest(
 		osrfAppSession* session, const jsonObject* params, const char* method_name,
-		int protocol, string_array* param_strings, char* locale );
+		int protocol, osrfStringArray* param_strings, char* locale );
 
 /* the global app_session cache */
 osrfHash* osrfAppSessionCache = NULL;
@@ -18,7 +18,7 @@ osrfHash* osrfAppSessionCache = NULL;
 
 /** Allocates and initializes a new app_request object */
 static osrfAppRequest* _osrf_app_request_init(
-		osrfAppSession* session, osrf_message* msg ) {
+		osrfAppSession* session, osrfMessage* msg ) {
 
 	osrfAppRequest* req =
 		(osrfAppRequest*) safe_malloc(sizeof(osrfAppRequest));
@@ -43,12 +43,12 @@ void osrfAppSessionCleanup() {
 static void _osrf_app_request_free( void * req ){
 	if( req == NULL ) return;
 	osrfAppRequest* r = (osrfAppRequest*) req;
-	if( r->payload ) osrf_message_free( r->payload );
+	if( r->payload ) osrfMessageFree( r->payload );
 	free( r );
 }
 
 /** Pushes the given message onto the list of 'responses' to this request */
-static void _osrf_app_request_push_queue( osrfAppRequest* req, osrf_message* result ){
+static void _osrf_app_request_push_queue( osrfAppRequest* req, osrfMessage* result ){
 	if(req == NULL || result == NULL) return;
 	osrfLogDebug( OSRF_LOG_MARK,  "App Session pushing request [%d] onto request queue", result->thread_trace );
 	if(req->result == NULL) {
@@ -56,8 +56,8 @@ static void _osrf_app_request_push_queue( osrfAppRequest* req, osrf_message* res
 
 	} else {
 		
-		osrf_message* ptr = req->result;
-		osrf_message* ptr2 = req->result->next;
+		osrfMessage* ptr = req->result;
+		osrfMessage* ptr2 = req->result->next;
 		while( ptr2 ) {
 			ptr = ptr2;
 			ptr2 = ptr2->next;
@@ -90,13 +90,13 @@ void osrf_app_session_request_reset_timeout( osrfAppSession* session, int req_id
   * seconds for a message to appear in the receive queue.  Once it arrives it is returned.
   * If no messages arrive in the timeout provided, null is returned.
   */
-static osrf_message* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
+static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 
 	if(req == NULL) return NULL;
 
 	if( req->result != NULL ) {
 		/* pop off the first message in the list */
-		osrf_message* tmp_msg = req->result;
+		osrfMessage* tmp_msg = req->result;
 		req->result = req->result->next;
 		return tmp_msg;
 	}
@@ -113,8 +113,8 @@ static osrf_message* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) 
 		if( req->result != NULL ) { /* if we received anything */
 			/* pop off the first message in the list */
 			osrfLogDebug( OSRF_LOG_MARK,  "app_request_recv received a message, returning it");
-			osrf_message* ret_msg = req->result;
-			osrf_message* tmp_msg = ret_msg->next;
+			osrfMessage* ret_msg = req->result;
+			osrfMessage* tmp_msg = ret_msg->next;
 			req->result = tmp_msg;
 			if (ret_msg->sender_locale) {
 				if (req->session->session_locale)
@@ -132,8 +132,8 @@ static osrf_message* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) 
 		if( req->result != NULL ) { /* if we received anything */
 			/* pop off the first message in the list */
 			osrfLogDebug( OSRF_LOG_MARK,  "app_request_recv received a message, returning it");
-			osrf_message* ret_msg = req->result;
-			osrf_message* tmp_msg = ret_msg->next;
+			osrfMessage* ret_msg = req->result;
+			osrfMessage* tmp_msg = ret_msg->next;
 			req->result = tmp_msg;
 			if (ret_msg->sender_locale) {
 				if (req->session->session_locale)
@@ -309,6 +309,7 @@ osrfAppSession* osrf_app_server_session_init(
 	session->transport_handle = osrfSystemGetTransportClient();
 	if( session->transport_handle == NULL ) {
 		osrfLogWarning( OSRF_LOG_MARK, "No transport client for service '%s'", our_app );
+		free(session);
 		return NULL;
 	}
 
@@ -368,7 +369,7 @@ static void _osrf_app_session_free( osrfAppSession* session ){
 
 int osrfAppSessionMakeRequest(
 		osrfAppSession* session, const jsonObject* params,
-		const char* method_name, int protocol, string_array* param_strings ) {
+		const char* method_name, int protocol, osrfStringArray* param_strings ) {
 
 	return osrfAppSessionMakeLocaleRequest( session, params,
 			method_name, protocol, param_strings, NULL );
@@ -376,13 +377,13 @@ int osrfAppSessionMakeRequest(
 
 static int osrfAppSessionMakeLocaleRequest(
 		osrfAppSession* session, const jsonObject* params, const char* method_name,
-		int protocol, string_array* param_strings, char* locale ) {
+		int protocol, osrfStringArray* param_strings, char* locale ) {
 
 	if(session == NULL) return -1;
 
 	osrfLogMkXid();
 
-	osrf_message* req_msg = osrf_message_init( REQUEST, ++(session->thread_trace), protocol );
+	osrfMessage* req_msg = osrf_message_init( REQUEST, ++(session->thread_trace), protocol );
 	osrf_message_set_method(req_msg, method_name);
 
 	if (locale) {
@@ -400,7 +401,7 @@ static int osrfAppSessionMakeLocaleRequest(
 			int i;
 			for(i = 0; i!= param_strings->size ; i++ ) {
 				osrf_message_add_param(req_msg,
-					string_array_get_string(param_strings,i));
+					osrfStringArrayGetString(param_strings,i));
 			}
 		}
 	}
@@ -408,6 +409,7 @@ static int osrfAppSessionMakeLocaleRequest(
 	osrfAppRequest* req = _osrf_app_request_init( session, req_msg );
 	if(_osrf_app_session_send( session, req_msg ) ) {
 		osrfLogWarning( OSRF_LOG_MARK,  "Error sending request message [%d]", session->thread_trace );
+		_osrf_app_request_free(req);
 		return -1;
 	}
 
@@ -458,7 +460,7 @@ void osrf_app_session_set_remote( osrfAppSession* session, const char* remote_id
 /** pushes the given message into the result list of the app_request
   with the given request_id */
 int osrf_app_session_push_queue( 
-		osrfAppSession* session, osrf_message* msg ){
+		osrfAppSession* session, osrfMessage* msg ){
 	if(session == NULL || msg == NULL) return 0;
 
 	osrfAppRequest* req = OSRF_LIST_GET_INDEX( session->request_queue, msg->thread_trace );
@@ -488,11 +490,11 @@ int osrf_app_session_connect(osrfAppSession* session){
 	osrfLogDebug( OSRF_LOG_MARK,  "AppSession connecting to %s", session->remote_id );
 
 	/* defaulting to protocol 1 for now */
-	osrf_message* con_msg = osrf_message_init( CONNECT, session->thread_trace, 1 );
+	osrfMessage* con_msg = osrf_message_init( CONNECT, session->thread_trace, 1 );
 	osrf_app_session_reset_remote( session );
 	session->state = OSRF_SESSION_CONNECTING;
 	int ret = _osrf_app_session_send( session, con_msg );
-	osrf_message_free(con_msg);
+	osrfMessageFree(con_msg);
 	if(ret)	return 0;
 
 	time_t start = time(NULL);	
@@ -531,11 +533,11 @@ int osrf_app_session_disconnect( osrfAppSession* session){
 
 	osrfLogDebug(OSRF_LOG_MARK,  "AppSession disconnecting from %s", session->remote_id );
 
-	osrf_message* dis_msg = osrf_message_init( DISCONNECT, session->thread_trace, 1 );
+	osrfMessage* dis_msg = osrf_message_init( DISCONNECT, session->thread_trace, 1 );
 	_osrf_app_session_send( session, dis_msg );
 	session->state = OSRF_SESSION_DISCONNECTED;
 
-	osrf_message_free( dis_msg );
+	osrfMessageFree( dis_msg );
 	osrf_app_session_reset_remote( session );
 	return 1;
 }
@@ -546,7 +548,7 @@ int osrf_app_session_request_resend( osrfAppSession* session, int req_id ) {
 }
 
 
-static int osrfAppSessionSendBatch( osrfAppSession* session, osrf_message* msgs[], int size ) {
+static int osrfAppSessionSendBatch( osrfAppSession* session, osrfMessage* msgs[], int size ) {
 
 	if( !(session && msgs && size > 0) ) return 0;
 	int retval = 0;
@@ -603,7 +605,7 @@ static int osrfAppSessionSendBatch( osrfAppSession* session, osrf_message* msgs[
 
 
 
-static int _osrf_app_session_send( osrfAppSession* session, osrf_message* msg ){
+static int _osrf_app_session_send( osrfAppSession* session, osrfMessage* msg ){
 	if( !(session && msg) ) return 0;
 	osrfMessage* a[1];
 	a[0] = msg;
@@ -634,16 +636,16 @@ void osrfAppSessionFree( osrfAppSession* session ){
 			session->remote_service, session->session_id );
 	if(session->type == OSRF_SESSION_CLIENT 
 			&& session->state != OSRF_SESSION_DISCONNECTED ) { /* disconnect if we're a client */
-		osrf_message* dis_msg = osrf_message_init( DISCONNECT, session->thread_trace, 1 );
+		osrfMessage* dis_msg = osrf_message_init( DISCONNECT, session->thread_trace, 1 );
 		_osrf_app_session_send( session, dis_msg ); 
-		osrf_message_free(dis_msg);
+		osrfMessageFree(dis_msg);
 	}
 
 	osrfHashRemove( osrfAppSessionCache, session->session_id );
 	_osrf_app_session_free( session );
 }
 
-osrf_message* osrfAppSessionRequestRecv(
+osrfMessage* osrfAppSessionRequestRecv(
 		osrfAppSession* session, int req_id, int timeout ) {
 	if(req_id < 0 || session == NULL)
 		return NULL;
@@ -656,7 +658,7 @@ osrf_message* osrfAppSessionRequestRecv(
 int osrfAppRequestRespond( osrfAppSession* ses, int requestId, const jsonObject* data ) {
 	if(!ses || ! data ) return -1;
 
-	osrf_message* msg = osrf_message_init( RESULT, requestId, 1 );
+	osrfMessage* msg = osrf_message_init( RESULT, requestId, 1 );
 	osrf_message_set_status_info( msg, NULL, "OK", OSRF_STATUS_OK );
 	char* json = jsonObjectToJSON( data );
 
@@ -664,7 +666,7 @@ int osrfAppRequestRespond( osrfAppSession* ses, int requestId, const jsonObject*
 	_osrf_app_session_send( ses, msg ); 
 
 	free(json);
-	osrf_message_free( msg );
+	osrfMessageFree( msg );
 
 	return 0;
 }
@@ -673,10 +675,10 @@ int osrfAppRequestRespond( osrfAppSession* ses, int requestId, const jsonObject*
 int osrfAppRequestRespondComplete( 
 		osrfAppSession* ses, int requestId, const jsonObject* data ) {
 
-	osrf_message* payload = osrf_message_init( RESULT, requestId, 1 );
+	osrfMessage* payload = osrf_message_init( RESULT, requestId, 1 );
 	osrf_message_set_status_info( payload, NULL, "OK", OSRF_STATUS_OK );
 
-	osrf_message* status = osrf_message_init( STATUS, requestId, 1);
+	osrfMessage* status = osrf_message_init( STATUS, requestId, 1);
 	osrf_message_set_status_info( status, "osrfConnectStatus", "Request Complete", OSRF_STATUS_COMPLETE );
 	
 	if (data) {
@@ -689,13 +691,12 @@ int osrfAppRequestRespondComplete(
 		ms[1] = status;
 
 		osrfAppSessionSendBatch( ses, ms, 2 );
-
-		osrf_message_free( payload );
 	} else {
 		osrfAppSessionSendBatch( ses, &status, 1 );
 	}
 
-	osrf_message_free( status );
+	osrfMessageFree( payload );
+	osrfMessageFree( status );
 
 	return 0;
 }
@@ -704,10 +705,10 @@ int osrfAppSessionStatus( osrfAppSession* ses, int type,
 		const char* name, int reqId, const char* message ) {
 
 	if(ses) {
-		osrf_message* msg = osrf_message_init( STATUS, reqId, 1);
+		osrfMessage* msg = osrf_message_init( STATUS, reqId, 1);
 		osrf_message_set_status_info( msg, name, message, type );
 		_osrf_app_session_send( ses, msg ); 
-		osrf_message_free( msg );
+		osrfMessageFree( msg );
 		return 0;
 	}
 	return -1;
