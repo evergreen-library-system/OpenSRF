@@ -1,5 +1,18 @@
 #include <opensrf/osrf_application.h>
 
+static osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symbolName,
+		const char* notes, int argc, int options, void* );
+static void osrfAppSetOnExit(osrfApplication* app, const char* appName);
+static int _osrfAppRegisterSysMethods( const char* app );
+static osrfApplication* _osrfAppFindApplication( const char* name );
+static osrfMethod* osrfAppFindMethod( osrfApplication* app, const char* methodName );
+static int _osrfAppRespond( osrfMethodContext* context, const jsonObject* data, int complete );
+static int _osrfAppPostProcess( osrfMethodContext* context, int retcode );
+static int _osrfAppRunSystemMethod(osrfMethodContext* context);
+static int osrfAppIntrospect( osrfMethodContext* ctx );
+static int osrfAppIntrospectAll( osrfMethodContext* ctx );
+static int osrfAppEcho( osrfMethodContext* ctx );
+
 static osrfHash* _osrfAppHash = NULL;
 
 int osrfAppRegisterApplication( const char* appName, const char* soFile ) {
@@ -45,7 +58,7 @@ int osrfAppRegisterApplication( const char* appName, const char* soFile ) {
 		}
 	}
 
-	__osrfAppRegisterSysMethods(appName);
+	_osrfAppRegisterSysMethods(appName);
 
 	osrfLogInfo( OSRF_LOG_MARK, "Application %s registered successfully", appName );
 
@@ -57,7 +70,7 @@ int osrfAppRegisterApplication( const char* appName, const char* soFile ) {
 }
 
 
-void osrfAppSetOnExit(osrfApplication* app, const char* appName) {
+static void osrfAppSetOnExit(osrfApplication* app, const char* appName) {
 	if(!(app && appName)) return;
 
 	/* see if we can run the initialize method */
@@ -109,6 +122,7 @@ void osrfAppRunExitCode() {
 			app->onExit();
 		}
 	}
+	osrfHashIteratorFree(itr);
 }
 
 
@@ -160,14 +174,17 @@ int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName,
 
 
 
-osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symbolName,
+static osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symbolName,
 		const char* notes, int argc, int options, void* user_data ) {
 
 	osrfMethod* method					= safe_malloc(sizeof(osrfMethod));
 
 	if(methodName) method->name		= strdup(methodName);
+	else method->name    = NULL;
 	if(symbolName) method->symbol		= strdup(symbolName);
+	else method->symbol  = NULL;
 	if(notes) method->notes				= strdup(notes);
+	else method->notes   = NULL;
 	if(user_data) method->userData	= user_data;
 
 	method->argc							= argc;
@@ -185,7 +202,10 @@ osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symbolName,
 }
 
 
-int __osrfAppRegisterSysMethods( const char* app ) {
+/**
+  Registers all of the system methods for this app so that they may be
+  treated the same as other methods */
+static int _osrfAppRegisterSysMethods( const char* app ) {
 
 	osrfAppRegisterMethod( 
 			app, OSRF_SYSMETHOD_INTROSPECT, NULL, 
@@ -206,19 +226,31 @@ int __osrfAppRegisterSysMethods( const char* app ) {
 	return 0;
 }
 
-osrfApplication* _osrfAppFindApplication( const char* name ) {
+/**
+  Finds the given app in the list of apps
+  @param name The name of the application
+  @return The application pointer or NULL if there is no such application
+ */
+static osrfApplication* _osrfAppFindApplication( const char* name ) {
 	if(!name) return NULL;
 	return (osrfApplication*) osrfHashGet(_osrfAppHash, name);
 }
 
-osrfMethod* __osrfAppFindMethod( osrfApplication* app, const char* methodName ) {
+/**
+  Finds the given method for the given app
+  @param app The application object
+  @param methodName The method to find
+  @return A method pointer or NULL if no such method 
+  exists for the given application
+ */
+static osrfMethod* osrfAppFindMethod( osrfApplication* app, const char* methodName ) {
 	if(!app || ! methodName) return NULL;
 	return (osrfMethod*) osrfHashGet( app->methods, methodName );
 }
 
 osrfMethod* _osrfAppFindMethod( const char* appName, const char* methodName ) {
 	if(!appName || ! methodName) return NULL;
-	return __osrfAppFindMethod( _osrfAppFindApplication(appName), methodName );
+	return osrfAppFindMethod( _osrfAppFindApplication(appName), methodName );
 }
 
 
@@ -244,7 +276,7 @@ int osrfAppRunMethod( const char* appName, const char* methodName,
 		return osrfAppRequestRespondException( ses, 
 				reqId, "Application not found: %s", appName );
 	
-	if( !(method = __osrfAppFindMethod( app, methodName )) ) 
+	if( !(method = osrfAppFindMethod( app, methodName )) )
 		return osrfAppRequestRespondException( ses, reqId, 
 				"Method [%s] not found for service %s", methodName, appName );
 
@@ -261,7 +293,7 @@ int osrfAppRunMethod( const char* appName, const char* methodName,
 	int retcode = 0;
 
 	if( method->options & OSRF_METHOD_SYSTEM ) {
-		retcode = __osrfAppRunSystemMethod(&context);
+		retcode = _osrfAppRunSystemMethod(&context);
 
 	} else {
 
@@ -280,7 +312,7 @@ int osrfAppRunMethod( const char* appName, const char* methodName,
 		return osrfAppRequestRespondException( 
 				ses, reqId, "An unknown server error occurred" );
 
-	return __osrfAppPostProcess( &context, retcode );
+	return _osrfAppPostProcess( &context, retcode );
 
 }
 
@@ -293,7 +325,7 @@ int osrfAppRespondComplete( osrfMethodContext* context, const jsonObject* data )
 	return _osrfAppRespond( context, data, 1 );
 }
 
-int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int complete ) {
+static int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int complete ) {
 	if(!(ctx && ctx->method)) return -1;
 
 	if( ctx->method->options & OSRF_METHOD_ATOMIC ) {
@@ -324,7 +356,7 @@ int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int complet
 
 
 
-int __osrfAppPostProcess( osrfMethodContext* ctx, int retcode ) {
+static int _osrfAppPostProcess( osrfMethodContext* ctx, int retcode ) {
 	if(!(ctx && ctx->method)) return -1;
 
 	osrfLogDebug( OSRF_LOG_MARK,  "Postprocessing method %s with retcode %d",
@@ -375,9 +407,17 @@ static void _osrfAppSetIntrospectMethod( osrfMethodContext* ctx, const osrfMetho
 	jsonObjectSetClass(resp, "method");
 }
 
-
-
-int __osrfAppRunSystemMethod(osrfMethodContext* ctx) {
+/**
+  Trys to run the requested method as a system method.
+  A system method is a well known method that all
+  servers implement.  
+  @param context The current method context
+  @return 0 if the method is run successfully, return < 0 means
+  the method was not run, return > 0 means the method was run
+  and the application code now needs to send a 'request complete' 
+  message
+ */
+static int _osrfAppRunSystemMethod(osrfMethodContext* ctx) {
 	OSRF_METHOD_VERIFY_CONTEXT(ctx);
 
 	if(	!strcmp(ctx->method->name, OSRF_SYSMETHOD_INTROSPECT_ALL ) || 
@@ -407,7 +447,7 @@ int __osrfAppRunSystemMethod(osrfMethodContext* ctx) {
 }
 
 
-int osrfAppIntrospect( osrfMethodContext* ctx ) {
+static int osrfAppIntrospect( osrfMethodContext* ctx ) {
 
 	jsonObject* resp = NULL;
 	char* methodSubstring = jsonObjectGetString( jsonObjectGetIndex(ctx->params, 0) );
@@ -440,7 +480,7 @@ int osrfAppIntrospect( osrfMethodContext* ctx ) {
 }
 
 
-int osrfAppIntrospectAll( osrfMethodContext* ctx ) {
+static int osrfAppIntrospectAll( osrfMethodContext* ctx ) {
 	jsonObject* resp = NULL;
 	osrfApplication* app = _osrfAppFindApplication( ctx->session->remote_service );
 
@@ -460,7 +500,7 @@ int osrfAppIntrospectAll( osrfMethodContext* ctx ) {
 	return -1;
 }
 
-int osrfAppEcho( osrfMethodContext* ctx ) {
+static int osrfAppEcho( osrfMethodContext* ctx ) {
 	OSRF_METHOD_VERIFY_CONTEXT(ctx);
 	int i;
 	for( i = 0; i < ctx->params->size; i++ ) {

@@ -141,16 +141,6 @@ int osrfAppRegisterMethod( const char* appName, const char* methodName,
 int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName, 
 		const char* symbolName, const char* notes, int argc, int options, void* );
 
-osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symbolName,
-		const char* notes, int argc, int options, void* );
-
-/**
-  Finds the given app in the list of apps
-  @param name The name of the application
-  @return The application pointer or NULL if there is no such application
-  */
-osrfApplication* _osrfAppFindApplication( const char* name );
-
 /**
   Finds the given method for the given app
   @param appName The application
@@ -159,16 +149,6 @@ osrfApplication* _osrfAppFindApplication( const char* name );
   exists for the given application
   */
 osrfMethod* _osrfAppFindMethod( const char* appName, const char* methodName );
-
-/**
-  Finds the given method for the given app
-  @param app The application object
-  @param methodName The method to find
-  @return A method pointer or NULL if no such method 
-  exists for the given application
-  */
-osrfMethod* __osrfAppFindMethod( osrfApplication* app, const char* methodName );
-
 
 /**
   Runs the specified method for the specified application.
@@ -181,26 +161,6 @@ osrfMethod* __osrfAppFindMethod( osrfApplication* app, const char* methodName );
 int osrfAppRunMethod( const char* appName, const char* methodName, 
 		osrfAppSession* ses, int reqId, jsonObject* params );
 
-
-/**
-  Trys to run the requested method as a system method.
-  A system method is a well known method that all
-  servers implement.  
-  @param context The current method context
-  @return 0 if the method is run successfully, return < 0 means
-  the method was not run, return > 0 means the method was run
-  and the application code now needs to send a 'request complete' 
-  message
-  */
-int __osrfAppRunSystemMethod(osrfMethodContext* context);
-
-/**
-  Registers all of the system methods for this app so that they may be
-  treated the same as other methods */
-int __osrfAppRegisterSysMethods( const char* app );
-
-
-
 /**
   Responds to the client with a method exception
   @param ses The current session
@@ -210,25 +170,15 @@ int __osrfAppRegisterSysMethods( const char* app );
   */
 int osrfAppRequestRespondException( osrfAppSession* ses, int request, const char* msg, ... );
 
-int __osrfAppPostProcess( osrfMethodContext* context, int retcode );
-
-
 int osrfAppRespond( osrfMethodContext* context, const jsonObject* data );
-int _osrfAppRespond( osrfMethodContext* context, const jsonObject* data, int complete );
 int osrfAppRespondComplete( osrfMethodContext* context, const jsonObject* data );
 
 /* OSRF_METHOD_ATOMIC and/or OSRF_METHOD_CACHABLE and/or 0 for no special options */
 //int osrfAppProcessMethodOptions( char* method );
 
-int osrfAppIntrospect( osrfMethodContext* ctx );
-int osrfAppIntrospectAll( osrfMethodContext* ctx );
-int osrfAppEcho( osrfMethodContext* ctx );
-
-
 /**
  * Tells the backend process to run its child init function */
 int osrfAppRunChildInit(const char* appname);
-void osrfAppSetOnExit(osrfApplication* app, const char* appName);
 void osrfAppRunExitCode();
 
 
