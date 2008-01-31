@@ -1,12 +1,12 @@
 #include "apachetools.h"
 
-string_array* apacheParseParms(request_rec* r) {
+osrfStringArray* apacheParseParms(request_rec* r) {
 
 	if( r == NULL ) return NULL;
 
 	char* arg = r->args;			/* url query string */
 	apr_pool_t *p = r->pool;	/* memory pool */
-	string_array* sarray			= init_string_array(12); /* method parameters */
+	osrfStringArray* sarray		= osrfNewStringArray(12); /* method parameters */
 
 	growing_buffer* buffer		= NULL;	/* POST data */
 	growing_buffer* tmp_buf		= NULL;	/* temp buffer */
@@ -97,13 +97,13 @@ string_array* apacheParseParms(request_rec* r) {
 
 		osrfLogDebug(OSRF_LOG_MARK, "parsed URL params %s=%s", key, val);
 
-		string_array_add(sarray, key);
-		string_array_add(sarray, val);
+		osrfStringArrayAdd(sarray, key);
+		osrfStringArrayAdd(sarray, val);
 
 		if( sanity++ > 1000 ) {
 			osrfLogError(OSRF_LOG_MARK, 
 				"Parsing URL params failed sanity check: 1000 iterations");
-			string_array_destroy(sarray);
+			osrfStringArrayFree(sarray);
 			return NULL;
 		}
 
@@ -118,41 +118,41 @@ string_array* apacheParseParms(request_rec* r) {
 
 
 
-string_array* apacheGetParamKeys(string_array* params) {
+osrfStringArray* apacheGetParamKeys(osrfStringArray* params) {
 	if(params == NULL) return NULL;	
-	string_array* sarray	= init_string_array(12); 
+	osrfStringArray* sarray = osrfNewStringArray(12);
 	int i;
 	osrfLogDebug(OSRF_LOG_MARK, "Fetching URL param keys");
 	for( i = 0; i < params->size; i++ ) 
-		string_array_add(sarray, string_array_get_string(params, i++));	
+		osrfStringArrayAdd(sarray, osrfStringArrayGetString(params, i++));
 	return sarray;
 }
 
-string_array* apacheGetParamValues(string_array* params, char* key) {
+osrfStringArray* apacheGetParamValues(osrfStringArray* params, char* key) {
 
 	if(params == NULL || key == NULL) return NULL;	
-	string_array* sarray	= init_string_array(12); 
+	osrfStringArray* sarray	= osrfNewStringArray(12);
 
 	osrfLogDebug(OSRF_LOG_MARK, "Fetching URL values for key %s", key);
 	int i;
 	for( i = 0; i < params->size; i++ ) {
-		char* nkey = string_array_get_string(params, i++);	
+		char* nkey = osrfStringArrayGetString(params, i++);
 		if(key && !strcmp(nkey, key)) 
-			string_array_add(sarray, string_array_get_string(params, i));	
+			osrfStringArrayAdd(sarray, osrfStringArrayGetString(params, i));
 	}
 	return sarray;
 }
 
 
-char* apacheGetFirstParamValue(string_array* params, char* key) {
+char* apacheGetFirstParamValue(osrfStringArray* params, char* key) {
 	if(params == NULL || key == NULL) return NULL;	
 
 	int i;
 	osrfLogDebug(OSRF_LOG_MARK, "Fetching first URL value for key %s", key);
 	for( i = 0; i < params->size; i++ ) {
-		char* nkey = string_array_get_string(params, i++);	
+		char* nkey = osrfStringArrayGetString(params, i++);
 		if(key && !strcmp(nkey, key)) 
-			return strdup(string_array_get_string(params, i));
+			return strdup(osrfStringArrayGetString(params, i));
 	}
 
 	return NULL;
