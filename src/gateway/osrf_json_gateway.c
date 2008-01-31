@@ -161,8 +161,8 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	r->allowed |= (AP_METHOD_BIT << M_POST);
 
 	osrfLogDebug(OSRF_LOG_MARK, "osrf gateway: parsing URL params");
-	string_array* mparams	= NULL;
-	string_array* params	= apacheParseParms(r); /* free me */
+	osrfStringArray* mparams	= NULL;
+	osrfStringArray* params	= apacheParseParms(r); /* free me */
 	param_locale		= apacheGetFirstParamValue( params, "locale" );
 	service			= apacheGetFirstParamValue( params, "service" );
 	method			= apacheGetFirstParamValue( params, "method" ); 
@@ -252,7 +252,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		fflush(stderr);
 		*/
 
-		osrfAppSession* session = osrf_app_client_session_init(service);
+		osrfAppSession* session = osrfAppSessionClientInit(service);
 		osrf_app_session_set_locale(session, osrf_locale);
 
 		double starttime = get_timestamp_millis();
@@ -268,6 +268,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 				jsonObjectPush(arr, parseJSONFunc(str));
 
 			req_id = osrfAppSessionMakeRequest( session, arr, method, api_level, NULL );
+			jsonObjectFree(arr);
 		} else {
 
 			/**
@@ -290,6 +291,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 
 		if( req_id == -1 ) {
 			osrfLogError(OSRF_LOG_MARK, "I am unable to communicate with opensrf..going away...");
+			osrfAppSessionFree(session);
 			/* we don't want to spawn an intense re-forking storm 
 			 * if there is no jabber server.. so give it some time before we die */
 			usleep( 100000 ); /* 100 milliseconds */
@@ -319,7 +321,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		/* ----------------------------------------------------------------- */
 
 
-		osrf_message* omsg = NULL;
+		osrfMessage* omsg = NULL;
 
 		int statuscode = 200;
 
@@ -360,7 +362,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 				}
 			}
 	
-			osrf_message_free(omsg);
+			osrfMessageFree(omsg);
 			if(statusname) break;
 		}
 
@@ -419,8 +421,8 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	}
 
 	osrfLogInfo(OSRF_LOG_MARK, "Completed processing service=%s, method=%s", service, method);
-	string_array_destroy(params);
-	string_array_destroy(mparams);
+	osrfStringArrayFree(params);
+	osrfStringArrayFree(mparams);
 	free( osrf_locale );
 	free( input_format );
 	free( method );
