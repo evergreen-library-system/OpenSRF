@@ -150,6 +150,8 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 		} 
 	} // should we do something if there are no apps? does the wait(NULL) below do that for us?
 
+	osrfStringArrayFree(arr);
+	
 	while(1) {
 		errno = 0;
 		int status;
@@ -310,6 +312,12 @@ int osrfSystemBootstrapClientResc( char* config_file, char* contextnode, char* r
 
 
 	char* log_file		= osrfConfigGetValue( NULL, "/logfile");
+	if(!log_file) {
+		fprintf(stderr, "No log file specified in configuration file %s\n",
+				config_file);
+		return -1;
+	}
+
 	char* log_level		= osrfConfigGetValue( NULL, "/loglevel" );
 	osrfStringArray* arr	= osrfNewStringArray(8);
 	osrfConfigGetValueList(NULL, arr, "/domains/domain");
@@ -320,19 +328,6 @@ int osrfSystemBootstrapClientResc( char* config_file, char* contextnode, char* r
 	char* unixpath		= osrfConfigGetValue( NULL, "/unixpath" );
 	char* facility		= osrfConfigGetValue( NULL, "/syslog" );
 	char* actlog		= osrfConfigGetValue( NULL, "/actlog" );
-
-	if(!log_file) {
-		fprintf(stderr, "No log file specified in configuration file %s\n",
-			   config_file);
-		free(log_level);
-		free(username);
-		free(password);
-		free(port);
-		free(unixpath);
-		free(facility);
-		free(actlog);
-		return -1;
-	}
 
 	/* if we're a source-client, tell the logger */
 	char* isclient = osrfConfigGetValue(NULL, "/client");
