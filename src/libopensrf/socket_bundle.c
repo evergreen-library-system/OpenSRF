@@ -129,7 +129,7 @@ int socket_open_tcp_server(socket_manager* mgr, int port, const char* listen_ip)
 	return sock_fd;
 }
 
-int socket_open_unix_server(socket_manager* mgr, char* path) {
+int socket_open_unix_server(socket_manager* mgr, const char* path) {
 	if(mgr == NULL || path == NULL) return -1;
 
 	osrfLogDebug( OSRF_LOG_MARK, "opening unix socket at %s", path);
@@ -291,7 +291,7 @@ int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr)
 
 
 int socket_open_udp_client( 
-		socket_manager* mgr, int port, char* dest_addr) {
+		socket_manager* mgr, int port, const char* dest_addr) {
 
 	int sockfd;
 	struct sockaddr_in client_addr, server_addr;
