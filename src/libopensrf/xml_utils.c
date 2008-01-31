@@ -1,5 +1,7 @@
 #include <opensrf/xml_utils.h>
 
+/* helper function */
+static jsonObject* _xmlToJSON(xmlNodePtr node, jsonObject*);
 
 void recurse_doc( xmlNodePtr node ) {
 	if( node == NULL ) return;
@@ -18,7 +20,7 @@ jsonObject* xmlDocToJSON(xmlDocPtr doc) {
 	return _xmlToJSON(xmlDocGetRootElement(doc), NULL);
 }
 
-jsonObject* _xmlToJSON(xmlNodePtr node, jsonObject* obj) {
+static jsonObject* _xmlToJSON(xmlNodePtr node, jsonObject* obj) {
 
 	if(!node) return NULL;
 	if(xmlIsBlankNode(node)) return NULL;
@@ -93,7 +95,7 @@ char* xmlDocToString(xmlDocPtr doc, int full) {
 
 
 
-char* xmlSaxAttr( const xmlChar** atts, char* name ) {
+char* xmlSaxAttr( const xmlChar** atts, const char* name ) {
 	if( atts && name ) {
 		int i;
 		for(i = 0; (atts[i] != NULL); i++) {
