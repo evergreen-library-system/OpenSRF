@@ -36,28 +36,28 @@ int osrf_settings_retrieve(const char* hostname) {
 
 	if(!config) {
 
-		osrfAppSession* session = osrf_app_client_session_init("opensrf.settings");
+		osrfAppSession* session = osrfAppSessionClientInit("opensrf.settings");
 		jsonObject* params = jsonNewObject(NULL);
 		jsonObjectPush(params, jsonNewObject(hostname));
 		int req_id = osrfAppSessionMakeRequest( 
 			session, params, "opensrf.settings.host_config.get", 1, NULL );
-		osrf_message* omsg = osrfAppSessionRequestRecv( session, req_id, 60 );
+		osrfMessage* omsg = osrfAppSessionRequestRecv( session, req_id, 60 );
 		jsonObjectFree(params);
 
 		if(!omsg) {
-			osrfLogError( OSRF_LOG_MARK, "No osrf_message received from host %s (timeout?)", hostname);
+			osrfLogError( OSRF_LOG_MARK, "No osrfMessage received from host %s (timeout?)", hostname);
 		} else if(!omsg->_result_content) {
-			osrf_message_free(omsg);
+			osrfMessageFree(omsg);
 			osrfLogError(
 				OSRF_LOG_MARK,
-				"NULL or non-existant osrf_message result content received from host %s, "
+			"NULL or non-existant osrfMessage result content received from host %s, "
 				"broken message or no settings for host",
 				hostname
 			);
 		} else {
 			config = osrf_settings_new_host_config(hostname);
 			config->config = jsonObjectClone(omsg->_result_content);
-			osrf_message_free(omsg);
+			osrfMessageFree(omsg);
 		}
 
 		osrf_app_session_request_finish( session, req_id );
