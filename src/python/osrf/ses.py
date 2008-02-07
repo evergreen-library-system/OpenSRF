@@ -209,7 +209,9 @@ class ClientSession(Session):
         ses = ClientSession(service)
         req = ses.request2(method, list(args))
         resp = req.recv()
-        data = resp.content()
+        data = None
+        if resp:
+            data = resp.content()
         req.cleanup()
         ses.cleanup()
         return data
