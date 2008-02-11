@@ -3,7 +3,6 @@
 #include <opensrf/osrf_prefork.h>
 #include <signal.h>
 
-static int _osrfSystemInitCache( void );
 static void report_child_status( pid_t pid, int status );
 struct child_node;
 typedef struct child_node ChildNode;
@@ -38,7 +37,7 @@ int osrf_system_bootstrap_client( char* config_file, char* contextnode ) {
 	return osrfSystemBootstrapClientResc(config_file, contextnode, NULL);
 }
 
-static int _osrfSystemInitCache( void ) {
+int osrfSystemInitCache( void ) {
 
 	jsonObject* cacheServers = osrf_settings_host_value_object("/cache/global/servers/server");
 	char* maxCache = osrf_settings_host_value("/cache/global/max_cache_time");
@@ -98,8 +97,6 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 	jsonObject* apps = osrf_settings_host_value_object("/activeapps/appname");
 	osrfStringArray* arr = osrfNewStringArray(8);
 	
-	_osrfSystemInitCache();
-
 	if(apps) {
 		int i = 0;
 

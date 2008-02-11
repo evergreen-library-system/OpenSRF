@@ -177,6 +177,8 @@ static int prefork_child_init_hook(prefork_child* child) {
 
 	if(!child) return -1;
 	osrfLogDebug( OSRF_LOG_MARK, "Child init hook for child %d", child->pid);
+
+    osrfSystemInitCache();
 	char* resc = va_list_to_string("%s_drone",child->appname);
 
    /* if we're a source-client, tell the logger now that we're a new process*/

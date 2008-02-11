@@ -20,6 +20,7 @@ static time_t _osrfCacheMaxSeconds = -1;
 
 int osrfCacheInit( const char* serverStrings[], int size, time_t maxCacheSeconds ) {
 	if( !(serverStrings && size > 0) ) return -1;
+    osrfCacheCleanup(); /* in case we've already been init-ed */
 
 	int i;
 	_osrfCache = mc_new();

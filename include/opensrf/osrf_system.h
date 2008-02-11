@@ -52,4 +52,7 @@ int osrf_system_shutdown( void );
 void osrfSystemIgnoreTransportClient();
 
 
+/** Initialize the cache connection */
+int osrfSystemInitCache(void);
+
 #endif
