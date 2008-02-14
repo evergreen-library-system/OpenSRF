@@ -68,7 +68,7 @@ def child_init(req):
     ops = req.get_options()
     conf = ops['OSRF_CONFIG']
     ctxt = ops.get('OSRF_CONFIG_CONTEXT') or 'opensrf'
-    osrf.system.connect(conf, ctxt)
+    osrf.system.System.connect(config_file=conf, config_context=ctxt)
 
     ROUTER_NAME = osrf.conf.get('router_name')
     OSRF_DOMAIN = osrf.conf.get('domains.domain')
@@ -137,8 +137,8 @@ class HTTPTranslator(object):
             pass # drop stale messages
 
 
-        net_msg = NetworkMessage(recipient=self.recipient, thread=self.thread, \
-            body=self.body, locale=self.locale)
+        net_msg = osrf.net.NetworkMessage(
+            recipient=self.recipient, thread=self.thread, body=self.body)
         self.handle.send(net_msg)
 
         if self.disconnect_only:
