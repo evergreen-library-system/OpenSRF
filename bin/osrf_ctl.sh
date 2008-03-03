@@ -16,9 +16,9 @@ function usage {
 	echo "";
 	echo "Mandatory parameters:";
 	echo -e "  -a\t\taction to perform";
-	echo -e "  -c\t\tfull path to C configuration file (opensrf_core.xml)";
 	echo "";
 	echo "Optional parameters:";
+	echo -e "  -c\t\tfull path to C configuration file (opensrf_core.xml)";
 	echo -e "  -d\t\tstore PID files in this directory";
 	echo -e "  -l\t\taccept 'localhost' as the fully-qualified domain name";
 	echo "";
@@ -40,17 +40,33 @@ function usage {
 	echo -e "\trestart_all"
 	echo "";
 	echo "Examples:";
-	echo "  $0 -c opensrf_core.xml -a restart_all";
+	echo "  $0 -a restart_all";
 	echo "  $0 -l -c opensrf_core.xml -a restart_all";
 	echo "";
 	exit;
 }
 
+# Get root directory of this script
+function basepath {
+	BASEDIR=""
+	script_path="$1"
+	IFS="/"
+	for p in $script_path
+	do
+		if [ -z "$BASEDIR" ] && [ -n "$p" ]; then
+			BASEDIR="$p"
+		fi;
+	done
+	BASEDIR="/$BASEDIR"
+	IFS=
+}
+
+basepath $0
 
 # ---------------------------------------------------------------------------
 # Load the command line options and set the global vars
 # ---------------------------------------------------------------------------
-while getopts  "c:a:d:lh" flag; do
+while getopts  "a:d:clh" flag; do
 	case $flag in	
 		"a")		OPT_ACTION="$OPTARG";;
 		"c")		OPT_CONFIG="$OPTARG";;
@@ -60,7 +76,7 @@ while getopts  "c:a:d:lh" flag; do
 	esac;
 done
 
-
+[ -z "$OPT_CONFIG" ] && OPT_CONFIG="$BASEDIR/conf/opensrf_core.xml";
 [ -z "$OPT_PID_DIR" ] && OPT_PID_DIR=/tmp;
 [ -z "$OPT_ACTION" ] && usage;
 
