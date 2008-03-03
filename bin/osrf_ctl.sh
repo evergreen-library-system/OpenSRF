@@ -77,6 +77,10 @@ while getopts  "a:d:clh" flag; do
 done
 
 [ -z "$OPT_CONFIG" ] && OPT_CONFIG="$BASEDIR/conf/opensrf_core.xml";
+if [ ! -r "$OPT_CONFIG" ]; then
+	echo "Please specify the location of the opensrf_core.xml file using the -c flag";
+	exit 1;
+fi;
 [ -z "$OPT_PID_DIR" ] && OPT_PID_DIR=/tmp;
 [ -z "$OPT_ACTION" ] && usage;
 
