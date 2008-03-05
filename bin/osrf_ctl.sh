@@ -66,7 +66,7 @@ basepath $0
 # ---------------------------------------------------------------------------
 # Load the command line options and set the global vars
 # ---------------------------------------------------------------------------
-while getopts  "a:d:clh" flag; do
+while getopts  "a:d:c:lh" flag; do
 	case $flag in	
 		"a")		OPT_ACTION="$OPTARG";;
 		"c")		OPT_CONFIG="$OPTARG";;
