@@ -34,12 +34,13 @@ This service should be loaded at system startup.
 		if( ! $instance ) {
 
 			my $conf = OpenSRF::Utils::Config->current;
-			my $domains = $conf->bootstrap->domains;
+			my $domain = $conf->bootstrap->domain;
+            $logger->error("use of <domains/> is deprecated") if $conf->bootstrap->domains;
 
 			my $username	= $conf->bootstrap->username;
 			my $password	= $conf->bootstrap->passwd;
 			my $port			= $conf->bootstrap->port;
-			my $host			= $domains->[0]; # XXX for now...
+			my $host			= $domain;
 			my $resource	= $app . '_listener_at_' . $conf->env->hostname;
 
 			my $router_name = $conf->bootstrap->router_name;
@@ -75,21 +76,9 @@ This service should be loaded at system startup.
 
 sub DESTROY {
 	my $self = shift;
-
-	my $routers = $self->{routers}; #store for destroy
-	my $router_name = $self->{router_name};
-
-	unless($router_name and $routers) {
-		return;
-	}
-
-	my @targets;
-	for my $router (@$routers) {
-		push @targets, "$router_name\@$router/router";
-	}
-
-	for my $router (@targets) {
+	for my $router (@{$self->{routers}}) {
 		if($self->tcp_connected()) {
+            $logger->info("disconnecting from router $router");
 			$self->send( to => $router, body => "registering", 
 				router_command => "unregister" , router_class => $self->{app} );
 		}
@@ -99,38 +88,35 @@ sub DESTROY {
 sub listen {
 	my $self = shift;
 	
-	my $routers;
+    $self->{routers} = [];
 
 	try {
 
 		my $conf = OpenSRF::Utils::Config->current;
-		my $router_name = $conf->bootstrap->router_name;
-		my $routers = $conf->bootstrap->domains;
+        my $router_name = $conf->bootstrap->router_name;
+		my $routers = $conf->bootstrap->routers;
+        $logger->info("loading router info $routers");
 
-		$self->{routers} = $routers; #store for destroy
-		$self->{router_name} = $router_name;
-	
-		if($router_name and $routers) {
-	
-			my @targets;
-			for my $router (@$routers) {
-				push @targets, "$router_name\@$router/router";
-			}
-	
-			for my $router (@targets) {
-				$logger->transport( $self->{app} . " connecting to router $router", INFO ); 
-				$self->send( to => $router, 
-						body => "registering", router_command => "register" , router_class => $self->{app} );
-			}
-			$logger->transport( $self->{app} . " :routers connected", INFO ); 
+        for my $router (@$routers) {
 
-		} else {
-
-			$logger->transport("Bypassing routers...", INFO);
-		}
-
+            if(ref $router) {
+                if( !$router->{services} || grep { $_ eq $self->{app} } @{$router->{services}->{service}} ) {
+                    my $name = $router->{name};
+                    my $domain = $router->{domain};
+                    my $target = "$name\@$domain/router";
+                    push(@{$self->{routers}}, $target);
+                    $logger->info( $self->{app} . " connecting to router $target");
+                    $self->send( to => $target, body => "registering", router_command => "register" , router_class => $self->{app} );
+                }
+            } else {
+                my $target = "$router_name\@$router/router";
+                push(@{$self->{routers}}, $target);
+                $logger->info( $self->{app} . " connecting to router $target");
+                $self->send( to => $target, body => "registering", router_command => "register" , router_class => $self->{app} );
+            }
+        }
 		
-	} catch OpenSRF::EX::Config with {
+	} catch Error with {
 		$logger->transport( $self->{app} . ": No routers defined" , WARN ); 
 		# no routers defined
 	};

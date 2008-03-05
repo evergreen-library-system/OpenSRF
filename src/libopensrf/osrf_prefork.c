@@ -143,34 +143,59 @@ int osrf_prefork_run(const char* appname) {
 
 }
 
+/* sends the "register" packet to the specified router */
+static void osrf_prefork_send_router_registration(const char* appname, const char* routerName, const char* routerDomain) {
+	transport_client* client = osrfSystemGetTransportClient();
+    char* jid = va_list_to_string( "%s@%s/router", routerName, routerDomain );
+    osrfLogInfo( OSRF_LOG_MARK, "%s registering with router %s", appname, jid );
+    transport_message* msg = message_init("registering", NULL, NULL, jid, NULL );
+    message_set_router_info( msg, NULL, NULL, appname, "register", 0 );
+    client_send_message( client, msg );
+    message_free( msg );
+    free(jid);
+}
+
+/** parses a single "complex" router configuration chunk */
+static void osrf_prefork_parse_router_chunk(const char* appname, jsonObject* routerChunk) {
+
+    char* routerName = jsonObjectGetString(jsonObjectGetKey(routerChunk, "name"));
+    char* domain = jsonObjectGetString(jsonObjectGetKey(routerChunk, "domain"));
+    jsonObject* services = jsonObjectGetKey(routerChunk, "services");
+    osrfLogDebug(OSRF_LOG_MARK, "found router config with domain %s and name %s", routerName, domain);
+
+    if(services && services->type == JSON_HASH) {
+        osrfLogDebug(OSRF_LOG_MARK, "investigating router information...");
+        services = jsonObjectGetKey(services, "service");
+        int j;
+        for(j = 0; j < services->size; j++ ) {
+            char* service = jsonObjectGetString(jsonObjectGetIndex(services, j));
+            if(!strcmp(appname, service))
+                osrf_prefork_send_router_registration(appname, routerName, domain);
+        }
+    } else {
+        osrf_prefork_send_router_registration(appname, routerName, domain);
+    }
+}
+
 static void osrf_prefork_register_routers( const char* appname ) {
 
-	osrfStringArray* arr = osrfNewStringArray(4);
+    jsonObject* routerInfo = osrfConfigGetValueObject(NULL, "/routers/router");
 
-	int c = osrfConfigGetValueList( NULL, arr, "/routers/router" );
-	char* routerName = osrfConfigGetValue( NULL, "/router_name" );
-	transport_client* client = osrfSystemGetTransportClient();
+    int i;
+    for(i = 0; i < routerInfo->size; i++) {
+        jsonObject* routerChunk = jsonObjectGetIndex(routerInfo, i);
 
-	osrfLogInfo( OSRF_LOG_MARK, "router name is %s and we have %d routers to connect to", routerName, c );
+        if(routerChunk->type == JSON_STRING) {
+            /* this accomodates simple router configs */
+            char* routerName = osrfConfigGetValue( NULL, "/router_name" );
+            char* domain = osrfConfigGetValue(NULL, "/routers/router");
+            osrfLogDebug(OSRF_LOG_MARK, "found simple router settings with router name %s", routerName);
+            osrf_prefork_send_router_registration(appname, routerName, domain);
 
-	while( c ) {
-		char* domain = osrfStringArrayGetString(arr, --c);
-		if(domain) {
-
-			char* jid = va_list_to_string( "%s@%s/router", routerName, domain );
-			osrfLogInfo( OSRF_LOG_MARK, "Registering with router %s", jid );
-
-			transport_message* msg = message_init("registering", NULL, NULL, jid, NULL );
-			message_set_router_info( msg, NULL, NULL, appname, "register", 0 );
-
-			client_send_message( client, msg );
-			message_free( msg );
-			free(jid);
-		}
-	}
-
-	free(routerName);
-	osrfStringArrayFree(arr);
+        } else {
+            osrf_prefork_parse_router_chunk(appname, routerChunk);
+        }
+    }
 }
 
 static int prefork_child_init_hook(prefork_child* child) {

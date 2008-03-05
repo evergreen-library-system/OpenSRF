@@ -135,7 +135,7 @@ function do_action {
 
 function start_router {
 	do_action "start" $PID_ROUTER "OpenSRF Router";
-	opensrf_router $OPT_CONFIG router
+	opensrf_router $OPT_CONFIG routers
 	pid=$(ps ax | grep "OpenSRF Router" | grep -v grep | awk '{print $1}')
 	echo $pid > $PID_ROUTER;
 	return 0;

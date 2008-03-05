@@ -89,7 +89,7 @@ class ClientSession(Session):
         self.locale = locale
 
         # find the remote service handle <router>@<domain>/<service>
-        domain = osrf.conf.get('domains.domain', 0)
+        domain = osrf.conf.get('domain', 0)
         router = osrf.conf.get('router_name')
         self.remote_id = "%s@%s/%s" % (router, domain, service)
         self.orig_remote_id = self.remote_id

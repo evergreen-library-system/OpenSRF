@@ -109,6 +109,10 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 		osrfLogDebug( OSRF_LOG_MARK,  "In app_request receive with remaining time [%d]", (int) remaining );
 
 		osrf_app_session_queue_wait( req->session, 0, NULL );
+        if(req->session->transport_error) {
+            osrfLogError(OSRF_LOG_MARK, "Transport error in recv()");
+            return NULL;
+        }
 
 		if( req->result != NULL ) { /* if we received anything */
 			/* pop off the first message in the list */
@@ -128,6 +132,11 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 			return NULL;
 
 		osrf_app_session_queue_wait( req->session, (int) remaining, NULL );
+
+        if(req->session->transport_error) {
+            osrfLogError(OSRF_LOG_MARK, "Transport error in recv()");
+            return NULL;
+        }
 
 		if( req->result != NULL ) { /* if we received anything */
 			/* pop off the first message in the list */
@@ -225,7 +234,7 @@ osrfAppSession* osrf_app_client_session_init( const char* remote_service ) {
 	}
 
 	osrfStringArray* arr = osrfNewStringArray(8);
-	osrfConfigGetValueList(NULL, arr, "/domains/domain");
+	osrfConfigGetValueList(NULL, arr, "/domain");
 	char* domain = osrfStringArrayGetString(arr, 0);
 
 	if (!domain) {
@@ -266,6 +275,7 @@ osrfAppSession* osrf_app_client_session_init( const char* remote_service ) {
 	session->orig_remote_id = strdup(session->remote_id);
 	session->remote_service = strdup(remote_service);
 	session->session_locale = NULL;
+    session->transport_error = 0;
 
 	#ifdef ASSUME_STATELESS
 	session->stateless = 1;
@@ -502,6 +512,10 @@ int osrf_app_session_connect(osrfAppSession* session){
 
 	while( session->state != OSRF_SESSION_CONNECTED && remaining >= 0 ) {
 		osrf_app_session_queue_wait( session, remaining, NULL );
+        if(session->transport_error) {
+            osrfLogError(OSRF_LOG_MARK, "cannot communicate with %s", session->remote_service);
+            return 0;
+        }
 		remaining -= (int) (time(NULL) - start);
 	}
 

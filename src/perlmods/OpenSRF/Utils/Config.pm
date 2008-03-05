@@ -343,7 +343,8 @@ sub load_config {
 
 			# If the child node is an element, this element may
 			# have multiple values; therefore, push it into an array
-			push @{$bootstrap{$node->nodeName()}}, OpenSRF::Utils::Config::extract_text($child_node->textContent);
+            my $content = OpenSRF::Utils::Config::extract_child($child_node);
+			push(@{$bootstrap{$node->nodeName()}}, $content) if $content;
 			$child_state = 1;
 		}
 		if (!$child_state) {
@@ -356,6 +357,11 @@ sub load_config {
 	$self->_sub_builder($sub_name);
 	$self->$sub_name($section);
 
+}
+sub extract_child {
+    my $node = shift;
+    use OpenSRF::Utils::SettingsParser;
+    return OpenSRF::Utils::SettingsParser::XML2perl($node);
 }
 
 sub extract_text {

@@ -572,6 +572,7 @@ int send_request( char* server,
 	osrfAppSession* session = osrfAppSessionClientInit(server);
 
 	if(!osrf_app_session_connect(session)) {
+		fprintf(stderr, "Unable to communicate with service %s\n", server);
 		osrfLogWarning( OSRF_LOG_MARK,  "Unable to connect to remote service %s\n", server );
 		jsonObjectFree(params);
 		return 1;

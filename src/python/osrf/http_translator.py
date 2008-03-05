@@ -71,7 +71,7 @@ def child_init(req):
     osrf.system.System.connect(config_file=conf, config_context=ctxt)
 
     ROUTER_NAME = osrf.conf.get('router_name')
-    OSRF_DOMAIN = osrf.conf.get('domains.domain')
+    OSRF_DOMAIN = osrf.conf.get('domain')
     INIT_COMPLETE = True
 
     servers = osrf.set.get('cache.global.servers.server')

@@ -102,8 +102,10 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 				arr[i]->status_code = OSRF_STATUS_REDIRECTED;
 
 			} else {
-				osrfLogWarning( OSRF_LOG_MARK, " * Jabber Error is for top level remote id [%s], no one "
-						"to send my message to!!!", session->remote_id );
+				osrfLogWarning( OSRF_LOG_MARK, " * Jabber Error is for top level remote "
+                    " id [%s], no one to send my message to!  Cutting request short...", session->remote_id );
+                session->transport_error = 1;
+                break;
 			}
 		}
 

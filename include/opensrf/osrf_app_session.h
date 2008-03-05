@@ -81,6 +81,8 @@ struct osrf_app_session_struct {
 	void* userData;
 
 	void (*userDataFree) (void*);
+
+    int transport_error;
 };
 typedef struct osrf_app_session_struct osrf_app_session;
 typedef struct osrf_app_session_struct osrfAppSession;

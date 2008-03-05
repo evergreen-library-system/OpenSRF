@@ -317,7 +317,7 @@ int osrfSystemBootstrapClientResc( char* config_file, char* contextnode, char* r
 
 	char* log_level		= osrfConfigGetValue( NULL, "/loglevel" );
 	osrfStringArray* arr	= osrfNewStringArray(8);
-	osrfConfigGetValueList(NULL, arr, "/domains/domain");
+	osrfConfigGetValueList(NULL, arr, "/domain");
 
 	char* username		= osrfConfigGetValue( NULL, "/username" );
 	char* password		= osrfConfigGetValue( NULL, "/passwd" );

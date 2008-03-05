@@ -71,30 +71,38 @@ osrfConfig* osrfConfigInit(char* configFile, char* configContext) {
 	return cfg;
 }
 
-char* osrfConfigGetValue(osrfConfig* cfg, char* path, ...) {
 
+char* osrfConfigGetValue(osrfConfig* cfg, char* path, ...) {
 	if(!path) return NULL;
 	if(!cfg) cfg = osrfConfigDefault;
-	if(!cfg) { osrfLogWarning( OSRF_LOG_MARK, "No Config object in osrfConfigGetValue()"); return NULL; }
+	if(!cfg) { 
+        osrfLogWarning( OSRF_LOG_MARK, "No Config object in osrfConfigGetValue()"); 
+        return NULL; 
+    }
 
 	VA_LIST_TO_STRING(path);
-
 	jsonObject* obj;
-	char* val = NULL;
 
-	if(cfg->configContext) {
-		obj = jsonObjectFindPath( cfg->config, "//%s%s", cfg->configContext, VA_BUF);
-		if(obj) val = jsonObjectToSimpleString(jsonObjectGetIndex(obj, 0));
-
-	} else {
+	if(cfg->configContext) 
+		obj = jsonObjectGetIndex(
+            jsonObjectFindPath(cfg->config, "//%s%s", cfg->configContext, VA_BUF), 0);
+	else
 		obj = jsonObjectFindPath( cfg->config, VA_BUF);
-		if(obj) val = jsonObjectToSimpleString(obj);
-	}
 
-	jsonObjectFree(obj);
-	return val;
+	char* val = jsonObjectToSimpleString(obj);
+    jsonObjectFree(obj);
+    return val;
 }
 
+jsonObject* osrfConfigGetValueObject(osrfConfig* cfg, char* path, ...) {
+	if(!path) return NULL;
+	if(!cfg) cfg = osrfConfigDefault;
+	VA_LIST_TO_STRING(path);
+	if(cfg->configContext) 
+        return jsonObjectFindPath(cfg->config, "//%s%s", cfg->configContext, VA_BUF);
+	else
+		return jsonObjectFindPath(cfg->config, VA_BUF);
+}
 
 int osrfConfigGetValueList(osrfConfig* cfg, osrfStringArray* arr, char* path, ...) {
 

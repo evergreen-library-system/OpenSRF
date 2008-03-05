@@ -85,6 +85,14 @@ void osrfConfigCleanup();
 */
 char* osrfConfigGetValue(osrfConfig* cfg, char* path, ...);
 
+
+/**
+ *  @see osrfConfigGetValue
+ *  @return jsonObject found at path
+ */
+jsonObject* osrfConfigGetValueObject(osrfConfig* cfg, char* path, ...);
+
+
 /** 
 	Puts the list of values found at 'path' into the pre-allocated 
 	string array.  

@@ -66,36 +66,36 @@ def handle_message(session, message):
             osrf.log.log_internal("handle_message(): processing STATUS, "
                 "status_code =  %d" % status_code)
 
-        if status_code == OSRF_STATUS_COMPLETE:
-            # The server has informed us that this request is complete
-            req = session.find_request(message.threadTrace())
-            if req: 
-                osrf.log.log_internal("marking request as complete: %d" % req.rid)
-                req.set_complete()
-            return
+            if status_code == OSRF_STATUS_COMPLETE:
+                # The server has informed us that this request is complete
+                req = session.find_request(message.threadTrace())
+                if req: 
+                    osrf.log.log_internal("marking request as complete: %d" % req.rid)
+                    req.set_complete()
+                return
 
-        if status_code == OSRF_STATUS_OK:
-            # We have connected successfully
-            osrf.log.log_debug("Successfully connected to " + session.service)
-            session.state = OSRF_APP_SESSION_CONNECTED
-            return
+            if status_code == OSRF_STATUS_OK:
+                # We have connected successfully
+                osrf.log.log_debug("Successfully connected to " + session.service)
+                session.state = OSRF_APP_SESSION_CONNECTED
+                return
 
-        if status_code == OSRF_STATUS_CONTINUE:
-            # server is telling us to reset our wait timeout and keep waiting for a response
-            session.reset_request_timeout(message.threadTrace())
-            return
+            if status_code == OSRF_STATUS_CONTINUE:
+                # server is telling us to reset our wait timeout and keep waiting for a response
+                session.reset_request_timeout(message.threadTrace())
+                return
 
-        if status_code == OSRF_STATUS_TIMEOUT:
-            osrf.log.log_debug("The server did not receive a request from us in time...")
-            session.state = OSRF_APP_SESSION_DISCONNECTED
-            return
+            if status_code == OSRF_STATUS_TIMEOUT:
+                osrf.log.log_debug("The server did not receive a request from us in time...")
+                session.state = OSRF_APP_SESSION_DISCONNECTED
+                return
 
-        if status_code == OSRF_STATUS_NOTFOUND:
-            osrf.log.log_error("Requested method was not found on the server: %s" % status_text)
-            session.state = OSRF_APP_SESSION_DISCONNECTED
-            raise osrf.ex.OSRFServiceException(status_text)
+            if status_code == OSRF_STATUS_NOTFOUND:
+                osrf.log.log_error("Requested method was not found on the server: %s" % status_text)
+                session.state = OSRF_APP_SESSION_DISCONNECTED
+                raise osrf.ex.OSRFServiceException(status_text)
 
-        raise osrf.ex.OSRFProtocolException("Unknown message status: %d" % status_code)
+            raise osrf.ex.OSRFProtocolException("Unknown message status: %d" % status_code)
 
 
 

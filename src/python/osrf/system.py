@@ -48,7 +48,7 @@ class System(object):
 
         # connect to the opensrf network
         network = Network(
-            host = osrf.conf.get('domains.domain'),
+            host = osrf.conf.get('domain'),
             port = osrf.conf.get('port'),
             username = osrf.conf.get('username'), 
             password = osrf.conf.get('passwd'),
@@ -74,7 +74,7 @@ class System(object):
         network = System.net_connect(**kwargs)
 
         # load the domain-wide settings file
-        osrf.set.load(osrf.conf.get('domains.domain'))
+        osrf.set.load(osrf.conf.get('domain'))
 
         if kwargs.get('connect_cache'):
             System.connect_cache()

@@ -51,14 +51,15 @@ sub new {
 	}
 
 	my $conf			= OpenSRF::Utils::Config->current;
-	my $domains = $conf->bootstrap->domains;
+	my $domain = $conf->bootstrap->domain;
 	my $h = $conf->env->hostname;
+	OpenSRF::Utils::Logger->error("use of <domains/> is deprecated") if $conf->bootstrap->domains;
 
 	my $username	= $conf->bootstrap->username;
 	my $password	= $conf->bootstrap->passwd;
 	my $port	= $conf->bootstrap->port;
 	my $resource	= "${app}_drone_at_$h";
-	my $host	= $domains->[0]; # XXX for now...
+	my $host	= $domain; # XXX for now...
 
 	if( $app eq "client" ) { $resource = "client_at_$h"; }
 

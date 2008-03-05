@@ -179,19 +179,15 @@ sub get_app_targets {
 
 	my $conf = OpenSRF::Utils::Config->current;
 	my $router_name = $conf->bootstrap->router_name || 'router';
-	my $routers = $conf->bootstrap->domains;
+	my $domain = $conf->bootstrap->domain;
+	$logger->error("use of <domains/> is deprecated") if $conf->bootstrap->domains;
 
-	unless($router_name and $routers) {
+	unless($router_name and $domain) {
 		throw OpenSRF::EX::Config 
-			("Missing router config information 'router_name' and 'routers'");
+			("Missing router config information 'router_name' and 'domain'");
 	}
 
-	my @targets;
-	for my $router (@$routers) {
-		push @targets, "$router_name\@$router/$app";
-	}
-
-	return @targets;
+    return ("$router_name\@$domain/$app");
 }
 
 sub stateless {
