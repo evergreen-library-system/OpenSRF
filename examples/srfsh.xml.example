@@ -2,9 +2,7 @@
 <!-- This file follows the standard bootstrap config file layout found in opensrf_core.xml -->
 <srfsh>
   <router_name>router</router_name>
-  <domains>
-    <domain>localhost</domain>
-  </domains>
+  <domain>localhost</domain>
   <username>myusername</username>
   <passwd>mypassword</passwd>
   <port>5222</port>
