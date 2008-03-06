@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
-<opensrf version="0.0.1">
+<!-- 
+vim:et:ts=2:sw=2:
+-->
+<opensrf version="0.0.3">
 <!-- 
 
 	There is one <host> entry for each server on the network.  Settings for the
@@ -51,26 +54,34 @@
       </global>
     </cache>
 
-<!-- These are the defaults for every served app.  Each server should 
-	duplicate the node layout for any nodes that need changing.
-	Any settings that are overridden in the server specific section 
-	will be used as the config values for that server.  Any settings that are
-	not overridden will fall back on the defaults
-	Note that overriding 'stateless' will break things -->
+    <!--
+    These are the defaults for every served app.  Each server should 
+    duplicate the node layout for any nodes that need changing.
+    Any settings that are overridden in the server specific section 
+    will be used as the config values for that server.  Any settings that are
+    not overridden will fall back on the defaults
+    Note that overriding 'stateless' will break things
+    -->
 
     <apps>
       <opensrf.persist>
 
-        <!-- How many seconds to wait between server 
-	requests before timing out a stateful server session. -->
+        <!--
+        How many seconds to wait between server 
+        requests before timing out a stateful server session.
+        -->
         <keepalive>1</keepalive>
 
-        <!-- if 1, then we support stateless sessions (no connect required),
-	if 0 then we don't -->
+        <!--
+        if 1, then we support stateless sessions (no connect required),
+        if 0 then we don't
+        -->
         <stateless>1</stateless>
 
-        <!-- Tells the servers which language this implementation is coded in 
-	In this case non "perl" servers will not be able to load the module -->
+        <!--
+        Tells the servers which language this implementation is coded in 
+        In this case non "perl" servers will not be able to load the module
+        -->
         <language>perl</language>
 
         <!-- Module the implements this application -->
