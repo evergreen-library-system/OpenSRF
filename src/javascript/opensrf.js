@@ -108,9 +108,21 @@ OpenSRF.set_subclass('OpenSRF.ClientSession', 'OpenSRF.Session');
 
 
 OpenSRF.ClientSession.prototype.request = function(args) {
+
+    if(typeof args == 'string') { 
+        params = [];
+        for(var i = 1; i < arguments.length; i++)
+            params.push(arguments[i]);
+
+        args = {
+            method : args, 
+            params : params
+        };
+    }
+
     var req = new OpenSRF.Request(this, this.last_id++, args);
     this.requests.push(req);
-    req.send();
+    return req;
 }
 
 OpenSRF.ClientSession.prototype.find_request = function(reqid) {
