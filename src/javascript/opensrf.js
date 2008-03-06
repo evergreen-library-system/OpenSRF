@@ -61,6 +61,7 @@ OpenSRF.set_subclass = function(cls, pcls) {
 /* general session superclass */
 OpenSRF.Session = function() {
     this.remote_id = null;
+    this.state = OSRF_APP_SESSION_DISCONNECTED;
 }
 
 OpenSRF.Session.transport = OSRF_TRANSPORT_TYPE_XHR; /* default to XHR */
@@ -102,9 +103,32 @@ OpenSRF.ClientSession = function(service) {
     this.thread = Math.random() + '' + new Date().getTime();
     this.do_connect = false;
     this.requests = [];
+    this.onconnect = null;
     OpenSRF.Session.cache[this.thread] = this;
 }
 OpenSRF.set_subclass('OpenSRF.ClientSession', 'OpenSRF.Session');
+
+
+OpenSRF.ClientSession.prototype.connect = function(args) {
+    if(args && args.onconnect)
+        this.onconnect = args.onconnect;
+
+    message = new osrfMessage({
+        'threadTrace' : this.reqid, 
+        'type' : OSRF_MESSAGE_TYPE_CONNECT,
+    });
+
+    this.send(message, {'timeout' : this.timeout});
+}
+
+OpenSRF.ClientSession.prototype.disconnect = function(args) {
+    this.send(
+        new osrfMessage({
+            'threadTrace' : this.reqid, 
+            'type' : OSRF_MESSAGE_TYPE_DISCONNECT,
+        })
+    );
+}
 
 
 OpenSRF.ClientSession.prototype.request = function(args) {
@@ -118,6 +142,9 @@ OpenSRF.ClientSession.prototype.request = function(args) {
             method : args, 
             params : params
         };
+    } else {
+        if(typeof args == 'undefined')
+            args = {};
     }
 
     var req = new OpenSRF.Request(this, this.last_id++, args);
@@ -193,20 +220,30 @@ OpenSRF.Stack.handle_message = function(ses, osrf_msg, stack_callback) {
     var req = null;
 
     if(osrf_msg.type() == OSRF_MESSAGE_TYPE_STATUS) {
+
         var payload = osrf_msg.payload();
         var status = payload.statusCode();
         var status_text = payload.status();
 
+        if(status == OSRF_STATUS_COMPLETE) {
+            req = ses.find_request(osrf_msg.threadTrace());
+            if(req) req.complete = true;
+        }
+
+        if(status == OSRF_STATUS_OK) {
+            ses.state = OSRF_APP_SESSION_CONNECTED;
+        }
+
         if(status == OSRF_STATUS_NOTFOUND) {
-            alert('status = ' + status_text);
+            alert('NOT_FOUND: ' + status_text);
+            return;
         }
     }
 
     if(osrf_msg.type() == OSRF_MESSAGE_TYPE_RESULT) {
         req = ses.find_request(osrf_msg.threadTrace());
-        if(req) {
+        if(req) 
             req.response_queue.push(osrf_msg.payload());
-        }
     }
 
     if(stack_callback)
@@ -245,7 +282,7 @@ osrfMessage.prototype.serialize = function() {
         "__p": {
             'threadTrace' : this.hash.threadTrace,
             'type' : this.hash.type,
-            'payload' : this.hash.payload.serialize(),
+            'payload' : (this.hash.payload) ? this.hash.payload.serialize() : 'null',
             'locale' : this.hash.locale
         }
     };

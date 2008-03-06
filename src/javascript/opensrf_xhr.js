@@ -60,14 +60,25 @@ OpenSRF.XHRequest.prototype.core_handler = function() {
     stat = this.xreq.status;
 
     var xhr = this;
-    var req = OpenSRF.Stack.push(
+    OpenSRF.Stack.push(
         new OpenSRF.NetMessage(null, sender, thread, json),
+
         function(ses, req) {
+            if(ses) {
+                if(ses.state == OSRF_APP_SESSION_CONNECTED && 
+                    ses.onconnect && !ses.onconnect_called) {
+                        ses.onconnect_called = true;
+                        ses.onconnect();
+                }
+            }
+
             if(req) {
                 if(req.response_queue.length > 0 && xhr.args.onresponse) 
                     return xhr.args.onresponse(req);
-                if(req.complete && xhr.args.oncomplete)
+                if(req.complete && xhr.args.oncomplete && !xhr.args.oncomplete_called) {
+                    xhr.args.oncomplete_called = true;
                     return xhr.args.oncomplete(req);
+                }
             }
         }
     );
