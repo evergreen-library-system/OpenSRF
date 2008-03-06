@@ -46,11 +46,19 @@ function decodeJS(arg) {
 		eval('arg = new ' + arg[JSON_CLASS_KEY] + '(arg[JSON_DATA_KEY])');	
 	}
 
-	jsIterate( arg, 
-		function(o, i) {
-			o[i] = decodeJS(o[i]);
-		}
-	);
+    if(arg._encodehash) {
+	    jsIterate( arg.hash, 
+		    function(o, i) {
+			    o[i] = decodeJS(o[i]);
+		    }
+	    );
+    } else {
+	    jsIterate( arg, 
+		    function(o, i) {
+			    o[i] = decodeJS(o[i]);
+		    }
+	    );
+    }
 
 	return arg;
 }
