@@ -34,14 +34,33 @@ OpenSRF.XHRequest.prototype.send = function() {
     var xhr_req = this;
     var xreq = this.xreq
 
-    xreq.multipart = true; /* XXX browser check */
-    xreq.onload = function(evt) {xhr_req.core_handler(evt.target);}
-    xreq.open('POST', OSRF_HTTP_TRANSLATOR, true);
+    if(this.args.timeout) {
+        /* this is a standard blocking (non-multipart) call */
+        xreq.open('POST', OSRF_HTTP_TRANSLATOR, false);
+
+    } else {
+
+        if( /* XXX browser != mozilla */ false ) {
+
+            /* standard asynchronous call */
+            xreq.onreadystatechange = function() {
+                if(xreq.readyState == 4)
+                    xhr_req.core_handler();
+            }
+            xreq.open('POST', OSRF_HTTP_TRANSLATOR, true);
+
+        } else {
+
+            /* asynchronous multipart call */
+            xreq.multipart = true;
+            xreq.onload = function(evt) {xhr_req.core_handler();}
+            xreq.open('POST', OSRF_HTTP_TRANSLATOR, true);
+            xreq.setRequestHeader(OSRF_HTTP_HEADER_MULTIPART, 'true');
+        }
+    }
 
     xreq.setRequestHeader('Content-Type', OSRF_POST_CONTENT_TYPE);
-    xreq.setRequestHeader(OSRF_HTTP_HEADER_MULTIPART, 'true');
     xreq.setRequestHeader(OSRF_HTTP_HEADER_THREAD, this.args.thread);
-
     if(this.args.rcpt)
         xreq.setRequestHeader(OSRF_HTTP_HEADER_TO, this.args.rcpt);
     else
@@ -50,8 +69,12 @@ OpenSRF.XHRequest.prototype.send = function() {
     var post = 'osrf-msg=' + encodeURIComponent(js2JSON([this.message.serialize()]));
     xreq.send(post);
 
+    if(this.args.timeout) /* this was a blocking call, manually run the handler */
+        this.core_handler()
+
     return this;
 }
+
 
 OpenSRF.XHRequest.prototype.core_handler = function() {
     sender = this.xreq.getResponseHeader(OSRF_HTTP_HEADER_FROM);
@@ -75,6 +98,7 @@ OpenSRF.XHRequest.prototype.core_handler = function() {
             if(req) {
                 if(req.response_queue.length > 0 && xhr.args.onresponse) 
                     return xhr.args.onresponse(req);
+
                 if(req.complete && xhr.args.oncomplete && !xhr.args.oncomplete_called) {
                     xhr.args.oncomplete_called = true;
                     return xhr.args.oncomplete(req);

@@ -74,6 +74,7 @@ OpenSRF.Session.prototype.cleanup = function() {
 }
 
 OpenSRF.Session.prototype.send = function(osrf_msg, args) {
+    args = (args) ? args : {};
     switch(OpenSRF.Session.transport) {
         case OSRF_TRANSPORT_TYPE_XHR:
             return this.send_xhr(osrf_msg, args);
@@ -101,7 +102,6 @@ OpenSRF.ClientSession = function(service) {
     this.locale = 'en-US';
     this.last_id = 0;
     this.thread = Math.random() + '' + new Date().getTime();
-    this.do_connect = false;
     this.requests = [];
     this.onconnect = null;
     OpenSRF.Session.cache[this.thread] = this;
@@ -110,8 +110,14 @@ OpenSRF.set_subclass('OpenSRF.ClientSession', 'OpenSRF.Session');
 
 
 OpenSRF.ClientSession.prototype.connect = function(args) {
-    if(args && args.onconnect)
+    args = (args) ? args : {};
+
+    if(args.onconnect)
         this.onconnect = args.onconnect;
+
+    /* if no handler is provided, make this a synchronous call */
+    if(!this.onconnect) 
+        this.timeout = (args.timeout) ? args.timeout : 5;
 
     message = new osrfMessage({
         'threadTrace' : this.reqid, 
@@ -119,6 +125,10 @@ OpenSRF.ClientSession.prototype.connect = function(args) {
     });
 
     this.send(message, {'timeout' : this.timeout});
+
+    if(this.onconnect || this.state == OSRF_APP_SESSION_CONNECTED)
+        return true;
+    return false;
 }
 
 OpenSRF.ClientSession.prototype.disconnect = function(args) {
@@ -177,6 +187,7 @@ OpenSRF.Request = function(session, reqid, args) {
 OpenSRF.Request.prototype.recv = function(timeout) {
     if(this.response_queue.length > 0)
         return this.response_queue.shift();
+    return null;
 }
 
 OpenSRF.Request.prototype.send = function() {
