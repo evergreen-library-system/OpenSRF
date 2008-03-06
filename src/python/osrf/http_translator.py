@@ -1,16 +1,8 @@
-import os, time, md5, random
+import sys, os, time, md5, random
 from mod_python import apache, util
-
-import osrf.cache
-import osrf.system
-import osrf.json
-import osrf.conf
-import osrf.set
-import sys
-from osrf.const import OSRF_MESSAGE_TYPE_DISCONNECT, OSRF_STATUS_CONTINUE, \
-    OSRF_STATUS_TIMEOUT, OSRF_MESSAGE_TYPE_STATUS
-import osrf.net
-import osrf.log
+import osrf.system, osrf.cache, osrf.json, osrf.conf, osrf.net, osrf.log
+from osrf.const import OSRF_MESSAGE_TYPE_DISCONNECT, OSRF_MESSAGE_TYPE_CONNECT, \
+    OSRF_STATUS_CONTINUE, OSRF_STATUS_TIMEOUT, OSRF_MESSAGE_TYPE_STATUS
 
 
 ''' 
@@ -23,12 +15,12 @@ Example Apache mod_python config:
    PythonPath "['/path/to/osrf-python'] + sys.path"
    PythonHandler osrf.http_translator
    PythonOption OSRF_CONFIG /path/to/opensrf_core.xml
-   PythonOption OSRF_CONFIG_CONTEXT gateway
+   PythonOption OSRF_CONFIG_CONTEXT config.gateway
+   PythonOption OSRF_CACHE_SERVERS 127.0.0.1:11211
    # testing only
    PythonAutoReload On
 </Location>
 '''
-
 
 OSRF_HTTP_HEADER_TO = 'X-OpenSRF-to'
 OSRF_HTTP_HEADER_XID = 'X-OpenSRF-thread'
@@ -37,7 +29,6 @@ OSRF_HTTP_HEADER_THREAD = 'X-OpenSRF-thread'
 OSRF_HTTP_HEADER_TIMEOUT = 'X-OpenSRF-timeout'
 OSRF_HTTP_HEADER_SERVICE = 'X-OpenSRF-service'
 OSRF_HTTP_HEADER_MULTIPART = 'X-OpenSRF-multipart'
-
 MULTIPART_CONTENT_TYPE = 'multipart/x-mixed-replace;boundary="%s"'
 JSON_CONTENT_TYPE = 'text/plain'
 CACHE_TIME = 300
@@ -65,18 +56,29 @@ def child_init(req):
     if INIT_COMPLETE: 
         return
 
+    # Apache complains with: UnboundLocalError: local variable 'osrf' referenced before assignment
+    # if the following import line is removed, even though its also at the top of the file...
+    import osrf.system 
+
     ops = req.get_options()
     conf = ops['OSRF_CONFIG']
     ctxt = ops.get('OSRF_CONFIG_CONTEXT') or 'opensrf'
-    osrf.system.System.connect(config_file=conf, config_context=ctxt)
+    osrf.system.System.net_connect(config_file=conf, config_context=ctxt)
 
     ROUTER_NAME = osrf.conf.get('router_name')
     OSRF_DOMAIN = osrf.conf.get('domain')
     INIT_COMPLETE = True
 
-    servers = osrf.set.get('cache.global.servers.server')
-    if not isinstance(servers, list):
-        servers = [servers]
+    servers = ops.get('OSRF_CACHE_SERVERS')
+    if servers:
+        servers = servers.split(',')
+    else:
+        # no cache servers configured, see if we can talk to the settings server
+        import osrf.set
+        servers = osrf.set.get('cache.global.servers.server')
+        if not isinstance(servers, list):
+            servers = [servers]
+
     osrf.cache.CacheClient.connect(servers)
 
 
@@ -109,8 +111,9 @@ class HTTPTranslator(object):
         self.thread = apreq.headers_in.get(OSRF_HTTP_HEADER_THREAD) or \
             "%s%s" % (os.getpid(), time.time())
         self.timeout = apreq.headers_in.get(OSRF_HTTP_HEADER_TIMEOUT) or 1200
-        self.multipart = str( \
+        self.multipart = str(
             apreq.headers_in.get(OSRF_HTTP_HEADER_MULTIPART)).lower() == 'true'
+        self.connect_only = False
         self.disconnect_only = False
 
         # generate a random multipart delimiter
@@ -161,11 +164,13 @@ class HTTPTranslator(object):
 
             if self.multipart:
                 self.respond_chunk(net_msg)
+                if self.connect_only:
+                    break
             else:
                 self.messages.append(net_msg.body)
 
                 # condense the sets of arrays into a single array of messages
-                if self.complete:
+                if self.complete or self.connect_only:
                     json = self.messages.pop(0)
                     while len(self.messages) > 0:
                         msg = self.messages.pop(0)
@@ -186,9 +191,11 @@ class HTTPTranslator(object):
         if not osrf_msgs:
             return False
         
-        if len(osrf_msgs) == 1 and \
-            osrf_msgs[0].type() == OSRF_MESSAGE_TYPE_DISCONNECT:
-            self.disconnect_only = True
+        if len(osrf_msgs) == 1:
+            if osrf_msgs[0].type() == OSRF_MESSAGE_TYPE_CONNECT:
+                self.connect_only = True
+            elif osrf_msgs[0].type() == OSRF_MESSAGE_TYPE_DISCONNECT:
+                self.disconnect_only = True
 
         return True
 
@@ -221,6 +228,7 @@ class HTTPTranslator(object):
         
     def init_headers(self, net_msg):
         self.apreq.headers_out[OSRF_HTTP_HEADER_FROM] = net_msg.sender
+        self.apreq.headers_out[OSRF_HTTP_HEADER_THREAD] = self.thread
         if self.multipart:
             self.apreq.content_type = MULTIPART_CONTENT_TYPE % self.delim
             self.write("--%s\n" % self.delim)
