@@ -7,6 +7,19 @@ static void report_child_status( pid_t pid, int status );
 struct child_node;
 typedef struct child_node ChildNode;
 
+static void handleKillSignal(int signo) {
+    /* we are the top-level process and we've been 
+     * killed. Kill all of our children */
+    kill(0, SIGTERM);
+    sleep(1); /* give the children a chance to die before we reap them */
+    pid_t child_pid;
+    int status;
+    while( (child_pid=waitpid(-1,&status,WNOHANG)) > 0) 
+        osrfLogInfo(OSRF_LOG_MARK, "Killed child %d", child_pid);
+    _exit(0);
+}
+
+
 struct child_node
 {
 	ChildNode* pNext;
@@ -148,6 +161,9 @@ int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
 	} // should we do something if there are no apps? does the wait(NULL) below do that for us?
 
 	osrfStringArrayFree(arr);
+
+    signal(SIGTERM, handleKillSignal);
+    signal(SIGINT, handleKillSignal);
 	
 	while(1) {
 		errno = 0;
