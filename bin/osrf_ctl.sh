@@ -115,11 +115,10 @@ function do_action {
 			return 0;
 		fi;
 
-		pid=$(cat $pidfile);
-		echo "Stopping $item : $pid";
-		kill -s INT $pid 2> /dev/null;
-        sleep 1;
-		kill -9 $pid 2> /dev/null;
+        while read pid; do
+            echo "Stopping process $pid..."
+            kill -s INT $pid
+        done < $pidfile;
 		rm -f $pidfile;
 
 	fi;
@@ -176,7 +175,6 @@ function start_c {
 
 function stop_c {
 	do_action "stop" $PID_OSRF_C "OpenSRF C";
-	killall -9 opensrf-c  # hack for now to force kill all C services
 	sleep 1;
 	return 0;
 }
