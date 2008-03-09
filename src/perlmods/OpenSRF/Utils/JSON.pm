@@ -92,6 +92,8 @@ sub perl2JSONObject {
 	my $ref = ref($obj);
 
 	return $obj unless $ref;
+
+    return $obj if $ref eq 'JSON::XS::Boolean';
 	my $newobj;
 
     if(UNIVERSAL::isa($obj, 'HASH')) {
