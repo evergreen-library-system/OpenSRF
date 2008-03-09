@@ -6,6 +6,14 @@ my $parser = JSON::XS->new;
 $parser->ascii(1); # output \u escaped strings
 $parser->allow_nonref(1);
 
+sub true {
+    return $parser->true();
+}
+
+sub false {
+    return $parser->false();
+}
+
 sub register_class_hint {
 	my $class = shift;
 	my %args = @_;
