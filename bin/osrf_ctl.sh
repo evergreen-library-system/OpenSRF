@@ -116,7 +116,7 @@ function do_action {
 		fi;
 
         while read pid; do
-            echo "Stopping process $pid..."
+            echo "Stopping $item process $pid..."
             kill -s INT $pid
         done < $pidfile;
 		rm -f $pidfile;
