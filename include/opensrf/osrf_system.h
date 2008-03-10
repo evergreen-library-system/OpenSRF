@@ -25,7 +25,8 @@ int osrf_system_bootstrap_client( char* config_file, char* contextnode );
   @param resource The login resource.  If NULL a default will be created
   @return 1 on successs, 0 on failure.
   */
-int osrfSystemBootstrapClientResc( char* configFile, char* contextNode, char* resource );
+int osrfSystemBootstrapClientResc( const char* configFile,
+		const char* contextNode, const char* resource );
 
 /**
   Bootstrap the server.
@@ -35,7 +36,8 @@ int osrfSystemBootstrapClientResc( char* configFile, char* contextNode, char* re
   @param contextnode The config context
   @return 0 on success, -1 on error
   */
-int osrfSystemBootstrap( char* hostName, char* configfile, char* contextNode );
+int osrfSystemBootstrap( const char* hostName, const char* configfile,
+		const char* contextNode );
 
 transport_client* osrfSystemGetTransportClient( void );
 

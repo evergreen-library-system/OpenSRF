@@ -81,7 +81,8 @@ int osrfSystemInitCache( void ) {
 }
 
 
-int osrfSystemBootstrap( char* hostname, char* configfile, char* contextNode ) {
+int osrfSystemBootstrap( const char* hostname, const char* configfile,
+		const char* contextNode ) {
 	if( !(hostname && configfile && contextNode) ) return -1;
 
 	/* first we grab the settings */
@@ -301,7 +302,8 @@ static ChildNode* seek_child( pid_t pid ) {
 /*----------- End of routines to manage list of children --*/
 
 
-int osrfSystemBootstrapClientResc( char* config_file, char* contextnode, char* resource ) {
+int osrfSystemBootstrapClientResc( const char* config_file,
+		const char* contextnode, const char* resource ) {
 
 	int failure = 0;
 
