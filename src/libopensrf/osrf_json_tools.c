@@ -16,6 +16,9 @@ GNU General Public License for more details.
 #include <opensrf/osrf_json.h>
 #include <opensrf/osrf_json_utils.h>
 
+static jsonObject* findMultiPath( const jsonObject* o,
+		const char* root, const char* path );
+static jsonObject* findMultiPathRecurse( const jsonObject* o, const char* root );
 static jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClass );
 
 static char* _tabs(int count) {
@@ -178,53 +181,56 @@ jsonObject* jsonParseFile( const char* filename ) {
 
 
 
-jsonObject* jsonObjectFindPath( const jsonObject* obj, char* format, ...) {
+jsonObject* jsonObjectFindPath( const jsonObject* obj, const char* format, ...) {
 	if(!obj || !format || strlen(format) < 1) return NULL;	
 
 	VA_LIST_TO_STRING(format);
 	char* buf = VA_BUF;
 	char* token = NULL;
-	char* t = buf;
 	char* tt; /* strtok storage */
 
-	/* copy the path before strtok_r destroys it */
-	char* pathcopy = strdup(buf);
-
-	/* grab the root of the path */
-	token = strtok_r(t, "/", &tt);
-	if(!token) return NULL;
-
 	/* special case where path starts with //  (start anywhere) */
-	if(strlen(pathcopy) > 2 && pathcopy[0] == '/' && pathcopy[1] == '/') {
-		jsonObject* it = _jsonObjectFindPathRecurse(obj, token, pathcopy + 1);
+	if(buf[0] == '/' && buf[1] == '/' && buf[2] != '\0') {
+
+		/* copy the path before strtok_r destroys it */
+		char* pathcopy = strdup(buf);
+
+		/* grab the root of the path */
+		token = strtok_r(buf, "/", &tt);
+		if(!token) {
+			free(pathcopy);
+			return NULL;
+		}
+
+		jsonObject* it = findMultiPath(obj, token, pathcopy + 1);
 		free(pathcopy);
 		return it;
 	}
+	else
+	{
+		/* grab the root of the path */
+		token = strtok_r(buf, "/", &tt);
+		if(!token) return NULL;
 
-	free(pathcopy);
+		do {
+			obj = jsonObjectGetKeyConst(obj, token);
+		} while( (token = strtok_r(NULL, "/", &tt)) && obj);
 
-	t = NULL;
-	do { 
-		obj = jsonObjectGetKeyConst(obj, token);
-	} while( (token = strtok_r(NULL, "/", &tt)) && obj);
-
-	return jsonObjectClone(obj);
+		return jsonObjectClone(obj);
+	}
 }
 
 /* --------------------------------------------------------------- */
 
-
-
-jsonObject* _jsonObjectFindPathRecurse(const jsonObject* obj, char* root, char* path) {
+/* Utility method. finds any object in the tree that matches the path.  
+	Use this for finding paths that start with '//' */
+static jsonObject* findMultiPath(const jsonObject* obj,
+		const char* root, const char* path) {
 
 	if(!obj || ! root || !path) return NULL;
 
 	/* collect all of the potential objects */
-	jsonObject* arr = __jsonObjectFindPathRecurse(obj, root);
-
-	/* container for fully matching objects */
-	jsonObject* newarr = jsonParseString("[]");
-	int i;
+	jsonObject* arr = findMultiPathRecurse(obj, root);
 
 	/* path is just /root or /root/ */
 	if( strlen(root) + 2 >= strlen(path) ) {
@@ -232,32 +238,37 @@ jsonObject* _jsonObjectFindPathRecurse(const jsonObject* obj, char* root, char* 
 
 	} else {
 
+		/* container for fully matching objects */
+		jsonObject* newarr = jsonNewObjectType(JSON_ARRAY);
+		int i;
+
 		/* gather all of the sub-objects that match the full path */
 		for( i = 0; i < arr->size; i++ ) {
 			const jsonObject* a = jsonObjectGetIndex(arr, i);
 			jsonObject* thing = jsonObjectFindPath(a , path + strlen(root) + 1); 
 
 			if(thing) { //jsonObjectPush(newarr, thing);
-         	if(thing->type == JSON_ARRAY) {
-            	int i;
+				if(thing->type == JSON_ARRAY) {
+            		int i;
 					for( i = 0; i != thing->size; i++ )
 						jsonObjectPush(newarr, jsonObjectClone(jsonObjectGetIndex(thing,i)));
 					jsonObjectFree(thing);
-
 				} else {
 					jsonObjectPush(newarr, thing);
-				}                                         	
+				}
 			}
 		}
+
+		jsonObjectFree(arr);
+		return newarr;
 	}
-	
-	jsonObjectFree(arr);
-	return newarr;
 }
 
-jsonObject* __jsonObjectFindPathRecurse(const jsonObject* obj, char* root) {
+/* returns a list of object whose key is 'root'.  These are used as
+	potential objects when doing a // search */
+static jsonObject* findMultiPathRecurse(const jsonObject* obj, const char* root) {
 
-	jsonObject* arr = jsonParseString("[]");
+	jsonObject* arr = jsonNewObjectType(JSON_ARRAY);
 	if(!obj) return arr;
 
 	int i;
@@ -273,7 +284,7 @@ jsonObject* __jsonObjectFindPathRecurse(const jsonObject* obj, char* root) {
 
 	/* recurse through the children and find all potential nodes */
 	while( (tmp = jsonIteratorNext(itr)) ) {
-		childarr = __jsonObjectFindPathRecurse(tmp, root);
+		childarr = findMultiPathRecurse(tmp, root);
 		if(childarr && childarr->size > 0) {
 			for( i = 0; i!= childarr->size; i++ ) {
 				jsonObjectPush( arr, jsonObjectClone(jsonObjectGetIndex(childarr, i)) );

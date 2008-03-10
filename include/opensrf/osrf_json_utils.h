@@ -13,6 +13,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
+#ifndef OSRF_JSON_UTILS_H
+#define OSRF_JSON_UTILS_H
 
 /* ----------------------------------------------------------------------- */
 /* Clients need not include this file.  These are internal utilities only	*/
@@ -94,14 +96,5 @@ int _jsonParserHandleNumber( jsonParserContext* ctx );
 
 void _jsonInsertParserItem( jsonInternalParser* p, jsonObject* newo );
 
-
-/* Utility method. finds any object in the tree that matches the path.  
-	Use this for finding paths that start with '//' */
-jsonObject* _jsonObjectFindPathRecurse( const jsonObject* o, char* root, char* path );
-
-
-/* returns a list of object whose key is 'root'.  These are used as
-	potential objects when doing a // search */
-jsonObject* __jsonObjectFindPathRecurse( const jsonObject* o, char* root );
-
+#endif
 

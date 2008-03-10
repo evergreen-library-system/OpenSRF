@@ -13,14 +13,12 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
+#ifndef _JSON_H
+#define _JSON_H
 
 #include <opensrf/utils.h>
 #include <opensrf/osrf_list.h>
 #include <opensrf/osrf_hash.h>
-
-#ifndef _JSON_H
-#define _JSON_H
-
 
 /* parser states */
 #define JSON_STATE_IN_OBJECT	0x1
@@ -352,7 +350,7 @@ char* jsonScrubNumber( const char* s );
 	Note also that the object returned is a clone and
 	must be freed by the caller
 */
-jsonObject* jsonObjectFindPath( const jsonObject* obj, char* path, ... );
+jsonObject* jsonObjectFindPath( const jsonObject* obj, const char* path, ... );
 
 
 /* formats a JSON string from printing.  User must free returned string */
