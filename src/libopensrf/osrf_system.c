@@ -393,6 +393,7 @@ int osrfSystemBootstrapClientResc( char* config_file, char* contextnode, char* r
 
 	if (failure) {
 		osrfStringArrayFree(arr);
+		free(log_file);
 		free(log_level);
 		free(username);
 		free(password);
