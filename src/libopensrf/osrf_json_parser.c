@@ -678,11 +678,10 @@ void _jsonInsertParserItem( jsonInternalParser* p, jsonObject* newo ) {
 	} else {
 
 		/* insert the new object into the current container object */
-		switch(p->current->type) { 
-			case JSON_HASH	: jsonObjectSetKey(p->current, p->lastkey, newo);  break;
-			case JSON_ARRAY: jsonObjectPush(p->current, newo); break;
-			default: fprintf(stderr, "%s:%d -> how?\n", JSON_LOG_MARK); 
-		} 
+		if(p->current->type == JSON_HASH)
+			jsonObjectSetKey(p->current, p->lastkey, newo);
+		else  // assume it's a JSON_ARRAY; if it isn't, it'll become one
+			jsonObjectPush(p->current, newo);
 
 		/* if the new object is a container object, make it our current container */
 		if( newo->type == JSON_ARRAY || newo->type == JSON_HASH )
