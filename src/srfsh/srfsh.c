@@ -684,15 +684,15 @@ int send_request( char* server,
 
 	double end = get_timestamp_millis();
 
-	fprintf( less, resp_buffer->buf );
+	fputs( resp_buffer->buf, less );
 	buffer_free( resp_buffer );
-	fprintf( less, "\n------------------------------------\n");
+	fputs("\n------------------------------------\n", less);
 	if( osrf_app_session_request_complete( session, req_id ))
-		fprintf(less, "Request Completed Successfully\n");
+		fputs("Request Completed Successfully\n", less);
 
 
 	fprintf(less, "Request Time in seconds: %.6f\n", end - start );
-	fprintf(less, "------------------------------------\n");
+	fputs("------------------------------------\n", less);
 
 	pclose(less); 
 
@@ -758,7 +758,7 @@ static int router_query_servers( const char* router_server ) {
 
 static int print_help( void ) {
 
-	printf(
+	fputs(
 			"---------------------------------------------------------------------------------\n"
 			"Commands:\n"
 			"---------------------------------------------------------------------------------\n"
@@ -804,8 +804,8 @@ static int print_help( void ) {
 			"\n"
 			"Note: long output is piped through 'less'. To search in 'less', type: /<search>\n"
 			"---------------------------------------------------------------------------------\n"
-			"\n"
-			);
+			"\n",
+			stdout );
 
 	return 1;
 }
