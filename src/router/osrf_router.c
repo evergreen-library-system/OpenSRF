@@ -521,6 +521,7 @@ static void osrfRouterNodeFree( char* remoteId, void* n ) {
 void osrfRouterFree( osrfRouter* router ) {
 	if(!router) return;
 
+	osrfHashFree(router->classes);
 	free(router->domain);		
 	free(router->name);
 	free(router->resource);
@@ -670,7 +671,7 @@ static int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* m
 	if(!strcmp( omsg->method_name, ROUTER_REQUEST_CLASS_LIST )) {
 
 		int i;
-		jresponse = jsonParseString("[]");
+		jresponse = jsonNewObjectType(JSON_ARRAY);
 
 		osrfStringArray* keys = osrfHashKeys( router->classes );
 		for( i = 0; i != keys->size; i++ )
@@ -711,7 +712,7 @@ static int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* m
 		if (!classname)
 			return -1;
 
-		jresponse = jsonParseString("{}");
+		jresponse = jsonNewObjectType(JSON_HASH);
 		class = osrfHashGet(router->classes, classname);
 		free(classname);
 
@@ -725,12 +726,12 @@ static int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* m
 
 		osrfRouterClass* class;
 		osrfRouterNode* node;
-		jresponse = jsonParseString("{}");
+		jresponse = jsonNewObjectType(JSON_HASH);
 
 		osrfHashIterator* class_itr = osrfNewHashIterator(router->classes);
 		while( (class = osrfHashIteratorNext(class_itr)) ) {
 
-			jsonObject* class_res = jsonParseString("{}");
+			jsonObject* class_res = jsonNewObjectType(JSON_HASH);
 			char* classname = class_itr->current;
 
 			osrfHashIterator* node_itr = osrfNewHashIterator(class->nodes);
@@ -749,7 +750,7 @@ static int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* m
 		osrfRouterClass* class;
 		osrfRouterNode* node;
 		int count;
-		jresponse = jsonParseString("{}");
+		jresponse = jsonNewObjectType(JSON_HASH);
 
 		osrfHashIterator* class_itr = osrfNewHashIterator(router->classes);
 		while( (class = osrfHashIteratorNext(class_itr)) ) {
