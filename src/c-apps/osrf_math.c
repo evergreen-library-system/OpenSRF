@@ -89,6 +89,7 @@ int osrfMathRun( osrfMethodContext* ctx ) {
 			/* dbmath uses the same method names that math does */
 			int req_id = osrfAppSessionMakeRequest( ses, newParams, ctx->method->name, 1, NULL );
 			osrfMessage* omsg = osrfAppSessionRequestRecv( ses, req_id, 60 );
+			jsonObjectFree(newParams);
 
 			if(omsg) {
 				/* return dbmath's response to the user */
