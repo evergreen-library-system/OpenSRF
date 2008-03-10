@@ -66,7 +66,7 @@ static void osrf_prefork_child_exit( prefork_child* );
 
 /* true if we just deleted a child.  This will allow us to make sure we're
 	not trying to use freed memory */
-static int child_dead;
+static sig_atomic_t child_dead;
 
 static void sigchld_handler( int sig );
 
@@ -634,11 +634,13 @@ static void check_children( prefork_simple* forker, int forever ) {
 			/* now suck off the data */
 			char buf[64];
 			osrf_clearbuf( buf, sizeof(buf) );
-			if( (n=read(cur_child->read_status_fd, buf, 63))  < 0 ) {
+			if( (n=read(cur_child->read_status_fd, buf, sizeof(buf) - 1)) < 0 ) {
 				osrfLogWarning( OSRF_LOG_MARK, "Read error after select in child status read with errno %d", errno);
 			}
-
-			osrfLogDebug( OSRF_LOG_MARK,  "Read %d bytes from status buffer: %s", n, buf );
+			else {
+				buf[n] = '\0';
+				osrfLogDebug( OSRF_LOG_MARK,  "Read %d bytes from status buffer: %s", n, buf );
+			}
 			cur_child->available = 1;
 		}
 		cur_child = cur_child->next;
@@ -661,6 +663,7 @@ static void prefork_child_wait( prefork_child* child ) {
 		clr_fl(child->read_data_fd, O_NONBLOCK );
 
 		while( (n=read(child->read_data_fd, buf, READ_BUFSIZE-1)) > 0 ) {
+			buf[n] = '\0';
 			osrfLogDebug(OSRF_LOG_MARK, "Prefork child read %d bytes of data", n);
 			if(!gotdata)
 				set_fl(child->read_data_fd, O_NONBLOCK );
