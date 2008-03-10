@@ -37,7 +37,7 @@ typedef struct {
 	@return The config object if the file parses successfully.  Otherwise
 		it returns NULL;
 */
-osrfConfig* osrfConfigInit(char* configFile, char* configContext);
+osrfConfig* osrfConfigInit(const char* configFile, const char* configContext);
 
 /**
 	@return True if we have a default config defined
@@ -83,7 +83,7 @@ void osrfConfigCleanup();
 		config should be used
 	@param path The search path
 */
-char* osrfConfigGetValue(osrfConfig* cfg, char* path, ...);
+char* osrfConfigGetValue(const osrfConfig* cfg, const char* path, ...);
 
 
 /**
@@ -105,7 +105,8 @@ jsonObject* osrfConfigGetValueObject(osrfConfig* cfg, char* path, ...);
 	@return the number of values added to the string array;
 */
 
-int osrfConfigGetValueList(osrfConfig* cfg, osrfStringArray* arr, char* path, ...);
+int osrfConfigGetValueList(const osrfConfig* cfg, osrfStringArray* arr,
+		const char* path, ...);
 
 
 #endif

@@ -38,7 +38,7 @@ void osrfConfigReplaceConfig(osrfConfig* cfg, const jsonObject* obj) {
 	cfg->config = jsonObjectClone(obj);	
 }
 
-osrfConfig* osrfConfigInit(char* configFile, char* configContext) {
+osrfConfig* osrfConfigInit(const char* configFile, const char* configContext) {
 	if(!configFile) return NULL;
 
 	// Load XML from the configuration file
@@ -72,7 +72,7 @@ osrfConfig* osrfConfigInit(char* configFile, char* configContext) {
 }
 
 
-char* osrfConfigGetValue(osrfConfig* cfg, char* path, ...) {
+char* osrfConfigGetValue(const osrfConfig* cfg, const char* path, ...) {
 	if(!path) return NULL;
 	if(!cfg) cfg = osrfConfigDefault;
 	if(!cfg) { 
@@ -104,7 +104,8 @@ jsonObject* osrfConfigGetValueObject(osrfConfig* cfg, char* path, ...) {
 		return jsonObjectFindPath(cfg->config, VA_BUF);
 }
 
-int osrfConfigGetValueList(osrfConfig* cfg, osrfStringArray* arr, char* path, ...) {
+int osrfConfigGetValueList(const osrfConfig* cfg, osrfStringArray* arr,
+		const char* path, ...) {
 
 	if(!arr || !path) return 0;
 	if(!cfg) cfg = osrfConfigDefault;
