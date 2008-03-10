@@ -136,6 +136,13 @@ int socket_open_unix_server(socket_manager* mgr, const char* path) {
 	int sock_fd;
 	struct sockaddr_un server_addr;
 
+	if(strlen(path) > sizeof(server_addr.sun_path) - 1)
+	{
+		osrfLogWarning( OSRF_LOG_MARK, "socket_open_unix_server(): path too long: %s",
+			path );
+		return -1;
+	}
+
 	errno = 0;
 	sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if(sock_fd < 0){
@@ -335,6 +342,13 @@ int socket_open_unix_client(socket_manager* mgr, const char* sock_path) {
 
 	int sock_fd, len;
    struct sockaddr_un usock;
+
+   if(strlen(sock_path) > sizeof(usock.sun_path) - 1)
+   {
+	   osrfLogWarning( OSRF_LOG_MARK, "socket_open_unix_client(): path too long: %s",
+		   sock_path );
+	   return -1;
+   }
 
    errno = 0;
    if( (sock_fd = socket( AF_UNIX, SOCK_STREAM, 0 )) < 0 ) {
@@ -713,6 +727,7 @@ static int _socket_handle_client_data(socket_manager* mgr, socket_node* node) {
 	osrfLogInternal( OSRF_LOG_MARK, "%ld : Received data at %f\n", (long) getpid(), get_timestamp_millis());
 
 	while( (read_bytes = recv(sock_fd, buf, RBUFSIZE-1, 0) ) > 0 ) {
+		buf[read_bytes] = '\0';
 		osrfLogInternal( OSRF_LOG_MARK, "Socket %d Read %d bytes and data: %s", sock_fd, read_bytes, buf);
 		if(mgr->data_received)
 			mgr->data_received(mgr->blob, mgr, sock_fd, buf, node->parent_id);
