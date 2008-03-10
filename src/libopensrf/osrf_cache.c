@@ -53,7 +53,7 @@ jsonObject* osrfCacheGetObject( const char* key, ... ) {
 	jsonObject* obj = NULL;
 	if( key ) {
 		VA_LIST_TO_STRING(key);
-		char* data = (char*) mc_aget( _osrfCache, VA_BUF, strlen(VA_BUF) );
+		const char* data = (const char*) mc_aget( _osrfCache, VA_BUF, strlen(VA_BUF) );
 		if( data ) {
 			osrfLogInternal( OSRF_LOG_MARK, "osrfCacheGetObject(): Returning object: %s", data);
 			obj = jsonParseString( data );
@@ -68,7 +68,7 @@ char* osrfCacheGetString( const char* key, ... ) {
 	if( key ) {
 		VA_LIST_TO_STRING(key);
 		char* data = (char*) mc_aget(_osrfCache, VA_BUF, strlen(VA_BUF) );
-		osrfLogInternal( OSRF_LOG_MARK, "osrfCacheGetObject(): Returning object: %s", data);
+		osrfLogInternal( OSRF_LOG_MARK, "osrfCacheGetString(): Returning object: %s", data);
 		if(!data) osrfLogWarning(OSRF_LOG_MARK, "No cache data exists with key %s", VA_BUF);
 		return data;
 	}
@@ -90,7 +90,9 @@ int osrfCacheSetExpire( time_t seconds, const char* key, ... ) {
 		VA_LIST_TO_STRING(key);
 		jsonObject* o = osrfCacheGetObject( VA_BUF );
 		//osrfCacheRemove(VA_BUF);
-		return osrfCachePutObject( VA_BUF, o, seconds );
+		int rc = osrfCachePutObject( VA_BUF, o, seconds );
+		jsonObjectFree(o);
+		return rc;
 	}
 	return -1;
 }
