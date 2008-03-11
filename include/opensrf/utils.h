@@ -41,7 +41,7 @@ GNU General Public License for more details.
 		memset( ptr, 0, size );\
 	} while(0)
 
-#ifdef NDEBUG
+#ifndef NDEBUG
 // The original ... replace with noop once no more errors occur in NDEBUG mode
 #define osrf_clearbuf( s, n ) memset( s, 0, n )
 #else
