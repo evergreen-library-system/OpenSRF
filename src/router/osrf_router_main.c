@@ -9,6 +9,14 @@ static osrfRouter* router = NULL;
 
 void routerSignalHandler( int signo ) {
 	osrfLogWarning( OSRF_LOG_MARK, "Received signal [%d], cleaning up...", signo );
+
+    /* for now, just forcibly exit.  This is not a friendly way to clean up, but
+     * there is a bug in osrfRouterFree() (in particular with cleaning up sockets),
+     * that can cause the router process to stick around.  If we do this, we 
+     * are guaranteed to exit.  
+     */
+    _exit(0);
+
 	osrfConfigCleanup();
 	osrfRouterFree(router);
 	router = NULL;
