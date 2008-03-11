@@ -13,7 +13,7 @@ export LDFLAGS	+= -Wl,-rpath=$(LIBDIR) -L $(TMPDIR) -L .
 export CFLAGS	+= -D_LARGEFILE64_SOURCE -pipe -g -Wall -O2 -fPIC -I ../../include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS) 
 
 ifneq ($(DEBUG), 1)
-export CGLAGS += -DNDEBUG
+export CFLAGS += -DNDEBUG
 endif
 
 ifeq ($(OSRF_LEGACY_JSON), 1)
