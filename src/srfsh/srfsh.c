@@ -842,7 +842,7 @@ static int do_math( int count, int style ) {
 	jsonObjectPush(params,jsonNewObject("2"));
 
 	char* methods[] = { "add", "sub", "mult", "div" };
-	char* answers[] = { "3", "-1", "2", "0.500000" };
+	char* answers[] = { "3", "-1", "2", "0.5" };
 
 	float times[ count * 4 ];
 	memset(times, 0, sizeof(times));
