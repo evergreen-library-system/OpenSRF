@@ -77,6 +77,7 @@ int osrfSystemInitCache( void ) {
 			"/cache/global/max_cache_time");
 	}
 
+	jsonObjectFree( cacheServers );
 	return 0;
 }
 
@@ -122,6 +123,7 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 			while( (app = jsonObjectGetIndex(apps, i++)) ) 
 				osrfStringArrayAdd(arr, jsonObjectGetString(app));
 		}
+		jsonObjectFree(apps);
 
 		char* appname = NULL;
 		i = 0;
