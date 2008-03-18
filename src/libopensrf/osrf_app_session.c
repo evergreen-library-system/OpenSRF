@@ -163,7 +163,11 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 		}
 	}
 
-	osrfLogInfo( OSRF_LOG_MARK, "Returning NULL from app_request_recv after timeout");
+    char* paramString = jsonObjectToJSON(req->payload->_params);
+	osrfLogInfo( OSRF_LOG_MARK, "Returning NULL from app_request_recv after timeout: %s %s",
+        req->payload->method_name, paramString);
+    free(paramString);
+
 	return NULL;
 }
 
