@@ -212,6 +212,7 @@ class HTTPTranslator(object):
                 return False
             self.recipient = "%s@%s/%s" % \
                 (ROUTER_NAME, OSRF_DOMAIN, self.service)
+            osrf.log.log_debug("set service to %s" % self.recipient)
             return True
         else:
             if self.recipient:
@@ -227,6 +228,7 @@ class HTTPTranslator(object):
 
         
     def init_headers(self, net_msg):
+        osrf.log.log_debug("initializing request headers")
         self.apreq.headers_out[OSRF_HTTP_HEADER_FROM] = net_msg.sender
         self.apreq.headers_out[OSRF_HTTP_HEADER_THREAD] = self.thread
         if self.multipart:
@@ -250,11 +252,13 @@ class HTTPTranslator(object):
             @return False if there is no data to return to the caller 
             (dropped message, eg. timeout), True otherwise '''
 
+        osrf.log.log_debug('checking status...')
         osrf_msgs = osrf.json.to_object(net_msg.body)
         last_msg = osrf_msgs.pop()
 
         if last_msg.type() == OSRF_MESSAGE_TYPE_STATUS:
             code = int(last_msg.payload().statusCode())
+            osrf.log.log_debug("got a status message with code %d" % code)
 
             if code == OSRF_STATUS_TIMEOUT:
                 osrf.log.log_debug("removing cached session [%s] and "
