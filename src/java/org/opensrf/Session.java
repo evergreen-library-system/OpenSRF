@@ -24,6 +24,11 @@ public abstract class Session {
     /** The address of the remote party we are communicating with */
     private String remoteNode;
 
+    /** Session locale */
+    protected String locale;
+    /** Default session locale */
+    protected static String defaultLocale = "en_US";
+
     /** 
      * The thread is used to link messages to a given session. 
      * In other words, each session has a unique thread, and all messages 
@@ -121,6 +126,41 @@ public abstract class Session {
     public void setThread(String thread) {
         this.thread = thread;
     }
+
+    /**
+     * Get locale.
+     * @return locale as String.
+     */
+    public String getLocale() {
+        if(locale == null)
+            return defaultLocale;
+        return locale;
+    }
+    
+    /**
+     * Set locale.
+     * @param locale the value to set.
+     */
+    public void setLocale(String locale) {
+        this.locale = locale;
+    }
+
+    /**
+     * Get defaultLocale.
+     * @return defaultLocale as String.
+     */
+    public String getDefaultLocale() {
+        return defaultLocale;
+    }
+    
+    /**
+     * Set defaultLocale.
+     * @param defaultLocale the value to set.
+     */
+    public void setDefaultLocale(String defaultLocale) {
+        this.defaultLocale = defaultLocale;
+    }
+
     
     /**
      * Get connectState.

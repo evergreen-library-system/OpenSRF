@@ -36,10 +36,21 @@ public class ClientSession extends Session {
 
     /**
      * Creates a new client session.  Initializes the 
-     * @param service The remove service.
+     * @param service The remote service.
      */
     public ClientSession(String service) throws ConfigException {
+        this(service, null);
+    }
+
+    /**
+     * Creates a new client session.  Initializes the 
+     * @param service The remote service.
+     * @param locale The locale for this session.
+     */
+    public ClientSession(String service, String locale) throws ConfigException {
         this.service = service;
+        if(locale != null) 
+            setLocale(locale);
 
         /** generate the remote node string */
         domain = (String) Config.global().getFirst("/domain");

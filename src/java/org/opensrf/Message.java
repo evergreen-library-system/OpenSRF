@@ -17,13 +17,15 @@ public class Message implements OSRFSerializable {
     private String type;
     /** message payload */
     private Object payload;
+    /** message locale */
+    private String locale;
 
     /** Create a registry for the osrfMessage object */
     private static OSRFRegistry registry = 
         OSRFRegistry.registerObject(
             "osrfMessage", 
             OSRFRegistry.WireProtocol.HASH, 
-            new String[] {"threadTrace", "type", "payload"});
+            new String[] {"threadTrace", "type", "payload", "locale"});
 
     /**
      * @param id This message's ID
@@ -44,6 +46,18 @@ public class Message implements OSRFSerializable {
         setPayload(payload);
     }
 
+    /**
+     * @param id This message's ID
+     * @param type The type of message
+     * @param payload The message payload
+     * @param locale The message locale
+     */
+    public Message(int id, String type, Object payload, String locale) {
+        this(id, type, payload);
+        setPayload(payload);
+        setLocale(locale);
+    }
+
 
     public int getId() {
         return id;
@@ -54,6 +68,9 @@ public class Message implements OSRFSerializable {
     public Object getPayload() {
         return payload;
     }
+    public String getLocale() {
+        return locale;
+    }
     public void setId(int id) {
         this.id = id;
     }
@@ -62,6 +79,9 @@ public class Message implements OSRFSerializable {
     }
     public void setPayload(Object p) {
         payload = p;
+    }
+    public void setLocale(String l) {
+        locale = l;
     }
 
     /**
@@ -74,6 +94,8 @@ public class Message implements OSRFSerializable {
             return getType().toString();
         if("payload".equals(field))
             return getPayload();
+        if("locale".equals(field))
+            return getLocale();
         return null;
     }
 

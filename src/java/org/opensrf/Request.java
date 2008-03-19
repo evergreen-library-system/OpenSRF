@@ -59,7 +59,7 @@ public class Request {
      * Sends the request to the server.
      */
     public void send() throws SessionException {
-        session.send(new Message(id, Message.REQUEST, method));
+        session.send(new Message(id, Message.REQUEST, method, session.getLocale()));
     }
 
     /**
