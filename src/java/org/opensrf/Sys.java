@@ -49,7 +49,7 @@ public class Sys {
         /** Collect the network connection info from the config */
         String username = config.getString("/username");
         String passwd = config.getString("/passwd");
-        String host = (String) config.getFirst("/domains/domain");
+        String host = (String) config.getFirst("/domain");
         int port = config.getInt("/port");
 
 

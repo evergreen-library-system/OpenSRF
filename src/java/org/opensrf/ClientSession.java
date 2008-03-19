@@ -42,7 +42,7 @@ public class ClientSession extends Session {
         this.service = service;
 
         /** generate the remote node string */
-        domain = (String) Config.global().getFirst("/domains/domain");
+        domain = (String) Config.global().getFirst("/domain");
         router = Config.global().getString("/router_name");
         setRemoteNode(router + "@" + domain + "/" + service);
         origRemoteNode = getRemoteNode();

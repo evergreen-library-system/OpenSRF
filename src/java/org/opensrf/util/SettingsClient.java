@@ -34,7 +34,7 @@ public class SettingsClient extends Config {
 
             Request req = ses.request(
                 "opensrf.settings.host_config.get", 
-                new String[]{(String)Config.global().getFirst("/domains/domain")});
+                new String[]{(String)Config.global().getFirst("/domain")});
     
             Result res = req.recv(12000);
             if(res == null) {
