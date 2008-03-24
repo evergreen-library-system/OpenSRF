@@ -75,36 +75,42 @@ OpenSRF.XHRequest.prototype.send = function() {
     return this;
 }
 
-
 OpenSRF.XHRequest.prototype.core_handler = function() {
     sender = this.xreq.getResponseHeader(OSRF_HTTP_HEADER_FROM);
     thread = this.xreq.getResponseHeader(OSRF_HTTP_HEADER_THREAD);
     json = this.xreq.responseText;
     stat = this.xreq.status;
 
-    var xhr = this;
+    if(stat >= 400) 
+        return this.transport_error_handler();
+
     OpenSRF.Stack.push(
         new OpenSRF.NetMessage(null, sender, thread, json),
-
-        function(ses, req) {
-            if(ses) {
-                if(ses.state == OSRF_APP_SESSION_CONNECTED && 
-                    ses.onconnect && !ses.onconnect_called) {
-                        ses.onconnect_called = true;
-                        ses.onconnect();
-                }
-            }
-
-            if(req) {
-                if(req.response_queue.length > 0 && xhr.args.onresponse) 
-                    return xhr.args.onresponse(req);
-
-                if(req.complete && xhr.args.oncomplete && !xhr.args.oncomplete_called) {
-                    xhr.args.oncomplete_called = true;
-                    return xhr.args.oncomplete(req);
-                }
-            }
+        {
+            onresponse : this.args.onresponse,
+            oncomplete : this.args.oncomplete,
+            onerror : this.args.onerror,
+            onmethoderror : this.method_error_handler()
         }
     );
 }
+
+
+OpenSRF.XHRequest.prototype.method_error_handler = function() {
+    var xhr = this;
+    return function(req, status, status_text) {
+        if(xhr.args.onmethoderror) 
+            xhr.args.onmethoderror(req, status, status_text);
+        if(xhr.args.onerror)  
+            xhr.args.onerror(xhr.message, xhr.args.rcpt || xhr.args.rcpt_service, xhr.args.thread);
+    }
+}
+
+OpenSRF.XHRequest.prototype.transport_error_handler = function() {
+    if(this.args.ontransporterror) 
+        this.args.ontransporterror(this.xreq);
+    if(this.args.onerror) 
+        this.args.onerror(this.message, this.args.rcpt || this.args.rcpt_service, this.args.thread);
+}
+
 

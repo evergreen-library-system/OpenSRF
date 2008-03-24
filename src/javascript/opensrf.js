@@ -174,9 +174,14 @@ OpenSRF.ClientSession.prototype.find_request = function(reqid) {
 OpenSRF.Request = function(session, reqid, args) {
     this.session = session;
     this.reqid = reqid;
+
+    /* callbacks */
     this.onresponse = args.onresponse;
-    this.onerror = args.onerror;
     this.oncomplete = args.oncomplete;
+    this.onerror = args.onerror;
+    this.onmethoderror = args.onmethoderror;
+    this.ontransporterror = args.ontransporterror;
+
     this.method = args.method;
     this.params = args.params;
     this.timeout = args.timeout;
@@ -203,7 +208,9 @@ OpenSRF.Request.prototype.send = function() {
         'timeout' : this.timeout,
         'onresponse' : this.onresponse,
         'oncomplete' : this.oncomplete,
-        'onerror' : this.onerror
+        'onerror' : this.onerror,
+        'onmethoderror' : this.onmethoderror,
+        'ontransporterror' : this.ontransporterror
     });
 }
 
@@ -217,16 +224,16 @@ OpenSRF.NetMessage = function(to, from, thread, body) {
 OpenSRF.Stack = function() {
 }
 
-OpenSRF.Stack.push = function(net_msg, stack_callback) {
+OpenSRF.Stack.push = function(net_msg, callbacks) {
     var ses = OpenSRF.Session.find_session(net_msg.thread); 
     if(!ses) return;
     ses.remote_id = net_msg.sender;
     osrf_msgs = JSON2js(net_msg.body);
     for(var i = 0; i < osrf_msgs.length; i++) 
-        OpenSRF.Stack.handle_message(ses, osrf_msgs[i], stack_callback);        
+        OpenSRF.Stack.handle_message(ses, osrf_msgs[i], callbacks);        
 }
 
-OpenSRF.Stack.handle_message = function(ses, osrf_msg, stack_callback) {
+OpenSRF.Stack.handle_message = function(ses, osrf_msg, callbacks) {
     
     var req = null;
 
@@ -238,27 +245,40 @@ OpenSRF.Stack.handle_message = function(ses, osrf_msg, stack_callback) {
 
         if(status == OSRF_STATUS_COMPLETE) {
             req = ses.find_request(osrf_msg.threadTrace());
-            if(req) req.complete = true;
+            if(req) {
+                req.complete = true;
+                if(callbacks.oncomplete && !req.oncomplete_called) {
+                    req.oncomplete_called = true;
+                    return callbacks.oncomplete(req);
+                }
+            }
         }
 
         if(status == OSRF_STATUS_OK) {
             ses.state = OSRF_APP_SESSION_CONNECTED;
+
+            /* call the connect callback */
+            if(ses.onconnect && !ses.onconnect_called) {
+                ses.onconnect_called = true;
+                return ses.onconnect();
+            }
         }
 
         if(status == OSRF_STATUS_NOTFOUND) {
-            alert('NOT_FOUND: ' + status_text);
-            return;
+            req = ses.find_request(osrf_msg.threadTrace());
+            if(callbacks.onmethoderror) 
+                return callbacks.onmethoderror(req, status, status_text);
         }
     }
 
     if(osrf_msg.type() == OSRF_MESSAGE_TYPE_RESULT) {
         req = ses.find_request(osrf_msg.threadTrace());
-        if(req) 
+        if(req) {
             req.response_queue.push(osrf_msg.payload());
+            if(callbacks.onresponse) 
+                return callbacks.onresponse(req);
+        }
     }
-
-    if(stack_callback)
-        stack_callback(ses, req);
 }
 
 /* The following classes map directly to network-serializable opensrf objects */
