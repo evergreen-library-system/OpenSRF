@@ -56,6 +56,13 @@ OpenSRF.XHRequest.prototype.send = function() {
             xreq.onload = function(evt) {xhr_req.core_handler();}
             xreq.open('POST', OSRF_HTTP_TRANSLATOR, true);
             xreq.setRequestHeader(OSRF_HTTP_HEADER_MULTIPART, 'true');
+
+            /* multipart requests do not pass the status info to the onload if there 
+               is no new data to load.  Capture the status on the readystate handler */
+            xreq.onreadystatechange = function() {
+                if(xreq.readyState == 4 && xreq.status >= 400)
+                    xhr_req.transport_error_handler();
+            }
         }
     }
 
