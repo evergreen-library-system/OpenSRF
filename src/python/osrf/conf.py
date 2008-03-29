@@ -34,7 +34,7 @@ class Config(object):
         self.data = osrf.xml_obj.xml_file_to_object(self.file)
         Config.config = self
     
-    def getValue(self, key, idx=None):
+    def get_value(self, key, idx=None):
         if self.context:
             if re.search('/', key):
                 key = "%s/%s" % (self.context, key)
@@ -54,7 +54,7 @@ def get(key, idx=None):
         e.g.  "domains.domain", "username"
     idx -- Optional array index if the searched value is an array member
     """
-    return Config.config.getValue(key, idx)
+    return Config.config.get_value(key, idx)
                 
 
 def get_no_ex(key, idx=None):
@@ -66,7 +66,7 @@ def get_no_ex(key, idx=None):
     idx -- Optional array index if the searched value is an array member
     """
     try:
-        return Config.config.getValue(key, idx)
+        return Config.config.get_value(key, idx)
     except:
         return None
 

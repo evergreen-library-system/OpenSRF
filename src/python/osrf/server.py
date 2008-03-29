@@ -19,7 +19,7 @@
 # -----------------------------------------------------------------------
 
 import os, sys, threading, logging, fcntl, socket, errno, signal, time
-import osrf.log, osrf.net, osrf.system, osrf.stack
+import osrf.log, osrf.conf, osrf.net, osrf.system, osrf.stack, osrf.app
 
 
 # used to define the size of the PID/size leader in 
@@ -32,7 +32,8 @@ class Controller(object):
     '''
 
     def __init__(self, service):
-        self.service = service
+        self.service = service # service name
+        self.application = None
         self.max_requests = 0 # max child requests
         self.max_children = 0 # max num of child processes
         self.min_childen = 0 # min num of child processes
@@ -40,14 +41,21 @@ class Controller(object):
         self.child_idx = 0 # current index into the children array
         self.children = [] # list of children
         self.osrf_handle = None # xmpp handle
+        self.routers = [] # list of registered routers
 
         # Global status socketpair.  All children relay their 
         # availability info to the parent through this socketpair. 
         self.read_status, self.write_status = socket.socketpair()
 
+    def load_app(self):
+        settings = osrf.set.get('activeapps.%s' % self.service)
+        
 
     def cleanup(self):
         ''' Closes management sockets, kills children, reaps children, exits '''
+
+        osrf.log.log_info("Shutting down...")
+        self.cleanup_routers()
 
         self.read_status.shutdown(socket.SHUT_RDWR)
         self.write_status.shutdown(socket.SHUT_RDWR)
@@ -85,7 +93,11 @@ class Controller(object):
         # clear the recv callback so inbound messages do not filter through the opensrf stack
         self.osrf_handle.receive_callback = None
 
+        # connect to our listening routers
+        self.register_routers()
+
         try:
+            osrf.log.log_debug("entering main server loop...")
             while True: # main server loop
 
                 self.reap_children()
@@ -216,6 +228,52 @@ class Controller(object):
             child.run()
             os._exit(0)
 
+    def register_routers(self):
+        ''' Registers this application instance with all configured routers '''
+        routers = osrf.conf.get('routers.router')
+
+        if not isinstance(routers, list):
+            routers = [routers]
+
+        for router in routers:
+            if isinstance(router, dict):
+                if not 'services' in router or \
+                        self.service in router['services']['service']:
+                    target = "%s@%s/router" % (router['name'], router['domain'])
+                    self.register_router(target)
+            else:
+                router_name = osrf.conf.get('router_name')
+                target = "%s@%s/router" % (router_name, router)
+                self.register_router(target)
+
+
+    def register_router(self, target):
+        ''' Registers with a single router '''
+        osrf.log.log_info("registering with router %s" % target)
+        self.routers.append(target)
+
+        reg_msg = osrf.net.NetworkMessage(
+            recipient = target,
+            body = 'registering...',
+            router_command = 'register',
+            router_class = self.service
+        )
+
+        self.osrf_handle.send(reg_msg)
+
+    def cleanup_routers(self):
+        ''' Un-registers with all connected routers '''
+        for target in self.routers:
+            osrf.log.log_info("un-registering with router %s" % target)
+            unreg_msg = osrf.net.NetworkMessage(
+                recipient = target,
+                body = 'un-registering...',
+                router_command = 'unregister',
+                router_class = self.service
+            )
+            self.osrf_handle.send(unreg_msg)
+        
+
 class Child(object):
     ''' Models a single child process '''
 
@@ -232,7 +290,7 @@ class Child(object):
         ''' Loops, processing data, until max_requests is reached '''
         while True:
             try:
-                size = int(self.read_data.recv(SIZE_PAD))
+                size = int(self.read_data.recv(SIZE_PAD) or 0)
                 data = self.read_data.recv(size)
                 osrf.log.log_internal("recv'd data " + data)
                 osrf.stack.push(osrf.net.NetworkMessage.from_xml(data))
@@ -242,6 +300,8 @@ class Child(object):
                 self.send_status()
             except KeyboardInterrupt:
                 pass
+        # run the exit handler
+        osrf.app.Application.application.child_exit()
 
     def send_status(self):
         ''' Informs the controller that we are done processing this request '''
@@ -255,4 +315,5 @@ class Child(object):
         ''' Connects the opensrf xmpp handle '''
         osrf.net.clear_network_handle()
         osrf.system.System.net_connect(resource = '%s_drone' % self.controller.service)
-            
+        osrf.app.Application.application.child_init()
+

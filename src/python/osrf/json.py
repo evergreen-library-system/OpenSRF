@@ -41,24 +41,23 @@ def encode_object(obj):
             newobj[k] = encode_object(v)
         return newobj
 
-    else:
-        if isinstance(obj, list):
-            return [encode_object(v) for v in obj]
+    elif isinstance(obj, list):
+        return [encode_object(v) for v in obj]
 
-        else:
-            if isinstance(obj, NetworkObject):
-                reg = obj.get_registry()
-                data = obj.get_data()
-                if reg.protocol == 'array':
-                    objarray = []
-                    for key in reg.keys:
-                        objarray.append(data.get(key)) 
-                    data = objarray
+    elif isinstance(obj, NetworkObject):
+        reg = obj.get_registry()
+        data = obj.get_data()
 
-                return {
-                    OSRF_JSON_CLASS_KEY: reg.hint,
-                    OSRF_JSON_PAYLOAD_KEY: encode_object(data)
-                }
+        if reg.protocol == 'array':
+            objarray = []
+            for key in reg.keys:
+                objarray.append(data.get(key)) 
+            data = objarray
+
+        return {
+            OSRF_JSON_CLASS_KEY: reg.hint,
+            OSRF_JSON_PAYLOAD_KEY: encode_object(data)
+        }
 
     return obj
         

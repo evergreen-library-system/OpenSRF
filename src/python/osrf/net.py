@@ -64,6 +64,7 @@ class NetworkMessage(object):
             self.thread = message.get_thread()
             self.recipient = message.get_to()
             self.router_command = None
+            self.router_class = None
             if message.xmlnode.hasProp('router_from') and \
                 message.xmlnode.prop('router_from') != '':
                 self.sender = message.xmlnode.prop('router_from')
@@ -75,10 +76,11 @@ class NetworkMessage(object):
             self.body = args.get('body')
             self.thread = args.get('thread')
             self.router_command = args.get('router_command')
+            self.router_class = args.get('router_class')
 
     @staticmethod
     def from_xml(xml):
-        doc=libxml2.parseDoc(xml)
+        doc = libxml2.parseDoc(xml)
         msg = Message(doc.getRootElement())
         return NetworkMessage(msg)
         
@@ -90,6 +92,8 @@ class NetworkMessage(object):
             self.body, self.thread)
         if self.router_command:
             msg.xmlnode.newProp('router_command', self.router_command)
+        if self.router_class:
+            msg.xmlnode.newProp('router_class', self.router_class)
         return msg
 
     def to_xml(self):
