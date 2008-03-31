@@ -402,7 +402,7 @@ class ServerRequest(Request):
 
         if self.complete: 
             return
-        self.copmlete = True
+        self.complete = True
         self.complete_time = time.time()
 
         if self.method.atomic:
