@@ -147,7 +147,7 @@ class ClientSession(Session):
 
         if self.state == OSRF_APP_SESSION_CONNECTED:
             return True
-        self.state == OSRF_APP_SESSION_CONNECTING
+        self.state = OSRF_APP_SESSION_CONNECTING
 
         # construct and send a CONNECT message
         self.send(
