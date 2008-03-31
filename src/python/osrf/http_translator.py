@@ -85,7 +85,9 @@ def child_init(req):
 def handler(req):
     ''' Create the translator and tell it to process the request. '''
     child_init(req)
-    return HTTPTranslator(req).process()
+    status = HTTPTranslator(req).process()
+    osrf.log.log_debug("translator call resulted in status %d" % int(status))
+    return status
 
 class HTTPTranslator(object):
     def __init__(self, apreq):
