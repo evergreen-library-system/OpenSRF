@@ -81,16 +81,13 @@ sub handler {
 
 	$logger->transport( "Transport handler() received $data", INTERNAL );
 
-	# pass data to the message envelope 
-	my $helper = OpenSRF::Transport::SlimJabber::MessageWrapper->new( $data );
+	my $remote_id	= $data->from;
+	my $sess_id	= $data->thread;
+	my $body	= $data->body;
+	my $type	= $data->type;
 
-	# Extract message information
-	my $remote_id	= $helper->get_remote_id();
-	my $sess_id	= $helper->get_sess_id();
-	my $body	= $helper->get_body();
-	my $type	= $helper->get_msg_type();
+	$logger->set_osrf_xid($data->osrf_xid);
 
-	$logger->set_osrf_xid($helper->get_osrf_xid);
 
 	if (defined($type) and $type eq 'error') {
 		throw OpenSRF::EX::Session ("$remote_id IS NOT CONNECTED TO THE NETWORK!!!");
@@ -129,8 +126,8 @@ sub handler {
 	eval { $doc = OpenSRF::Utils::JSON->JSON2perl($body); };
 	if( $@ ) {
 
-		$logger->transport( "Received bogus JSON: $@", INFO );
-		$logger->transport( "Bogus JSON data: \n $body \n", INTERNAL );
+		$logger->warn("Received bogus JSON: $@");
+		$logger->warn("Bogus JSON data: $body");
 		my $res = OpenSRF::DomainObject::oilsXMLParseError->new( status => "JSON Parse Error --- $body\n\n$@" );
 
 		$app_session->status($res);

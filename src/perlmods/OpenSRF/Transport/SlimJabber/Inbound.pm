@@ -6,6 +6,7 @@ use OpenSRF::Utils::Logger qw(:level);
 use OpenSRF::Utils::SettingsClient;
 use OpenSRF::Utils::Config;
 use Time::HiRes qw/usleep/;
+use FreezeThaw qw/freeze/;
 
 my $logger = "OpenSRF::Utils::Logger";
 
@@ -19,9 +20,6 @@ retreived are based on the $app name passed into new().
 This service should be loaded at system startup.
 
 =cut
-
-# XXX This will be overhauled to connect as a component instead of as
-# a user.  all in good time, though.
 
 {
 	my $unix_sock;
@@ -98,7 +96,6 @@ sub listen {
         $logger->info("loading router info $routers");
 
         for my $router (@$routers) {
-
             if(ref $router) {
                 if( !$router->{services} || grep { $_ eq $self->{app} } @{$router->{services}->{service}} ) {
                     my $name = $router->{name};
@@ -134,9 +131,7 @@ sub listen {
 		$logger->debug("Inbound listener calling process()");
 
 		try {
-			$o = $self->process( -1 );
-
-			$logger->debug("Inbound listener received ".length($o)." bytes of data");
+			$o = $self->process(-1);
 
 			if(!$o){
 				$logger->error(
@@ -158,7 +153,7 @@ sub listen {
 			throw OpenSRF::EX::Socket( 
 				"Unable to connect to UnixServer: socket-file: $sock \n :=> $! " )
 				unless ($socket->connected);
-			print $socket $o;
+			print $socket freeze($o);
 			$socket->close;
 		} 
 	}

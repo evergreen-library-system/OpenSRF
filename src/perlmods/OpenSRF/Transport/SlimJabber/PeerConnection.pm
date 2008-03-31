@@ -29,15 +29,9 @@ our $_singleton_connection;
 sub retrieve { 
 	my( $class, $app ) = @_;
 	return $_singleton_connection;
-#	my @keys = keys %apps_hash;
-#	OpenSRF::Utils::Logger->transport( 
-#			"Requesting peer for $app and we have @keys", INFO );
-#	return $apps_hash{$app};
 }
 
 
-
-# !! In here we use the bootstrap config ....
 sub new {
 	my( $class, $app ) = @_;
 
@@ -62,12 +56,6 @@ sub new {
 	my $host	= $domain; # XXX for now...
 
 	if( $app eq "client" ) { $resource = "client_at_$h"; }
-
-#	unless ( $conf->bootstrap->router_name ) {
-#		$username = 'router';
-#		$resource = $app;
-#	}
-
 
 	OpenSRF::EX::Config->throw( "JPeer could not load all necesarry values from config" )
 		unless ( $username and $password and $resource and $host and $port );
@@ -94,26 +82,16 @@ sub new {
 }
 
 sub process {
-
 	my $self = shift;
 	my $val = $self->SUPER::process(@_);
 	return 0 unless $val;
-
-	OpenSRF::Utils::Logger->transport( "Calling transport handler for ".$self->app." with: $val", INTERNAL );
-	my $t;
-	$t = OpenSRF::Transport->handler($self->app, $val);
-
-	return $t;
+	return OpenSRF::Transport->handler($self->app, $val);
 }
 
 sub app {
 	my $self = shift;
 	my $app = shift;
-	if( $app ) {
-		OpenSRF::Utils::Logger->transport( "PEER changing app to $app: ".$self->jid, INTERNAL );
-	}
-
-	$self->{app} = $app if ($app);
+	$self->{app} = $app if $app;
 	return $self->{app};
 }
 

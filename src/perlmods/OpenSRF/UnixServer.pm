@@ -14,6 +14,7 @@ use OpenSRF::Utils::JSON;
 use vars qw/@ISA $app/;
 use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);
 use Carp;
+use FreezeThaw qw/thaw/;
 
 use IO::Socket::INET;
 use IO::Socket::UNIX;
@@ -97,6 +98,7 @@ sub process_request {
 		exit;
 	}
 
+    ($data) = thaw($data);
 	my $app_session = OpenSRF::Transport->handler( $self->app(), $data );
 
 	if(!ref($app_session)) {
