@@ -48,5 +48,3 @@ class OSRFJSONParseException(OSRFException):
     """Raised when a JSON parsing error occurs."""
     pass
 
-
-

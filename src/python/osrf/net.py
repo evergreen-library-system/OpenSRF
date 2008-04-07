@@ -20,7 +20,7 @@ from pyxmpp.message import Message
 from pyxmpp.jid import JID
 from socket import gethostname
 import libxml2
-import osrf.log
+import osrf.log, osrf.ex
 
 THREAD_SESSIONS = {}
 
@@ -30,6 +30,16 @@ THREAD_SESSIONS = {}
 #logger.addHandler(logging.StreamHandler())
 #logger.addHandler(logging.FileHandler('j.log'))
 #logger.setLevel(logging.DEBUG)
+
+
+
+class XMPPNoRecipient(osrf.ex.OSRFException):
+    ''' Raised when a message was sent to a non-existent recipient 
+        The recipient is stored in the 'recipient' field on this object
+    '''
+    def __init__(self, recipient):
+        osrf.ex.OSRFException.__init__(self, 'Error communicating with %s' % recipient)
+        self.recipient = recipient
 
 def set_network_handle(handle):
     """ Sets the thread-specific network handle"""
@@ -120,6 +130,7 @@ class Network(JabberClient):
         self.queue = []
 
         self.receive_callback = None
+        self.transport_error_msg = None
 
     def connect(self):
         JabberClient.connect(self)
@@ -139,6 +150,7 @@ class Network(JabberClient):
         osrf.log.log_info("Successfully connected to the opensrf network")
         self.authenticated()
         self.stream.set_message_handler("normal", self.message_received)
+        self.stream.set_message_handler("error", self.error_received)
         self.isconnected = True
 
     def send(self, message):
@@ -147,6 +159,10 @@ class Network(JabberClient):
         message.sender = self.jid.as_utf8()
         msg = message.make_xmpp_msg()
         self.stream.send(msg)
+
+    def error_received(self, stanza):
+        self.transport_error_msg = NetworkMessage(stanza)
+        osrf.log.log_error("XMPP error message received from %s" % self.transport_error_msg.sender)
     
     def message_received(self, stanza):
         """Handler for received messages."""
@@ -181,6 +197,12 @@ class Network(JabberClient):
                     timeout -= endtime
                 osrf.log.log_internal("exiting stream loop after %s seconds. "
                     "act=%s, queue size=%d" % (str(endtime), act, len(self.queue)))
+
+                if self.transport_error_msg:
+                    msg = self.transport_error_msg
+                    self.transport_error_msg = None
+                    raise XMPPNoRecipient(msg.sender)
+
                 if not act:
                     self.idle()
 

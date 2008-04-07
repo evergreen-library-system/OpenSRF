@@ -23,11 +23,7 @@ srfsh.py - provides a basic shell for issuing OpenSRF requests
 """
 
 import os, sys, time, readline, atexit, re
-import osrf.json
-import osrf.system
-import osrf.ses
-import osrf.conf
-import osrf.log
+import osrf.json, osrf.system, osrf.ses, osrf.conf, osrf.log, osrf.net
 
 # -------------------------------------------------------------------
 # main listen loop
@@ -126,7 +122,14 @@ def handle_request(parts):
 
 
     while True:
-        resp = req.recv(timeout=120)
+        resp = None
+        try:
+            resp = req.recv(timeout=120)
+        except osrf.net.XMPPNoRecipient:
+            print "Unable to communicate with %s" % service
+            total = 0
+            break
+
         osrf.log.log_internal("Looping through receive request")
         if not resp:
             break

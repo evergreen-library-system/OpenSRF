@@ -98,8 +98,11 @@ class HTTPTranslator(object):
 
         try:
             post = util.parse_qsl(apreq.read(int(apreq.headers_in['Content-length'])))
+            osrf.log.log_debug('post = ' + str(post))
             self.body = [d for d in post if d[0] == 'osrf-msg'][0][1]
-        except: 
+            osrf.log.log_debug(self.body)
+        except Exception, e: 
+            osrf.log.log_warn("error parsing osrf message: %s" % unicode(e))
             self.body = None
             return
 
@@ -153,7 +156,12 @@ class HTTPTranslator(object):
         first_write = True
         while not self.complete:
 
-            net_msg = self.handle.recv(self.timeout)
+            net_msg = None
+            try:
+                net_msg = self.handle.recv(self.timeout)
+            except osrf.net.XMPPNoRecipient:
+                return apache.HTTP_NOT_FOUND 
+
             if not net_msg: 
                 return apache.GATEWAY_TIME_OUT
 
