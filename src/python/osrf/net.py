@@ -66,6 +66,7 @@ class NetworkMessage(object):
     body - the body of the message
     thread - the message thread
     locale - locale of the message
+    osrf_xid - The logging transaction ID
     """
 
     def __init__(self, message=None, **args):
@@ -80,6 +81,10 @@ class NetworkMessage(object):
                 self.sender = message.xmlnode.prop('router_from')
             else:
                 self.sender = message.get_from().as_utf8()
+            if message.xmlnode.hasProp('osrf_xid'):
+                self.xid = message.xmlnode
+            else:
+                self.xid = ''
         else:
             self.sender = args.get('sender')
             self.recipient = args.get('recipient')
@@ -87,6 +92,7 @@ class NetworkMessage(object):
             self.thread = args.get('thread')
             self.router_command = args.get('router_command')
             self.router_class = args.get('router_class')
+            self.xid = osrf.log.get_xid()
 
     @staticmethod
     def from_xml(xml):
@@ -104,6 +110,8 @@ class NetworkMessage(object):
             msg.xmlnode.newProp('router_command', self.router_command)
         if self.router_class:
             msg.xmlnode.newProp('router_class', self.router_class)
+        if self.xid:
+            msg.xmlnode.newProp('osrf_xid', self.xid)
         return msg
 
     def to_xml(self):

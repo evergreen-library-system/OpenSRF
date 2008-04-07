@@ -23,7 +23,7 @@ Example Apache mod_python config:
 '''
 
 OSRF_HTTP_HEADER_TO = 'X-OpenSRF-to'
-OSRF_HTTP_HEADER_XID = 'X-OpenSRF-thread'
+OSRF_HTTP_HEADER_XID = 'X-OpenSRF-xid'
 OSRF_HTTP_HEADER_FROM = 'X-OpenSRF-from'
 OSRF_HTTP_HEADER_THREAD = 'X-OpenSRF-thread'
 OSRF_HTTP_HEADER_TIMEOUT = 'X-OpenSRF-timeout'
@@ -85,8 +85,11 @@ def child_init(req):
 def handler(req):
     ''' Create the translator and tell it to process the request. '''
     child_init(req)
-    status = HTTPTranslator(req).process()
+    translator = HTTPTranslator(req)
+    status = translator.process()
     osrf.log.log_debug("translator call resulted in status %d" % int(status))
+    if translator.local_xid:
+        osrf.log.clear_xid()
     return status
 
 class HTTPTranslator(object):
@@ -95,6 +98,9 @@ class HTTPTranslator(object):
         self.apreq = apreq
         if apreq.header_only: 
             return
+
+        for k,v in apreq.headers_in.iteritems():
+            osrf.log.log_internal('HEADER: %s = %s' % (k, v))
 
         try:
             post = util.parse_qsl(apreq.read(int(apreq.headers_in['Content-length'])))
@@ -128,6 +134,15 @@ class HTTPTranslator(object):
         self.delim = mpart.hexdigest()
         self.remote_host = self.apreq.get_remote_host(apache.REMOTE_NOLOOKUP)
         self.cache = osrf.cache.CacheClient()
+
+        if OSRF_HTTP_HEADER_XID in apreq.headers_in:
+            osrf.log.log_debug('read XID from client %s' % apreq.headers_in.get(OSRF_HTTP_HEADER_XID))
+            osrf.log.set_xid(apreq.headers_in.get(OSRF_HTTP_HEADER_XID))
+            self.local_xid = False
+        else:
+            osrf.log.make_xid()
+            osrf.log.log_debug('created new XID %s' % osrf.log.get_xid())
+            self.local_xid = True
 
 
     def process(self):

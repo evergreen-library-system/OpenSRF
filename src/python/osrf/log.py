@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 # -----------------------------------------------------------------------
 
-import traceback, sys, os, re, threading
+import traceback, sys, os, re, threading, time
 from osrf.const import OSRF_LOG_DEBUG, OSRF_LOG_ERR, OSRF_LOG_INFO, \
     OSRF_LOG_INTERNAL, OSRF_LOG_TYPE_FILE, OSRF_LOG_TYPE_STDERR, \
     OSRF_LOG_TYPE_SYSLOG, OSRF_LOG_WARN
@@ -25,11 +25,17 @@ LOG_TYPE = OSRF_LOG_TYPE_STDERR
 LOG_FILE = None
 FRGX = re.compile('/.*/')
 
+_xid = '' # the current XID
+_xid_pfx = '' # our XID prefix
+_xid_ctr = 0
+_xid_is_client = False # true if we are the request origin
 
-def initialize(level, facility=None, logfile=None):
+
+def initialize(level, facility=None, logfile=None, is_client=False):
     """Initialize the logging subsystem."""
-    global LOG_LEVEL, LOG_TYPE, LOG_FILE
+    global LOG_LEVEL, LOG_TYPE, LOG_FILE, _xid_is_client
 
+    _xid_is_client = is_client
     LOG_LEVEL = level
 
     if facility: 
@@ -47,6 +53,24 @@ def initialize(level, facility=None, logfile=None):
         LOG_TYPE = OSRF_LOG_TYPE_FILE
         LOG_FILE = logfile
 
+def make_xid():
+    global _xid, _xid_pfx, _xid_is_client, _xid_ctr
+    if _xid_is_client:
+        if not _xid_pfx:
+            _xid_pfx = "%s%s" % (time.time(), os.getpid())
+        _xid = "%s%d" % (_xid_pfx, _xid_ctr)
+        _xid_ctr += 1
+         
+def clear_xid():
+    global _xid
+    _xid =  ''
+
+def set_xid(xid):
+    global _xid
+    _xid = xid
+
+def get_xid():
+    return _xid
 
 # -----------------------------------------------------------------------
 # Define wrapper functions for the log levels
@@ -90,7 +114,7 @@ def __log(level, msg):
         lvl = 'ERR '
 
     filename = FRGX.sub('', tb[0])
-    msg = '[%s:%d:%s:%s:%s] %s' % (lvl, os.getpid(), filename, tb[1], threading.currentThread().getName(), msg)
+    msg = '[%s:%d:%s:%s:%s:%s] %s' % (lvl, os.getpid(), filename, tb[1], threading.currentThread().getName(), _xid, msg)
 
     if LOG_TYPE == OSRF_LOG_TYPE_SYSLOG:
         __log_syslog(level, msg)

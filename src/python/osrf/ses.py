@@ -134,6 +134,8 @@ class ClientSession(Session):
         if self.state != OSRF_APP_SESSION_CONNECTED:
             self.reset_remote_id()
 
+        osrf.log.make_xid()
+
         osrf.log.log_debug("Sending request %s -> %s " % (self.service, method))
         req = ClientRequest(self, self.next_id, method, arr, self.locale)
         self.requests[str(self.next_id)] = req

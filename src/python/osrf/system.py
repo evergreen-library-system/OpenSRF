@@ -39,12 +39,13 @@ class System(object):
         # parse the config file
         config_parser = osrf.conf.Config(config_file, config_context)
         config_parser.parse_config()
-        
+
         # set up logging
         osrf.log.initialize(
             osrf.conf.get('loglevel'), 
             osrf.conf.get_no_ex('syslog'),
-            osrf.conf.get_no_ex('logfile'))
+            osrf.conf.get_no_ex('logfile'),
+            osrf.conf.get_no_ex('client') == 'true')
 
         # connect to the opensrf network
         network = Network(
