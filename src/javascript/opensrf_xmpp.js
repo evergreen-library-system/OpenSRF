@@ -1,3 +1,12 @@
+
+/**
+ * XXX
+ * XXX For reference only until this code is updated to match new opensrf.js layout XXX
+ * XXX
+ */
+
+
+
 // ------------------------------------------------------------------
 //		Houses the jabber transport code
 //
