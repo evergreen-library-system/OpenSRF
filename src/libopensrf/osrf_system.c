@@ -412,14 +412,14 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 		domain, iport, unixpath ? unixpath : "(none)" );
 	transport_client* client = client_init( domain, iport, unixpath, 0 );
 
-	const char* host;
-	host = getenv("HOSTNAME");
+	char host[HOST_NAME_MAX + 1] = "";
+	gethostname(host, sizeof(host) );
+	host[HOST_NAME_MAX] = '\0';
 
 	char tbuf[32];
 	tbuf[0] = '\0';
 	snprintf(tbuf, 32, "%f", get_timestamp_millis());
 
-	if(!host) host = "";
 	if(!resource) resource = "";
 
 	int len = strlen(resource) + 256;

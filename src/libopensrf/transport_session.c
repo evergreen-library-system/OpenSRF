@@ -209,7 +209,9 @@ int session_connect( transport_session* session,
 	if( session->component ) {
 
 		/* the first Jabber connect stanza */
-		char* our_hostname = getenv("HOSTNAME");
+		char our_hostname[HOST_NAME_MAX + 1] = "";
+		gethostname(our_hostname, sizeof(our_hostname) );
+		our_hostname[HOST_NAME_MAX] = '\0';
 		size1 = 150 + strlen( server );
 		char stanza1[ size1 ]; 
 		snprintf( stanza1, sizeof(stanza1),

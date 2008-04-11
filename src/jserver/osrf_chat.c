@@ -605,8 +605,11 @@ int osrfChatHandleNewConnection( osrfChatNode* node, const char* name, const xml
 
 
 char* osrfChatMkAuthKey() {
+	char hostname[HOST_NAME_MAX + 1] = "";
+	gethostname(hostname, sizeof(hostname) );
+	hostname[HOST_NAME_MAX] = '\0';
 	char keybuf[112];
-	snprintf(keybuf, sizeof(keybuf), "%d%ld%s", (int) time(NULL), (long) getpid(), getenv("HOSTNAME"));
+	snprintf(keybuf, sizeof(keybuf), "%d%ld%s", (int) time(NULL), (long) getpid(), hostname);
 	return strdup(shahash(keybuf));
 }
 
