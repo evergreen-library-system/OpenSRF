@@ -227,6 +227,7 @@ osrfHashIterator* osrfNewHashIterator( osrfHash* hash ) {
 	itr->hash = hash;
 	itr->currentIdx = 0;
 	itr->current = NULL;
+	itr->currsize = 0;
 	itr->keys = osrfHashKeysInc(hash);
 	return itr;
 }
@@ -234,8 +235,24 @@ osrfHashIterator* osrfNewHashIterator( osrfHash* hash ) {
 void* osrfHashIteratorNext( osrfHashIterator* itr ) {
 	if(!(itr && itr->hash)) return NULL;
 	if( itr->currentIdx >= itr->keys->size ) return NULL;
-	free(itr->current);
-	itr->current = strdup(osrfStringArrayGetString(itr->keys, itr->currentIdx++));
+
+	// Copy the string to iter->current
+	const char * curr = osrfStringArrayGetString(itr->keys, itr->currentIdx++);
+	size_t new_len = strlen(curr);
+	if( new_len >= itr->currsize ) {
+		// We need a bigger buffer
+
+		if(0 == itr->currsize) itr->currsize = 64; //default size
+		do {
+			itr->currsize *= 2;
+		} while( new_len >= itr->currsize );
+
+		if(itr->current)
+			free(itr->current);
+		itr->current = safe_malloc(itr->currsize);
+	}
+	strcpy(itr->current, curr);
+	
 	char* val = osrfHashGet( itr->hash, itr->current );
 	return val;
 }
@@ -248,10 +265,9 @@ void osrfHashIteratorFree( osrfHashIterator* itr ) {
 
 void osrfHashIteratorReset( osrfHashIterator* itr ) {
 	if(!itr) return;
-	free(itr->current);
+	itr->current[0] = '\0';
 	itr->keys = osrfHashKeysInc(itr->hash);
 	itr->currentIdx = 0;
-	itr->current = NULL;
 }
 
 

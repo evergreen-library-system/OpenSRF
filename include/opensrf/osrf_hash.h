@@ -15,6 +15,7 @@ typedef struct _osrfHashStruct osrfHash;
 
 struct _osrfHashIteratorStruct {
 	char* current;
+	size_t currsize;  // length of "current" buffer
 	int currentIdx;
 	osrfHash* hash;
 	osrfStringArray* keys;
