@@ -118,7 +118,8 @@ void osrfAppRunExitCode() {
 	osrfApplication* app;
 	while( (app = osrfHashIteratorNext(itr)) ) {
 		if( app->onExit ) {
-			osrfLogInfo(OSRF_LOG_MARK, "Running onExit handler for app %s", itr->current);
+			osrfLogInfo(OSRF_LOG_MARK, "Running onExit handler for app %s",
+				osrfHashIteratorKey(itr) );
 			app->onExit();
 		}
 	}
