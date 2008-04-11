@@ -128,7 +128,7 @@ void osrfRouterRun( osrfRouter* router ) {
 
 			while( (class = osrfHashIteratorNext(itr)) ) {
 
-				char* classname = itr->current;
+				const char* classname = itr->current;
 
 				if( classname && (class = osrfRouterFindClass( router, classname )) ) {
 
@@ -574,7 +574,7 @@ static int _osrfRouterFillFDSet( osrfRouter* router, fd_set* set ) {
 	osrfHashIterator* itr = osrfNewHashIterator(router->classes);
 
 	while( (class = osrfHashIteratorNext(itr)) ) {
-		char* classname = itr->current;
+		const char* classname = itr->current;
 
 		if( classname && (class = osrfRouterFindClass( router, classname )) ) {
 			sockid = class->ROUTER_SOCKFD;
@@ -732,7 +732,7 @@ static int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* m
 		while( (class = osrfHashIteratorNext(class_itr)) ) {
 
 			jsonObject* class_res = jsonNewObjectType(JSON_HASH);
-			char* classname = class_itr->current;
+			const char* classname = class_itr->current;
 
 			osrfHashIterator* node_itr = osrfNewHashIterator(class->nodes);
 			while( (node = osrfHashIteratorNext(node_itr)) ) {
@@ -756,7 +756,7 @@ static int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* m
 		while( (class = osrfHashIteratorNext(class_itr)) ) {
 
 			count = 0;
-			char* classname = class_itr->current;
+			const char* classname = class_itr->current;
 
 			osrfHashIterator* node_itr = osrfNewHashIterator(class->nodes);
 			while( (node = osrfHashIteratorNext(node_itr)) ) {
