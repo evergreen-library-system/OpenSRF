@@ -265,7 +265,7 @@ void osrfHashIteratorFree( osrfHashIterator* itr ) {
 
 void osrfHashIteratorReset( osrfHashIterator* itr ) {
 	if(!itr) return;
-	itr->current[0] = '\0';
+    if(itr->current) itr->current[0] = '\0';
 	itr->keys = osrfHashKeysInc(itr->hash);
 	itr->currentIdx = 0;
 }
