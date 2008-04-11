@@ -84,6 +84,11 @@ int osrfHashIteratorHasNext( osrfHashIterator* itr );
 void* osrfHashIteratorNext( osrfHashIterator* itr );
 
 /**
+  Returns a pointer to the key of the current hash item
+ */
+const char* osrfHashIteratorKey( const osrfHashIterator* itr );
+
+/**
   Deallocates the given list
   */
 void osrfHashIteratorFree( osrfHashIterator* itr );

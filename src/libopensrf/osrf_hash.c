@@ -263,6 +263,11 @@ void osrfHashIteratorFree( osrfHashIterator* itr ) {
 	free(itr);
 }
 
+const char* osrfHashIteratorKey( const osrfHashIterator* itr ) {
+    if( ! itr ) return NULL;
+    return itr->current;
+}
+
 void osrfHashIteratorReset( osrfHashIterator* itr ) {
 	if(!itr) return;
     if(itr->current) itr->current[0] = '\0';
