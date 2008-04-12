@@ -37,7 +37,7 @@ GNU General Public License for more details.
 	_obj_->type = newtype;\
 	if( newtype == JSON_HASH && _obj_->value.h == NULL ) {	\
 		_obj_->value.h = osrfNewHash();		\
-		_obj_->value.h->freeItem = _jsonFreeHashItem; \
+		osrfHashSetCallback( _obj_->value.h, _jsonFreeHashItem ); \
 } else if( newtype == JSON_ARRAY && _obj_->value.l == NULL ) {	\
 		_obj_->value.l = osrfNewList();		\
 		_obj_->value.l->freeItem = _jsonFreeListItem;\
@@ -242,7 +242,7 @@ unsigned long jsonObjectSetKey( jsonObject* o, const char* key, jsonObject* newo
 	JSON_INIT_CLEAR(o, JSON_HASH);
 	newo->parent = o;
 	osrfHashSet( o->value.h, newo, key );
-	o->size = o->value.h->size;
+	o->size = osrfHashGetCount(o->value.h);
 	return o->size;
 }
 
@@ -322,7 +322,7 @@ static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf ) {
 
 			while( (item = osrfHashIteratorNext(itr)) ) {
 				if(i++ > 0) OSRF_BUFFER_ADD(buf, ",");
-				buffer_fadd(buf, "\"%s\":", itr->current);
+				buffer_fadd(buf, "\"%s\":", osrfHashIteratorKey(itr));
 				add_json_to_buffer( item, buf );
 			}
 
@@ -362,7 +362,7 @@ jsonObject* jsonIteratorNext(jsonIterator* itr) {
 		if(!itr->hashItr) return NULL;
 		jsonObject* item = osrfHashIteratorNext(itr->hashItr);
 		free(itr->key);
-		itr->key = strdup(itr->hashItr->current);
+		itr->key = strdup( osrfHashIteratorKey(itr->hashItr) );
 		return item;
 	} else {
 		return jsonObjectGetIndex( itr->obj, itr->index++ );

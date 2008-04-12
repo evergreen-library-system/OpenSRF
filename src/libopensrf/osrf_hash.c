@@ -57,7 +57,12 @@ static unsigned int osrfHashMakeKey(char* str) {
       num = (__h & (OSRF_HASH_LIST_SIZE-1));\
    } while(0)
 
-
+/** Installs a callback function for freeing stored items
+    */
+void osrfHashSetCallback( osrfHash* hash, void (*callback) (char* key, void* item) )
+{
+	if( hash ) hash->freeItem = callback;
+}
 
 /* returns the index of the item and points l to the sublist the item
  * lives in if the item and points n to the hashnode the item 

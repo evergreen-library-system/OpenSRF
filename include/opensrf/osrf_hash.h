@@ -27,6 +27,10 @@ typedef struct _osrfHashIteratorStruct osrfHashIterator;
   */
 osrfHash* osrfNewHash();
 
+/** Installs a callback function for freeing stored items
+    */
+void osrfHashSetCallback( osrfHash* hash, void (*callback) (char* key, void* item) );
+
 /**
   Sets the given key with the given item
   if "freeItem" is defined and an item already exists at the given location, 
