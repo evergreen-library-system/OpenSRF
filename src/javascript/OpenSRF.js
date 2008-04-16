@@ -1,7 +1,10 @@
-if(!dojo._hasResource['OpenSRF']){
+if(!dojo._hasResource['DojoSRF']){
 
-	dojo._hasResource['OpenSRF'] = true;
-	dojo.provide('OpenSRF');
+	dojo._hasResource['DojoSRF'] = true;
+	dojo.provide('DojoSRF');
+
+	// Note: this file was renamed from OpenSRF.js to DojoSRF.js,
+	// but still provides resources with the OpenSRF namespace
 	dojo.require('opensrf.opensrf', true);
 	dojo.require('opensrf.opensrf_xhr', true);
 
