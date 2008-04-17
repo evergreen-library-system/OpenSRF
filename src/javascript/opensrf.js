@@ -47,6 +47,7 @@ var OSRF_STATUS_NOTIMPLEMENTED = 501;
 var OSRF_STATUS_VERSIONNOTSUPPORTED = 505;
 
 var OpenSRF = {};
+OpenSRF.locale = null;
 
 /* makes cls a subclass of pcls */
 OpenSRF.set_subclass = function(cls, pcls) {
@@ -99,7 +100,7 @@ OpenSRF.Session.prototype.send_xmpp = function(osrf_msg, args) {
 OpenSRF.ClientSession = function(service) {
     this.service = service
     this.remote_id = null;
-    this.locale = 'en-US';
+    this.locale = OpenSRF.locale || 'en-US';
     this.last_id = 0;
     this.thread = Math.random() + '' + new Date().getTime();
     this.requests = [];
