@@ -5,6 +5,8 @@ if(!dojo._hasResource['DojoSRF']){
 
 	// Note: this file was renamed from OpenSRF.js to DojoSRF.js,
 	// but still provides resources with the OpenSRF namespace
+	dojo.require('opensrf.md5', true);
+	dojo.require('opensrf.JSON_v1', true);
 	dojo.require('opensrf.opensrf', true);
 	dojo.require('opensrf.opensrf_xhr', true);
 
