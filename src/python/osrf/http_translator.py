@@ -96,6 +96,16 @@ class HTTPTranslator(object):
     def __init__(self, apreq):
 
         self.apreq = apreq
+
+        if OSRF_HTTP_HEADER_XID in apreq.headers_in:
+            osrf.log.log_debug('read XID from client %s' % apreq.headers_in.get(OSRF_HTTP_HEADER_XID))
+            osrf.log.set_xid(apreq.headers_in.get(OSRF_HTTP_HEADER_XID))
+            self.local_xid = False
+        else:
+            osrf.log.make_xid()
+            osrf.log.log_debug('created new XID %s' % osrf.log.get_xid())
+            self.local_xid = True
+
         if apreq.header_only: 
             return
 
@@ -103,7 +113,8 @@ class HTTPTranslator(object):
             osrf.log.log_internal('HEADER: %s = %s' % (k, v))
 
         try:
-            post = util.parse_qsl(apreq.read(int(apreq.headers_in['Content-length'])))
+            #post = util.parse_qsl(apreq.read(int(apreq.headers_in['Content-length'])))
+            post = util.parse_qsl(apreq.read())
             osrf.log.log_debug('post = ' + str(post))
             self.body = [d for d in post if d[0] == 'osrf-msg'][0][1]
             osrf.log.log_debug(self.body)
@@ -135,14 +146,6 @@ class HTTPTranslator(object):
         self.remote_host = self.apreq.get_remote_host(apache.REMOTE_NOLOOKUP)
         self.cache = osrf.cache.CacheClient()
 
-        if OSRF_HTTP_HEADER_XID in apreq.headers_in:
-            osrf.log.log_debug('read XID from client %s' % apreq.headers_in.get(OSRF_HTTP_HEADER_XID))
-            osrf.log.set_xid(apreq.headers_in.get(OSRF_HTTP_HEADER_XID))
-            self.local_xid = False
-        else:
-            osrf.log.make_xid()
-            osrf.log.log_debug('created new XID %s' % osrf.log.get_xid())
-            self.local_xid = True
 
 
     def process(self):
