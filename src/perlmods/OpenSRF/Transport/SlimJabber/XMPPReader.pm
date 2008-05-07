@@ -136,8 +136,10 @@ sub connect {
 
 sub disconnect {
     my $self = shift;
-    $self->send(JABBER_DISCONNECT); 
-    shutdown($self->socket, 2);
+    if($self->tcp_connected) {
+        $self->send(JABBER_DISCONNECT); 
+        shutdown($self->socket, 2);
+    }
     close($self->socket);
 }
 
