@@ -10,6 +10,8 @@ try:
 except ImportError:
     _use_cjson = False
 
+_use_cjson = False
+
 class NetworkEncoder(simplejson.JSONEncoder):
     ''' Encoder used by simplejson '''
     def default(self, obj):
