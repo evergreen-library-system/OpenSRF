@@ -478,17 +478,11 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 						return json_handle_error(string, index,
 							"json_parse_json_string(): truncated escaped unicode"); }
 
-					char buff[5];
-					osrf_clearbuf(buff, sizeof(buff));
-					memcpy(buff, string + (*index), 4);
-
-
 					/* ----------------------------------------------------------------------- */
 					/* ----------------------------------------------------------------------- */
 					/* The following chunk was borrowed with permission from 
 						json-c http://oss.metaparadigm.com/json-c/ */
-					unsigned char utf_out[3];
-					memset(utf_out, 0, sizeof(utf_out));
+					unsigned char utf_out[3] = { '\0', '\0', '\0' };
 
 					#define hexdigit(x) ( ((x) <= '9') ? (x) - '0' : ((x) & 7) + 9)
 
@@ -695,9 +689,11 @@ int json_handle_error(char* string, unsigned long* index, char* err_msg) {
 	osrf_clearbuf(buf, sizeof(buf));
 
 	if(*index > 30)
-		strncpy( buf, string + (*index - 30), 59 );
+		strncpy( buf, string + (*index - 30), sizeof(buf) - 1 );
 	else
-		strncpy( buf, string, 59 );
+		strncpy( buf, string, sizeof(buf) - 1 );
+
+	buf[ sizeof(buf) - 1 ] = '\0';
 
 	fprintf(stderr, 
 			"\nError parsing json string at charracter %c "
