@@ -331,6 +331,8 @@ void jid_get_username( const char* jid, char buf[], int size ) {
 
 	if( jid == NULL || buf == NULL || size <= 0 ) { return; }
 
+	buf[ 0 ] = '\0';
+	
 	/* find the @ and return whatever is in front of it */
 	int len = strlen( jid );
 	int i;
@@ -360,6 +362,8 @@ void jid_get_resource( const char* jid, char buf[], int size)  {
 		memcpy( buf, start, len );
 		buf[ len ] = '\0';
 	}
+	else
+		buf[ 0 ] = '\0';
 }
 
 void jid_get_domain( const char* jid, char buf[], int size ) {
@@ -384,6 +388,8 @@ void jid_get_domain( const char* jid, char buf[], int size ) {
 		memcpy( buf, jid + index1, dlen );
 		buf[dlen] = '\0'; // memcpy doesn't provide the nul
 	}
+	else
+		buf[ 0 ] = '\0';
 }
 
 void set_msg_error( transport_message* msg, const char* type, int err_code ) {
