@@ -5,21 +5,10 @@
 #include <opensrf/string_array.h>
 #include <opensrf/osrf_list.h>
 
-struct _osrfHashStruct {
-	osrfList* hash; /* this hash */
-	void (*freeItem) (char* key, void* item);	/* callback for freeing stored items */
-	unsigned int size;
-	osrfStringArray* keys;
-};
+struct _osrfHashStruct;
 typedef struct _osrfHashStruct osrfHash;
 
-struct _osrfHashIteratorStruct {
-	char* current;
-	size_t currsize;  // length of "current" buffer
-	int currentIdx;
-	osrfHash* hash;
-	osrfStringArray* keys;
-};
+struct _osrfHashIteratorStruct;
 typedef struct _osrfHashIteratorStruct osrfHashIterator;
 
 /**
@@ -28,7 +17,7 @@ typedef struct _osrfHashIteratorStruct osrfHashIterator;
 osrfHash* osrfNewHash();
 
 /** Installs a callback function for freeing stored items
-    */
+ */
 void osrfHashSetCallback( osrfHash* hash, void (*callback) (char* key, void* item) );
 
 /**
@@ -59,8 +48,6 @@ void* osrfHashGet( osrfHash* hash, const char* key, ... );
   */
 osrfStringArray* osrfHashKeys( osrfHash* hash );
 
-osrfStringArray* osrfHashKeysInc( osrfHash* hash );
-
 /**
   Frees a hash
   */
@@ -70,9 +57,6 @@ void osrfHashFree( osrfHash* hash );
   @return The number of items in the hash
   */
 unsigned long osrfHashGetCount( osrfHash* hash );
-
-
-
 
 /**
   Creates a new list iterator with the given list
@@ -89,7 +73,7 @@ void* osrfHashIteratorNext( osrfHashIterator* itr );
 
 /**
   Returns a pointer to the key of the current hash item
- */
+  */
 const char* osrfHashIteratorKey( const osrfHashIterator* itr );
 
 /**
