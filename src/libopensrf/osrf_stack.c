@@ -6,12 +6,12 @@
 // -----------------------------------------------------------------------------
 
 static int osrf_stack_process( transport_client* client, int timeout, int* msg_received );
-static int osrf_stack_message_handler( osrf_app_session* session, osrf_message* msg );
-static int osrf_stack_application_handler( osrf_app_session* session, osrf_message* msg );
-static osrf_message* _do_client( osrf_app_session*, osrf_message* );
-static osrf_message* _do_server( osrf_app_session*, osrf_message* );
+static int osrf_stack_message_handler( osrfAppSession* session, osrfMessage* msg );
+static int osrf_stack_application_handler( osrfAppSession* session, osrfMessage* msg );
+static osrfMessage* _do_client( osrfAppSession*, osrfMessage* );
+static osrfMessage* _do_server( osrfAppSession*, osrfMessage* );
 
-/* tell osrf_app_session where the stack entry is */
+/* tell osrfAppSession where the stack entry is */
 int (*osrf_stack_entry_point) (transport_client*, int, int*)  = &osrf_stack_process;
 
 static int osrf_stack_process( transport_client* client, int timeout, int* msg_received ) {
@@ -63,7 +63,7 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 		return NULL;
 	}
 
-	osrf_app_session* session = osrf_app_session_find_session( msg->thread );
+	osrfAppSession* session = osrf_app_session_find_session( msg->thread );
 
 	if( !session && my_service ) 
 		session = osrf_app_server_session_init( msg->thread, my_service, msg->sender);
@@ -77,7 +77,7 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 		osrfLogDebug( OSRF_LOG_MARK, "Session [%s] found or built", session->session_id );
 
 	osrf_app_session_set_remote( session, msg->sender );
-	osrf_message* arr[OSRF_MAX_MSGS_PER_PACKET];
+	osrfMessage* arr[OSRF_MAX_MSGS_PER_PACKET];
 	memset(arr, 0, sizeof(arr));
 	int num_msgs = osrf_message_deserialize(msg->body, arr, OSRF_MAX_MSGS_PER_PACKET);
 
@@ -121,11 +121,11 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 	return session;
 }
 
-static int osrf_stack_message_handler( osrf_app_session* session, osrf_message* msg ) {
+static int osrf_stack_message_handler( osrfAppSession* session, osrfMessage* msg ) {
 	if(session == NULL || msg == NULL)
 		return 0;
 
-	osrf_message* ret_msg = NULL;
+	osrfMessage* ret_msg = NULL;
 
 	if( session->type ==  OSRF_SESSION_CLIENT )
 		 ret_msg = _do_client( session, msg );
@@ -137,7 +137,7 @@ static int osrf_stack_message_handler( osrf_app_session* session, osrf_message* 
 				msg->thread_trace, session->session_id );
 		osrf_stack_application_handler( session, ret_msg );
 	} else
-		osrf_message_free(msg);
+		osrfMessageFree(msg);
 
 	return 1;
 
@@ -146,11 +146,11 @@ static int osrf_stack_message_handler( osrf_app_session* session, osrf_message* 
 /** If we return a message, that message should be passed up the stack, 
   * if we return NULL, we're finished for now...
   */
-static osrf_message* _do_client( osrf_app_session* session, osrf_message* msg ) {
+static osrfMessage* _do_client( osrfAppSession* session, osrfMessage* msg ) {
 	if(session == NULL || msg == NULL)
 		return NULL;
 
-	osrf_message* new_msg;
+	osrfMessage* new_msg;
 
 	if( msg->m_type == STATUS ) {
 		
@@ -197,7 +197,7 @@ static osrf_message* _do_client( osrf_app_session* session, osrf_message* msg ) 
 						msg->status_code, msg->status_name );
 				new_msg->is_exception = 1;
 				osrf_app_session_set_complete( session, msg->thread_trace );
-				osrf_message_free(msg);
+				osrfMessageFree(msg);
 				return new_msg;
 		}
 
@@ -214,7 +214,7 @@ static osrf_message* _do_client( osrf_app_session* session, osrf_message* msg ) 
 /** If we return a message, that message should be passed up the stack, 
   * if we return NULL, we're finished for now...
   */
-static osrf_message* _do_server( osrf_app_session* session, osrf_message* msg ) {
+static osrfMessage* _do_server( osrfAppSession* session, osrfMessage* msg ) {
 
 	if(session == NULL || msg == NULL) return NULL;
 
@@ -253,7 +253,7 @@ static osrf_message* _do_server( osrf_app_session* session, osrf_message* msg ) 
 
 
 
-static int osrf_stack_application_handler( osrf_app_session* session, osrf_message* msg ) {
+static int osrf_stack_application_handler( osrfAppSession* session, osrfMessage* msg ) {
 	if(session == NULL || msg == NULL) return 0;
 
 	if(msg->m_type == RESULT && session->type == OSRF_SESSION_CLIENT) {
