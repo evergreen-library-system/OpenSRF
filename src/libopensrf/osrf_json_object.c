@@ -361,6 +361,7 @@ jsonObject* jsonIteratorNext(jsonIterator* itr) {
 	if( itr->obj->type == JSON_HASH ) {
 		if(!itr->hashItr) return NULL;
 		jsonObject* item = osrfHashIteratorNext(itr->hashItr);
+        if(!item) return NULL;
 		free(itr->key);
 		itr->key = strdup( osrfHashIteratorKey(itr->hashItr) );
 		return item;
