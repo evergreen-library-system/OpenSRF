@@ -218,10 +218,6 @@ static void _osrf_app_session_push_session( osrfAppSession* session ) {
 /** Allocates and initializes a new app_session */
 
 osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
-	return osrf_app_client_session_init( remote_service );
-}
-
-osrfAppSession* osrf_app_client_session_init( const char* remote_service ) {
 
 	if (!remote_service) {
 		osrfLogWarning( OSRF_LOG_MARK, "No remote service specified in osrf_app_client_session_init");

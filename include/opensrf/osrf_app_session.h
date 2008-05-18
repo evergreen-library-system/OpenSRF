@@ -84,7 +84,6 @@ struct osrf_app_session_struct {
 
     int transport_error;
 };
-typedef struct osrf_app_session_struct osrf_app_session;
 typedef struct osrf_app_session_struct osrfAppSession;
 
 
@@ -95,7 +94,6 @@ typedef struct osrf_app_session_struct osrfAppSession;
 
 /** Allocates a initializes a new app_session */
 osrfAppSession* osrfAppSessionClientInit( const char* remote_service );
-osrfAppSession* osrf_app_client_session_init( const char* remote_service );
 
 /** Allocates and initializes a new server session.  The global session cache
   * is checked to see if this session already exists, if so, it's returned 
