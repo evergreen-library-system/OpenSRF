@@ -148,6 +148,8 @@ def __log_file(msg):
 
     global LOG_TYPE
 
+    timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+
     logfile = None
     try:
         logfile = open(LOG_FILE, 'a')
@@ -157,7 +159,7 @@ def __log_file(msg):
         return
     try:
         LOG_SEMAPHORE.acquire()
-        logfile.write("%s\n" % msg)
+        logfile.write("%s %s\n" % (timestamp, msg))
     finally:
         LOG_SEMAPHORE.release()
         
