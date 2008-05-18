@@ -85,11 +85,22 @@ def child_init(req):
 def handler(req):
     ''' Create the translator and tell it to process the request. '''
     child_init(req)
-    translator = HTTPTranslator(req)
-    status = translator.process()
-    osrf.log.log_debug("translator call resulted in status %d" % int(status))
-    if translator.local_xid:
-        osrf.log.clear_xid()
+
+    # capture the callback handle, clear it, then reset 
+    # it after we've handled the request
+    handle = osrf.net.get_network_handle()
+    callback = handle.receive_callback
+    handle.set_receive_callback(None)
+
+    try:
+        translator = HTTPTranslator(req)
+        status = translator.process()
+        osrf.log.log_debug("translator call resulted in status %d" % int(status))
+        if translator.local_xid:
+            osrf.log.clear_xid()
+    finally:
+        handle.receive_callback = callback
+        
     return status
 
 class HTTPTranslator(object):
@@ -126,7 +137,6 @@ class HTTPTranslator(object):
         self.messages = []
         self.complete = False
         self.handle = osrf.net.get_network_handle()
-        self.handle.set_receive_callback(None)
 
         self.recipient = apreq.headers_in.get(OSRF_HTTP_HEADER_TO)
         self.service = apreq.headers_in.get(OSRF_HTTP_HEADER_SERVICE)
