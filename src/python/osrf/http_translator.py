@@ -45,7 +45,6 @@ def _dbg(msg):
     sys.stderr.write("%s\n\n" % str(msg))
     sys.stderr.flush()
 
-
 INIT_COMPLETE = False
 def child_init(req):
     ''' At time of writing, mod_python doesn't support a child_init handler,
