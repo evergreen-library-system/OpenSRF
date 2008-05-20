@@ -33,6 +33,7 @@ THREAD_SESSIONS = {}
 
 
 
+
 class XMPPNoRecipient(osrf.ex.OSRFException):
     ''' Raised when a message was sent to a non-existent recipient 
         The recipient is stored in the 'recipient' field on this object
@@ -40,6 +41,9 @@ class XMPPNoRecipient(osrf.ex.OSRFException):
     def __init__(self, recipient):
         osrf.ex.OSRFException.__init__(self, 'Error communicating with %s' % recipient)
         self.recipient = recipient
+
+class XMPPNoConnection(osrf.ex.OSRFException):
+    pass
 
 def set_network_handle(handle):
     """ Sets the thread-specific network handle"""
@@ -53,8 +57,10 @@ def clear_network_handle():
     ''' Disconnects the thread-specific handle and discards it '''
     handle = THREAD_SESSIONS.get(threading.currentThread().getName())
     if handle:
-        handle.disconnect()
+        osrf.log.log_internal("clearing network handle %s" % handle.jid.as_utf8())
+        #handle.disconnect()
         del THREAD_SESSIONS[threading.currentThread().getName()]
+        return handle
 
 class NetworkMessage(object):
     """Network message
@@ -82,7 +88,7 @@ class NetworkMessage(object):
             else:
                 self.sender = message.get_from().as_utf8()
             if message.xmlnode.hasProp('osrf_xid'):
-                self.xid = message.xmlnode
+                self.xid = message.xmlnode.prop('osrf_xid')
             else:
                 self.xid = ''
         else:
@@ -182,6 +188,16 @@ class Network(JabberClient):
         self.queue.append(NetworkMessage(stanza))
         return True
 
+    def stream_closed(self, stream):
+        osrf.log.log_debug("XMPP Stream closing...")
+
+    def stream_error(self, err):
+        osrf.log.log_error("XMPP Stream error: condition: %s %r"
+            % (err.get_condition().name,err.serialize()))
+
+    def disconnected(self):
+        osrf.log.log_internal('XMPP Disconnected')
+
     def recv(self, timeout=120):
         """Attempts to receive a message from the network.
 
@@ -199,10 +215,17 @@ class Network(JabberClient):
         if len(self.queue) == 0:
             while (forever or timeout >= 0) and len(self.queue) == 0:
                 starttime = time.time()
-                act = self.get_stream().loop_iter(timeout)
+
+                stream = self.get_stream()
+                if not stream:
+                   raise XMPPNoConnection('We lost our server connection...') 
+
+                act = stream.loop_iter(timeout)
                 endtime = time.time() - starttime
+
                 if not forever:
                     timeout -= endtime
+
                 osrf.log.log_internal("exiting stream loop after %s seconds. "
                     "act=%s, queue size=%d" % (str(endtime), act, len(self.queue)))
 
