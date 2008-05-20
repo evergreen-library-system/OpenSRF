@@ -33,7 +33,7 @@ class Controller(object):
 
     def __init__(self, service):
         self.service = service # service name
-        self.application = None
+        self.application = None # the application we're serving
         self.max_requests = 0 # max child requests
         self.max_children = 0 # max num of child processes
         self.min_childen = 0 # min num of child processes
@@ -83,6 +83,7 @@ class Controller(object):
 
     def run(self):
 
+        osrf.net.get_network_handle().disconnect()
         osrf.net.clear_network_handle()
         self.spawn_children()
         self.handle_signals()
@@ -226,6 +227,8 @@ class Controller(object):
             child.pid = os.getpid()
             child.init()
             child.run()
+            osrf.net.get_network_handle().disconnect()
+            osrf.log.log_internal("child exiting...")
             os._exit(0)
 
     def register_routers(self):
