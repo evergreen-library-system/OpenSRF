@@ -24,7 +24,7 @@ import osrf.system, osrf.server, osrf.app
 
 def help():
     print '''
-    Manage one or more an OpenSRF applications
+    Manage OpenSRF application processes
 
     Options:
         -a <action>
@@ -78,7 +78,7 @@ if action == 'start':
     osrf.app.Application.application.global_init()
 
     controller = osrf.server.Controller(service)
-    controller.max_requests = 10
+    controller.max_requests = 100
     controller.max_children = 6
     controller.min_children = 3
 
