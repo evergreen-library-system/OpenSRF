@@ -145,10 +145,21 @@ class Application(object):
             stream = True
         )
 
+        Application.register_method(
+            api_name = 'opensrf.system.echo',
+            method = 'sysmethod_echo',
+            argc = 1,
+            stream = True
+        )
 
     def sysmethod_time(self, request):
         '''@return type:number The current epoch time '''
         return time.time()
+
+    def sysmethod_echo(self, request, *args):
+        '''@return type:string The current epoch time '''
+        for a in args:
+            request.respond(a)
 
     def sysmethod_introspect(self, request, prefix=None):
         ''' Generates a list of methods with method metadata 
@@ -167,7 +178,6 @@ class Application(object):
                 'argc' : method.argc,
                 'params' : [], # XXX parse me
                 'desc' : method.get_doc() # XXX parse me
-
             })
 
 
