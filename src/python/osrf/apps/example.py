@@ -33,8 +33,8 @@ class Example(Application):
 
     def reverse(self, request, message=''):
         ''' Returns the given string in reverse order one character at a time
-            @param string Message to reverse 
-            @return string The reversed message, one character at a time.  '''
+            @param type:string Message to reverse 
+            @return type:string The reversed message, one character at a time.  '''
         idx = len(message) - 1
         while idx >= 0:
             request.respond(message[idx])
