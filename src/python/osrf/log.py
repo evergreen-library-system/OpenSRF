@@ -148,7 +148,9 @@ def __log_file(msg):
 
     global LOG_TYPE
 
-    timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    epoch = time.time()
+    timestamp = time.strftime('%Y-%M-%d %H:%m:%S', time.localtime(epoch))
+    timestamp += '.%s' % str('%0.3f' % epoch)[-3:] # grab the millis
 
     logfile = None
     try:
