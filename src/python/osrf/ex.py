@@ -19,7 +19,7 @@
 
 class OSRFException(Exception):
     """Root class for exceptions."""
-    def __init__(self, info=None):
+    def __init__(self, info=''):
         self.msg = '%s: %s' % (self.__class__.__name__, info)
     def __str__(self):
         return self.msg
