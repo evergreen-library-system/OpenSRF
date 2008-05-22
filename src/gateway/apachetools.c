@@ -6,6 +6,7 @@ osrfStringArray* apacheParseParms(request_rec* r) {
 
 	char* arg = NULL;
 	apr_pool_t *p = r->pool;	/* memory pool */
+	growing_buffer* buffer = buffer_init(1025);
 
 	/* gather the post args and append them to the url query string */
 	if( !strcmp(r->method,"POST") ) {
@@ -16,7 +17,6 @@ osrfStringArray* apacheParseParms(request_rec* r) {
 
 		if(ap_should_client_block(r)) {
 
-			growing_buffer* buffer = buffer_init(1025);
 
 			/* Start with url query string, if any */
 			
@@ -53,18 +53,20 @@ osrfStringArray* apacheParseParms(request_rec* r) {
 			}
 
 			osrfLogDebug(OSRF_LOG_MARK, "gateway done reading post data");
-	
-			if(buffer->n_used > 0)
-				arg = apr_pstrdup(p, buffer->buf);
-			else
-				arg = NULL; 
-
-			buffer_free(buffer);
 		}
-	} 
+
+	} else { /* GET */
+
+        if(r->args && r->args[0])
+            buffer_add(buffer, r->args);
+    }
 
 
-	osrfLogDebug(OSRF_LOG_MARK, "gateway done mangling post data");
+    if(buffer->n_used > 0)
+        arg = apr_pstrdup(p, buffer->buf);
+    else
+        arg = NULL; 
+    buffer_free(buffer);
 
 	if( !arg || !arg[0] ) { /* we received no request */
 		return NULL;
