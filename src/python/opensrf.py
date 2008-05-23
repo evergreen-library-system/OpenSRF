@@ -22,7 +22,7 @@
 import sys, getopt, os, signal
 import osrf.system, osrf.server, osrf.app
 
-def help():
+def do_help():
     print '''
     Manage OpenSRF application processes
 
@@ -45,17 +45,27 @@ def help():
             The location of application PID files.  Default is /tmp
 
         -d 
-            If set, run in daemon (background) mode
+            If set, run in daemon (background) mode.  This creates a PID 
+            file for managing the process.
+
+        -h
+            Prints help message
     '''
     sys.exit(0)
 
 
 # Parse the command line options
-ops, args = getopt.getopt(sys.argv[1:], 'a:s:f:c:p:d')
+ops, args = None, None
+try:
+    ops, args = getopt.getopt(sys.argv[1:], 'a:s:f:c:p:dh')
+except getopt.GetoptError, e:
+    print '* %s' % str(e)
+    do_help()
+
 options = dict(ops)
 
 if '-a' not in options or '-s' not in options or '-f' not in options:
-    help()
+    do_help()
 
 action = options['-a']
 service = options['-s']
@@ -67,7 +77,6 @@ pidfile = "%s/osrf_py_%s.pid" % (pid_dir, service)
 
 
 def do_start():
-
 
     # connect to the OpenSRF network
     osrf.system.System.net_connect(
@@ -108,3 +117,6 @@ elif action == 'stop':
 elif action == 'restart':
     do_stop()
     do_start()
+
+elif action == 'help':
+    do_help()
