@@ -289,7 +289,6 @@ class HTTPTranslator(object):
             @return False if there is no data to return to the caller 
             (dropped message, eg. timeout), True otherwise '''
 
-        osrf.log.log_debug('checking status...')
         osrf_msgs = osrf.json.to_object(net_msg.body)
         last_msg = osrf_msgs.pop()
 
