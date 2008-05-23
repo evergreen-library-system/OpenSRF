@@ -66,7 +66,8 @@ as_daemon = '-d' in options
 pidfile = "%s/osrf_py_%s.pid" % (pid_dir, service)
 
 
-if action == 'start':
+def do_start():
+
 
     # connect to the OpenSRF network
     osrf.system.System.net_connect(
@@ -90,7 +91,7 @@ if action == 'start':
 
     controller.run()
 
-elif action == 'stop':
+def do_stop():
     file = open(pidfile)
     pid = file.read()
     file.close()
@@ -98,3 +99,12 @@ elif action == 'stop':
     os.remove(pidfile)
 
 
+if action == 'start':
+    do_start()
+
+elif action == 'stop':
+    do_stop()
+
+elif action == 'restart':
+    do_stop()
+    do_start()
