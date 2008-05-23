@@ -20,7 +20,7 @@
 # -----------------------------------------------------------------------
 
 import sys, getopt, os, signal
-import osrf.system, osrf.server, osrf.app
+import osrf.system, osrf.server, osrf.app, osrf.set, osrf.json
 
 def do_help():
     print '''
@@ -70,7 +70,7 @@ if '-a' not in options or '-s' not in options or '-f' not in options:
 action = options['-a']
 service = options['-s']
 config_file = options['-f']
-config_ctx = options.get('-c', 'opensrf')
+config_ctx = options.get('-c', 'config.opensrf')
 pid_dir = options.get('-p', '/tmp')
 as_daemon = '-d' in options
 pidfile = "%s/osrf_py_%s.pid" % (pid_dir, service)
@@ -81,6 +81,13 @@ def do_start():
     # connect to the OpenSRF network
     osrf.system.System.net_connect(
         config_file = config_file, config_context = config_ctx)
+
+    osrf.set.load(osrf.conf.get('domain'))
+    settings = osrf.json.to_json(osrf.set.get('apps/%s' % service))
+
+    if settings['language'].lower() != 'python':
+        print '%s is not a Python application' % service
+        return
 
     # XXX load the settings configs...
     osrf.app.Application.load(service, 'osrf.apps.example') # XXX example only for now
