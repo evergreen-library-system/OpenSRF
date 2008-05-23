@@ -24,13 +24,19 @@ from osrf.app import Application
 class Example(Application):
     ''' Example OpenSRF application. '''
 
+    # ---------------------------------------------------------
+    # Register a new method for this application
+    # ---------------------------------------------------------
     Application.register_method(
-        api_name = 'opensrf.py-example.reverse',
-        method = 'reverse',
-        argc = 1,
-        stream = True
+        api_name = 'opensrf.py-example.reverse', # published API name for the method
+        method = 'reverse', # name of def that implements this method
+        argc = 1, # expects a single argument
+        stream = True # returns a stream of results.  can be called atomic-ly
     )
 
+    # ---------------------------------------------------------
+    # This method implements the API call registered above
+    # ---------------------------------------------------------
     def reverse(self, request, message=''):
         ''' Returns the given string in reverse order one character at a time
             @param type:string Message to reverse 
@@ -40,6 +46,10 @@ class Example(Application):
             request.respond(message[idx])
             idx -= 1
 
+    # ---------------------------------------------------------
+    # These example methods override methods from 
+    # osrf.app.Application.  They are not required.
+    # ---------------------------------------------------------
     def global_init(self):
         osrf.log.log_debug("Running global init handler for %s" % __name__)
 
@@ -49,6 +59,10 @@ class Example(Application):
     def child_exit(self):
         osrf.log.log_debug("Running child exit handler for process %d" % os.getpid())
 
+
+# ---------------------------------------------------------
+# Now register an instance of this class as an application
+# ---------------------------------------------------------
 Application.register_app(Example())
 
 
