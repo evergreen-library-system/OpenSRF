@@ -16,7 +16,7 @@
 import traceback, sys, os, re, threading, time
 from osrf.const import OSRF_LOG_DEBUG, OSRF_LOG_ERR, OSRF_LOG_INFO, \
     OSRF_LOG_INTERNAL, OSRF_LOG_TYPE_FILE, OSRF_LOG_TYPE_STDERR, \
-    OSRF_LOG_TYPE_SYSLOG, OSRF_LOG_WARN
+    OSRF_LOG_TYPE_SYSLOG, OSRF_LOG_WARN, OSRF_LOG_ACT
 LOG_SEMAPHORE = threading.BoundedSemaphore(value=1)
 
 
@@ -85,6 +85,8 @@ def log_warn(debug_str):
     __log(OSRF_LOG_WARN, debug_str)
 def log_error(debug_str):
     __log(OSRF_LOG_ERR, debug_str)
+def log_activity(debug_str):
+    __log(OSRF_LOG_ACT, debug_str)
 
 def __log(level, msg):
     """Builds the log message and passes the message off to the logger."""
@@ -112,6 +114,8 @@ def __log(level, msg):
         lvl = 'WARN'
     if level == OSRF_LOG_ERR:
         lvl = 'ERR '
+    if level == OSRF_LOG_ACT:
+        lvl = 'ACT '
 
     filename = FRGX.sub('', tb[0])
     msg = '[%s:%d:%s:%s:%s:%s] %s' % (lvl, os.getpid(), filename, tb[1], threading.currentThread().getName(), _xid, msg)
@@ -134,7 +138,7 @@ def __log_syslog(level, msg):
     slvl = syslog.LOG_DEBUG
     if level == OSRF_LOG_INTERNAL:
         slvl = syslog.LOG_DEBUG
-    if level == OSRF_LOG_INFO:
+    if level == OSRF_LOG_INFO or level == OSRF_LOG_ACT:
         slvl = syslog.LOG_INFO
     if level == OSRF_LOG_WARN:
         slvl = syslog.LOG_WARNING

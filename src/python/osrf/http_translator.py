@@ -2,7 +2,7 @@ import sys, os, time, md5, random
 from mod_python import apache, util
 import osrf.system, osrf.cache, osrf.json, osrf.conf, osrf.net, osrf.log
 from osrf.const import OSRF_MESSAGE_TYPE_DISCONNECT, OSRF_MESSAGE_TYPE_CONNECT, \
-    OSRF_STATUS_CONTINUE, OSRF_STATUS_TIMEOUT, OSRF_MESSAGE_TYPE_STATUS
+    OSRF_STATUS_CONTINUE, OSRF_STATUS_TIMEOUT, OSRF_MESSAGE_TYPE_STATUS, OSRF_MESSAGE_TYPE_REQUEST
 
 
 ''' 
@@ -234,6 +234,27 @@ class HTTPTranslator(object):
             elif osrf_msgs[0].type() == OSRF_MESSAGE_TYPE_DISCONNECT:
                 self.disconnect_only = True
 
+                '''
+                [76.202.6.250] [] open-ils.search open-ils.search.biblio.metarecord_to_records 0, {"format":null,"org":1,"depth":"0"}
+                '''
+        for msg in osrf_msgs:
+            if msg.type() == OSRF_MESSAGE_TYPE_REQUEST:
+                method = msg.payload()
+                params = osrf.json.to_json(method.params())
+                if len(params) == 2:
+                    params = ''
+                else:
+                    params = params[1:len(params)-1]
+                    
+                osrf.log.log_activity("[%s] [%s] %s %s %s" % (
+                    self.remote_host,
+                    '', # XXX auth token?
+                    self.service,
+                    method.method(),
+                    params
+                ))
+
+
         return True
 
 
@@ -258,6 +279,7 @@ class HTTPTranslator(object):
                 obj = self.cache.get(self.thread)
                 if obj and obj['ip'] == self.remote_host and \
                     obj['jid'] == self.recipient:
+                    self.service = obj['service']
                     return True
         osrf.log.log_warn("client [%s] attempted to send directly "
             "[%s] without a session" % (self.remote_host, self.recipient))
@@ -274,7 +296,7 @@ class HTTPTranslator(object):
         else:
             self.apreq.content_type = JSON_CONTENT_TYPE
         self.cache.put(self.thread, \
-            {'ip':self.remote_host, 'jid': net_msg.sender}, CACHE_TIME)
+            {'ip':self.remote_host, 'jid': net_msg.sender, 'service':self.service}, CACHE_TIME)
 
         osrf.log.log_debug("caching session [%s] for host [%s] and server "
             " drone [%s]" % (self.thread, self.remote_host, net_msg.sender))
