@@ -85,6 +85,11 @@ static void* osrf_json_gateway_create_dir_config( apr_pool_t* p, char* dir) {
 	return (void*) cfg;
 }
 
+static apr_status_t child_exit(void* data) {
+    osrfLogInfo(OSRF_LOG_MARK, "Disconnecting on child cleanup...");
+    osrf_system_shutdown();
+    return OK;
+}
 
 static void osrf_json_gateway_child_init(apr_pool_t *p, server_rec *s) {
 
@@ -109,6 +114,10 @@ static void osrf_json_gateway_child_init(apr_pool_t *p, server_rec *s) {
 		ap_log_error( APLOG_MARK, APLOG_DEBUG, 0, s, 
 			"allowed service: %s\n", osrfStringArrayGetString(allowedServices, i));
 	}
+
+    // when this pool is cleaned up, it means the child 
+    // process is going away.  register some cleanup code
+    apr_pool_cleanup_register(p, NULL, child_exit, NULL);
 }
 
 static int osrf_json_gateway_method_handler (request_rec *r) {
