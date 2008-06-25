@@ -1,4 +1,15 @@
 #!/bin/bash
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
 
 OPT_ACTION=""
 OPT_CONFIG=""
@@ -76,12 +87,14 @@ while getopts  "a:d:c:lh" flag; do
 	esac;
 done
 
-[ -z "$OPT_CONFIG" ] && OPT_CONFIG="$BASEDIR/conf/opensrf_core.xml";
+OSRF_CONFIG=`find $BASEDIR -name osrf_config`
+
+[ -z "$OPT_CONFIG" ] && OPT_CONFIG=`$OSRF_CONFIG --sysconfdir`/opensrf_core.xml;
 if [ ! -r "$OPT_CONFIG" ]; then
 	echo "Please specify the location of the opensrf_core.xml file using the -c flag";
 	exit 1;
 fi;
-[ -z "$OPT_PID_DIR" ] && OPT_PID_DIR=/tmp;
+[ -z "$OPT_PID_DIR" ] && OPT_PID_DIR=`$OSRF_CONFIG --sysconfdir`/run;
 [ -z "$OPT_ACTION" ] && usage;
 
 PID_ROUTER="$OPT_PID_DIR/router.pid";
