@@ -44,7 +44,7 @@ vim:et:ts=2:sw=2:
         <servers>
 
           <!-- memcached server ip:port -->
-          <server>127.0.0.1:10101</server>
+          <server>localhost:11211</server>
 
         </servers>
 
@@ -172,7 +172,7 @@ vim:et:ts=2:sw=2:
         <max_requests>17</max_requests>
         <unix_config>
           <unix_sock>opensrf.settings_unix.sock</unix_sock>
-          <unix_pid>opoensrf.settings_unix.pid</unix_pid>
+          <unix_pid>opensrf.settings_unix.pid</unix_pid>
           <max_requests>1000</max_requests>
           <unix_log>opensrf.settings_unix.log</unix_log>
           <min_children>5</min_children>
