@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 
 
-AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing -I./.libs/ -DOSRF_JSON_ENABLE_XML_UTILS
+AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing -L./.libs/ -DOSRF_JSON_ENABLE_XML_UTILS
 AM_LDFLAGS = $(DEF_LDFLAGS)
 LDADD = -lxml2 -ldl -lmemcache -lopensrf -lobjson
 

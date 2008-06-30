@@ -105,11 +105,14 @@ case "$1" in
      --sysconfdir)
 		echo @sysconfdir@;
 		;;
+     --localstatedir)
+		echo @localstatedir@;
+		;;
      --tmpdir)
 		echo @TMP@;
 		;;
      --apxs)
-		echo @APXS@;
+		echo @APXS2@;
 		;;
      --includedir)
 		echo @includedir@;

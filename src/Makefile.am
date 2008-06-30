@@ -23,12 +23,10 @@ export JSDIR	= $(LIBDIR)/javascript
 export INCLUDEDIR= @includedir@
 export OSRF_JAVA_DEPSDIR = @OSRF_JAVA_DEPSDIR@
 
+
+
 AM_LDFLAGS = $(DEF_LDFLAGS)
 AM_CFLAGS = $(DEF_CFLAGS)
-
-if DEBUG
-AM_CFLAGS += -DNDEBUG
-endif
 
 if BUILDJSON
 LDADD = -lobjson
@@ -46,6 +44,10 @@ endif
 SUBDIRS = libopensrf c-apps router srfsh jserver gateway $(MAYBE_PY) $(MAYBE_JA)
 
 install-data-local:
+	mkdir -p $(VAR)
+	mkdir -p $(PID)
+	mkdir -p $(LOG)
+	mkdir -p $(SOCK)
 	mkdir -p $(JSDIR)
 	mkdir -p $(PERLDIR)
 	mkdir -p $(ETCDIR)
@@ -53,6 +55,12 @@ install-data-local:
 	mv $(BINDIR)/opensrf $(BINDIR)/opensrf-c
 	cp ../bin/osrf_config $(BINDIR)
 	cp ../bin/osrf_ctl.sh $(BINDIR)
+	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '../examples/opensrf.xml.example'
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '../examples/opensrf.xml.example'
+	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '../examples/opensrf_core.xml.example'
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '../examples/opensrf_core.xml.example'
+	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '../examples/srfsh.xml.example'
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '../examples/srfsh.xml.example'
 	cp ../examples/opensrf.xml.example $(ETCDIR)
 	cp ../examples/opensrf_core.xml.example $(ETCDIR)
 	cp ../examples/srfsh.xml.example $(ETCDIR)

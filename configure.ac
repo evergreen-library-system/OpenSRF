@@ -24,7 +24,7 @@ AC_INIT([OpenSRF],[trunk],[open-ils-dev@list.georgialibraries.org])
 AM_INIT_AUTOMAKE([OpenSRF], [trunk])
 AC_REVISION($Revision: 0.1 $)
 AC_CONFIG_SRCDIR([configure.ac])
-AC_PREFIX_DEFAULT([/openils/])
+AC_PREFIX_DEFAULT([/opensrf/])
 
 
 AC_SUBST(prefix)

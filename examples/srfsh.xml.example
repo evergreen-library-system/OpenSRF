@@ -6,6 +6,6 @@
   <username>myusername</username>
   <passwd>mypassword</passwd>
   <port>5222</port>
-  <logfile>/path/to/log/srfsh.log</logfile>
+  <logfile>LOCALSTATEDIR/log/srfsh.log</logfile>
   <loglevel>4</loglevel>
 </srfsh>

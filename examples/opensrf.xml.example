@@ -22,16 +22,16 @@ vim:et:ts=2:sw=2:
     <dirs>
 
       <!-- opensrf log files go in this directory -->
-      <log>/path/to/log</log>
+      <log>LOCALSTATEDIR/log</log>
 
       <!-- opensrf unix domaind socket files go here -->
-      <sock>/path/to/sock</sock>
+      <sock>LOCALSTATEDIR/lock</sock>
 
       <!-- opensrf pids go here -->
-      <pid>/path/to/pid</pid>
+      <pid>LOCALSTATEDIR/run</pid>
 
       <!-- global config directory -->
-      <conf>/path/to/conf</conf>
+      <conf>SYSCONFDIR</conf>
     </dirs>
 
     <!-- prefork, simple. prefork is suggested -->

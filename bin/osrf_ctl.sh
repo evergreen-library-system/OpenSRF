@@ -9,7 +9,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
+ 
 
 OPT_ACTION=""
 OPT_CONFIG=""
@@ -94,7 +94,7 @@ if [ ! -r "$OPT_CONFIG" ]; then
 	echo "Please specify the location of the opensrf_core.xml file using the -c flag";
 	exit 1;
 fi;
-[ -z "$OPT_PID_DIR" ] && OPT_PID_DIR=`$OSRF_CONFIG --sysconfdir`/run;
+[ -z "$OPT_PID_DIR" ] && OPT_PID_DIR=`$OSRF_CONFIG --localstatedir`/run;
 [ -z "$OPT_ACTION" ] && usage;
 
 PID_ROUTER="$OPT_PID_DIR/router.pid";
