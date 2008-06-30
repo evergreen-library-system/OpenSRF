@@ -55,15 +55,15 @@ install-data-local:
 	mv $(BINDIR)/opensrf $(BINDIR)/opensrf-c
 	cp ../bin/osrf_config $(BINDIR)
 	cp ../bin/osrf_ctl.sh $(BINDIR)
-	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '../examples/opensrf.xml.example'
-	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '../examples/opensrf.xml.example'
-	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '../examples/opensrf_core.xml.example'
-	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '../examples/opensrf_core.xml.example'
-	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '../examples/srfsh.xml.example'
-	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '../examples/srfsh.xml.example'
 	cp ../examples/opensrf.xml.example $(ETCDIR)
 	cp ../examples/opensrf_core.xml.example $(ETCDIR)
 	cp ../examples/srfsh.xml.example $(ETCDIR)
+	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(ETCDIR)/opensrf.xml.example'
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(ETCDIR)/opensrf.xml.example'
+	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(ETCDIR)/opensrf_core.xml.example'
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(ETCDIR)/opensrf_core.xml.example'
+	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(ETCDIR)/srfsh.xml.example'
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(ETCDIR)/srfsh.xml.example'
 	cp -r ../include/objson $(INCLUDEDIR)
 	cp -r javascript/* $(JSDIR)/
 	cp -r perlmods/* $(PERLDIR)/
