@@ -166,7 +166,7 @@ vim:et:ts=2:sw=2:
 
       <opensrf.settings>
         <keepalive>1</keepalive>
-        <stateless>0</stateless>
+        <stateless>1</stateless>
         <language>perl</language>
         <implementation>OpenSRF::Application::Settings</implementation>
         <max_requests>17</max_requests>
