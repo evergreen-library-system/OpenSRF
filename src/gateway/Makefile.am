@@ -14,12 +14,12 @@
 
 AM_LDFLAGS = $(DEF_LDFLAGS)
 AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS -L../libopensrf/.libs/ 
-LDADD = $(DEF_LDLIBS)
 
 curdir = @abs_top_builddir@/src/gateway/
 
 cur_LTLIBRARIES = libosrf_json_gateway.la
 libosrf_json_gateway_la_SOURCES = apachetools.c apachetools.h osrf_json_gateway.c
+libosrf_json_gateway_la_LIBADD = -lobjson -lopensrf
 
 include_HEADERS = apachetools.h
 
