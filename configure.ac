@@ -36,7 +36,7 @@ AC_DEFUN([AC_PYTHON_MOD],[
         PYTHON="python"
     fi
     AC_MSG_CHECKING($PYTHON_NAME module: $1)
-        $PYTHON -c "import $1" 2>/tmp/null
+        $PYTHON -c "import $1" 2>/dev/null
         if test $? -eq 0;
         then
                 AC_MSG_RESULT(yes)
@@ -125,9 +125,9 @@ AC_PROG_MAKE_SET
 # Set install path variables
 #------------------------------
 AC_ARG_WITH([tmp],
-[  --with-tmp=path              location for the tmp dir for openSRF (/tmp/osrftmp by default)],
+[  --with-tmp=path              location for the tmp dir for openSRF (default is /tmp)],
 [TMP=${withval}],
-[TMP=/tmp/osrftmp])
+[TMP=/tmp])
 AC_SUBST([TMP])
 
 AC_ARG_WITH([apxs],
