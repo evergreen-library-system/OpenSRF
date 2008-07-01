@@ -124,16 +124,3 @@ else
 libopensrf_la_SOURCES = $(TARGS) $(TARGS_HEADS) $(JSON_TARGS) $(JSON_TARGS_HEADS)
 endif
 
-install-exec-hook:
-	## Remove extra lib files created by libtool.
-	rm $(LIBDIR)/libobjson.a
-	rm $(LIBDIR)/libobjson.la
-	rm $(LIBDIR)/libobjson.so
-	mv $(LIBDIR)/libobjson.so.*.*.* $(LIBDIR)/libobjson.so
-	rm $(LIBDIR)/libobjson.so.*
-
-	rm $(LIBDIR)/libopensrf.a
-	rm $(LIBDIR)/libopensrf.la
-	rm $(LIBDIR)/libopensrf.so
-	mv $(LIBDIR)/libopensrf.so.*.*.* $(LIBDIR)/libopensrf.so
-	rm $(LIBDIR)/libopensrf.so.*
