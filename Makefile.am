@@ -24,7 +24,6 @@ export ETCDIR                   = @sysconfdir@
 export APXS2                    = @APXS2@
 export APACHE2_HEADERS          = @APACHE2_HEADERS@
 export DEF_CFLAGS		= -D_LARGEFILE64_SOURCE $(MAYBE_DEBUG) -pipe -g -Wall -O2 -fPIC -I@abs_top_builddir@/include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS) @INCLUDES@
-export DEF_LDFLAGS		= -L$(TMPDIR) @LIBDIRS@
 export DEF_LDLIBS		= -lobjson -lopensrf
 export VAR			= @localstatedir@
 export PID			= @localstatedir@/run/opensrf
@@ -32,7 +31,6 @@ export SOCK			= @localstatedir@/lock/opensrf
 export LOG			= @localstatedir@/log/opensrf
 
 AM_CFLAGS = $(DEF_CFLAGS)
-LDFLAGS = $(DEF_LDFLAGS) -L./src/
 
 SUBDIRS = src
 

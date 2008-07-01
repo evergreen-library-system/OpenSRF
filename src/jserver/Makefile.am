@@ -13,7 +13,7 @@
 
 
 LDADD = -lxml2 $(DEF_LDLIBS)
-AM_CFLAGS = $(DEF_CFLAGS) -D_GNU_SOURCE -L../libopensrf/.libs/
+AM_CFLAGS = $(DEF_CFLAGS) -D_GNU_SOURCE -L../libopensrf/
 AM_LDFLAGS = $(DEF_LDFLAGS)
 
 bin_PROGRAMS = chopchop

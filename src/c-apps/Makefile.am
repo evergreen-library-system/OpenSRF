@@ -13,7 +13,7 @@
 
 
 AM_CFLAGS = $(DEF_CFLAGS) -DORSF_LOG_PARAMS 
-AM_LDFLAGS = $(DEF_LDFLAGS) -L../libopensrf/.libs/ -L.  
+AM_LDFLAGS = $(DEF_LDFLAGS) -L../libopensrf/
 
 noinst_PROGRAMS = timejson
 lib_LTLIBRARIES = libosrf_dbmath.la libosrf_math.la libosrf_version.la

@@ -13,7 +13,7 @@
 
 
 AM_LDFLAGS = $(DEF_LDFLAGS)
-AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS -L../libopensrf/.libs/ 
+AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS -L../libopensrf/
 
 curdir = @abs_top_builddir@/src/gateway/
 

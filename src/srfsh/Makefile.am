@@ -13,7 +13,7 @@
 
 
 LDADD = -lreadline -lxml2 -lncurses $(DEF_LDLIBS) 
-AM_CFLAGS = $(DEF_CFLAGS) -DEXEC_DEFAULT -L../libopensrf/.libs/ 
+AM_CFLAGS = $(DEF_CFLAGS) -DEXEC_DEFAULT -L../libopensrf/
 AM_LDFLAGS = $(DEF_LDFLAGS)
 
 bin_PROGRAMS = srfsh

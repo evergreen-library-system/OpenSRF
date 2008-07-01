@@ -14,7 +14,7 @@
 
 # Declare some directory variables
 
-export TMPDIR	= $(TMP)/opensrf
+export TMPDIR	= $(TMP)
 export OPENSRF	= opensrf
 export BINDIR	= @bindir@
 export LIBDIR	= @libdir@
