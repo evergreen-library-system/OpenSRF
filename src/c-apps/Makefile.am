@@ -12,20 +12,20 @@
 # GNU General Public License for more details.
 
 
-# for libtool
-tmpdir = $(TMP)
-
 AM_CFLAGS = $(DEF_CFLAGS) -DORSF_LOG_PARAMS 
-LDADD = $(DEF_LDLIBS)
-AM_LDFLAGS = $(DEF_LDFLAGS) -L$(TMP)/opensrf/ -L../libopensrf/.libs/ -L.  
+AM_LDFLAGS = $(DEF_LDFLAGS) -L../libopensrf/.libs/ -L.  
 
-tmp_PROGRAMS = timejson
+noinst_PROGRAMS = timejson
 lib_LTLIBRARIES = libosrf_dbmath.la libosrf_math.la libosrf_version.la
 
 timejson_SOURCES = timejson.c
+timejson_LDADD = -lobjson -lopensrf
 libosrf_dbmath_la_SOURCES = osrf_dbmath.c 
+libosrf_dbmath_la_LIBADD = -lobjson -lopensrf
 libosrf_math_la_SOURCES = osrf_math.c
+libosrf_math_la_LIBADD = -lobjson -lopensrf
 libosrf_version_la_SOURCES = osrf_version.c 
+libosrf_version_la_LIBADD = -lobjson -lopensrf
 
 ## rename libraries (libtool requires the prefix lib, but we dont use that here)
 ## remove extra library files created by libtool
