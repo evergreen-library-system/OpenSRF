@@ -456,13 +456,16 @@ int osrf_system_disconnect_client( void ) {
 	return 0;
 }
 
+static int shutdownComplete = 0;
 int osrf_system_shutdown( void ) {
+    if(shutdownComplete) return;
 	osrfConfigCleanup();
     osrfCacheCleanup();
 	osrf_system_disconnect_client();
 	osrf_settings_free_host_config(NULL);
 	osrfAppSessionCleanup();
 	osrfLogCleanup();
+    shutdownComplete = 1;
 	return 1;
 }
 
