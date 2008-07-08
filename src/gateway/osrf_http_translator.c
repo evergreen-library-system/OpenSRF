@@ -69,7 +69,7 @@ typedef struct {
  */
 static osrfHttpTranslator* osrfNewHttpTranslator(request_rec* apreq) {
     osrfHttpTranslator* trans;
-    OSRF_MALLOC(trans, sizeof(trans));
+    OSRF_MALLOC(trans, sizeof(osrfHttpTranslator));
     trans->apreq = apreq;
     trans->complete = 0;
     trans->connectOnly = 0;
@@ -120,7 +120,7 @@ static void osrfHttpTranslatorFree(osrfHttpTranslator* trans) {
     if(trans->delim)
         free(trans->delim);
     osrfListFree(trans->messages);
-    //free(trans); // why does freeing this cause Apache to croak??
+    free(trans);
 }
 
 static void osrfHttpTranslatorDebug(osrfHttpTranslator* trans) {
@@ -168,20 +168,13 @@ static int osrfHttpTranslatorSetTo(osrfHttpTranslator* trans) {
                 if(!strcmp(ipAddr, trans->remoteHost) && !strcmp(recipient, trans->recipient)) {
                     osrfLogDebug(OSRF_LOG_MARK, "Found cached session from host %s and recipient %s", 
                         trans->remoteHost, trans->recipient);
-                    jsonObjectFree(sessionCache);
                     stat = 1;
-                     
-                    // XXX free me
                     trans->service = jsonObjectGetString(jsonObjectGetKey(sessionCache, "service"));
 
                 } else {
                     osrfLogError(OSRF_LOG_MARK, 
                         "Session cache for thread %s does not match request", trans->thread);
                 }
-
-                free(ipAddr);
-                free(recipient);
-
             }  else {
                 osrfLogError(OSRF_LOG_MARK, 
                     "attempt to send directly to %s without a session", trans->recipient);
@@ -259,7 +252,7 @@ static int osrfHttpTranslatorCheckStatus(osrfHttpTranslator* trans, transport_me
             osrfCacheRemove(trans->thread);
             return 0;
         }
-
+        // XXX hm, check for explicit status=COMPLETE message instead??
         if(last->status_code != OSRF_STATUS_CONTINUE)
             trans->complete = 1;
     }
@@ -274,7 +267,7 @@ static void osrfHttpTranslatorInitHeaders(osrfHttpTranslator* trans, transport_m
         char buf[strlen(MULTIPART_CONTENT_TYPE) + strlen(trans->delim) + 1];
         sprintf(buf, MULTIPART_CONTENT_TYPE, trans->delim);
 	    ap_set_content_type(trans->apreq, buf);
-        ap_rvputs(trans->apreq, "--%s\n", trans->delim);
+        ap_rprintf(trans->apreq, "--%s\n", trans->delim);
     } else {
 	    ap_set_content_type(trans->apreq, JSON_CONTENT_TYPE);
     }
@@ -293,12 +286,12 @@ static void osrfHttpTranslatorCacheSession(osrfHttpTranslator* trans) {
  * Writes a single chunk of multipart/x-mixed-replace content
  */
 static void osrfHttpTranslatorWriteChunk(osrfHttpTranslator* trans, transport_message* msg) {
-    ap_rvputs(trans->apreq, 
+    ap_rprintf(trans->apreq, 
         "Content-type: %s\n\n%s\n\n", JSON_CONTENT_TYPE, msg->body);
     if(trans->complete)
-        ap_rvputs(trans->apreq, "--%s--\n", trans->delim);
+        ap_rprintf(trans->apreq, "--%s--\n", trans->delim);
     else
-        ap_rvputs(trans->apreq, "--%s\n", trans->delim);
+        ap_rprintf(trans->apreq, "--%s\n", trans->delim);
     ap_rflush(trans->apreq);
 }
 
@@ -319,7 +312,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
     transport_message* tmsg = message_init(
         trans->body, NULL, trans->thread, trans->recipient, NULL);
     client_send_message(trans->handle, tmsg);
-    message_free(tmsg);
+    message_free(tmsg); 
 
     if(trans->disconnectOnly) {
         osrfLogDebug(OSRF_LOG_MARK, "exiting early on disconnect");
@@ -329,9 +322,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
     // process the response from the opensrf service
     int firstWrite = 1;
     while(!trans->complete) {
-        osrfLogDebug(OSRF_LOG_MARK, "1");
         transport_message* msg = client_recv(trans->handle, trans->timeout);
-        osrfLogDebug(OSRF_LOG_MARK, "2");
 
         if(trans->handle->error) {
             osrfLogError(OSRF_LOG_MARK, "Transport error");
@@ -380,6 +371,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
 
 static void testConnection(request_rec* r) {
 	if(!osrfConnected || !osrfSystemGetTransportClient()) {
+        osrfLogError(OSRF_LOG_MARK, "We're not connected to OpenSRF");
 		ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "We're not connected to OpenSRF");
 		usleep(100000); // .1 second to prevent process die/start overload
 		exit(1);
@@ -427,10 +419,7 @@ static int handler(request_rec *r) {
     if(trans->body) {
         stat = osrfHttpTranslatorProcess(trans);
         osrfHttpTranslatorDebug(trans);
-    
         osrfLogInfo(OSRF_LOG_MARK, "translator resulted in status %d", stat);
-    
-        ap_rputs(trans->body, r);
     } else {
         osrfLogWarning(OSRF_LOG_MARK, "no message body to process");
     }
