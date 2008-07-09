@@ -36,6 +36,7 @@ char* routerName = NULL;
 char* domainName = NULL;
 int osrfConnected = 0;
 char recipientBuf[128];
+char contentTypeBuf[80];
 
 // for development only, writes to apache error log
 static void _dbg(char* s, ...) {
@@ -264,9 +265,10 @@ static void osrfHttpTranslatorInitHeaders(osrfHttpTranslator* trans, transport_m
     apr_table_set(trans->apreq->headers_out, OSRF_HTTP_HEADER_FROM, msg->sender);
     apr_table_set(trans->apreq->headers_out, OSRF_HTTP_HEADER_THREAD, trans->thread);
     if(trans->multipart) {
-        char buf[strlen(MULTIPART_CONTENT_TYPE) + strlen(trans->delim) + 1];
-        sprintf(buf, MULTIPART_CONTENT_TYPE, trans->delim);
-	    ap_set_content_type(trans->apreq, buf);
+        sprintf(contentTypeBuf, MULTIPART_CONTENT_TYPE, trans->delim);
+        contentTypeBuf[79] = '\0';
+        osrfLogDebug(OSRF_LOG_MARK, "content type %s : %s : %s", MULTIPART_CONTENT_TYPE, trans->delim, contentTypeBuf);
+	    ap_set_content_type(trans->apreq, contentTypeBuf);
         ap_rprintf(trans->apreq, "--%s\n", trans->delim);
     } else {
 	    ap_set_content_type(trans->apreq, JSON_CONTENT_TYPE);
