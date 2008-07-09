@@ -362,8 +362,16 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
                 int i;
                 OSRF_BUFFER_ADD(buf, osrfListGetIndex(trans->messages, 0));
                 for(i = 1; i < trans->messages->size; i++) {
-                    // yay! string mangling
+                    buffer_chomp(buf); // chomp off the closing array bracket
+                    char* body = osrfListGetIndex(trans->messages, i);
+                    char newbuf[strlen(body)];
+                    sprintf(newbuf, body+1); // chomp off the opening array bracket
+                    OSRF_BUFFER_ADD_CHAR(buf, ',');
+                    OSRF_BUFFER_ADD(buf, newbuf);
                 }
+                
+                ap_rputs(buf->buf, trans->apreq);
+                buffer_free(buf);
             }
         }
     }
