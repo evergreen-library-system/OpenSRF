@@ -17,12 +17,16 @@ AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS -L../libopensrf/
 
 curdir = @abs_top_builddir@/src/gateway/
 
-cur_LTLIBRARIES = libosrf_json_gateway.la
+cur_LTLIBRARIES = libosrf_json_gateway.la libosrf_http_translator.la
 libosrf_json_gateway_la_SOURCES = apachetools.c apachetools.h osrf_json_gateway.c
 libosrf_json_gateway_la_LIBADD = -lobjson -lopensrf
+libosrf_http_translator_la_SOURCES = apachetools.c apachetools.h osrf_http_translator.c
+libosrf_http_translator_la_LIBADD = -lobjson -lopensrf
 
 include_HEADERS = apachetools.h
 
 install-exec-local: 
 	cp .libs/libosrf_json_gateway.so osrf_json_gateway.so
 	$(APXS2) -i -a -n osrf_json_gateway osrf_json_gateway.so
+	cp .libs/libosrf_http_translator.so osrf_http_translator.so
+	$(APXS2) -i -a -n osrf_http_translator osrf_http_translator.so
