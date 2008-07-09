@@ -428,7 +428,7 @@ static int handler(request_rec *r) {
     osrfHttpTranslator* trans = osrfNewHttpTranslator(r);
     if(trans->body) {
         stat = osrfHttpTranslatorProcess(trans);
-        osrfHttpTranslatorDebug(trans);
+        //osrfHttpTranslatorDebug(trans);
         osrfLogInfo(OSRF_LOG_MARK, "translator resulted in status %d", stat);
     } else {
         osrfLogWarning(OSRF_LOG_MARK, "no message body to process");
