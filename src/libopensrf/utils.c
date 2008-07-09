@@ -280,6 +280,15 @@ char* buffer_data( const growing_buffer *gb) {
 	return strdup( gb->buf );
 }
 
+int buffer_chomp(growing_buffer* gb) {
+	if( gb == NULL ) { return -1; }
+    if(gb->n_used > 0) {
+	    gb->n_used--;
+	    gb->buf[gb->n_used] = '\0';
+    }
+    return gb->n_used;
+}
+
 
 /*
 #define OSRF_BUFFER_ADD_CHAR(gb, c)\

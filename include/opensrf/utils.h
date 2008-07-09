@@ -195,6 +195,7 @@ char* buffer_data( const growing_buffer* gb);
 char* buffer_release( growing_buffer* gb );
 int buffer_free( growing_buffer* gb );
 int buffer_add_char(growing_buffer* gb, char c);
+int buffer_chomp(growing_buffer* gb); // removes the last character from the buffer
 
 /* returns the size needed to fill in the vsnprintf buffer.  
 	* ! this calls va_end on the va_list argument*
