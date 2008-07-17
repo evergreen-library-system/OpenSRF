@@ -58,7 +58,7 @@ install-exec-local:
 	mkdir -p $(perldir)
 
 install-data-hook:
-	ln -s $(BINDIR)/opensrf $(BINDIR)/opensrf-c
+	ln -sf $(BINDIR)/opensrf $(BINDIR)/opensrf-c
 	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(ETCDIR)/opensrf.xml.example'
 	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(ETCDIR)/opensrf.xml.example'
 	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(ETCDIR)/opensrf_core.xml.example'
