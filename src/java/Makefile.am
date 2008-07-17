@@ -10,7 +10,7 @@ JAVA_SRC = \
 
 #------------------------------------------------------------------
 
-all:	verify_deps dirs jar
+all-local:	verify_deps dirs jar
 
 verify_deps:
 	@if [ ! -e "$(OSRF_JAVA_DEPSDIR)/$(WSTX)" ]; then echo -e "\nmissing dependency $(WSTX)!\n" && exit 1; fi
@@ -47,12 +47,9 @@ docs:
 	javadoc -classpath $(JAVA_LIBS) -d doc @files;
 	rm files;
 
-install:
+install-data-local:
 	mkdir -p $(LIBDIR)/java
 	cp opensrf.jar $(LIBDIR)/java
-
-clean:	
-	rm -fr opensrf.jar $(JAVA_LIBDIR)
 
 dep_clean:
 	rm -rf deps

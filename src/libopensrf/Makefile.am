@@ -16,7 +16,7 @@ AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fn
 AM_LDFLAGS = $(DEF_LDFLAGS)
 LDADD = -lxml2 -ldl -lmemcache -lopensrf -lobjson
 
-export OSRF_INC = @abs_top_builddir@/include/opensrf/
+OSRF_INC = @top_srcdir@/include/opensrf
 
 TARGS = 		osrf_message.c \
 			osrf_app_session.c \
@@ -78,19 +78,15 @@ JSON_DEP = 		osrf_list.c\
 			md5.c\
 			string_array.c
 
-JSON_TARGS_HEADS = 		$(OSRF_INC)/osrf_json_object.h\
-				$(OSRF_INC)/osrf_json_parser.h \
-				$(OSRF_INC)/osrf_json_tools.h \
-				$(OSRF_INC)/osrf_legacy_json.h \
-				$(OSRF_INC)/osrf_json_xml.h
+JSON_TARGS_HEADS = 	$(OSRF_INC)/osrf_legacy_json.h \
+			$(OSRF_INC)/osrf_json_xml.h
 
-JSON_DEP_HEADS = 	$(OSRF_INC)/osrf_list.h\
-			$(OSRF_INC)/osrf_hash.h\
-			$(OSRF_INC)/utils.h\
-			$(OSRF_INC)/log.h\
-			$(OSRF_INC)/md5.h\
+JSON_DEP_HEADS = 	$(OSRF_INC)/osrf_list.h \
+			$(OSRF_INC)/osrf_hash.h \
+			$(OSRF_INC)/utils.h \
+			$(OSRF_INC)/log.h \
+			$(OSRF_INC)/md5.h \
 			$(OSRF_INC)/string_array.h
-
 
 noinst_PROGRAMS = osrf_json_test
 

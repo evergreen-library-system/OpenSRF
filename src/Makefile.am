@@ -18,11 +18,11 @@ export TMPDIR	= $(TMP)
 export OPENSRF	= opensrf
 export BINDIR	= @bindir@
 export LIBDIR	= @libdir@
-export PERLDIR	= $(LIBDIR)/perl5
-export JSDIR	= $(LIBDIR)/javascript
+perldir	= $(LIBDIR)/perl5
+jsdir = $(LIBDIR)/javascript
 export INCLUDEDIR= @includedir@
 export OSRF_JAVA_DEPSDIR = @OSRF_JAVA_DEPSDIR@
-
+etcdir = $(ETCDIR)
 
 
 AM_LDFLAGS = $(DEF_LDFLAGS)
@@ -43,30 +43,36 @@ endif
 
 SUBDIRS = libopensrf c-apps router srfsh jserver gateway $(MAYBE_PY) $(MAYBE_JA)
 
-install-data-local:
+dist_bin_SCRIPTS = ../bin/osrf_ctl.sh
+bin_SCRIPTS = ../bin/osrf_config
+
+dist_etc_DATA = @top_srcdir@/examples/opensrf.xml.example @top_srcdir@/examples/opensrf_core.xml.example @top_srcdir@/examples/srfsh.xml.example 
+
+install-exec-local:
 	mkdir -p $(VAR)
 	mkdir -p $(PID)
 	mkdir -p $(LOG)
 	mkdir -p $(SOCK)
-	mkdir -p $(JSDIR)
-	mkdir -p $(PERLDIR)
 	mkdir -p $(ETCDIR)
-	cp -r ../include/opensrf $(INCLUDEDIR)
-	mv $(BINDIR)/opensrf $(BINDIR)/opensrf-c
-	cp ../bin/osrf_config $(BINDIR)
-	cp ../bin/osrf_ctl.sh $(BINDIR)
-	cp ../examples/opensrf.xml.example $(ETCDIR)
-	cp ../examples/opensrf_core.xml.example $(ETCDIR)
-	cp ../examples/srfsh.xml.example $(ETCDIR)
+	mkdir -p $(jsdir)
+	mkdir -p $(perldir)
+
+install-data-hook:
+	ln -s $(BINDIR)/opensrf $(BINDIR)/opensrf-c
 	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(ETCDIR)/opensrf.xml.example'
 	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(ETCDIR)/opensrf.xml.example'
 	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(ETCDIR)/opensrf_core.xml.example'
 	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(ETCDIR)/opensrf_core.xml.example'
 	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(ETCDIR)/srfsh.xml.example'
 	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(ETCDIR)/srfsh.xml.example'
-	cp -r ../include/objson $(INCLUDEDIR)
-	cp -r javascript/* $(JSDIR)/
-	cp -r perlmods/* $(PERLDIR)/
-	mv $(INCLUDEDIR)/apachetools.h $(INCLUDEDIR)/opensrf/apachetools.h
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '@abs_top_srcdir@/examples/math_bench.pl'
+	sed -i 's|LIBDIR|$(LIBDIR)|g' '@abs_top_srcdir@/examples/multisession-test.pl'
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '@abs_top_srcdir@/doc/dokuwiki-doc-stubber.pl'
+	cp -r @srcdir@/javascript/* $(jsdir)/
+	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '@srcdir@/perlmods/OpenSRF/Utils/Config.pm'
+	cp -r @srcdir@/perlmods/* $(perldir)/
 
 
+uninstall-hook:
+	rm $(INCLUDEDIR)/opensrf/apachetools.h
+	rm $(bindir)/opensrf-c

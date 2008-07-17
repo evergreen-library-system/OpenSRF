@@ -18,7 +18,7 @@
 #define JSON_PROTOCOL "OSRFGatewayLegacyJSON"
 #define GATEWAY_USE_LEGACY_JSON 1
 
-#define GATEWAY_DEFAULT_CONFIG "/openils/conf/opensrf_core.xml"
+#define GATEWAY_DEFAULT_CONFIG "SYSCONFDIR/opensrf_core.xml"
 
 
 /* our config structure */

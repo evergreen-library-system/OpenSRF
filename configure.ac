@@ -28,6 +28,7 @@ AC_PREFIX_DEFAULT([/opensrf/])
 
 
 AC_SUBST(prefix)
+AC_SUBST(sysconfdir)
 
 
 AC_DEFUN([AC_PYTHON_MOD],[
@@ -273,6 +274,8 @@ AC_CONFIG_FILES([Makefile
 
 
 AC_OUTPUT
+
+bin/osrf_config --cconfig
 
 AC_MSG_RESULT([])
 AC_MSG_RESULT([--------------------- Configuration options:  -----------------------])

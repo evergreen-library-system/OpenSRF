@@ -50,6 +50,14 @@ function showAll {
 	 showInstalled;
 }
 
+function cconfig {
+	 
+sed -i 's|SYSCONFDIR|@sysconfdir@|g' '@srcdir@/src/gateway/osrf_json_gateway.c'
+sed -i 's|${prefix}|@prefix@|g' '@srcdir@/src/gateway/osrf_json_gateway.c'
+sed -i 's|osrf|@abs_top_srcdir@/src/python/osrf|g' '@srcdir@/src/python/setup.py'
+sed -i 's|srfsh\.py|@abs_top_srcdir@/src/python/srfsh.py|g' '@srcdir@/src/python/setup.py'
+}
+
 function showHelp {
 	 echo 
 	 echo "------------------------------------------------------------"
@@ -81,6 +89,8 @@ case "$1" in
      --installed)
 		showInstalled;
 		;;
+     --cconfig) cconfig;
+      		;;
      --libxml)
 		echo @LIBXML2_HEADERS@;
 		;;

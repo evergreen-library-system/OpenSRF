@@ -26,11 +26,3 @@ libosrf_math_la_SOURCES = osrf_math.c
 libosrf_math_la_LIBADD = -lobjson -lopensrf
 libosrf_version_la_SOURCES = osrf_version.c 
 libosrf_version_la_LIBADD = -lobjson -lopensrf
-
-## rename libraries (libtool requires the prefix lib, but we dont use that here)
-## remove extra library files created by libtool
-install-exec-hook:
-	cp $(LIBDIR)/libosrf_math.so $(LIBDIR)/osrf_math.so
-	cp $(LIBDIR)/libosrf_dbmath.so $(LIBDIR)/osrf_dbmath.so
-	cp $(LIBDIR)/libosrf_version.so $(LIBDIR)/osrf_version.so	
-	rm $(LIBDIR)/libosrf*

@@ -153,7 +153,7 @@ Given an OpenSRF configuration file named F<opensrf_core.xml> with the following
 	<router>otherhost</router>
       </routers>
 
-      <logfile>/openils/var/log/osrfsys.log</logfile>
+      <logfile>LOCALSTATEDIR/log/osrfsys.log</logfile>
     </opensrf>
   </config>
 
@@ -163,7 +163,7 @@ with the following structure:
   {
     router_name => 'router',
     routers => ['localhost', 'otherhost'],
-    logfile => '/openils/var/log/osrfsys.log'
+    logfile => 'LOCALSTATEDIR/log/osrfsys.log'
   }
 
 You can retrieve any of these values by name from the bootstrap section of C<$config_obj>; for example:

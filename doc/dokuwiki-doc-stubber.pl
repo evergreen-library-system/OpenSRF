@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-use OpenSRF::System qw(/openils/conf/opensrf_core.xml);
+use OpenSRF::System qw(SYSCONFDIR/opensrf_core.xml);
 use Getopt::Long
 
 $| = 1;
