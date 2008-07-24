@@ -328,7 +328,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
 
         if(trans->handle->error) {
             osrfLogError(OSRF_LOG_MARK, "Transport error");
-            return HTTP_NOT_FOUND;
+            return HTTP_INTERNAL_SERVER_ERROR;
         }
 
         if(msg == NULL)
