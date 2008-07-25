@@ -18,9 +18,6 @@
 #define JSON_PROTOCOL "OSRFGatewayLegacyJSON"
 #define GATEWAY_USE_LEGACY_JSON 1
 
-#define GATEWAY_DEFAULT_CONFIG "SYSCONFDIR/opensrf_core.xml"
-
-
 /* our config structure */
 typedef struct { 
 	char* configfile;  /* our bootstrap config file */
@@ -70,13 +67,6 @@ static const command_rec osrf_json_gateway_cmds[] = {
 	{NULL}
 };
 
-/* build the config object */
-static void* osrf_json_gateway_create_config( apr_pool_t* p, server_rec* s) {
-	osrf_json_gateway_config* cfg = (osrf_json_gateway_config*) 
-			apr_palloc(p, sizeof(osrf_json_gateway_config));
-	cfg->configfile = GATEWAY_DEFAULT_CONFIG;
-	return (void*) cfg;
-}
 
 static void* osrf_json_gateway_create_dir_config( apr_pool_t* p, char* dir) {
 	osrf_json_gateway_dir_config* cfg = (osrf_json_gateway_dir_config*) 
@@ -455,7 +445,7 @@ module AP_MODULE_DECLARE_DATA osrf_json_gateway_module = {
 	STANDARD20_MODULE_STUFF,
 	osrf_json_gateway_create_dir_config,
 	NULL,
-	osrf_json_gateway_create_config,
+    NULL,
 	NULL,
 	osrf_json_gateway_cmds,
 	osrf_json_gateway_register_hooks,
