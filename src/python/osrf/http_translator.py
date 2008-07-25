@@ -234,9 +234,6 @@ class HTTPTranslator(object):
             elif osrf_msgs[0].type() == OSRF_MESSAGE_TYPE_DISCONNECT:
                 self.disconnect_only = True
 
-                '''
-                [76.202.6.250] [] open-ils.search open-ils.search.biblio.metarecord_to_records 0, {"format":null,"org":1,"depth":"0"}
-                '''
         for msg in osrf_msgs:
             if msg.type() == OSRF_MESSAGE_TYPE_REQUEST:
                 method = msg.payload()
