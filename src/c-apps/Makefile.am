@@ -19,10 +19,10 @@ noinst_PROGRAMS = timejson
 lib_LTLIBRARIES = libosrf_dbmath.la libosrf_math.la libosrf_version.la
 
 timejson_SOURCES = timejson.c
-timejson_LDADD = -lobjson -lopensrf
+timejson_LDADD = -lopensrf
 libosrf_dbmath_la_SOURCES = osrf_dbmath.c 
-libosrf_dbmath_la_LIBADD = -lobjson -lopensrf
+libosrf_dbmath_la_LIBADD = -lopensrf
 libosrf_math_la_SOURCES = osrf_math.c
-libosrf_math_la_LIBADD = -lobjson -lopensrf
+libosrf_math_la_LIBADD =  -lopensrf
 libosrf_version_la_SOURCES = osrf_version.c 
-libosrf_version_la_LIBADD = -lobjson -lopensrf
+libosrf_version_la_LIBADD = -lopensrf

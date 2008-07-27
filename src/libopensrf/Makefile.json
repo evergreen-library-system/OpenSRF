@@ -13,9 +13,6 @@ TARGETS = osrf_json_object.o osrf_json_parser.o osrf_json_tools.o osrf_legacy_js
 EXT_TARGETS = osrf_list.o osrf_hash.o utils.o log.o md5.o string_array.o
 
 all:	$(TARGETS)
-	if [ ! -z "$(OSRF_LEGACY_JSON)" ]; then \
-		$(CC) -shared -W1 $(LDFLAGS) $(TARGETS) -o $(TMPDIR)/libobjson.so;\
-	fi;
 
 standalone: $(TARGETS) $(EXT_TARGETS)
 	$(CC) -shared -W1 $(CFLAGS) $(LDFLAGS) $(LDLIBS) $(TARGETS) $(EXT_TARGETS) -o libosrf_json.so

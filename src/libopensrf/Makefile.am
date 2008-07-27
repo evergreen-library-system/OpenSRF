@@ -14,7 +14,7 @@
 
 AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing -DOSRF_JSON_ENABLE_XML_UTILS
 AM_LDFLAGS = $(DEF_LDFLAGS)
-LDADD = -lxml2 -ldl -lmemcache -lopensrf -lobjson
+LDADD = -lxml2 -ldl -lmemcache -lopensrf
 
 OSRF_INC = @top_srcdir@/include/opensrf
 
@@ -97,19 +97,10 @@ opensrf_DEPENDENCIES = libopensrf.la
 osrf_json_test_SOURCES = osrf_json_test.c $(JSON_TARGS) $(JSON_DEP) $(JSON_TARGS_HEADS) $(JSON_DEP_HEADS)
 
 noinst_LTLIBRARIES = libosrf_json.la
-lib_LTLIBRARIES = libobjson.la libopensrf.la
-
-if BUILDJSON
-libobjson_la_SOURCES = $(JSON_TARGS) $(JSON_DEP) $(JSON_TARGS_HEADS) $(JSON_DEP_HEADS)
-libobjson_la_CFLAGS = $(AM_CFLAGS)
-endif
+lib_LTLIBRARIES = libopensrf.la
 
 libosrf_json_la_SOURCES = $(JSON_TARGS) $(JSON_DEP) $(JSON_TARGS_HEADS) $(JSON_DEP_HEADS)
 libosrf_json_la_CFLAGS = $(AM_CFLAGS)
-
-if BUILDJSON
-libosrf_json_la_DEPENDENCIES = libobjson.la
-endif
 
 libopensrf_la_CFLAGS = $(AM_CFLAGS)
 libopensrf_la_DEPENDENCIES = libosrf_json.la

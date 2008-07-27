@@ -19,9 +19,9 @@ curdir = @abs_top_builddir@/src/gateway/
 
 cur_LTLIBRARIES = libosrf_json_gateway.la libosrf_http_translator.la
 libosrf_json_gateway_la_SOURCES = apachetools.c apachetools.h osrf_json_gateway.c
-libosrf_json_gateway_la_LIBADD = -lobjson -lopensrf
+libosrf_json_gateway_la_LIBADD = -lopensrf
 libosrf_http_translator_la_SOURCES = apachetools.c apachetools.h osrf_http_translator.c
-libosrf_http_translator_la_LIBADD = -lobjson -lopensrf
+libosrf_http_translator_la_LIBADD = -lopensrf
 
 include_HEADERS = apachetools.h
 

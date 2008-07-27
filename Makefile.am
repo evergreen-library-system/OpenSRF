@@ -24,7 +24,7 @@ export ETCDIR                   = @sysconfdir@
 export APXS2                    = @APXS2@
 export APACHE2_HEADERS          = @APACHE2_HEADERS@
 export DEF_CFLAGS		= -D_LARGEFILE64_SOURCE $(MAYBE_DEBUG) -pipe -g -Wall -O2 -fPIC -I@abs_top_srcdir@/include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS) @INCLUDES@
-export DEF_LDLIBS		= -lobjson -lopensrf
+export DEF_LDLIBS		= -lopensrf
 export VAR			= @localstatedir@
 export PID			= @localstatedir@/run/opensrf
 export SOCK			= @localstatedir@/lock/opensrf
@@ -72,10 +72,8 @@ libosrf_FILES = src/libopensrf/basic_client.c \
 
 EXTRA_DIST = $(DOC_FILES) $(EXAMPLES_FILES) $(libosrf_FILES) $(strn_compat_FILES) $(python_FILES) $(java_FILES) autogen.sh src/extras src/gateway/fieldmapper-c-xml-out.pl DCO-1.1.txt LICENSE.txt src/perlmods src/javascript
 
-objsonincludedir = @includedir@/objson
 opensrfincludedir = @includedir@/opensrf
 
-OBJINC=@srcdir@/include/objson
 OSRFINC=@srcdir@/include/opensrf
 
 opensrfinclude_HEADERS = $(OSRFINC)/log.h \
@@ -107,7 +105,6 @@ opensrfinclude_HEADERS = $(OSRFINC)/log.h \
 				$(OSRFINC)/utils.h \
 				$(OSRFINC)/xml_utils.h
 
-objsoninclude_HEADERS = $(OBJINC)/json2xml.h $(OBJINC)/json_parser.h $(OBJINC)/object.h $(OBJINC)/xml2json.h
 
 
 SUBDIRS = src

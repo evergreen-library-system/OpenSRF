@@ -28,11 +28,6 @@ etcdir = $(ETCDIR)
 AM_LDFLAGS = $(DEF_LDFLAGS)
 AM_CFLAGS = $(DEF_CFLAGS)
 
-if BUILDJSON
-LDADD = -lobjson
-BJSON=1
-endif
-
 if BUILDPYTHON
 MAYBE_PY = python
 endif 

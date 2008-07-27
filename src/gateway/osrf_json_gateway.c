@@ -16,12 +16,7 @@
 #define DEFAULT_LOCALE "OSRFDefaultLocale"
 #define CONFIG_CONTEXT "gateway"
 #define JSON_PROTOCOL "OSRFGatewayLegacyJSON"
-#define GATEWAY_USE_LEGACY_JSON 1
-
-/* our config structure */
-typedef struct { 
-	char* configfile;  /* our bootstrap config file */
-} osrf_json_gateway_config;
+#define GATEWAY_USE_LEGACY_JSON 0
 
 typedef struct { 
 	int legacyJSON;
@@ -43,16 +38,13 @@ static const char* osrf_json_gateway_set_default_locale(cmd_parms *parms, void *
 }
 
 static const char* osrf_json_gateway_set_config(cmd_parms *parms, void *config, const char *arg) {
-	osrf_json_gateway_config  *cfg;
-	cfg = ap_get_module_config(parms->server->module_config, &osrf_json_gateway_module);
-	cfg->configfile = (char*) arg;
 	osrf_json_gateway_config_file = (char*) arg;
 	return NULL;
 }
 
 static const char* osrf_json_gateway_set_json_proto(cmd_parms *parms, void *config, const char *arg) {
 	osrf_json_gateway_dir_config* cfg = (osrf_json_gateway_dir_config*) config;
-	cfg->legacyJSON = (!strcasecmp((char*) arg, "false")) ? 0 : 1;
+	cfg->legacyJSON = (!strcasecmp((char*) arg, "true")) ? 1 : 0;
 	return NULL;
 }
 
@@ -125,10 +117,9 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	char* (*jsonToStringFunc) (const jsonObject*) = legacy_jsonObjectToJSON;
 
 	if(dir_conf->legacyJSON) {
-		ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r, "Using legacy JSON");
+		ap_log_rerror( APLOG_MARK, APLOG_DEBUG, 0, r, "Using legacy JSON");
 
 	} else {
-		ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r, "Not using legacy JSON");
 		parseJSONFunc = jsonParseString;
 		jsonToStringFunc = jsonObjectToJSON;
 	}
