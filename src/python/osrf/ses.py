@@ -84,7 +84,7 @@ class Session(object):
 class ClientSession(Session):
     """Client session object.  Use this to make server requests."""
 
-    def __init__(self, service, locale='en_US'):
+    def __init__(self, service, locale='en-US'):
         
         # call superclass constructor
         Session.__init__(self)

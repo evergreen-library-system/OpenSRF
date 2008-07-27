@@ -27,7 +27,7 @@ public abstract class Session {
     /** Session locale */
     protected String locale;
     /** Default session locale */
-    protected static String defaultLocale = "en_US";
+    protected static String defaultLocale = "en-US";
 
     /** 
      * The thread is used to link messages to a given session. 

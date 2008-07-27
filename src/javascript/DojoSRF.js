@@ -17,5 +17,5 @@ if(!dojo._hasResource['DojoSRF']){
 		return this.session_cache[app];
 	}
 
-	OpenSRF.locale = dojo.config.locale || (dojo.isIE ? navigator.userLanguage : navigator.language).toLowerCase();
+	OpenSRF.locale = dojo.config.locale || dojo.isIE ? navigator.userLanguage : navigator.language;
 }
