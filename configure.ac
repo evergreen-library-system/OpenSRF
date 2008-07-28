@@ -80,19 +80,6 @@ esac],
 AM_CONDITIONAL([BUILDPYTHON], [test x$OSRF_INSTALL_PYTHON = xtrue])
 AC_SUBST([OSRF_INSTALL_PYTHON])
 
-# create the legacy JSON headers and .so file for backwards compatibility?
-AC_ARG_ENABLE([legacyjson],
-[  --disable-legacyjson    disable the legacy json headers and .so file for backwards compatibility],
-[case "${enableval}" in
-    yes) OSRF_LEGACY_JSON=true ;;
-    no)  OSRF_LEGACY_JSON=false ;;
-  *) AC_MSG_ERROR([please choose another value for --disable-legacyjson (supported values are yes or no)]) ;;
-esac],
-[OSRF_LEGACY_JSON=true])
-
-AM_CONDITIONAL([BUILDJSON], [test x$OSRF_LEGACY_JSON = xtrue])
-AC_SUBST([OSRF_LEGACY_JSON])
-
 # enable debug?
 
 AC_ARG_ENABLE(debug,
@@ -291,12 +278,6 @@ if test "$OSRF_INSTALL_PYTHON" = "true" ; then
         AC_MSG_RESULT([OSRF install python?:            yes])
 else
         AC_MSG_RESULT([OSRF install python?:            no])
-fi
-
-if test "$OSRF_LEGACY_JSON" = "true" ; then
-        AC_MSG_RESULT([OSRF install legacy json?:       yes])
-else
-        AC_MSG_RESULT([OSRF install legacy json?:	no])
 fi
 
 	AC_MSG_RESULT(Installation directory prefix:		${prefix})

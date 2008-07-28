@@ -21,15 +21,11 @@ datarootdir=@datarootdir@
 function showInstalled {
 	 JAVA=@OSRF_INSTALL_JAVA@
 	 PYTHON=@OSRF_INSTALL_PYTHON@
-	 JSON=@OSRF_LEGACY_JSON@
 	 if test "$JAVA" = "true"; then
 	    echo "OSRF_JAVA"
 	 fi
 	 if test "$PYTHON" = "true"; then
 	    echo "OSRF_PYTHON"
-	 fi
-	 if test "$JSON" = "true"; then
-	    echo "OSRF_LEGACY_JSON"
 	 fi
 }
 
