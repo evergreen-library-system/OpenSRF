@@ -13,7 +13,7 @@
 
 
 LDADD = -lxml2 $(DEF_LDLIBS) 
-AM_CFLAGS = $(DEF_CFLAGS) -D_ROUTER -L../libopensrf/
+AM_CFLAGS = $(DEF_CFLAGS) -D_ROUTER -L@top_builddir@/src/libopensrf
 AM_LDFLAGS = $(DEF_LDFLAGS)
 
 bin_PROGRAMS = opensrf_router

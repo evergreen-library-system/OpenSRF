@@ -13,16 +13,19 @@
 
 
 AM_CFLAGS = $(DEF_CFLAGS) -DORSF_LOG_PARAMS 
-AM_LDFLAGS = $(DEF_LDFLAGS) -L../libopensrf/
+AM_LDFLAGS = $(DEF_LDFLAGS) -L@top_builddir@/src/libopensrf
 
 noinst_PROGRAMS = timejson
-lib_LTLIBRARIES = libosrf_dbmath.la libosrf_math.la libosrf_version.la
+lib_LTLIBRARIES = osrf_dbmath.la osrf_math.la osrf_version.la
 
 timejson_SOURCES = timejson.c
 timejson_LDADD = -lopensrf
-libosrf_dbmath_la_SOURCES = osrf_dbmath.c 
-libosrf_dbmath_la_LIBADD = -lopensrf
-libosrf_math_la_SOURCES = osrf_math.c
-libosrf_math_la_LIBADD =  -lopensrf
-libosrf_version_la_SOURCES = osrf_version.c 
-libosrf_version_la_LIBADD = -lopensrf
+osrf_dbmath_la_SOURCES = osrf_dbmath.c 
+osrf_dbmath_la_LDFLAGS = $(AM_LDFLAGS) -module
+osrf_dbmath_la_LIBADD = -lopensrf
+osrf_math_la_SOURCES = osrf_math.c
+osrf_math_la_LDFLAGS = $(AM_LDFLAGS) -module
+osrf_math_la_LIBADD =  -lopensrf
+osrf_version_la_SOURCES = osrf_version.c 
+osrf_version_la_LDFLAGS = $(AM_LDFLAGS) -module
+osrf_version_la_LIBADD = -lopensrf

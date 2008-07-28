@@ -46,10 +46,10 @@ int osrfConfigHasDefaultConfig();
 
 /**
 	Replaces the config object's json object.  This is useful
-	if you have an ojbson object already and not an XML config
+	if you have a json object already and not an XML config
 	file to parse.
 	@param cfg The config object to alter
-	@param obj The json objet to use when searching values
+	@param obj The json object to use when searching values
 */
 void osrfConfigReplaceConfig(osrfConfig* cfg, const jsonObject* obj);
 

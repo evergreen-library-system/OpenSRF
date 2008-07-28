@@ -12,21 +12,17 @@
 # GNU General Public License for more details.
 
 
-AM_LDFLAGS = $(DEF_LDFLAGS)
-AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS -L../libopensrf/
+EXTRA_DIST = @srcdir@/apachetools.c @srcdir@/apachetools.h @srcdir@/osrf_json_gateway.c @srcdir@/osrf_http_translator.c
 
-curdir = @abs_top_builddir@/src/gateway/
+options=-D_LARGEFILE64_SOURCE -Wall -I@abs_top_srcdir@/include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS) -L$(LIBDIR) -L@top_builddir@/src/libopensrf
 
-cur_LTLIBRARIES = libosrf_json_gateway.la libosrf_http_translator.la
-libosrf_json_gateway_la_SOURCES = apachetools.c apachetools.h osrf_json_gateway.c
-libosrf_json_gateway_la_LIBADD = -lopensrf
-libosrf_http_translator_la_SOURCES = apachetools.c apachetools.h osrf_http_translator.c
-libosrf_http_translator_la_LIBADD = -lopensrf
-
-include_HEADERS = apachetools.h
+all-local:
+	$(APXS2) -c $(DEF_LDLIBS) $(options) @srcdir@/osrf_json_gateway.c
+	$(APXS2) -c $(DEF_LDLIBS) $(options) @srcdir@/osrf_http_translator.c
 
 install-exec-local: 
-	cp .libs/libosrf_json_gateway.so osrf_json_gateway.so
-	$(APXS2) -i -a -n osrf_json_gateway osrf_json_gateway.so
-	cp .libs/libosrf_http_translator.so osrf_http_translator.so
-	$(APXS2) -i -a -n osrf_http_translator osrf_http_translator.so
+	$(APXS2) -i -a @srcdir@/osrf_json_gateway.c
+	$(APXS2) -i -a @srcdir@/osrf_http_translator.c
+
+clean-local:
+	rm -f @srcdir@/osrf_http_translator.la @srcdir@/osrf_http_translator.lo @srcdir@/osrf_http_translator.slo @srcdir@/osrf_json_gateway.la @srcdir@/osrf_json_gateway.lo @srcdir@/osrf_json_gateway.slo

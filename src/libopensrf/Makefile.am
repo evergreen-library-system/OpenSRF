@@ -90,9 +90,9 @@ JSON_DEP_HEADS = 	$(OSRF_INC)/osrf_list.h \
 
 noinst_PROGRAMS = osrf_json_test
 
-bin_PROGRAMS = opensrf
-opensrf_SOURCES = opensrf.c
-opensrf_DEPENDENCIES = libopensrf.la
+bin_PROGRAMS = opensrf-c
+opensrf_c_SOURCES = opensrf.c
+opensrf_c_DEPENDENCIES = libopensrf.la
 
 osrf_json_test_SOURCES = osrf_json_test.c $(JSON_TARGS) $(JSON_DEP) $(JSON_TARGS_HEADS) $(JSON_DEP_HEADS)
 
@@ -105,9 +105,5 @@ libosrf_json_la_CFLAGS = $(AM_CFLAGS)
 libopensrf_la_CFLAGS = $(AM_CFLAGS)
 libopensrf_la_DEPENDENCIES = libosrf_json.la
 
-if BUILDJSON
-libopensrf_la_SOURCES = $(TARGS) $(TARGS_HEADS)
-else
 libopensrf_la_SOURCES = $(TARGS) $(TARGS_HEADS) $(JSON_TARGS) $(JSON_TARGS_HEADS)
-endif
 

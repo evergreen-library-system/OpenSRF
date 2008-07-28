@@ -33,44 +33,44 @@ export srcdir			= @srcdir@
 
 AM_CFLAGS = $(DEF_CFLAGS)
 
-DOC_FILES = doc/Application-HOWTO.txt \
-	    doc/dokuwiki-doc-stubber.pl \
-	    doc/OpenSRF-Messaging-Protocol.html \
-	    doc/Persist-API.html \
-	    doc/Roadmap.txt
+DOC_FILES = @srcdir@/doc/Application-HOWTO.txt \
+	    @srcdir@/doc/dokuwiki-doc-stubber.pl \
+	    @srcdir@/doc/OpenSRF-Messaging-Protocol.html \
+	    @srcdir@/doc/Persist-API.html \
+	    @srcdir@/doc/Roadmap.txt
 
-EXAMPLES_FILES = examples/fieldmapper2cdbi.xsl \
-		 examples/fieldmapper2javascript.xsl \
-		 examples/fieldmapper2perl.xsl \
-		 examples/gen-fieldmapper.xml \
-		 examples/math_bench.pl \
-		 examples/multisession-test.pl \
-		 examples/register.pl \
-		 examples/srfsh_config.xsd \
-		 examples/math_xul_client/math \
-		 examples/math_xul_client/install.js
+EXAMPLES_FILES = @srcdir@/examples/fieldmapper2cdbi.xsl \
+		 @srcdir@/examples/fieldmapper2javascript.xsl \
+		 @srcdir@/examples/fieldmapper2perl.xsl \
+		 @srcdir@/examples/gen-fieldmapper.xml \
+		 @srcdir@/examples/math_bench.pl \
+		 @srcdir@/examples/multisession-test.pl \
+		 @srcdir@/examples/register.pl \
+		 @srcdir@/examples/srfsh_config.xsd \
+		 @srcdir@/examples/math_xul_client/math \
+		 @srcdir@/examples/math_xul_client/install.js
 
-strn_compat_FILES = src/ports/strn_compat/strndup.c \
-		    src/ports/strn_compat/strndup.h \
-		    src/ports/strn_compat/strnlen.c \
-		    src/ports/strn_compat/strnlen.h
+strn_compat_FILES = @srcdir@/src/ports/strn_compat/strndup.c \
+		    @srcdir@/src/ports/strn_compat/strndup.h \
+		    @srcdir@/src/ports/strn_compat/strnlen.c \
+		    @srcdir@/src/ports/strn_compat/strnlen.h
 
-python_FILES = src/python/opensrf.py \
-	       src/python/setup.py \
-	       src/python/srfsh.py \
-	       src/python/osrf
+python_FILES = @srcdir@/src/python/opensrf.py \
+	       @srcdir@/src/python/setup.py \
+	       @srcdir@/src/python/srfsh.py \
+	       @srcdir@/src/python/osrf
 
-java_FILES = src/java/deps.inc \
-	     src/java/deps.sh \
-	     src/java/org
+java_FILES = @srcdir@/src/java/deps.inc \
+	     @srcdir@/src/java/deps.sh \
+	     @srcdir@/src/java/org
 
-libosrf_FILES = src/libopensrf/basic_client.c \
-		src/libopensrf/osrf_big_hash.c \
-		src/libopensrf/osrf_big_list.c \
-		src/libopensrf/osrfConfig.c
+libosrf_FILES = @srcdir@/src/libopensrf/basic_client.c \
+		@srcdir@/src/libopensrf/osrf_big_hash.c \
+		@srcdir@/src/libopensrf/osrf_big_list.c \
+		@srcdir@/src/libopensrf/osrfConfig.c
 
 
-EXTRA_DIST = $(DOC_FILES) $(EXAMPLES_FILES) $(libosrf_FILES) $(strn_compat_FILES) $(python_FILES) $(java_FILES) autogen.sh src/extras src/gateway/fieldmapper-c-xml-out.pl DCO-1.1.txt LICENSE.txt src/perlmods src/javascript
+EXTRA_DIST = $(DOC_FILES) $(EXAMPLES_FILES) $(libosrf_FILES) $(strn_compat_FILES) $(python_FILES) $(java_FILES) @srcdir@/autogen.sh @srcdir@/src/extras @srcdir@/DCO-1.1.txt @srcdir@/LICENSE.txt @srcdir@/src/perlmods @srcdir@/src/javascript
 
 opensrfincludedir = @includedir@/opensrf
 
@@ -119,5 +119,5 @@ javascript-install:
 	make -s -C src javascript-install
 
 install-data-hook:
-	mv @srcdir@/src/gateway/apachetools.h @includedir@/opensrf/apachetools.h
+	cp @srcdir@/src/gateway/apachetools.h @includedir@/opensrf/apachetools.h
 
