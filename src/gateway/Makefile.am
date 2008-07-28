@@ -21,8 +21,8 @@ all-local:
 	$(APXS2) -c $(DEF_LDLIBS) $(options) @srcdir@/osrf_http_translator.c
 
 install-exec-local: 
-	$(APXS2) -i -a @srcdir@/osrf_json_gateway.c
-	$(APXS2) -i -a @srcdir@/osrf_http_translator.c
+	$(APXS2) -i -a @srcdir@/osrf_json_gateway.la
+	$(APXS2) -i -a @srcdir@/osrf_http_translator.la
 
 clean-local:
 	rm -f @srcdir@/osrf_http_translator.la @srcdir@/osrf_http_translator.lo @srcdir@/osrf_http_translator.slo @srcdir@/osrf_json_gateway.la @srcdir@/osrf_json_gateway.lo @srcdir@/osrf_json_gateway.slo
