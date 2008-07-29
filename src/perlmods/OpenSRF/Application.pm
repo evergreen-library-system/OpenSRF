@@ -529,7 +529,7 @@ sub run {
 	if ( !UNIVERSAL::isa($req, 'OpenSRF::AppRequest') ) {
 		$log->debug("Creating a SubRequest object", DEBUG);
 		unshift @params, $req;
-		$req = OpenSRF::AppSubrequest->new;
+		$req = OpenSRF::AppSubrequest->new( session => $req->session );
 	} else {
 		$log->debug("This is a top level request", DEBUG);
 	}
