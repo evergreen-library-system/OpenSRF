@@ -1027,6 +1027,13 @@ sub new {
 
 sub responses { @{$_[0]->{resp}} }
 
+sub session {
+	my $x = shift;
+	my $s = shift;
+	$x->{session} = $s if ($s);
+	return $x->{session};
+}
+
 sub status {}
 
 

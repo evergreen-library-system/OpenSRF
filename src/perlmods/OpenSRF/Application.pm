@@ -54,6 +54,16 @@ sub api_level {
 	return $self->{api_level};
 }
 
+sub session {
+	my $self = shift;
+	my $session = shift;
+
+	if($session) {
+		$self->{session} = $session;
+	}
+	return $self->{session};
+}
+
 sub server_class {
 	my $class = shift;
 	if($class) {
@@ -530,6 +540,8 @@ sub run {
 		$log->debug("Creating a SubRequest object", DEBUG);
 		unshift @params, $req;
 		$req = OpenSRF::AppSubrequest->new;
+		$req->session( $self->session ) if ($self->session);
+
 	} else {
 		$log->debug("This is a top level request", DEBUG);
 	}
@@ -712,7 +724,11 @@ sub make_stream_atomic {
 	my @args = @_;
 
 	(my $m_name = $self->api_name) =~ s/\.atomic$//o;
-	my @results = $self->method_lookup($m_name)->run(@args);
+	my $m = $self->method_lookup($m_name);
+
+	$m->session( $req->session );
+	my @results = $m->run(@args);
+	$m->session('');
 
 	return \@results;
 }
