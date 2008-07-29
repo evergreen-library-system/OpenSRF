@@ -14,13 +14,12 @@
 
 EXTRA_DIST = @srcdir@/apachetools.c @srcdir@/apachetools.h @srcdir@/osrf_json_gateway.c @srcdir@/osrf_http_translator.c
 
-options=-D_LARGEFILE64_SOURCE -Wall -I@abs_top_srcdir@/include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS) -L$(LIBDIR) -L@top_builddir@/src/libopensrf
-
-all-local:
-	$(APXS2) -c $(DEF_LDLIBS) $(options) @srcdir@/osrf_json_gateway.c
-	$(APXS2) -c $(DEF_LDLIBS) $(options) @srcdir@/osrf_http_translator.c
+AM_CFLAGS = -D_LARGEFILE64_SOURCE -Wall -I@abs_top_srcdir@/include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS)
+AM_LDFLAGS = -L$(LIBDIR) -L@top_builddir@/src/libopensrf
 
 install-exec-local: 
+	$(APXS2) -c $(DEF_LDLIBS) $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_json_gateway.c apachetools.c apachetools.h libopensrf.so
+	$(APXS2) -c $(DEF_LDLIBS) $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_http_translator.c apachetools.c apachetools.h libopensrf.so
 	$(APXS2) -i -a @srcdir@/osrf_json_gateway.la
 	$(APXS2) -i -a @srcdir@/osrf_http_translator.la
 
