@@ -45,11 +45,17 @@ GetOptions(
 
 my $pid_file = "$pid_dir/$service.pid" if $pid_dir and $service;
 
+sub haltme {
+    kill('INT', -$$); #kill all in process group
+    exit;
+};
+$SIG{INT} = \&haltme;
+$SIG{TERM} = \&haltme;
+
 # stop a specific service
 sub do_stop {
     if(-e $pid_file) {
         my $pid = `cat $pid_file`;
-        msg("Stopping $service parent process $pid");
         kill('INT', $pid);
         unlink $pid_file;
     } else {
@@ -79,6 +85,7 @@ sub do_start {
                     do_daemon() unless $no_daemon;
                     launch_net_server();
                     launch_listener();
+                    $0 = "OpenSRF controller [$service]";
                     while(my $pid = waitpid(-1, 0)) {
                         $logger->debug("Cleaning up Perl $service process $pid");
                     }
@@ -115,7 +122,7 @@ sub load_settings {
 sub launch_net_server {
     push @OpenSRF::UnixServer::ISA, 'Net::Server::PreFork';
     unless(OpenSRF::Utils::safe_fork()) {
-        $0 = "OpenSRF App ($service)";
+        $0 = "OpenSRF Drone [$service]";
         OpenSRF::UnixServer->new($service)->serve;
         exit;
     }
@@ -138,7 +145,6 @@ sub msg {
 }
 
 sub do_help {
-    # XXX add more comments
     print <<HELP;
 
     Usage: perl $0 --pid_dir /var/run/opensrf --config /etc/opensrf/opensrf_core.xml --service opensrf.settings --action start
