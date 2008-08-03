@@ -33,14 +33,14 @@ OpenSRF.XHRequest = function(osrf_msg, args) {
 OpenSRF.XHRequest.prototype.send = function() {
     var xhr_req = this;
     var xreq = this.xreq
-
+    
     if(this.args.timeout) {
         /* this is a standard blocking (non-multipart) call */
         xreq.open('POST', OSRF_HTTP_TRANSLATOR, false);
 
     } else {
 
-        if( /* XXX browser != mozilla */ false ) {
+        if(!navigator.userAgent.match(/mozilla/i)) {
 
             /* standard asynchronous call */
             xreq.onreadystatechange = function() {
