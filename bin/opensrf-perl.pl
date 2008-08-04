@@ -57,6 +57,7 @@ sub do_stop {
     if(-e $pid_file) {
         my $pid = `cat $pid_file`;
         kill('INT', $pid);
+        waitpid($pid, 0);
         unlink $pid_file;
     } else {
         msg("$service not running");
