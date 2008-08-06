@@ -36,7 +36,7 @@ endif
 
 SUBDIRS = libopensrf c-apps router srfsh jserver gateway $(MAYBE_PY) $(MAYBE_JA)
 
-dist_bin_SCRIPTS = @top_srcdir@/bin/osrf_ctl.sh
+dist_bin_SCRIPTS = @top_srcdir@/bin/osrf_ctl.sh @top_srcdir@/bin/opensrf-perl.pl
 bin_SCRIPTS = @top_srcdir@/bin/osrf_config
 
 dist_sysconf_DATA = @top_srcdir@/examples/opensrf.xml.example @top_srcdir@/examples/opensrf_core.xml.example @top_srcdir@/examples/srfsh.xml.example 
