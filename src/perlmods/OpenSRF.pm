@@ -31,7 +31,7 @@ sub AUTOLOAD {
 	my $type = ref($self) || $self;
 	my $name = $AUTOLOAD;
 	my $otype = ref $self;
-	
+
 	my ($package, $filename, $line) = caller;
 	my ($package1, $filename1, $line1) = caller(1);
 	my ($package2, $filename2, $line2) = caller(2);
