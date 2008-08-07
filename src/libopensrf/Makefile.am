@@ -13,7 +13,7 @@
 
 
 AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing -DOSRF_JSON_ENABLE_XML_UTILS
-AM_LDFLAGS = $(DEF_LDFLAGS)
+AM_LDFLAGS = $(DEF_LDFLAGS) -R $(libdir)
 LDADD = -lxml2 -ldl -lmemcache -lopensrf
 
 OSRF_INC = @top_srcdir@/include/opensrf
