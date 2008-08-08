@@ -17,11 +17,6 @@ lib/EX.pm
 lib/MultiSession.pm
 lib/System.pm
 lib/Transport.pm
-lib/Transport/Jabber.pm
-lib/Transport/Jabber/JabberClient.pm
-lib/Transport/Jabber/JInbound.pm
-lib/Transport/Jabber/JMessageWrapper.pm
-lib/Transport/Jabber/JPeerConnection.pm
 lib/Transport/Listener.pm
 lib/Transport/PeerHandle.pm
 lib/Transport/SlimJabber.pm
