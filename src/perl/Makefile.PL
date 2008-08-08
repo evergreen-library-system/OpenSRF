@@ -19,7 +19,7 @@ requires 'Net::Domain'      => 0;
 requires 'Net::Server'      => 0;
 requires 'Time::HiRes'      => 0;
 requires 'Time::Local'      => 0;
-requires 'UNIVERSAL::require' => 0
+requires 'UNIVERSAL::require' => 0;
 requires 'XML::LibXML'        => 0;
 
 WriteAll;
