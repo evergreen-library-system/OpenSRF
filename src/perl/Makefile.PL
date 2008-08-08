@@ -1,16 +1,15 @@
-use strict;
-use warnings;
-use ExtUtils::MakeMaker;
+use inc::Module::Install;
 
-WriteMakefile(
-    NAME                => 'OpenSRF',
-    AUTHOR              => 'Equinox <foo@esilibrary.com>',
-    VERSION_FROM        => 'lib/OpenSRF.pm',
-    ABSTRACT_FROM       => 'lib/OpenSRF.pm',
-    PL_FILES            => {},
-    PREREQ_PM => {
-        'Test::More' => 0,
-    },
-    dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean               => { FILES => 'OpenSRF-*' },
-);
+# Define metadata
+name           'OpenSRF';
+all_from       'lib/OpenSRF.pm';
+abstract       '';
+
+# Specific dependencies
+requires       'File::Spec'  => '0.80';
+test_requires  'Test::More'  => '0.42';
+recommends     'Text::CSV_XS'=> '0.50';
+no_index       'directory'   => 'demos';
+install_script 'myscript';
+
+WriteAll;
