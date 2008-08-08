@@ -5,7 +5,6 @@ name           'OpenSRF';
 all_from       'lib/OpenSRF.pm';
 
 # Specific dependencies
-requires 'libnet'           => 0;
 requires 'Cache::Memcached' => 0;
 requires 'Data::Dumper'     => 0;
 requires 'DateTime'         => 0;
@@ -16,6 +15,7 @@ requires 'Error'            => 0;
 requires 'FreezeThaw'       => 0;
 requires 'IO'               => 0;
 requires 'JSON'             => 0;
+requires 'Net::Domain'      => 0;
 requires 'Net::Server'      => 0;
 requires 'Time::HiRes'      => 0;
 requires 'Time::Local'      => 0;
