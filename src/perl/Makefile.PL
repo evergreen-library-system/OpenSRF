@@ -3,13 +3,22 @@ use inc::Module::Install;
 # Define metadata
 name           'OpenSRF';
 all_from       'lib/OpenSRF.pm';
-abstract       '';
 
 # Specific dependencies
-requires       'File::Spec'  => '0.80';
-test_requires  'Test::More'  => '0.42';
-recommends     'Text::CSV_XS'=> '0.50';
-no_index       'directory'   => 'demos';
-install_script 'myscript';
+requires       'libnet'           => 0;
+requires       'Cache::Memcached' => 0;
+requires       'Data::Dumper'     => 0;
+requires       'DateTime'         => 0;
+requires       'DBI'              => 0;
+requires       'Digest::MD5'      => 0;
+requires       'Errno'            => 0;
+requires       'Error'            => 0;
+requires       'FreezeThaw'       => 0;
+requires       'IO'               => 0;
+requires       'JSON'             => 0;
+requires       'Net::Server'      => 0;
+requires       'Time::HiRes'      => 0;
+requires       'Time::Local'      => 0;
+requires       'XML::LibXML'      => 0;
 
 WriteAll;
