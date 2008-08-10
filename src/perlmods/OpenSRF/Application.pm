@@ -332,7 +332,7 @@ sub normalize_whitespace {
 sub parse_string_signature {
 	my $string = shift;
 	return [] unless $string;
-	my @chunks = split(/\@/sog, $string);
+	my @chunks = split(/\@/smo, $string);
 
 	my @params;
 	my $ret;
