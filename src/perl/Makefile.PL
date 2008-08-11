@@ -3,6 +3,7 @@ use inc::Module::Install;
 # Define metadata
 name           'OpenSRF';
 all_from       'lib/OpenSRF.pm';
+license        'perl';
 
 # Specific dependencies
 requires 'Cache::Memcached' => 0;
