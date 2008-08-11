@@ -36,6 +36,12 @@ sub signature {
 	return $self->{signature};
 }
 
+sub strict {
+    my $self = shift; 
+    return 0 unless ref($self);
+    return $self->{strict};
+}
+
 sub argc {
 	my $self = shift;
 	return 0 unless ref($self);
@@ -148,7 +154,7 @@ sub handler {
 			my $resp;
 			try {
 				# un-if(0) this block to enable param checking based on signature and argc
-				if (0) {
+				if ($coderef->strict) {
 					if (@args < $coderef->argc) {
 						die	"Not enough params passed to ".
 							$coderef->api_name." : requires ". $coderef->argc
@@ -327,7 +333,7 @@ sub normalize_whitespace {
 sub parse_string_signature {
 	my $string = shift;
 	return [] unless $string;
-	my @chunks = split(/\@/so, $string);
+	my @chunks = split(/\@/smo, $string);
 
 	my @params;
 	my $ret;
