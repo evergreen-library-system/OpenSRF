@@ -17,7 +17,6 @@
 export OPENSRF	= opensrf
 export BINDIR	= @bindir@
 export LIBDIR	= @libdir@
-perldir	= $(LIBDIR)/perl5
 jsdir = $(LIBDIR)/javascript
 export OSRF_JAVA_DEPSDIR = @OSRF_JAVA_DEPSDIR@
 etcdir = $(ETCDIR)
@@ -47,7 +46,7 @@ install-exec-local:
 	mkdir -p $(LOG)
 	mkdir -p $(SOCK)
 	mkdir -p $(jsdir)
-	mkdir -p $(perldir)
+	make install-perl
 
 install-exec-hook:
 	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/opensrf.xml.example'
@@ -60,12 +59,24 @@ install-exec-hook:
 	sed -i 's|LIBDIR|$(LIBDIR)|g' '@abs_top_srcdir@/examples/multisession-test.pl'
 	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '@abs_top_srcdir@/doc/dokuwiki-doc-stubber.pl'
 	cp -r @srcdir@/javascript/* $(jsdir)/
-	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '@srcdir@/perlmods/OpenSRF/Utils/Config.pm'
-	cp -r @srcdir@/perlmods/* $(perldir)/
 
+
+install-perl:
+	cd ./perl && perl Makefile.PL || make -s install-perl-fail
+	make -C perl
+	make -C perl test || make -s install-perl-fail
+	make -C perl install
+
+install-perl-fail:
+	echo
+	echo ">>> Installation of Perl modules has failed. The most likely"
+	echo ">>> possibility is that a dependency is not pre-installed"
+	echo ">>> or that a test has failed."
+	echo ">>> See the messages above this one for more information."
+	echo
+	exit 1
 
 uninstall-hook:
 	rm @includedir@/opensrf/apachetools.h
 	rm -R $(jsdir)
-	rm -R $(perldir)
 
