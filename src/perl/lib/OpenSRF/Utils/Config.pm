@@ -112,7 +112,6 @@ OpenSRF::Utils::Config
 
 =head1 SYNOPSIS
 
- 
   use OpenSRF::Utils::Config;
 
   my $config_obj = OpenSRF::Utils::Config->load( config_file   => '/config/file.cnf' );
@@ -125,23 +124,24 @@ OpenSRF::Utils::Config
   print FH $config_obj;
   close FH;
 
- 
-
 =head1 DESCRIPTION
 
- 
-This module is mainly used by other OpenSRF modules to load an OpenSRF configuration file.
-OpenSRF configuration files are XML files that contain a C<< <config> >> root element and an C<< <opensrf> >>
-child element (in XPath notation, C</config/opensrf/>). Each child element is converted into a
-hash key=>value pair. Elements that contain other XML elements are pushed into arrays and added
-as an array reference to the hash. Scalar values have whitespace trimmed from the left and right
-sides.
+This module is mainly used by other OpenSRF modules to load an OpenSRF
+configuration file.  OpenSRF configuration files are XML files that
+contain a C<< <config> >> root element and an C<< <opensrf> >> child
+element (in XPath notation, C</config/opensrf/>). Each child element
+is converted into a hash key=>value pair. Elements that contain other
+XML elements are pushed into arrays and added as an array reference to
+the hash. Scalar values have whitespace trimmed from the left and
+right sides.
 
-Child elements of C<< <config> >> other than C<< <opensrf> >> are currently ignored by this module.
+Child elements of C<< <config> >> other than C<< <opensrf> >> are
+currently ignored by this module.
 
 =head1 EXAMPLE
- 
-Given an OpenSRF configuration file named F<opensrf_core.xml> with the following content:
+
+Given an OpenSRF configuration file named F<opensrf_core.xml> with the
+following content:
 
   <?xml version='1.0'?>
   <config>
@@ -153,32 +153,38 @@ Given an OpenSRF configuration file named F<opensrf_core.xml> with the following
 	<router>otherhost</router>
       </routers>
 
-      <logfile>LOCALSTATEDIR/log/osrfsys.log</logfile>
+      <logfile>/var/log/osrfsys.log</logfile>
     </opensrf>
   </config>
 
-... calling C<< OpenSRF::Utils::Config->load(config_file => 'opensrf_core.xml') >> will create a hash
-with the following structure:
+... calling C<< OpenSRF::Utils::Config->load(config_file =>
+'opensrf_core.xml') >> will create a hash with the following
+structure:
 
   {
     router_name => 'router',
     routers => ['localhost', 'otherhost'],
-    logfile => 'LOCALSTATEDIR/log/osrfsys.log'
+    logfile => '/var/log/osrfsys.log'
   }
 
-You can retrieve any of these values by name from the bootstrap section of C<$config_obj>; for example:
+You can retrieve any of these values by name from the bootstrap
+section of C<$config_obj>; for example:
 
   $config_obj->bootstrap->router_name
 
 =head1 NOTES
 
-For compatibility with a previous version of OpenSRF configuration files, the F</config/opensrf/> section
-has a hardcoded name of B<bootstrap>. However, future iterations of this module may extend the ability
-of the module to parse the entire OpenSRF configuration file and provide sections named after the sibling
-elements of C</config/opensrf>.
+For compatibility with a previous version of OpenSRF configuration
+files, the F</config/opensrf/> section has a hardcoded name of
+B<bootstrap>. However, future iterations of this module may extend the
+ability of the module to parse the entire OpenSRF configuration file
+and provide sections named after the sibling elements of
+C</config/opensrf>.
 
-Hashrefs of sections can be returned by calling a method of the object of the same name as the section.
-They can be set by passing a hashref back to the same method.  Sections will B<NOT> be autovivicated, though.
+Hashrefs of sections can be returned by calling a method of the object
+of the same name as the section.  They can be set by passing a hashref
+back to the same method.  Sections will B<NOT> be autovivicated,
+though.
 
 
 =head1 METHODS
@@ -192,10 +198,10 @@ $VERSION = do { my @r=(q$Revision$=~/\d+/g); sprintf "%d."."%02d"x$#r,@r };
 
 =head2 OpenSRF::Utils::Config->load( config_file => '/some/config/file.cnf' )
 
-Returns a OpenSRF::Utils::Config object representing the config file that was loaded.
-The most recently loaded config file (hopefully the only one per app)
-is stored at $OpenSRF::Utils::ConfigCache. Use OpenSRF::Utils::Config::current() to get at it.
-
+Returns a OpenSRF::Utils::Config object representing the config file
+that was loaded.  The most recently loaded config file (hopefully the
+only one per app) is stored at $OpenSRF::Utils::ConfigCache. Use
+OpenSRF::Utils::Config::current() to get at it.
 
 =cut
 
