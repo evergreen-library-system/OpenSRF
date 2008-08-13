@@ -70,7 +70,7 @@ libosrf_FILES = @srcdir@/src/libopensrf/basic_client.c \
 		@srcdir@/src/libopensrf/osrfConfig.c
 
 
-EXTRA_DIST = $(DOC_FILES) $(EXAMPLES_FILES) $(libosrf_FILES) $(strn_compat_FILES) $(python_FILES) $(java_FILES) @srcdir@/autogen.sh @srcdir@/src/extras @srcdir@/DCO-1.1.txt @srcdir@/LICENSE.txt @srcdir@/src/perlmods @srcdir@/src/javascript
+EXTRA_DIST = $(DOC_FILES) $(EXAMPLES_FILES) $(libosrf_FILES) $(strn_compat_FILES) $(python_FILES) $(java_FILES) @srcdir@/autogen.sh @srcdir@/src/extras @srcdir@/DCO-1.1.txt @srcdir@/LICENSE.txt @srcdir@/src/perl @srcdir@/src/javascript
 
 opensrfincludedir = @includedir@/opensrf
 
