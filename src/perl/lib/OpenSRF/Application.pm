@@ -36,16 +36,16 @@ sub signature {
 	return $self->{signature};
 }
 
+sub strict {
+    my $self = shift; 
+    return 0 unless ref($self);
+    return $self->{strict};
+}
+
 sub argc {
 	my $self = shift;
 	return 0 unless ref($self);
 	return $self->{argc};
-}
-
-sub strict {
-	my $self = shift;
-	return 0 unless ref($self);
-	return $self->{strict};
 }
 
 sub api_name {
@@ -153,6 +153,7 @@ sub handler {
 
 			my $resp;
 			try {
+				# un-if(0) this block to enable param checking based on signature and argc
 				if ($coderef->strict) {
 					if (@args < $coderef->argc) {
 						die	"Not enough params passed to ".

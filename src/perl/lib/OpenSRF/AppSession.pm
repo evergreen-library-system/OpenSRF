@@ -317,18 +317,17 @@ sub connect {
 	# just using a default for now XXX
 
 	my $time_remaining = 5;
-	
-=head blah
-	my $client = OpenSRF::Utils::SettingsClient->new();
-	my $trans = $client->config_value("client_connection","transport_host");
 
-	if(!ref($trans)) {
-		$time_remaining = $trans->{connect_timeout};
-	} else {
-		# XXX for now, just use the first
-		$time_remaining = $trans->[0]->{connect_timeout};
-	}
-=cut
+
+#	my $client = OpenSRF::Utils::SettingsClient->new();
+#	my $trans = $client->config_value("client_connection","transport_host");
+#
+#	if(!ref($trans)) {
+#		$time_remaining = $trans->{connect_timeout};
+#	} else {
+#		# XXX for now, just use the first
+#		$time_remaining = $trans->[0]->{connect_timeout};
+#	}
 
 	while ( $self->state != CONNECTED  and $time_remaining > 0 ) {
 		my $starttime = time;

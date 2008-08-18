@@ -18,6 +18,10 @@ AM_CFLAGS = -D_LARGEFILE64_SOURCE -Wall -I@abs_top_srcdir@/include/ -I$(LIBXML2_
 AM_LDFLAGS = -L$(LIBDIR) -L@top_builddir@/src/libopensrf
 
 install-exec-local: 
+	if [ ! "$$(grep mod_placeholder `apxs2 -q SYSCONFDIR`/httpd.conf)" ]; \
+		then echo -e "#\n#LoadModule mod_placeholder /usr/lib/apache2/modules/mod_placeholder.so" \
+		>> `apxs2 -q SYSCONFDIR`/httpd.conf; \
+	fi
 	$(APXS2) -c $(DEF_LDLIBS) $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_json_gateway.c apachetools.c apachetools.h libopensrf.so
 	$(APXS2) -c $(DEF_LDLIBS) $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_http_translator.c apachetools.c apachetools.h libopensrf.so
 	$(APXS2) -i -a @srcdir@/osrf_json_gateway.la

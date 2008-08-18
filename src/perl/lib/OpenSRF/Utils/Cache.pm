@@ -10,7 +10,11 @@ use OpenSRF::Utils::JSON;
 
 my $log = 'OpenSRF::Utils::Logger';
 
-=head OpenSRF::Utils::Cache
+=head1 NAME
+
+OpenSRF::Utils::Cache
+
+=head1 SYNOPSIS
 
 This class just subclasses Cache::Memcached.
 see Cache::Memcached for more options.
@@ -41,18 +45,24 @@ my $persist_slot_get_expire;
 my $persist_slot_find;
 
 my $max_persist_time;
-my $persist_add_slot_name			= "opensrf.persist.slot.create_expirable";
-my $persist_push_stack_name		= "opensrf.persist.stack.push";
-my $persist_peek_stack_name		= "opensrf.persist.stack.peek";
-my $persist_destroy_slot_name		= "opensrf.persist.slot.destroy";
+my $persist_add_slot_name	 = "opensrf.persist.slot.create_expirable";
+my $persist_push_stack_name	 = "opensrf.persist.stack.push";
+my $persist_peek_stack_name	 = "opensrf.persist.stack.peek";
+my $persist_destroy_slot_name	 = "opensrf.persist.slot.destroy";
 my $persist_slot_get_expire_name = "opensrf.persist.slot.get_expire";
-my $persist_slot_find_name			= "opensrf.persist.slot.find";;
+my $persist_slot_find_name	 = "opensrf.persist.slot.find";;
 
 # ------------------------------------------------------
 
+=head1 METHODS
 
-# return a named cache if it exists
-sub current { 
+=head2 current
+
+Return a named cache if it exists
+
+=cut
+
+sub current {
 	my ( $class, $c_type )  = @_;
 	return undef unless $c_type;
 	return $caches{$c_type} if exists $caches{$c_type};
@@ -60,23 +70,25 @@ sub current {
 }
 
 
-# create a new named memcache object.
+=head2 new
+
+Create a new named memcache object.
+
+=cut
+
 sub new {
 
 	my( $class, $cache_type, $persist ) = @_;
 	$cache_type ||= 'global';
 	$class = ref( $class ) || $class;
 
-	return $caches{$cache_type} 
-		if (defined $caches{$cache_type});
+	return $caches{$cache_type} if (defined $caches{$cache_type});
 
 	my $conf = OpenSRF::Utils::SettingsClient->new;
 	my $servers = $conf->config_value( cache => $cache_type => servers => 'server' );
 	$max_persist_time = $conf->config_value( cache => $cache_type => 'max_cache_time' );
 
-	if(!ref($servers)){
-		$servers = [ $servers ];
-	}
+	$servers = [ $servers ] if(!ref($servers))
 
 	my $self = {};
 	$self->{persist} = $persist || 0;
@@ -91,6 +103,9 @@ sub new {
 }
 
 
+=head2 put_cache
+
+=cut
 
 sub put_cache {
 	my($self, $key, $value, $expiretime ) = @_;
@@ -133,6 +148,11 @@ sub put_cache {
 	return $key;
 }
 
+
+=head2 delete_cache
+
+=cut
+
 sub delete_cache {
 	my( $self, $key ) = @_;
 	if(!$key) { return undef; }
@@ -143,6 +163,11 @@ sub delete_cache {
 	}
 	return $key; 
 }
+
+
+=head2 get_cache
+
+=cut
 
 sub get_cache {
 	my($self, $key ) = @_;
@@ -163,13 +188,15 @@ sub get_cache {
 				$self->{memcache}->set( $key, $val, $max_persist_time);
 			}
 			return OpenSRF::Utils::JSON->JSON2perl($val);
-		} 
+		}
 	}
 	return undef;
-} 
+}
 
 
+=head2 _load_methods
 
+=cut
 
 sub _load_methods {
 

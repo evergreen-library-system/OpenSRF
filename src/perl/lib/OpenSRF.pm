@@ -1,37 +1,40 @@
 package OpenSRF;
+
 use strict;
+use vars qw/$AUTOLOAD/;
+
 use Error;
 require UNIVERSAL::require;
-use vars qw/$VERSION $AUTOLOAD/;
-$VERSION = do { my @r=(q$Revision$=~/\d+/g); sprintf "%d."."%02d"x$#r,@r };
 
-=head1 OpenSRF
+# $Revision$
+
+=head1 NAME
+
+OpenSRF - Top level class for OpenSRF perl modules.
+
+=head1 VERSION
+
+Version 0.9.1
+
+=cut
+
+our $VERSION = 0.9.1;
+
+=head1 METHODS
+
+=head2 AUTOLOAD
+
+Traps methods calls for methods that have not been defined so they
+don't propogate up the class hierarchy.
 
 =cut
 
-=head2 Overview
-
- Top level class for OpenSRF perl modules.
-
-=cut
-
-# Exception base classes
-#use Exception::Class
-#	( OpenSRFException => { fields => [ 'errno' ] });
-#push @Exception::Class::ISA, 'Error';
-
-=head3 AUTOLOAD()
-
- Traps methods calls for methods that have not been defined so they
- don't propogate up the class hierarchy.
-
-=cut
 sub AUTOLOAD {
 	my $self = shift;
 	my $type = ref($self) || $self;
 	my $name = $AUTOLOAD;
 	my $otype = ref $self;
-	
+
 	my ($package, $filename, $line) = caller;
 	my ($package1, $filename1, $line1) = caller(1);
 	my ($package2, $filename2, $line2) = caller(2);
@@ -56,18 +59,25 @@ sub AUTOLOAD {
 
 
 
-=head3 alert_abstract()
+=head2 alert_abstract
 
- This method is called by abstract methods to ensure that
- the process dies when an undefined abstract method is called
+This method is called by abstract methods to ensure that the process
+dies when an undefined abstract method is called.
 
 =cut
+
 sub alert_abstract() {
 	my $c = shift;
 	my $class = ref( $c ) || $c;
 	my ($file, $line, $method) = (caller(1))[1..3];
 	die " * Call to abstract method $method at $file, line $line";
 }
+
+=head2 class
+
+Returns the scalar value of its caller.
+
+=cut
 
 sub class { return scalar(caller); }
 
