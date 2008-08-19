@@ -88,7 +88,7 @@ sub new {
 	my $servers = $conf->config_value( cache => $cache_type => servers => 'server' );
 	$max_persist_time = $conf->config_value( cache => $cache_type => 'max_cache_time' );
 
-	$servers = [ $servers ] if(!ref($servers))
+	$servers = [ $servers ] if(!ref($servers));
 
 	my $self = {};
 	$self->{persist} = $persist || 0;
