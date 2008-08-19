@@ -21,6 +21,8 @@ requires 'Net::Server'      => 0;
 requires 'Time::HiRes'      => 0;
 requires 'Time::Local'      => 0;
 requires 'UNIVERSAL::require' => 0;
+requires 'Unix::Syslog'       => 0;
 requires 'XML::LibXML'        => 0;
+requires 'DateTime::Format::ISO8601' => 0;
 
 WriteAll;
