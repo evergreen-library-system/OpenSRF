@@ -737,6 +737,7 @@ sub recv {
 			$avail = @{ $self->{recv_queue} };
 	}
 
+    $self->timed_out(1) if ( $self->{remaining_recv_timeout} <= 0 );
 
 	my @list;
 	while ( my $msg = shift @{ $self->{recv_queue} } ) {
@@ -749,6 +750,13 @@ sub recv {
 	
 	return $list[0] if (!wantarray);
 	return @list;
+}
+
+sub timed_out {
+    my $self = shift;
+    my $out = shift;
+    my $self->{timed_out} = $out if (defined $out);
+    return $self->{timed_out};
 }
 
 sub push_resend {
