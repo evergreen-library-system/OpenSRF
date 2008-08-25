@@ -755,7 +755,7 @@ sub recv {
 sub timed_out {
     my $self = shift;
     my $out = shift;
-    my $self->{timed_out} = $out if (defined $out);
+    $self->{timed_out} = $out if (defined $out);
     return $self->{timed_out};
 }
 
