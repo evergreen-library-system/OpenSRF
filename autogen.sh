@@ -1,7 +1,13 @@
 #!/bin/sh
 # autogen.sh - generates configure using the autotools
 
-: ${LIBTOOLIZE=libtoolize}
+OS=`uname`
+if [ "$OS" == "Darwin" ]; then
+    : ${LIBTOOLIZE=glibtoolize}
+elif [ "$OS" == "Linux" ]; then
+    : ${LIBTOOLIZE=libtoolize}
+fi
+
 : ${ACLOCAL=aclocal}
 : ${AUTOHEADER=autoheader}
 : ${AUTOMAKE=automake}
@@ -15,7 +21,7 @@ ${AUTOMAKE} --add-missing
 
 ${AUTOCONF}
 
-SILENT=`which libtoolize aclocal autoheader automake autoconf`
+SILENT=`which ${LIBTOOLIZE} ${ACLOCAL} ${AUTOHEADER} ${AUTOMAKE} ${AUTOCONF}`
 case "$?" in
     0 )
         echo All build tools found.

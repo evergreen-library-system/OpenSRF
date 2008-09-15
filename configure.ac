@@ -202,7 +202,7 @@ fi
 #-----------------------------
 
 AC_CHECK_LIB([dl], [dlerror], [],AC_MSG_ERROR(***OpenSRF requires libdl))
-AC_CHECK_LIB([memcache], [mc_req_free], [], AC_MSG_ERROR(***OpenSRF requires memcache development headers))
+AC_SEARCH_LIBS([mc_req_free], [memcache], [], AC_MSG_ERROR(***OpenSRF requires memcache development headers))
 AC_CHECK_LIB([ncurses], [initscr], [], AC_MSG_ERROR(***OpenSRF requires ncurses development headers))
 AC_CHECK_LIB([readline], [readline], [], AC_MSG_ERROR(***OpenSRF requires readline development headers))
 AC_CHECK_LIB([xml2], [xmlAddID], [], AC_MSG_ERROR(***OpenSRF requires xml2 development headers))

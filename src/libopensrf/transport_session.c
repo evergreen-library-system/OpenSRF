@@ -1,5 +1,9 @@
 #include <opensrf/transport_session.h>
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 256
+#endif
+
 static char* get_xml_attr( const xmlChar** atts, const char* attr_name );
 
 // ---------------------------------------------------------------------------------

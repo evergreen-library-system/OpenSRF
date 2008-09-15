@@ -3,6 +3,10 @@
 #include <opensrf/osrf_prefork.h>
 #include <signal.h>
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 256
+#endif
+
 static void report_child_status( pid_t pid, int status );
 struct child_node;
 typedef struct child_node ChildNode;
