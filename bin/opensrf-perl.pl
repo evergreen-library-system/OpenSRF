@@ -25,25 +25,25 @@ use OpenSRF::Transport::Listener;
 use OpenSRF::Utils;
 use OpenSRF::Utils::Config;
 
-my $action = undef;
-my $service = undef;
-my $config = undef;
-my $pid_dir = '/tmp';
-my $no_daemon = 0;
-my $help = 0;
+my $opt_action = undef;
+my $opt_service = undef;
+my $opt_config = undef;
+my $opt_pid_dir = '/tmp';
+my $opt_no_daemon = 0;
+my $opt_help = 0;
 my $sclient;
 my $hostname = hostfqdn();
+my @hosted_services;
 
 GetOptions(
-    'action=s' => \$action,
-    'service=s' => \$service,
-    'config=s' => \$config,
-    'pid_dir=s' => \$pid_dir,
-    'no_daemon' => \$no_daemon,
-    'help' => \$help,
+    'action=s' => \$opt_action,
+    'service=s' => \$opt_service,
+    'config=s' => \$opt_config,
+    'pid_dir=s' => \$opt_pid_dir,
+    'no_daemon' => \$opt_no_daemon,
+    'help' => \$opt_help,
 );
 
-my $pid_file = "$pid_dir/$service.pid" if $pid_dir and $service;
 
 sub haltme {
     kill('INT', -$$); #kill all in process group
@@ -52,8 +52,15 @@ sub haltme {
 $SIG{INT} = \&haltme;
 $SIG{TERM} = \&haltme;
 
+sub get_pid_file {
+    my $service = shift;
+    return "$opt_pid_dir/$service.pid";
+}
+
 # stop a specific service
 sub do_stop {
+    my $service = shift;
+    my $pid_file = get_pid_file($service);
     if(-e $pid_file) {
         my $pid = `cat $pid_file`;
         kill('INT', $pid);
@@ -64,42 +71,67 @@ sub do_stop {
     }
 }
 
-# start a specific service
-sub do_start {
-
-    OpenSRF::System->bootstrap_client(config_file => $config);
-
+sub do_init {
+    OpenSRF::System->bootstrap_client(config_file => $opt_config);
     die "Unable to bootstrap client for requests\n"
         unless OpenSRF::Transport::PeerHandle->retrieve;
 
-    load_settings() if $service eq 'opensrf.settings';
+    load_settings(); # load the settings config if we can
 
     my $sclient = OpenSRF::Utils::SettingsClient->new;
     my $apps = $sclient->config_value("activeapps", "appname");
+
+    # disconnect the top-level network handle
     OpenSRF::Transport::PeerHandle->retrieve->disconnect;
 
     if($apps) {
         $apps = [$apps] unless ref $apps;
         for my $app (@$apps) {
             if($app eq $service) {
-                if($sclient->config_value('apps', $app, 'language') =~ /perl/i) {
-                    do_daemon() unless $no_daemon;
-                    launch_net_server();
-                    launch_listener();
-                    $0 = "OpenSRF controller [$service]";
-                    while(my $pid = waitpid(-1, 0)) {
-                        $logger->debug("Cleaning up Perl $service process $pid");
-                    }
-                }
+                push(@hosted_services, $app) 
+                    if $sclient->config_value('apps', $app, 'language') =~ /perl/i);
             }
+        }
+    }
+}
+
+# start a specific service
+sub do_start {
+    my $service = shift;
+    load_settings() if $service eq 'opensrf.settings';
+
+    my $sclient = OpenSRF::Utils::SettingsClient->new;
+    my $apps = $sclient->config_value("activeapps", "appname");
+    OpenSRF::Transport::PeerHandle->retrieve->disconnect;
+
+    if(grep { $_ eq $service } @hosted_services) {
+        do_daemon($service) unless $opt_no_daemon;
+        launch_net_server($service);
+        launch_listener($service);
+        $0 = "OpenSRF controller [$service]";
+        while(my $pid = waitpid(-1, 0)) {
+            $logger->debug("Cleaning up Perl $service process $pid");
         }
     }
 
     msg("$service is not configured to run on $hostname");
 }
 
+sub do_start_all {
+    do_start('opensrf.settings') if grep {$_ eq 'opensrf.settings'} @hosted_services);
+    for my $service (@hosted_services) {
+        do_start($service) unless $service eq 'opensrf.settings';
+    }
+}
+
+sub do_stop_all {
+    do_stop($_) for @hosted_services;
+}
+
 # daemonize us
 sub do_daemon {
+    my $service = shift;
+    my $pid_file = get_pid_file($service);
     exit if OpenSRF::Utils::safe_fork();
     chdir('/');
     setsid();
@@ -113,6 +145,7 @@ sub do_daemon {
 sub load_settings {
     my $conf = OpenSRF::Utils::Config->current;
     my $cfile = $conf->bootstrap->settings_config;
+    return unless $cfile;
     my $parser = OpenSRF::Utils::SettingsParser->new();
     $parser->initialize( $cfile );
     $OpenSRF::Utils::SettingsClient::host_config =
@@ -121,6 +154,7 @@ sub load_settings {
 
 # starts up the unix::server master process
 sub launch_net_server {
+    my $service = shift;
     push @OpenSRF::UnixServer::ISA, 'Net::Server::PreFork';
     unless(OpenSRF::Utils::safe_fork()) {
         $0 = "OpenSRF Drone [$service]";
@@ -132,6 +166,7 @@ sub launch_net_server {
 
 # starts up the inbound listener process
 sub launch_listener {
+    my $service = shift;
     unless(OpenSRF::Utils::safe_fork()) {
         $0 = "OpenSRF listener [$service]";
         OpenSRF::Transport::Listener->new($service)->initialize->listen;
@@ -172,9 +207,12 @@ exit;
 }
 
 
-do_help() if $help or not $action;
-do_start() if $action eq 'start';
-do_stop() if $action eq 'stop';
-do_stop() and do_start() if $action eq 'restart';
+do_help() if $opt_help or not $opt_action;
+do_init() and do_start($opt_service) if $opt_action eq 'start';
+do_stop($opt_service) if $opt_action eq 'stop';
+do_init() and do_stop($opt_service) and do_start($opt_service) if $opt_action eq 'restart';
+do_init() and do_start_all() if $opt_action eq 'start_all';
+do_stop_all() if $opt_action eq 'stop_all';
+do_init() and do_stop_all() and do_start_all() if $opt_action eq 'restart_all';
 
 
