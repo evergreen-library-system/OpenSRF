@@ -10,15 +10,18 @@
 #include <opensrf/osrf_cache.h>
 
 #define MODULE_NAME "osrf_http_translator_module"
-#define TRANSLATOR_CONFIG_FILE "OSRFTranslatorConfig"
-#define TRANSLATOR_CONFIG_CTX "OSRFTranslatorConfigContext"
-#define TRANSLATOR_CACHE_SERVER "OSRFTranslatorCacheServer"
+#define OSRF_TRANSLATOR_CONFIG_FILE "OSRFTranslatorConfig"
+#define OSRF_TRANSLATOR_CONFIG_CTX "OSRFTranslatorConfigContext"
+#define OSRF_TRANSLATOR_CACHE_SERVER "OSRFTranslatorCacheServer"
+
 #define DEFAULT_TRANSLATOR_CONFIG_CTX "gateway"
 #define DEFAULT_TRANSLATOR_CONFIG_FILE "/openils/conf/opensrf_core.xml"
 #define DEFAULT_TRANSLATOR_TIMEOUT 1200
+#define DEFAULT_TRANSLATOR_CACHE_SERVERS "127.0.0.1:11211"
 
 #define MULTIPART_CONTENT_TYPE "multipart/x-mixed-replace;boundary=\"%s\""
 #define JSON_CONTENT_TYPE "text/plain"
+#define MAX_MSGS_PER_PACKET 256
 #define CACHE_TIME 300
 
 #define OSRF_HTTP_HEADER_TO "X-OpenSRF-to"
@@ -28,10 +31,11 @@
 #define OSRF_HTTP_HEADER_TIMEOUT "X-OpenSRF-timeout"
 #define OSRF_HTTP_HEADER_SERVICE "X-OpenSRF-service"
 #define OSRF_HTTP_HEADER_MULTIPART "X-OpenSRF-multipart"
-#define MAX_MSGS_PER_PACKET 256
 
 char* configFile = DEFAULT_TRANSLATOR_CONFIG_FILE;
 char* configCtx = DEFAULT_TRANSLATOR_CONFIG_CTX;
+char* cacheServers = DEFAULT_TRANSLATOR_CACHE_SERVERS;
+
 char* routerName = NULL;
 char* domainName = NULL;
 int osrfConnected = 0;
@@ -64,13 +68,41 @@ typedef struct {
     int localXid;
 } osrfHttpTranslator;
 
+
+static const char* osrfHttpTranslatorGetConfigFile(cmd_parms *parms, void *config, const char *arg) {
+    configFile = (char*) arg;
+	return NULL;
+}
+static const char* osrfHttpTranslatorGetConfigFileCtx(cmd_parms *parms, void *config, const char *arg) {
+    configCtx = (char*) arg;
+	return NULL;
+}
+static const char* osrfHttpTranslatorGetCacheServer(cmd_parms *parms, void *config, const char *arg) {
+    cacheServers = (char*) arg;
+	return NULL;
+}
+
+/** set up the configuratoin handlers */
+static const command_rec osrf_json_gateway_cmds[] = {
+	AP_INIT_TAKE1( OSRF_TRANSLATOR_CONFIG_FILE, osrfHttpTranslatorGetConfigFile,
+			NULL, RSRC_CONF, "osrf translator config file"),
+	AP_INIT_TAKE1( OSRF_TRANSLATOR_CONFIG_CTX, osrfHttpTranslatorGetConfigFileCtx,
+			NULL, RSRC_CONF, "osrf translator config file context"),
+	AP_INIT_TAKE1( OSRF_TRANSLATOR_CACHE_SERVER, osrfHttpTranslatorGetCacheServer,
+			NULL, RSRC_CONF, "osrf translator cache server"),
+    {NULL}
+};
+
+
+// there can only be one, so use a global static one
+static osrfHttpTranslator globalTranslator;
+
 /*
  * Constructs a new translator object based on the current apache 
  * request_rec.  Reads the request body and headers.
  */
 static osrfHttpTranslator* osrfNewHttpTranslator(request_rec* apreq) {
-    osrfHttpTranslator* trans;
-    OSRF_MALLOC(trans, sizeof(osrfHttpTranslator));
+    osrfHttpTranslator* trans = &globalTranslator;
     trans->apreq = apreq;
     trans->complete = 0;
     trans->connectOnly = 0;
@@ -121,7 +153,6 @@ static void osrfHttpTranslatorFree(osrfHttpTranslator* trans) {
     if(trans->delim)
         free(trans->delim);
     osrfListFree(trans->messages);
-    free(trans);
 }
 
 static void osrfHttpTranslatorDebug(osrfHttpTranslator* trans) {
@@ -403,11 +434,8 @@ static void childInit(apr_pool_t *p, server_rec *s) {
 
     routerName = osrfConfigGetValue(NULL, "/router_name");
     domainName = osrfConfigGetValue(NULL, "/domain");
-    // ---------------------
-    // XXX initialize the cache from the Apache settings
-    const char* servers[] = {"127.0.0.1:11211"};
+    const char* servers[] = {cacheServers};
     osrfCacheInit(servers, 1, 86400);
-    // ---------------------
 	osrfConnected = 1;
 
     // at pool destroy time (= child exit time), cleanup
