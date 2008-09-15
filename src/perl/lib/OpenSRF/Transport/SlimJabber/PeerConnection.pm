@@ -57,7 +57,7 @@ sub new {
 
 	if( $app eq "client" ) { $resource = "client_at_$h"; }
 
-	OpenSRF::EX::Config->throw( "JPeer could not load all necesarry values from config" )
+	OpenSRF::EX::Config->throw( "JPeer could not load all necessary values from config" )
 		unless ( $username and $password and $resource and $host and $port );
 
 	OpenSRF::Utils::Logger->transport( "Built Peer with", INTERNAL );
