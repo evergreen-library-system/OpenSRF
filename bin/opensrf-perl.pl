@@ -87,10 +87,8 @@ sub do_init {
     if($apps) {
         $apps = [$apps] unless ref $apps;
         for my $app (@$apps) {
-            if($app eq $service) {
-                push(@hosted_services, $app) 
-                    if $sclient->config_value('apps', $app, 'language') =~ /perl/i);
-            }
+            push(@hosted_services, $app) 
+                if $sclient->config_value('apps', $app, 'language') =~ /perl/i;
         }
     }
 }
@@ -118,7 +116,7 @@ sub do_start {
 }
 
 sub do_start_all {
-    do_start('opensrf.settings') if grep {$_ eq 'opensrf.settings'} @hosted_services);
+    do_start('opensrf.settings') if grep {$_ eq 'opensrf.settings'} @hosted_services;
     for my $service (@hosted_services) {
         do_start($service) unless $service eq 'opensrf.settings';
     }
