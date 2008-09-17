@@ -2,9 +2,9 @@
 # autogen.sh - generates configure using the autotools
 
 OS=`uname`
-if [ "$OS" == "Darwin" ]; then
+if [ "$OS" = "Darwin" ]; then
     : ${LIBTOOLIZE=glibtoolize}
-elif [ "$OS" == "Linux" ]; then
+elif [ "$OS" = "Linux" ]; then
     : ${LIBTOOLIZE=libtoolize}
 fi
 
