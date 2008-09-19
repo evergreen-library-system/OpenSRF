@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------- */
 
 var OSRF_HTTP_HEADER_TO = 'X-OpenSRF-to';
-var OSRF_HTTP_HEADER_XID = 'X-OpenSRF-thread';
+var OSRF_HTTP_HEADER_XID = 'X-OpenSRF-xid';
 var OSRF_HTTP_HEADER_FROM = 'X-OpenSRF-from';
 var OSRF_HTTP_HEADER_THREAD = 'X-OpenSRF-thread';
 var OSRF_HTTP_HEADER_TIMEOUT = 'X-OpenSRF-timeout';
