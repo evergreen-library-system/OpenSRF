@@ -116,11 +116,8 @@ static osrfHttpTranslator* osrfNewHttpTranslator(request_rec* apreq) {
     osrfStringArrayFree(params);
 
     /* load the request headers */
-    if (apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_XID) ) {
-        trans->localXid = 0;
-    } else {
-        trans->localXid = 1;
-    }
+    if (apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_XID)) // force our log xid to match the caller
+	    osrfLogForceXid(strdup(apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_XID)));
 
     trans->handle = osrfSystemGetTransportClient();
     trans->recipient = apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_TO);
@@ -454,6 +451,7 @@ static int handler(request_rec *r) {
     testConnection(r);
 
     osrfHttpTranslator* trans = osrfNewHttpTranslator(r);
+	osrfLogMkXid();
     if(trans->body) {
         stat = osrfHttpTranslatorProcess(trans);
         //osrfHttpTranslatorDebug(trans);
