@@ -72,7 +72,14 @@ void osrfLogActivity( const char* file, int line, const char* msg, ... );
 void osrfLogCleanup( void );
 
 void osrfLogClearXid( void );
+/**
+ * Set the log XID.  This only sets the xid if we are not the origin client 
+ */
 void osrfLogSetXid(char* xid);
+/**
+ * Set the log XID regardless of whether we are the origin client
+ */
+void osrfLogForceXid(char* xid);
 void osrfLogMkXid( void );
 void osrfLogSetIsClient(int is);
 char* osrfLogGetXid( void );

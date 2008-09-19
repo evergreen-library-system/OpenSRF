@@ -53,6 +53,9 @@ void osrfLogClearXid( void ) { _osrfLogSetXid(""); }
 void osrfLogSetXid(char* xid) {
    if(!_osrfLogIsClient) _osrfLogSetXid(xid);
 }
+void osrfLogForceXid(char* xid) {
+   _osrfLogSetXid(xid);
+}
 
 void osrfLogMkXid( void ) {
    if(_osrfLogIsClient) {
