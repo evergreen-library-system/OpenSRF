@@ -112,6 +112,7 @@ sub tcp_connected {
 sub send {
 	my $self = shift;
     my $msg = OpenSRF::Transport::SlimJabber::XMPPMessage->new(@_);
+    $msg->osrf_xid($logger->get_osrf_xid);
     $self->reader->send($msg->to_xml);
 }
 
