@@ -341,6 +341,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
     // send the message to the recipient
     transport_message* tmsg = message_init(
         trans->body, NULL, trans->thread, trans->recipient, NULL);
+    message_set_osrf_xid(tmsg, osrfLogGetXid());
     client_send_message(trans->handle, tmsg);
     message_free(tmsg); 
 
