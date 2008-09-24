@@ -39,8 +39,8 @@ GetOptions(
     'action=s' => \$opt_action,
     'service=s' => \$opt_service,
     'config=s' => \$opt_config,
-    'pid_dir=s' => \$opt_pid_dir,
-    'no_daemon' => \$opt_no_daemon,
+    'pid-dir=s' => \$opt_pid_dir,
+    'no-daemon' => \$opt_no_daemon,
     'help' => \$opt_help,
 );
 
@@ -69,6 +69,7 @@ sub do_stop {
     } else {
         msg("$service not running");
     }
+    return 1;
 }
 
 sub do_init {
@@ -91,6 +92,7 @@ sub do_init {
                 if $sclient->config_value('apps', $app, 'language') =~ /perl/i;
         }
     }
+    return 1;
 }
 
 # start a specific service
@@ -103,7 +105,7 @@ sub do_start {
     OpenSRF::Transport::PeerHandle->retrieve->disconnect;
 
     if(grep { $_ eq $service } @hosted_services) {
-        do_daemon($service) unless $opt_no_daemon;
+        return unless do_daemon($service);
         launch_net_server($service);
         launch_listener($service);
         $0 = "OpenSRF controller [$service]";
@@ -113,6 +115,7 @@ sub do_start {
     }
 
     msg("$service is not configured to run on $hostname");
+    return 1;
 }
 
 sub do_start_all {
@@ -120,23 +123,28 @@ sub do_start_all {
     for my $service (@hosted_services) {
         do_start($service) unless $service eq 'opensrf.settings';
     }
+    return 1;
 }
 
 sub do_stop_all {
     do_stop($_) for @hosted_services;
+    return 1;
 }
 
-# daemonize us
+# daemonize us.  return true if we're the child, false if parent
 sub do_daemon {
+    return 1 if $opt_no_daemon;
     my $service = shift;
     my $pid_file = get_pid_file($service);
-    exit if OpenSRF::Utils::safe_fork();
+    #exit if OpenSRF::Utils::safe_fork();
+    return 0 if OpenSRF::Utils::safe_fork();
     chdir('/');
     setsid();
     close STDIN;
     close STDOUT;
     close STDERR;
     `echo $$ > $pid_file`;
+    return 1;
 }
 
 # parses the local settings file
@@ -192,10 +200,10 @@ sub do_help {
     --config <file>
         OpenSRF configuration file 
         
-    --pid_dir <dir>
+    --pid-dir <dir>
         Directory where process-specific PID files are kept
         
-    --no_daemon
+    --no-daemon
         Do not detach and run as a daemon process.  Useful for debugging.
         
     --help
@@ -210,7 +218,7 @@ do_init() and do_start($opt_service) if $opt_action eq 'start';
 do_stop($opt_service) if $opt_action eq 'stop';
 do_init() and do_stop($opt_service) and do_start($opt_service) if $opt_action eq 'restart';
 do_init() and do_start_all() if $opt_action eq 'start_all';
-do_stop_all() if $opt_action eq 'stop_all';
+do_init() and do_stop_all() if $opt_action eq 'stop_all';
 do_init() and do_stop_all() and do_start_all() if $opt_action eq 'restart_all';
 
 
