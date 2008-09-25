@@ -100,6 +100,11 @@ sub do_init {
 # start a specific service
 sub do_start {
     my $service = shift;
+    if(-e get_pid_file($service)) {
+        msg("$service is already running");
+        return;
+    }
+
     load_settings() if $service eq 'opensrf.settings';
 
     my $sclient = OpenSRF::Utils::SettingsClient->new;
