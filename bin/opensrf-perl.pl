@@ -30,6 +30,7 @@ my $opt_service = undef;
 my $opt_config = undef;
 my $opt_pid_dir = '/tmp';
 my $opt_no_daemon = 0;
+my $opt_settings_pause = 0;
 my $opt_help = 0;
 my $sclient;
 my $hostname = hostfqdn();
@@ -41,6 +42,7 @@ GetOptions(
     'config=s' => \$opt_config,
     'pid-dir=s' => \$opt_pid_dir,
     'no-daemon' => \$opt_no_daemon,
+    'settings-startup-pause=i' => \$opt_settings_pause,
     'help' => \$opt_help,
 );
 
@@ -119,7 +121,12 @@ sub do_start {
 }
 
 sub do_start_all {
-    do_start('opensrf.settings') if grep {$_ eq 'opensrf.settings'} @hosted_services;
+    if(grep {$_ eq 'opensrf.settings'} @hosted_services) {
+        do_start('opensrf.settings');
+        # in batch mode, give opensrf.settings plenty of time to start 
+        # before any non-Perl services try to connect
+        sleep $opt_settings_pause if $opt_settings_pause;
+    }
     for my $service (@hosted_services) {
         do_start($service) unless $service eq 'opensrf.settings';
     }
@@ -205,6 +212,12 @@ sub do_help {
         
     --no-daemon
         Do not detach and run as a daemon process.  Useful for debugging.
+
+    --settings-startup-pause
+        How long to give the opensrf.settings server to start up when running 
+        in batch mode (start_all).  The purpose is to give plenty of time for
+        the settings server to be up and active before any non-Perl services
+        attempt to connect.
         
     --help
         Print this help message
