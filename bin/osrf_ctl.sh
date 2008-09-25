@@ -159,16 +159,15 @@ function stop_router {
 }
 
 function start_perl {
-	do_action "start" $PID_OSRF_PERL "OpenSRF Perl";
-	perl -MOpenSRF::System="$OPT_CONFIG" -e 'OpenSRF::System->bootstrap()' & 
-	sleep 3;
-	pid=$(ps ax | grep "OpenSRF System" | grep -v grep | grep -v "System-C"| awk '{print $1}')
-	echo $pid > $PID_OSRF_PERL;
+    echo "Starting OpenSRF Perl";
+    opensrf-perl.pl --pid-dir $OPT_PID_DIR \
+        --config $OPT_CONFIG --action start_all --settings-startup-pause 3
 	return 0;
 }
 
 function stop_perl {
-	do_action "stop" $PID_OSRF_PERL "OpenSRF Perl";
+    echo "Stopping OpenSRF Perl";
+    opensrf-perl.pl --pid-dir $OPT_PID_DIR --config $OPT_CONFIG --action stop_all
 	sleep 1;
 	return 0;
 }
