@@ -30,7 +30,7 @@ superclass and it will be pushed onto @ISA.
 
 sub set_listener {
 	my( $class, $listener ) = @_;
-	OpenSRF::Utils::Logger->transport("Loading Listener $listener", INFO );
+	OpenSRF::Utils::Logger->debug("Loading Listener $listener");
 	if( $listener ) {
 		$listener->use;
 		if( $@ ) {
