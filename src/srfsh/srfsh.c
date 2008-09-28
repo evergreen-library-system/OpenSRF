@@ -796,7 +796,7 @@ static int print_help( void ) {
 			"---------------------------------------------------------------------------------\n"
 			" Commands for Open-ILS\n"
 			"---------------------------------------------------------------------------------\n"
-			"login <username> <password>\n"
+			"login <username> <password> [type] [org_unit] [workstation]\n"
 			"       - Logs into the 'server' and displays the session id\n"
 			"       - To view the session id later, enter: print login\n"
 			"---------------------------------------------------------------------------------\n"
