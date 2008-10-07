@@ -69,13 +69,13 @@ AC_SUBST([OSRF_INSTALL_JAVA])
 
 # build and install the python modules
 AC_ARG_ENABLE([python],
-[  --disable-python  disable building and installing python modules],
+[  --enable-python  disable building and installing python modules],
 [case "${enableval}" in
   yes) OSRF_INSTALL_PYTHON=true ;;
   no) OSRF_INSTALL_PYTHON=false ;;
   *) AC_MSG_ERROR([please choose another value for --enable-python (supported values are yes or no)]) ;;
 esac],
-[OSRF_INSTALL_PYTHON=true])
+[OSRF_INSTALL_PYTHON=false])
 
 AM_CONDITIONAL([BUILDPYTHON], [test x$OSRF_INSTALL_PYTHON = xtrue])
 AC_SUBST([OSRF_INSTALL_PYTHON])
