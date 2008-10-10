@@ -32,6 +32,7 @@ my $opt_pid_dir = '/tmp';
 my $opt_no_daemon = 0;
 my $opt_settings_pause = 0;
 my $opt_help = 0;
+my $verbose = 0;
 my $sclient;
 my $hostname = hostfqdn();
 my @hosted_services;
@@ -44,6 +45,7 @@ GetOptions(
     'no-daemon' => \$opt_no_daemon,
     'settings-startup-pause=i' => \$opt_settings_pause,
     'help' => \$opt_help,
+    'verbose' => \$verbose,
 );
 
 
@@ -65,6 +67,8 @@ sub do_stop {
     my $pid_file = get_pid_file($service);
     if(-e $pid_file) {
         my $pid = `cat $pid_file`;
+        chomp $pid;
+        msg("stopping servivce pid=$pid $service", 1);
         kill('INT', $pid);
         waitpid($pid, 0);
         unlink $pid_file;
@@ -126,6 +130,7 @@ sub do_start {
 }
 
 sub do_start_all {
+    msg("starting all services for $hostname", 1);
     if(grep {$_ eq 'opensrf.settings'} @hosted_services) {
         do_start('opensrf.settings');
         # in batch mode, give opensrf.settings plenty of time to start 
@@ -139,6 +144,7 @@ sub do_start_all {
 }
 
 sub do_stop_all {
+    msg("stopping all services for $hostname", 1);
     do_stop($_) for @hosted_services;
     return 1;
 }
@@ -150,6 +156,7 @@ sub do_daemon {
     my $pid_file = get_pid_file($service);
     #exit if OpenSRF::Utils::safe_fork();
     return 0 if OpenSRF::Utils::safe_fork();
+    msg("starting servivce pid=$$ $service", 1);
     chdir('/');
     setsid();
     close STDIN;
@@ -195,7 +202,8 @@ sub launch_listener {
 
 sub msg {
     my $m = shift;
-    print "* $m\n";
+    my $v = shift;
+    print "* $m\n" unless $v and not $verbose;
 }
 
 sub do_help {
