@@ -140,18 +140,17 @@ sub initialize {
 
     my $socket = IO::Socket::INET->new(
         PeerHost => $host,
-        PeerPort => $port,
-        Peer => $port,
+        PeerPort => int($port),
         Proto  => 'tcp' );
 
-    throw OpenSRF::EX::Jabber("Could not open TCP socket to Jabber server: $!")
+    throw OpenSRF::EX::Jabber("Could not open TCP socket to Jabber server: $@")
 	    unless ( $socket and $socket->connected );
 
     $self->socket($socket);
     $self->reader(OpenSRF::Transport::SlimJabber::XMPPReader->new($socket));
     $self->reader->connect($host, $username, $password, $resource);
 
-    throw OpenSRF::EX::Jabber("Could not authenticate with Jabber server: $!")
+    throw OpenSRF::EX::Jabber("Could not authenticate with Jabber server: $@")
 	    unless ( $self->reader->connected );
 
 	return $self;
