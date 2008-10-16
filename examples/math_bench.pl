@@ -13,7 +13,7 @@ my $count = $ARGV[0];
 print "usage: $0 <num_requests>\n" and exit unless $count;
 
 # * connect to the Jabber network
-OpenSRF::System->bootstrap_client( config_file => "/openils/conf/bootstrap.conf" );
+OpenSRF::System->bootstrap_client( config_file => "SYSCONFDIR/opensrf_core.xml" );
 $log->set_service('math_bench');
 
 # * create a new application session for the opensrf.math service

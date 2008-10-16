@@ -16,7 +16,7 @@
 
 	<!-- OpenSRF -->
 	<script>var myPackageDir = "math";</script>
-	<script src="OpenSRF/JSON.js" />
+	<script src="OpenSRF/JSON_v1.js" />
 	<script src="OpenSRF/md5.js" />
 	<script src="OpenSRF/opensrf_utils.js" />
 	<script src="OpenSRF/opensrf_config.js" />

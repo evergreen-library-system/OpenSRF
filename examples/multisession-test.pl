@@ -1,10 +1,10 @@
 #!/usr/bin/perl
-use lib '/openils/lib/perl5/';
+use lib 'LIBDIR/perl5/';
 use OpenSRF::System;
 use OpenILS::Application::AppUtils;
 use OpenILS::Event;
 use OpenSRF::EX qw/:try/;
-use JSON;
+use OpenSRF::Utils::JSON;
 use Data::Dumper;
 use OpenILS::Utils::Fieldmapper;
 use Digest::MD5 qw/md5_hex/;
@@ -12,7 +12,6 @@ use OpenSRF::Utils qw/:daemon/;
 use OpenSRF::MultiSession;
 use OpenSRF::AppSession;
 use Time::HiRes qw/time/;
-use JSON;
 
 my $config = shift;
 
@@ -37,7 +36,7 @@ $mses->success_handler(
 	sub {
 		my $ses = shift;
 		my $req = shift;
-		print $req->{params}->[0] . "\t: " . JSON->perl2JSON($req->{response}->[0]->content)."\n";
+		print $req->{params}->[0] . "\t: " . OpenSRF::Utils::JSON->perl2JSON($req->{response}->[0]->content)."\n";
 	}
 );
 
@@ -45,7 +44,7 @@ $mses->failure_handler(
 	sub {
 		my $ses = shift;
 		my $req = shift;
-		warn "record $req->{params}->[0] failed: ".JSON->perl2JSON($req->{response});
+		warn "record $req->{params}->[0] failed: " . OpenSRF::Utils::JSON->perl2JSON($req->{response});
 	}
 );
 
