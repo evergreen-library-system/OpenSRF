@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!-- This file follows the standard bootstrap config file layout found in opensrf_core.xml -->
+<srfsh>
+  <router_name>router</router_name>
+  <domain>localhost</domain>
+  <username>myusername</username>
+  <passwd>mypassword</passwd>
+  <port>5222</port>
+  <logfile>LOCALSTATEDIR/log/srfsh.log</logfile>
+  <loglevel>4</loglevel>
+</srfsh>

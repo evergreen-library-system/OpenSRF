@@ -1,0 +1,51 @@
+README for OpenSRF 1.0 RC
+
+Installing prerequisites:
+========================
+
+OpenSRF has a number of prerequisite packages that must be installed
+before you can successfully configure, compile, and install OpenSRF.
+On Debian and Ubuntu, the easiest way to install these prerequisites
+is to use the Makefile.install prerequisite installer for Evergreen.
+
+Issue the following commands as the root user to install prerequisites
+using the Makefile.install prerequisite installer, substituting "debian"
+or "ubuntu" for <osname> below:
+
+aptitude install wget make
+wget http://svn.open-ils.org/trac/ILS/export/10741/trunk/Open-ILS/src/extras/Makefile.install
+make -f Makefile.install <osname>
+
+Note: You may also be able to use "centos" to install the OpenSRF
+prerequisites for CentOS 5 and RHEL 5, or "gentoo" for Gentoo - but
+these are less tested distributions. Your patches and suggestions for
+improvement are welcome!
+
+Configuration and compilation instructions:
+==========================================
+
+For the time being, we are still installing everything in the /openils/
+directory (with the exception of the Perl modules, which are installed
+into system directories). Issue the following commands to configure and
+build OpenSRF:
+
+./configure --with-prefix=/openils --with-sysconfdir=/openils/conf
+make
+
+Installation instructions:
+=========================
+
+Once you have configured and compiled OpenSRF, issue the following
+command as the root user to install OpenSRF:
+
+make install
+
+This will install OpenSRF, including example configuration files in
+/openils/conf/ that you can use as templates for your own configuration files.
+
+Getting help:
+============
+
+Need help installing or using OpenSRF? Join the mailing lists at
+http://evergreen-ils.org/listserv.php or contact us on the Freenode
+IRC network on the #evergreen channel.

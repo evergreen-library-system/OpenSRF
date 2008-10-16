@@ -1,0 +1,133 @@
+# Copyright (C) 2008 Equinox Software, Inc.
+# Kevin Beswick <kevinbeswick00@gmail.com>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+
+# Shows configuration options of OSRF
+
+prefix=@prefix@
+exec_prefix=@prefix@
+datarootdir=@datarootdir@
+
+function showInstalled {
+	 JAVA=@OSRF_INSTALL_JAVA@
+	 PYTHON=@OSRF_INSTALL_PYTHON@
+	 if test "$JAVA" = "true"; then
+	    echo "OSRF_JAVA"
+	 fi
+	 if test "$PYTHON" = "true"; then
+	    echo "OSRF_PYTHON"
+	 fi
+}
+
+function showAll {
+	 echo @PACKAGE_STRING@	
+	 echo PREFIX=@prefix@
+	 echo BINDIR=@bindir@
+	 echo LIBDIR=@libdir@
+	 echo TMP=@TMP@
+	 echo INCLUDEDIR=@includedir@
+	 echo SYSCONFDIR=@sysconfdir@
+	 echo APXS2=@APXS2@
+	 echo APACHE2_HEADERS=@APACHE2_HEADERS@
+	 echo APR_HEADERS=@APR_HEADERS@
+	 echo LIBXML2_HEADERS=@LIBXML2_HEADERS@
+	 echo 
+	 echo "Installed modules:"
+	 showInstalled;
+}
+
+function cconfig {
+	 
+sed -e 's|osrf|@abs_top_srcdir@/src/python/osrf|g' \
+    -e 's|srfsh\.py|@abs_top_srcdir@/src/python/srfsh.py|g' @srcdir@/src/python/setup.py.in > @srcdir@/src/python/setup.py
+}
+
+function showHelp {
+	 echo 
+	 echo "------------------------------------------------------------"
+	 echo " osrf_config                                                "
+	 echo " Shows configuration of opensrf                             "
+	 echo "------------------------------------------------------------"
+	 echo
+	 echo "Usage: osrf_config [--option]"
+	 echo 
+	 echo "Options: "
+	 echo
+	 echo "--help                  displays help"
+	 echo "--version               displays version number of osrf"
+	 echo "--installed             displays options that were installed"
+	 echo "--prefix                displays prefix"
+	 echo "--bindir                displays bindir"
+	 echo "--libdir                displays libdir"
+	 echo "--tmp                   displays tmp"
+	 echo "--includedir            displays includedir"
+	 echo "--sysconfdir            displays sysconfdir"
+	 echo "--apxs                  displays location of apxs"
+	 echo "--apache                displays location of apache2 headers"
+	 echo "--apr                   displays location of apr headers"
+	 echo "--libxml                displays location of libxml2 headers" 
+	 echo
+}
+
+case "$1" in
+     --installed)
+		showInstalled;
+		;;
+     --cconfig) cconfig;
+      		;;
+     --libxml)
+		echo @LIBXML2_HEADERS@;
+		;;
+     --apr)
+		echo @APR_HEADERS@;
+		;;
+     --apache)
+		echo @APACHE2_HEADERS@;
+		;;
+     --prefix)
+		echo @prefix@
+		;;
+     --version) 
+		echo @PACKAGE_STRING@;
+		;;
+     --bindir)
+		echo @bindir@
+		;;
+     --libdir)
+		echo @libdir@;
+		;;
+     --sysconfdir)
+		echo @sysconfdir@;
+		;;
+     --localstatedir)
+		echo @localstatedir@;
+		;;
+     --tmpdir)
+		echo @TMP@;
+		;;
+     --apxs)
+		echo @APXS2@;
+		;;
+     --includedir)
+		echo @includedir@;
+		;;
+     --docdir)
+		echo @docdir@;
+		;;
+     --help)
+		showHelp;
+		;;
+     *)
+		showAll;
+		;;
+esac
