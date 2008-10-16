@@ -13,7 +13,7 @@
 
 	<xsl:template match="/">
 package Fieldmapper;
-use JSON;
+use OpenSRF::Utils::JSON;
 use Data::Dumper;
 use base 'OpenSRF::Application';
 

@@ -1,18 +1,12 @@
 #include "apachetools.h"
 
-string_array* apacheParseParms(request_rec* r) {
+osrfStringArray* apacheParseParms(request_rec* r) {
 
 	if( r == NULL ) return NULL;
 
-	char* arg = r->args;			/* url query string */
+	char* arg = NULL;
 	apr_pool_t *p = r->pool;	/* memory pool */
-	string_array* sarray			= init_string_array(12); /* method parameters */
-
-	growing_buffer* buffer		= NULL;	/* POST data */
-	growing_buffer* tmp_buf		= NULL;	/* temp buffer */
-
-	char* key						= NULL;	/* query item name */
-	char* val						= NULL;	/* query item value */
+	growing_buffer* buffer = buffer_init(1025);
 
 	/* gather the post args and append them to the url query string */
 	if( !strcmp(r->method,"POST") ) {
@@ -23,15 +17,20 @@ string_array* apacheParseParms(request_rec* r) {
 
 		if(ap_should_client_block(r)) {
 
-			char body[1025];
-			memset(body,0,1025);
-			buffer = buffer_init(1025);
 
+			/* Start with url query string, if any */
+			
+			if(r->args && r->args[0])
+				buffer_add(buffer, r->args);
+
+			char body[1025];
 
 			osrfLogDebug(OSRF_LOG_MARK, "gateway client has post data, reading...");
-	
+
+			/* Append POST data */
+			
 			long bread;
-			while( (bread = ap_get_client_block(r, body, 1024)) ) {
+			while( (bread = ap_get_client_block(r, body, sizeof(body) - 1)) ) {
 
 				if(bread < 0) {
 					osrfLogInfo(OSRF_LOG_MARK, 
@@ -39,120 +38,117 @@ string_array* apacheParseParms(request_rec* r) {
 					break;
 				}
 
+				body[bread] = '\0';
 				buffer_add( buffer, body );
-				memset(body,0,1025);
 
 				osrfLogDebug(OSRF_LOG_MARK, 
-					"gateway read %d bytes: %d bytes of data so far", bread, buffer->n_used);
-
-				if(buffer->n_used == 0) break;
+					"gateway read %ld bytes: %d bytes of data so far", bread, buffer->n_used);
 
 				if(buffer->n_used > APACHE_TOOLS_MAX_POST_SIZE) {
 					osrfLogError(OSRF_LOG_MARK, "gateway received POST larger "
-						"than %d bytes. dropping reqeust", APACHE_TOOLS_MAX_POST_SIZE);
+						"than %d bytes. dropping request", APACHE_TOOLS_MAX_POST_SIZE);
 					buffer_free(buffer);
 					return NULL;
 				}
 			}
 
 			osrfLogDebug(OSRF_LOG_MARK, "gateway done reading post data");
-	
-			if(arg && arg[0]) {
-
-				tmp_buf = buffer_init(1024);
-				buffer_add(tmp_buf,arg);
-				buffer_add(tmp_buf,buffer->buf);
-				arg = (char*) apr_pstrdup(p, tmp_buf->buf);
-				buffer_free(tmp_buf);
-
-			} else if(buffer->n_used > 0){
-					arg = (char*) apr_pstrdup(p, buffer->buf);
-
-			} else { 
-				arg = NULL; 
-			}
-
-			buffer_free(buffer);
 		}
-	} 
+
+	} else { /* GET */
+
+        if(r->args && r->args[0])
+            buffer_add(buffer, r->args);
+    }
 
 
-	osrfLogDebug(OSRF_LOG_MARK, "gateway done mangling post data");
+    if(buffer->n_used > 0)
+        arg = apr_pstrdup(p, buffer->buf);
+    else
+        arg = NULL; 
+    buffer_free(buffer);
 
 	if( !arg || !arg[0] ) { /* we received no request */
 		return NULL;
 	}
 
-
 	osrfLogDebug(OSRF_LOG_MARK, "parsing URL params from post/get request data: %s", arg);
+	
+	osrfStringArray* sarray		= osrfNewStringArray(12); /* method parameters */
 	int sanity = 0;
+	char* key					= NULL;	/* query item name */
+	char* val					= NULL;	/* query item value */
+
+	/* Parse the post/get request data into a series of name/value pairs.   */
+	/* Load each name into an even-numbered slot of an osrfStringArray, and */
+	/* the corresponding value into the following odd-numbered slot.        */
+
 	while( arg && (val = ap_getword(p, (const char**) &arg, '&'))) {
 
 		key = ap_getword(r->pool, (const char**) &val, '=');
 		if(!key || !key[0])
 			break;
 
-		ap_unescape_url((char*)key);
-		ap_unescape_url((char*)val);
+		ap_unescape_url(key);
+		ap_unescape_url(val);
 
 		osrfLogDebug(OSRF_LOG_MARK, "parsed URL params %s=%s", key, val);
 
-		string_array_add(sarray, key);
-		string_array_add(sarray, val);
+		osrfStringArrayAdd(sarray, key);
+		osrfStringArrayAdd(sarray, val);
 
 		if( sanity++ > 1000 ) {
 			osrfLogError(OSRF_LOG_MARK, 
 				"Parsing URL params failed sanity check: 1000 iterations");
-			string_array_destroy(sarray);
+			osrfStringArrayFree(sarray);
 			return NULL;
 		}
 
 	}
 
-	if(sarray)
-		osrfLogDebug(OSRF_LOG_MARK, 
-			"Apache tools parsed %d params key/values", sarray->size / 2 );
+	osrfLogDebug(OSRF_LOG_MARK,
+		"Apache tools parsed %d params key/values", sarray->size / 2 );
 
 	return sarray;
 }
 
 
 
-string_array* apacheGetParamKeys(string_array* params) {
+osrfStringArray* apacheGetParamKeys(osrfStringArray* params) {
 	if(params == NULL) return NULL;	
-	string_array* sarray	= init_string_array(12); 
+	osrfStringArray* sarray = osrfNewStringArray(12);
 	int i;
 	osrfLogDebug(OSRF_LOG_MARK, "Fetching URL param keys");
 	for( i = 0; i < params->size; i++ ) 
-		string_array_add(sarray, string_array_get_string(params, i++));	
+		osrfStringArrayAdd(sarray, osrfStringArrayGetString(params, i++));
 	return sarray;
 }
 
-string_array* apacheGetParamValues(string_array* params, char* key) {
+osrfStringArray* apacheGetParamValues(osrfStringArray* params, char* key) {
 
 	if(params == NULL || key == NULL) return NULL;	
-	string_array* sarray	= init_string_array(12); 
+	osrfStringArray* sarray	= osrfNewStringArray(12);
 
 	osrfLogDebug(OSRF_LOG_MARK, "Fetching URL values for key %s", key);
 	int i;
 	for( i = 0; i < params->size; i++ ) {
-		char* nkey = string_array_get_string(params, i++);	
+		char* nkey = osrfStringArrayGetString(params, i++);
 		if(key && !strcmp(nkey, key)) 
-			string_array_add(sarray, string_array_get_string(params, i));	
+			osrfStringArrayAdd(sarray, osrfStringArrayGetString(params, i));
 	}
 	return sarray;
 }
 
 
-char* apacheGetFirstParamValue(string_array* params, char* key) {
+char* apacheGetFirstParamValue(osrfStringArray* params, char* key) {
 	if(params == NULL || key == NULL) return NULL;	
 
 	int i;
 	osrfLogDebug(OSRF_LOG_MARK, "Fetching first URL value for key %s", key);
 	for( i = 0; i < params->size; i++ ) {
-		char* nkey = string_array_get_string(params, i++);	
+		char* nkey = osrfStringArrayGetString(params, i++);
 		if(key && !strcmp(nkey, key)) 
-			return strdup(string_array_get_string(params, i));
+			return strdup(osrfStringArrayGetString(params, i));
 	}
 
 	return NULL;
