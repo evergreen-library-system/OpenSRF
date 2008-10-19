@@ -43,6 +43,13 @@ make install
 This will install OpenSRF, including example configuration files in
 /openils/conf/ that you can use as templates for your own configuration files.
 
+Adjust the system dynamic library path:
+======================================
+
+Add /usr/local/lib/dbd and /openils/lib/ to the system's dynamic library path.
+On most systems, you can add these entries to /etc/ld.so.conf or a file within
+the /etc/ld.so.conf.d/ directory and then running "ldconfig" as root.
+
 Getting help:
 ============
 
