@@ -29,7 +29,7 @@ directory (with the exception of the Perl modules, which are installed
 into system directories). Issue the following commands to configure and
 build OpenSRF:
 
-./configure --with-prefix=/openils --with-sysconfdir=/openils/conf
+./configure --prefix=/openils --sysconfdir=/openils/conf
 make
 
 Installation instructions:
