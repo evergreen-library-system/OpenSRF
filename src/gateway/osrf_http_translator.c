@@ -318,13 +318,13 @@ static void osrfHttpTranslatorCacheSession(osrfHttpTranslator* trans) {
 static void osrfHttpTranslatorWriteChunk(osrfHttpTranslator* trans, transport_message* msg) {
     ap_rprintf(trans->apreq, 
         "Content-type: %s\n\n%s\n\n", JSON_CONTENT_TYPE, msg->body);
-    osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: Content-type: %s\n\n%s\n\n", JSON_CONTENT_TYPE, msg->body);
+    //osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: Content-type: %s\n\n%s\n\n", JSON_CONTENT_TYPE, msg->body);
     if(trans->complete) {
         ap_rprintf(trans->apreq, "--%s--\n", trans->delim);
-        osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: --%s--\n", trans->delim);
+        //osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: --%s--\n", trans->delim);
     } else {
         ap_rprintf(trans->apreq, "--%s\n", trans->delim);
-        osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: --%s\n", trans->delim);
+        //osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: --%s\n", trans->delim);
     }
     ap_rflush(trans->apreq);
 }
