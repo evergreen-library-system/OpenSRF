@@ -8,7 +8,7 @@ vim:et:ts=2:sw=2:
   <opensrf>
 
     <!-- The OpenSRF Routers's name on the network -->
-    <!-- You should never need to change thischange this -->
+    <!-- You should never need to change this -->
     <router_name>router</router_name>
 
     <routers>
