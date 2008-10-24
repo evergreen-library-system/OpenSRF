@@ -48,7 +48,7 @@ vim:et:ts=2:sw=2:
 
         </servers>
 
-        <!-- maximun time that anything may stay in the cache -->
+        <!-- maximum time that anything may stay in the cache -->
         <max_cache_time>86400</max_cache_time>
 
       </global>
@@ -172,7 +172,7 @@ vim:et:ts=2:sw=2:
         <max_requests>17</max_requests>
         <unix_config>
           <unix_sock>opensrf.settings_unix.sock</unix_sock>
-          <unix_pid>opoensrf.settings_unix.pid</unix_pid>
+          <unix_pid>opensrf.settings_unix.pid</unix_pid>
           <max_requests>1000</max_requests>
           <unix_log>opensrf.settings_unix.log</unix_log>
           <min_children>5</min_children>
@@ -187,12 +187,15 @@ vim:et:ts=2:sw=2:
   <hosts>
 
     <localhost>
-<!-- ^-=-
-	Must match the fully qualified domain name of the host 
-	on Linux, this is usually the output of "hostname -f"
--->
+      <!-- ^-=- 
+        Should match the fully qualified domain name of the host.
 
-<!-- List all of the apps this server will be running -->
+        On Linux, the output of the following command is authoritative:
+        $ perl -MNet::Domain -e 'print Net::Domain::hostfqdn();'
+
+        To use 'localhost' instead, run osrf_ctl.sh with the -l flag
+      -->
+      <!-- List all of the apps this server will be running -->
       <activeapps>
         <appname>opensrf.persist</appname>
         <appname>opensrf.settings</appname>
