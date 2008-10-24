@@ -44,7 +44,7 @@ vim:et:ts=2:sw=2:
         <servers>
 
           <!-- memcached server ip:port -->
-          <server>127.0.0.1:10101</server>
+          <server>127.0.0.1:11211</server>
 
         </servers>
 
