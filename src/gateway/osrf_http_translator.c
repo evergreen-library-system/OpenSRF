@@ -437,7 +437,8 @@ static void childInit(apr_pool_t *p, server_rec *s) {
 	osrfConnected = 1;
 
     // at pool destroy time (= child exit time), cleanup
-    apr_pool_cleanup_register(p, NULL, childExit, NULL);
+    // XXX causes us to disconnect even for clone()'d process cleanup (as in mod_cgi)
+    //apr_pool_cleanup_register(p, NULL, childExit, apr_pool_cleanup_null);
 }
 
 static int handler(request_rec *r) {

@@ -99,7 +99,8 @@ static void osrf_json_gateway_child_init(apr_pool_t *p, server_rec *s) {
 
     // when this pool is cleaned up, it means the child 
     // process is going away.  register some cleanup code
-    apr_pool_cleanup_register(p, NULL, child_exit, NULL);
+    // XXX causes us to disconnect even for clone()'d process cleanup (as in mod_cgi)
+    //apr_pool_cleanup_register(p, NULL, child_exit, apr_pool_cleanup_null);
 }
 
 static int osrf_json_gateway_method_handler (request_rec *r) {
