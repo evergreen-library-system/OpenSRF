@@ -318,10 +318,14 @@ static void osrfHttpTranslatorCacheSession(osrfHttpTranslator* trans) {
 static void osrfHttpTranslatorWriteChunk(osrfHttpTranslator* trans, transport_message* msg) {
     ap_rprintf(trans->apreq, 
         "Content-type: %s\n\n%s\n\n", JSON_CONTENT_TYPE, msg->body);
-    if(trans->complete)
+    osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: Content-type: %s\n\n%s\n\n", JSON_CONTENT_TYPE, msg->body);
+    if(trans->complete) {
         ap_rprintf(trans->apreq, "--%s--\n", trans->delim);
-    else
+        osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: --%s--\n", trans->delim);
+    } else {
         ap_rprintf(trans->apreq, "--%s\n", trans->delim);
+        osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: --%s\n", trans->delim);
+    }
     ap_rflush(trans->apreq);
 }
 
@@ -437,7 +441,8 @@ static void childInit(apr_pool_t *p, server_rec *s) {
 	osrfConnected = 1;
 
     // at pool destroy time (= child exit time), cleanup
-    apr_pool_cleanup_register(p, NULL, childExit, NULL);
+    // XXX causes us to disconnect even for clone()'d process cleanup (as in mod_cgi)
+    //apr_pool_cleanup_register(p, NULL, childExit, apr_pool_cleanup_null);
 }
 
 static int handler(request_rec *r) {
