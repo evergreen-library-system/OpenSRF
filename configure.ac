@@ -262,8 +262,6 @@ AC_CONFIG_FILES([Makefile
 
 AC_OUTPUT
 
-bin/osrf_config --cconfig
-
 AC_MSG_RESULT([])
 AC_MSG_RESULT([--------------------- Configuration options:  -----------------------])
 
