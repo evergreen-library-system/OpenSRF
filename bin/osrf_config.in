@@ -46,12 +46,6 @@ function showAll {
 	 showInstalled;
 }
 
-function cconfig {
-	 
-sed -e 's|osrf|@abs_top_srcdir@/src/python/osrf|g' \
-    -e 's|srfsh\.py|@abs_top_srcdir@/src/python/srfsh.py|g' @srcdir@/src/python/setup.py.in > @srcdir@/src/python/setup.py
-}
-
 function showHelp {
 	 echo 
 	 echo "------------------------------------------------------------"
