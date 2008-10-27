@@ -37,13 +37,18 @@ DOC_FILES = @srcdir@/doc/Application-HOWTO.txt \
 	    @srcdir@/doc/dokuwiki-doc-stubber.pl \
 	    @srcdir@/doc/OpenSRF-Messaging-Protocol.html \
 	    @srcdir@/doc/Persist-API.html \
-	    @srcdir@/doc/Roadmap.txt
+	    @srcdir@/doc/Roadmap.txt \
+		@srcdir@/AUTHORS \
+		@srcdir@/ChangeLog \
+		@srcdir@/INSTALL \
+		@srcdir@/README
 
 EXAMPLES_FILES = @srcdir@/examples/fieldmapper2cdbi.xsl \
 		 @srcdir@/examples/fieldmapper2javascript.xsl \
 		 @srcdir@/examples/fieldmapper2perl.xsl \
 		 @srcdir@/examples/gen-fieldmapper.xml \
 		 @srcdir@/examples/math_bench.pl \
+		 @srcdir@/examples/math_client.py \
 		 @srcdir@/examples/multisession-test.pl \
 		 @srcdir@/examples/register.pl \
 		 @srcdir@/examples/srfsh_config.xsd \
@@ -70,7 +75,7 @@ libosrf_FILES = @srcdir@/src/libopensrf/basic_client.c \
 		@srcdir@/src/libopensrf/osrfConfig.c
 
 
-EXTRA_DIST = $(DOC_FILES) $(EXAMPLES_FILES) $(libosrf_FILES) $(strn_compat_FILES) $(python_FILES) $(java_FILES) @srcdir@/autogen.sh @srcdir@/src/extras @srcdir@/DCO-1.1.txt @srcdir@/LICENSE.txt @srcdir@/src/perl @srcdir@/src/javascript
+EXTRA_DIST = $(DOC_FILES) $(EXAMPLES_FILES) $(libosrf_FILES) $(strn_compat_FILES) $(python_FILES) $(java_FILES) @srcdir@/autogen.sh @srcdir@/src/extras @srcdir@/COPYING @srcdir@/DCO-1.1.txt @srcdir@/LICENSE.txt @srcdir@/src/perl @srcdir@/src/javascript
 
 opensrfincludedir = @includedir@/opensrf
 
