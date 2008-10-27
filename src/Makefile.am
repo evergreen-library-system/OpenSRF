@@ -56,6 +56,7 @@ install-exec-hook:
 	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/srfsh.xml.example'
 	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(DESTDIR)@sysconfdir@/srfsh.xml.example'
 	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '@abs_top_srcdir@/examples/math_bench.pl'
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '@abs_top_srcdir@/examples/math_client.py'
 	sed -i 's|LIBDIR|$(LIBDIR)|g' '@abs_top_srcdir@/examples/multisession-test.pl'
 	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '@abs_top_srcdir@/doc/dokuwiki-doc-stubber.pl'
 	cp -r @srcdir@/javascript/* $(jsdir)/
