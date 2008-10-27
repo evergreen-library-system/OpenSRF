@@ -12,9 +12,8 @@ Issue the following commands as the root user to install prerequisites
 using the Makefile.install prerequisite installer, substituting "debian"
 or "ubuntu" for <osname> below:
 
-aptitude install wget make
-wget http://svn.open-ils.org/trac/ILS/export/10741/trunk/Open-ILS/src/extras/Makefile.install
-make -f Makefile.install <osname>
+aptitude install make
+make -f src/extras/Makefile.install <osname>
 
 Note: You may also be able to use "centos" to install the OpenSRF
 prerequisites for CentOS 5 and RHEL 5, or "gentoo" for Gentoo - but
@@ -43,12 +42,140 @@ make install
 This will install OpenSRF, including example configuration files in
 /openils/conf/ that you can use as templates for your own configuration files.
 
+Create and set up the opensrf Unix user environment:
+===================================================
+
+This user is used to start and stop all OpenSRF processes, and must own all
+files contained in the PREFIX directory hierarchy. Issue the following
+commands as root to create the "opensrf" user and set up its environment,
+substituting <PREFIX> with the value you passed to --prefix in your
+configure command:
+
+$ useradd -m -s /bin/bash opensrf
+$ echo "export PERL5LIB=\$PERL5LIB:/<PREFIX>/lib" > /home/opensrf/.bashrc
+$ echo "export PATH=\$PATH:/<PREFIX>/bin" > /home/opensrf/.bashrc
+$ passwd opensrf
+
 Adjust the system dynamic library path:
 ======================================
 
-Add /usr/local/lib/dbd and /openils/lib/ to the system's dynamic library path.
-On most systems, you can add these entries to /etc/ld.so.conf or a file within
-the /etc/ld.so.conf.d/ directory and then running "ldconfig" as root.
+Add /openils/lib/ to the system's dynamic library path, and then run "ldconfig"
+as root.
+
+On Debian and Ubuntu systems, run the following commands as root:
+
+$ echo /openils/lib > /etc/ld.so.conf.d/opensrf.conf
+$ ldconfig
+
+On most other systems, you can add these entries to a /etc/ld.so.conf, or create
+a file within the /etc/ld.so.conf.d/ directory, and then run "ldconfig" as root.
+
+Configure the ejabberd server:
+=============================
+
+OpenSRF requires an XMPP (Jabber) server. For performance reasons, ejabberd is
+the Jabber server of choice for the OpenSRF project. In most cases, you only
+have to make a few changes to the default ejabberd.cfg file to make ejabberd
+work for OpenSRF. Open /etc/ejabberd/ejabberd.cfg and make the following
+changes:
+
+1. Comment out the "mod_offline" directive
+2. Increase the "max_user_sessions" value to 1000
+3. Change all "max_stanza_size" values to 200000
+4. Change all "maxrate values" to 500000 
+
+Restart the ejabberd server to make the changes take effect.
+
+Create the OpenSRF Jabber users:
+===============================
+
+You need two Jabber users to manage the OpenSRF communications:
+
+  * a "router" user, to whom all requests to connect to an OpenSRF service
+    will be routed; this Jabber user must be named "router"
+  * an "opensrf" user, which clients use to connect to OpenSRF services; this
+    user can be named anything you like
+
+Create the Jabber users by issuing the following commands as root. Substitute
+<password> for your chosen passwords for each user respectively:
+
+$ ejabberdctl register router localhost <password>
+$ ejabberdctl register opensrf localhost <password>
+
+Update the OpenSRF configuration files:
+======================================
+
+There are two critical files that you must update to make OpenSRF work.
+"SYSCONFDIR" will be /openils/conf/ if you followed the configuration
+suggestion above:
+
+  * SYSCONFDIR/opensrf.xml - this file lists the services that this
+    OpenSRF installation supports; if you create a new OpenSRF service,
+    you need to add it to this file.
+      * The <hosts> element at the bottom of the file lists the services
+        that should be started for each hostname. You can force the system
+        to use "localhost", so in most cases you will leave this section
+        as-is.
+      * You must alter the <dbfile> element value for the "opensrf.persist"
+        service to point to a directory to which the opensrf user can write.
+        Note that the override in the <hosts> section takes precedence over
+        the general service definition value.
+    
+  * SYSCONFDIR/opensrf_core.xml - this file lists the Jabber connection
+    information that will be used for the system, as well as determining
+    logging verbosity and defining which services will be exposed on the
+    HTTP gateway. There are three username/password pairs to update in this
+    file:
+      1. <config><opensrf> = use the Jabber "opensrf" user
+      2. <config><gateway> = use the Jabber "opensrf" user
+      3. <config><routers><router> = use the Jabber "router" user
+
+You should also create a .srfsh.xml file in the home directory of each user
+that you want to enable to use the srfsh to communicate with OpenSRF services.
+
+Copy /openils/conf/srfsh.xml to ~/.srfsh.xml and update the username and
+password values with the Jabber "opensrf" user credentials.
+
+Starting and stopping OpenSRF services:
+======================================
+
+To start all OpenSRF services with a hostname of "localhost", issue the
+following command as the opensrf user:
+
+$ osrf_ctl.sh -l -a start_all
+
+To stop all OpenSRF services with a hostname of "localhost", issue the
+following command as the opensrf user:
+
+$ osrf_ctl.sh -l -a stop_all
+
+Testing the default OpenSRF services:
+====================================
+
+By default, OpenSRF ships with an opensrf.math service that performs basic
+calculations involving two integers. Once you have started the OpenSRF
+services, start srfsh and issue the following request:
+
+srfsh# request opensrf.math add 2,2
+
+You should receive the value "4".
+
+Troubleshooting note for Python users:
+=====================================
+
+If you are running a Python client and trying to connect to OpenSRF running on
+localhost rather than a hostname that can be resolved via DNS, you will
+probably receive exceptions about "dns.resolver.NXDOMAIN". If this happens,
+you need to install the dnsmasq package, configure it to serve up a DNS
+entry for localhost, and point your local DNS resolver to dnsmasq. For example,
+on Ubuntu you can issue the following commands as root:
+
+$ aptitude install dnsmasq
+$ echo "webserver=/localhost/127.0.0.1/" >> /etc/dnsmasq.conf
+$ /etc/init.d/dnsmasq restart
+
+Then edit /etc/resolv.conf and ensure that "nameserver 127.0.0.1" is the first
+entry in the file.
 
 Getting help:
 ============
