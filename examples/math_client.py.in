@@ -3,7 +3,7 @@ import osrf.system
 import osrf.ses
 
 # XXX: Replace with command line arguments
-file = '/openils/conf/opensrf_core.xml'
+file = '@sysconfdir@/opensrf_core.xml'
 operator = 'add'
 operand1 = 5
 operand2 = 7
