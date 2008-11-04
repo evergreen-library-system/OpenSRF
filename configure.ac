@@ -246,7 +246,11 @@ AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname gettimeofday memset select 
 #------------------------------------
 
 AC_CONFIG_FILES([Makefile
+                 doc/dokuwiki-doc-stubber.pl
                  examples/math_xul_client/Makefile
+                 examples/math_bench.pl
+                 examples/math_client.py
+                 examples/multisession-test.pl
                  src/Makefile
                  src/c-apps/Makefile
                  src/gateway/Makefile
@@ -257,7 +261,7 @@ AC_CONFIG_FILES([Makefile
                  src/python/Makefile
                  src/router/Makefile
                  src/srfsh/Makefile
-		 bin/osrf_config], [if test -e "./bin/osrf_config"; then chmod 755 bin/osrf_config; fi])
+                 bin/osrf_config], [if test -e "./bin/osrf_config"; then chmod 755 bin/osrf_config; fi])
 
 
 AC_OUTPUT
