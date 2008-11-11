@@ -160,14 +160,14 @@ function stop_router {
 
 function start_perl {
     echo "Starting OpenSRF Perl";
-    opensrf-perl.pl --pid-dir $OPT_PID_DIR \
+    opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR \
         --config $OPT_CONFIG --action start_all --settings-startup-pause 3
 	return 0;
 }
 
 function stop_perl {
     echo "Stopping OpenSRF Perl";
-    opensrf-perl.pl --pid-dir $OPT_PID_DIR --config $OPT_CONFIG --action stop_all
+    opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR --config $OPT_CONFIG --action stop_all
 	sleep 1;
 	return 0;
 }
