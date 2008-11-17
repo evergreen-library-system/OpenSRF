@@ -69,8 +69,10 @@ GNU General Public License for more details.
 #define OSRF_BUFFER_ADD_CHAR(gb, c)\
 	do {\
 		if(gb) {\
-			if(gb->n_used < gb->size - 1)\
+			if(gb->n_used < gb->size - 1) {\
 				gb->buf[gb->n_used++] = c;\
+				gb->buf[gb->n_used]   = '\0';\
+			}\
 			else\
 				buffer_add_char(gb, c);\
 		}\
@@ -207,7 +209,7 @@ long va_list_size(const char* format, va_list);
 char* va_list_to_string(const char* format, ...);
 
 
-/* string escape utility method.  escapes unicode embeded characters.
+/* string escape utility method.  escapes unicode embedded characters.
 	escapes the usual \n, \t, etc. 
 	for example, if you provide a string like so:
 
