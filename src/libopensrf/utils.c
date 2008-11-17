@@ -242,7 +242,7 @@ int buffer_add(growing_buffer* gb, const char* data) {
 			return -1;
 	}
 
-	strcat( gb->buf, data );
+	strcpy( gb->buf + gb->n_used, data );
 	gb->n_used = total_len;
 	return total_len;
 }
@@ -251,8 +251,9 @@ int buffer_add(growing_buffer* gb, const char* data) {
 int buffer_reset( growing_buffer *gb){
 	if( gb == NULL ) { return -1; }
 	if( gb->buf == NULL ) { return -1; }
-	osrf_clearbuf( gb->buf, sizeof(gb->buf) );
+	osrf_clearbuf( gb->buf, gb->size );
 	gb->n_used = 0;
+	gb->buf[ 0 ] = '\0';
 	return gb->n_used;
 }
 
@@ -322,6 +323,9 @@ int buffer_add_char(growing_buffer* gb, char c ) {
 
 char* uescape( const char* string, int size, int full_escape ) {
 
+	if( NULL == string )
+		return NULL;
+	
 	growing_buffer* buf = buffer_init(size + 64);
 	int clen = 0;
 	int idx = 0;
