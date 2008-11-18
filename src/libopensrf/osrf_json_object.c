@@ -61,7 +61,8 @@ typedef union unusedObjUnion unusedObj;
 
 static unusedObj* freeObjList = NULL;
 
-static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf );
+static void add_json_to_buffer( const jsonObject* obj,
+	growing_buffer * buf, int do_classname, int second_pass );
 
 /**
  * Return all unused jsonObjects to the heap
@@ -194,7 +195,10 @@ void jsonObjectFree( jsonObject* o ) {
     unusedObjCapture++;
     currentListLen++;
     if (unusedObjCapture > 1 && !(unusedObjCapture % 1000))
-        osrfLogDebug( OSRF_LOG_MARK, "Objects malloc()'d: %d, Reusable objects captured: %d, Objects reused: %d, Current List Length: %d", mallocObjCreate, unusedObjCapture, unusedObjRelease, currentListLen );
+        osrfLogDebug( OSRF_LOG_MARK, "Objects malloc()'d: %d, "
+			"Reusable objects captured: %d, Objects reused: %d, "
+			"Current List Length: %d",
+			mallocObjCreate, unusedObjCapture, unusedObjRelease, currentListLen );
 }
 
 static void _jsonFreeHashItem(char* key, void* item){
@@ -256,21 +260,49 @@ const jsonObject* jsonObjectGetKeyConst( const jsonObject* obj, const char* key 
 	return osrfHashGet( obj->value.h, key);
 }
 
-char* jsonObjectToJSON( const jsonObject* obj ) {
-	jsonObject* obj2 = jsonObjectEncodeClass( obj );
-	char* json = jsonObjectToJSONRaw(obj2);
-	jsonObjectFree(obj2);
-	return json;
-}
+/**
+ * Recursively traverse a jsonObject, formatting it into a JSON string.
+ *
+ * The last two parameters are booleans.
+ *
+ * If do_classname is true, examine each node for a classname, and if you
+ * find one, pretend that the node is under an extra layer of JSON_HASH, with
+ * JSON_CLASS_KEY and JSON_DATA_KEY as keys.
+ *
+ * second_pass should always be false except for some recursive calls.  It
+ * is used when expanding classnames, to distinguish between the first and
+ * second passes through a given node.
+ *
+ * @return Nothing
+ */
+static void add_json_to_buffer( const jsonObject* obj,
+	growing_buffer * buf, int do_classname, int second_pass ) {
 
-char* jsonObjectToJSONRaw( const jsonObject* obj ) {
-	if(!obj) return NULL;
-	growing_buffer* buf = buffer_init(32);
-	add_json_to_buffer( obj, buf );
-	return buffer_release( buf );
-}
+    if(NULL == obj) {
+        OSRF_BUFFER_ADD(buf, "null");
+        return;
+    }
 
-static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf ) {
+	if( obj->classname && do_classname )
+	{
+		if( second_pass )
+			second_pass = 0;
+		else
+		{
+			// Pretend we see an extra layer of JSON_HASH
+			
+			OSRF_BUFFER_ADD( buf, "{\"" );
+			OSRF_BUFFER_ADD( buf, JSON_CLASS_KEY );
+			OSRF_BUFFER_ADD( buf, "\":\"" );
+			OSRF_BUFFER_ADD( buf, obj->classname );
+			OSRF_BUFFER_ADD( buf, "\",\"" );
+			OSRF_BUFFER_ADD( buf, JSON_DATA_KEY );
+			OSRF_BUFFER_ADD( buf, "\":" );
+			add_json_to_buffer( obj, buf, 1, 1 );
+			buffer_add_char( buf, '}' );
+			return;
+		}
+	}
 
 	switch(obj->type) {
 
@@ -279,11 +311,11 @@ static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf ) {
 			else OSRF_BUFFER_ADD(buf, "false"); 
 			break;
 
-		case JSON_NUMBER: {
-			if(obj->value.s) OSRF_BUFFER_ADD( buf, obj->value.s );
-			else OSRF_BUFFER_ADD_CHAR( buf, '0' );
-			break;
-		}
+        case JSON_NUMBER: {
+            if(obj->value.s) OSRF_BUFFER_ADD( buf, obj->value.s );
+            else OSRF_BUFFER_ADD_CHAR( buf, '0' );
+            break;
+        }
 
 		case JSON_NULL:
 			OSRF_BUFFER_ADD(buf, "null");
@@ -291,12 +323,7 @@ static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf ) {
 
 		case JSON_STRING:
 			OSRF_BUFFER_ADD_CHAR(buf, '"');
-			char* data = obj->value.s;
-			int len = strlen(data);
-			
-			char* output = uescape(data, len, 1);
-			OSRF_BUFFER_ADD(buf, output);
-			free(output);
+			buffer_append_uescape(buf, obj->value.s);
 			OSRF_BUFFER_ADD_CHAR(buf, '"');
 			break;
 			
@@ -306,7 +333,8 @@ static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf ) {
 				int i;
 				for( i = 0; i != obj->value.l->size; i++ ) {
 					if(i > 0) OSRF_BUFFER_ADD(buf, ",");
-					add_json_to_buffer( OSRF_LIST_GET_INDEX(obj->value.l, i), buf );
+					add_json_to_buffer(
+						OSRF_LIST_GET_INDEX(obj->value.l, i), buf, do_classname, second_pass );
 				}
 			}
 			OSRF_BUFFER_ADD_CHAR(buf, ']');
@@ -314,16 +342,18 @@ static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf ) {
 		}
 
 		case JSON_HASH: {
-
+	
 			OSRF_BUFFER_ADD_CHAR(buf, '{');
 			osrfHashIterator* itr = osrfNewHashIterator(obj->value.h);
 			jsonObject* item;
 			int i = 0;
 
 			while( (item = osrfHashIteratorNext(itr)) ) {
-				if(i++ > 0) OSRF_BUFFER_ADD(buf, ",");
-				buffer_fadd(buf, "\"%s\":", osrfHashIteratorKey(itr));
-				add_json_to_buffer( item, buf );
+				if(i++ > 0) OSRF_BUFFER_ADD_CHAR(buf, ',');
+				OSRF_BUFFER_ADD_CHAR(buf, '"');
+				OSRF_BUFFER_ADD(buf, osrfHashIteratorKey(itr));
+				OSRF_BUFFER_ADD(buf, "\":");
+				add_json_to_buffer( item, buf, do_classname, second_pass );
 			}
 
 			osrfHashIteratorFree(itr);
@@ -333,6 +363,19 @@ static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf ) {
 	}
 }
 
+char* jsonObjectToJSONRaw( const jsonObject* obj ) {
+	if(!obj) return NULL;
+	growing_buffer* buf = buffer_init(32);
+	add_json_to_buffer( obj, buf, 0, 0 );
+	return buffer_release( buf );
+}
+
+char* jsonObjectToJSON( const jsonObject* obj ) {
+	if(!obj) return NULL;
+	growing_buffer* buf = buffer_init(32);
+	add_json_to_buffer( obj, buf, 1, 0 );
+	return buffer_release( buf );
+}
 
 jsonIterator* jsonNewIterator(const jsonObject* obj) {
 	if(!obj) return NULL;
