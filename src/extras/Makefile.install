@@ -230,7 +230,7 @@ ubuntu: install_debs install debian_sys_config
 # Install the CPAN modules
 install_cpan: 
 	for m in $(CPAN_MODULES); do perl -MCPAN -e "install \"$$m\";"; done
-	for m in $(CPAN_MODULES_FORCE); do perl -MCPAN -e "CPAN::Shell->force(qw/install $$m);"; done
+	for m in $(CPAN_MODULES_FORCE); do perl -MCPAN -e "CPAN::Shell->force(qw#install $$m#);"; done
 
 # Install ejabberd from official project installer binary
 install_ejabberd:    
@@ -300,7 +300,7 @@ install_centos_rpms:
 	yum -y install $(CENTOS)
 
 install_centos_perl:
-	for m in $(CENTOS_PERL_FORCE); do perl -MCPAN -e "CPAN::Shell->force(qw/install $$m);"; done
+	for m in $(CENTOS_PERL_FORCE); do perl -MCPAN -e "CPAN::Shell->force(qw#install $$m#);"; done
 	for m in $(CENTOS_PERL); do perl -MCPAN -e "install \"$$m\";"; done
 	for m in $(CENTOS_PERL_VERSION); do perl -MCPAN -e "CPAN::Shell->install \"$$m\";"; done
 	for m in $(CENTOS_PERL_NOTEST); do perl -MCPAN -e "CPAN::Shell->notest('install', \"$$m\";"; done
