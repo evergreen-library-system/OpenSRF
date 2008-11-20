@@ -1,12 +1,13 @@
-#include "opensrf/osrf_app_session.h"
-#include "opensrf/osrf_application.h"
-#include "objson/object.h"
-#include "opensrf/log.h"
+#include <opensrf/osrf_app_session.h>
+#include <opensrf/osrf_application.h>
+#include <opensrf/osrf_json.h>
+#include <opensrf/log.h>
 
 #define MODULENAME "opensrf.math"
 
 int osrfAppInitialize();
 int osrfAppChildInit();
+void osrfAppChildExit();
 int osrfMathRun( osrfMethodContext* );
 
 
@@ -41,17 +42,24 @@ int osrfAppInitialize() {
 	return 0;
 }
 
+/* called when this process is just coming into existence */
 int osrfAppChildInit() {
 	return 0;
 }
+
+/* called when this process is about to exit */
+void osrfAppChildExit() {
+   osrfLogDebug(OSRF_LOG_MARK, "Child is exiting...");
+}
+
 
 int osrfMathRun( osrfMethodContext* ctx ) {
 
 	OSRF_METHOD_VERIFY_CONTEXT(ctx); /* see osrf_application.h */
 
 	/* collect the request params */
-	jsonObject* x = jsonObjectGetIndex(ctx->params, 0);
-	jsonObject* y = jsonObjectGetIndex(ctx->params, 1);
+	const jsonObject* x = jsonObjectGetIndex(ctx->params, 0);
+	const jsonObject* y = jsonObjectGetIndex(ctx->params, 1);
 
 	if( x && y ) {
 
@@ -81,6 +89,7 @@ int osrfMathRun( osrfMethodContext* ctx ) {
 			/* dbmath uses the same method names that math does */
 			int req_id = osrfAppSessionMakeRequest( ses, newParams, ctx->method->name, 1, NULL );
 			osrfMessage* omsg = osrfAppSessionRequestRecv( ses, req_id, 60 );
+			jsonObjectFree(newParams);
 
 			if(omsg) {
 				/* return dbmath's response to the user */
@@ -91,6 +100,10 @@ int osrfMathRun( osrfMethodContext* ctx ) {
 			}
 
 			osrfAppSessionFree(ses);
+		}
+		else {
+			if(a) free(a);
+			if(b) free(b);
 		}
 	}
 
