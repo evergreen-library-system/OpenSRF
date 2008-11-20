@@ -15,6 +15,11 @@ or "ubuntu" for <osname> below:
 aptitude install make
 make -f src/extras/Makefile.install <osname>
 
+When the prerequisite installer reaches the Perl module stage, you will
+be prompted for configuration of Comprehensive Perl Archive Network (CPAN)
+on your mserver. You can just press <return> for all of the prompts, except
+for the country configuration.
+
 Note: You may also be able to use "centos" to install the OpenSRF
 prerequisites for CentOS 5 and RHEL 5, or "gentoo" for Gentoo - but
 these are less tested distributions. Your patches and suggestions for
