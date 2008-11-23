@@ -3,7 +3,7 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (etch), Ubuntu (gutsy), and Gentoo.
+# Currently supports Debian (etch), Ubuntu (gutsy/hardy), and Gentoo.
 # Working towards support of CentOS 5 / RHEL 5.
 # Installs Perl prereqs, libjs with Perl wrapper
 #
@@ -38,8 +38,9 @@ SHELL=/bin/bash
 
 # ejabberd is not packaged on CentOS/RHEL, so we have to
 # download the installable package from the source
-EJABBERD_VER=2.0.1
-EJABBERD_PKG=ejabberd-2.0.1_2-linux-x86-installer.bin
+EJABBERD_VER=2.0.2
+EJABBERD_PKG=ejabberd-2.0.2_2-linux-x86-installer.bin
+EJABBERD_PKG_x64=ejabberd-2.0.2_2-linux-x86_64-installer.bin
 EJABBERD_HOST=http://www.process-one.net/downloads/ejabberd
 
 # libmemcache is not packaged on CentOS/RHEL
@@ -163,7 +164,7 @@ GENTOOS = \
 	net-fs/nfs-utils\
 	dev-libs/apr\
 	dev-perl/Cache-Memcached\
-    dev-perl/DBI\
+	dev-perl/DBI\
 	dev-perl/Log-Log4perl\
 	dev-perl/Unix-Syslog\
 	dev-perl/XML-LibXML\
