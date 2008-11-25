@@ -123,7 +123,7 @@ vim:et:ts=2:sw=2:
         <app_settings>
 
           <!-- sqlite database file -->
-          <dbfile>/path/to/dbfile/persist.db</dbfile>
+          <dbfile>LOCALSTATEDIR/persist.db</dbfile>
 
         </app_settings>
       </opensrf.persist>
@@ -208,7 +208,7 @@ vim:et:ts=2:sw=2:
 <!-- Example of an app-specific setting override -->
         <opensrf.persist>
           <app_settings>
-            <dbfile>/different/path/to/dbfile/persist.db</dbfile>
+            <dbfile>LOCALSTATEDIR/persist-override.db</dbfile>
           </app_settings>
         </opensrf.persist>
 
