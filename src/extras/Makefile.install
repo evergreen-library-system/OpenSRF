@@ -3,14 +3,20 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (etch), Ubuntu (gutsy/hardy), and Gentoo.
+# Currently supports Debian (etch/lenny), Ubuntu (gutsy/hardy/ibex), and Gentoo.
 # Working towards support of CentOS 5 / RHEL 5.
 # Installs Perl prereqs, libjs with Perl wrapper
 #
 # usage:
-# 	make -f Makefile.install debian
+# 	make -f Makefile.install debian-etch
 # 	- or -
-# 	make -f Makefile.install ubuntu
+# 	make -f Makefile.install debian-lenny
+# 	- or -
+# 	make -f Makefile.install ubuntu-gutsy
+# 	- or -
+# 	make -f Makefile.install ubuntu-hardy
+# 	- or -
+# 	make -f Makefile.install ubuntu-ibex
 # 	- or -
 # 	make -f Makefile.install centos
 # 	- or -
@@ -187,15 +193,19 @@ GENTOO_PERL = \
 	UNIVERSAL::require
 
 DEB_APACHE_MODS = \
-	expires\
-	include\
-	proxy\
-	proxy_http\
-	rewrite\
 	ssl
- 
 
-# generic CPAN modules
+EXTRA_DEBS = \
+	libdatetime-format-iso8601-perl \
+	libjson-xs-perl \
+	libnet-server-perl
+
+# generic CPAN modules:
+#   * DateTime::Format::ISO8601 is packaged by both Debian Lenny and Ubuntu Intrepid
+#   * JSON::XS is packaged by both Debian Lenny and Ubuntu Intrepid
+#   * XML::LibXML::XPathContext is part of libxml-libxml-perl on Debian Lenny and Ubuntu Intrepid
+#   * libnet-server-perl 0.97 is packaged on Debian Lenny and Ubuntu Intrepid
+#     - is there a specific need for 0.90?
 CPAN_MODULES = \
 	DateTime::Format::ISO8601 \
 	RHANDOM/Net-Server-0.90.tar.gz \
@@ -212,25 +222,33 @@ all:
 	@echo "please specify an OS" && exit 0
 
 
-# these should be the same for any distro
-install: install_cpan
-
 centos: install_centos_rpms install_ejabberd install_libmemcache install install_libxml2 install_libxslt install_centos_perl create_ld_local
 
-debian: install_debs install debian_sys_config
+debian-etch: generic_debian etch
+debian-lenny: generic_debian lenny
+etch: install_cpan
+lenny: install_extra_debs
+generic_debian: install_debs install_cpan_force debian_sys_config
 
 gentoo: install_gentoos install_gentoo_rc install_gentoo_perl install
 
 rhel: centos
 
-ubuntu: install_debs install debian_sys_config
-
+ubuntu-gutsy: generic_ubuntu hardy 
+ubuntu-hardy: generic_ubuntu hardy
+ubuntu-ibex: generic_ubuntu ibex
+hardy: install_cpan
+ibex: install_extra_debs
+generic_ubuntu: install_debs install_cpan_force debian_sys_config
 
 # - COMMON TARGETS ---------------------------------------------------------
 
 # Install the CPAN modules
 install_cpan: 
 	for m in $(CPAN_MODULES); do perl -MCPAN -e "install \"$$m\";"; done
+
+# Install CPAN modules that need to be forced
+install_cpan_force: 
 	for m in $(CPAN_MODULES_FORCE); do perl -MCPAN -e "CPAN::Shell->force(qw#install $$m#);"; done
 
 # Install ejabberd from official project installer binary
@@ -281,6 +299,10 @@ debian_sys_config:
 # Install the debian-specific dependencies
 install_debs:
 	$(APT_TOOL) install $(DEBS)
+
+# Install the debian-specific dependencies for more modern distros
+install_extra_debs:
+	$(APT_TOOL) install $(EXTRA_DEBS)
 
 # ------------------------------------------------------------------
 # - GENTOO ---------------------------------------------------------
