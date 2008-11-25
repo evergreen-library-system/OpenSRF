@@ -68,7 +68,7 @@ sub do_stop {
     if(-e $pid_file) {
         my $pid = `cat $pid_file`;
         chomp $pid;
-        msg("stopping servivce pid=$pid $service", 1);
+        msg("stopping service pid=$pid $service", 1);
         kill('INT', $pid);
         waitpid($pid, 0);
         unlink $pid_file;
@@ -156,7 +156,7 @@ sub do_daemon {
     my $pid_file = get_pid_file($service);
     #exit if OpenSRF::Utils::safe_fork();
     return 0 if OpenSRF::Utils::safe_fork();
-    msg("starting servivce pid=$$ $service", 1);
+    msg("starting service pid=$$ $service", 1);
     chdir('/');
     setsid();
     close STDIN;
