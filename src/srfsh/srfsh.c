@@ -38,7 +38,7 @@ static int raw_print = 0;
 static transport_client* client = NULL; 
 
 /* the last result we received */
-static osrf_message* last_result = NULL;
+static osrfMessage* last_result = NULL;
 
 /* functions */
 static int parse_request( char* request );
@@ -583,7 +583,7 @@ int send_request( char* server,
 	int req_id = osrfAppSessionMakeRequest( session, params, method, 1, NULL );
 	jsonObjectFree(params);
 
-	osrf_message* omsg = osrfAppSessionRequestRecv( session, req_id, recv_timeout );
+	osrfMessage* omsg = osrfAppSessionRequestRecv( session, req_id, recv_timeout );
 
 	if(!omsg) 
 		printf("\nReceived no data from server\n");
@@ -868,7 +868,7 @@ static int do_math( int count, int style ) {
 
 			double start = get_timestamp_millis();
 			int req_id = osrfAppSessionMakeRequest( session, params, methods[j], 1, NULL );
-			osrf_message* omsg = osrfAppSessionRequestRecv( session, req_id, 5 );
+			osrfMessage* omsg = osrfAppSessionRequestRecv( session, req_id, 5 );
 			double end = get_timestamp_millis();
 
 			times[(4*i) + j] = end - start;

@@ -31,9 +31,9 @@ struct osrf_app_request_struct {
 	/** True if we have received a 'request complete' message from our request */
 	int complete;
 	/** Our original request payload */
-	osrf_message* payload; 
+	osrfMessage* payload;
 	/** List of responses to our request */
-	osrf_message* result;
+	osrfMessage* result;
 
 	/* if set to true, then a call that is waiting on a response, will reset the 
 		timeout and set this variable back to false */
@@ -113,7 +113,7 @@ osrfAppSession* osrf_app_session_find_session( const char* session_id );
   */
 int osrfAppSessionMakeRequest(
 		osrfAppSession* session, const jsonObject* params,
-		const char* method_name, int protocol, string_array* param_strings);
+		const char* method_name, int protocol, osrfStringArray* param_strings);
 
 /** Sets the given request to complete state */
 void osrf_app_session_set_complete( osrfAppSession* session, int request_id );
@@ -122,7 +122,7 @@ void osrf_app_session_set_complete( osrfAppSession* session, int request_id );
 int osrf_app_session_request_complete( const osrfAppSession* session, int request_id );
 
 /** Does a recv call on the given request */
-osrf_message* osrfAppSessionRequestRecv(
+osrfMessage* osrfAppSessionRequestRecv(
 		osrfAppSession* session, int request_id, int timeout );
 
 /** Removes the request from the request set and frees the reqest */
@@ -140,7 +140,7 @@ void osrf_app_session_set_remote( osrfAppSession* session, const char* remote_id
 /** pushes the given message into the result list of the app_request
   * whose request_id matches the messages thread_trace 
   */
-int osrf_app_session_push_queue( osrfAppSession*, osrf_message* msg );
+int osrf_app_session_push_queue( osrfAppSession*, osrfMessage* msg );
 
 /** Attempts to connect to the remote service. Returns 1 on successful 
   * connection, 0 otherwise.
