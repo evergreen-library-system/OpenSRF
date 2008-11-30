@@ -30,6 +30,7 @@ TARGS = 		osrf_message.c \
 			osrf_transgroup.c \
 			osrf_list.c \
 			osrf_hash.c \
+			osrf_utf8.c \
 			xml_utils.c \
 			transport_message.c\
 			transport_session.c\
@@ -55,6 +56,7 @@ TARGS_HEADS = 	 $(OSRF_INC)/transport_message.h \
 		 $(OSRF_INC)/osrf_cache.h \
 		 $(OSRF_INC)/osrf_list.h \
 		 $(OSRF_INC)/osrf_hash.h \
+		 $(OSRF_INC)/osrf_utf8.h \
 		 $(OSRF_INC)/md5.h \
 		 $(OSRF_INC)/log.h \
 		 $(OSRF_INC)/utils.h \
@@ -73,6 +75,7 @@ JSON_TARGS = 			osrf_json_object.c\
 # use these when building the standalone JSON module
 JSON_DEP = 		osrf_list.c\
 			osrf_hash.c\
+			osrf_utf8.c\
 			utils.c\
 			log.c\
 			md5.c\
@@ -83,6 +86,7 @@ JSON_TARGS_HEADS = 	$(OSRF_INC)/osrf_legacy_json.h \
 
 JSON_DEP_HEADS = 	$(OSRF_INC)/osrf_list.h \
 			$(OSRF_INC)/osrf_hash.h \
+			$(OSRF_INC)/osrf_utf8.h \
 			$(OSRF_INC)/utils.h \
 			$(OSRF_INC)/log.h \
 			$(OSRF_INC)/md5.h \

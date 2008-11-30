@@ -323,7 +323,7 @@ static void add_json_to_buffer( const jsonObject* obj,
 
 		case JSON_STRING:
 			OSRF_BUFFER_ADD_CHAR(buf, '"');
-			buffer_append_uescape(buf, obj->value.s);
+			buffer_append_utf8(buf, obj->value.s);
 			OSRF_BUFFER_ADD_CHAR(buf, '"');
 			break;
 			
