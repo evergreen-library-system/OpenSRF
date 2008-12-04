@@ -77,7 +77,7 @@ DEBS =  \
 	libclass-dbi-abstractsearch-perl\
 	libclass-dbi-sqlite-perl\
 	liberror-perl\
-	lintrepidpat1-dev\
+	libexpat1-dev\
 	libfile-find-rule-perl\
 	libfreezethaw-perl\
 	liblog-log4perl-perl\
