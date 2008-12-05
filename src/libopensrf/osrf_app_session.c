@@ -1,6 +1,25 @@
 #include <opensrf/osrf_app_session.h>
 #include <time.h>
 
+struct osrf_app_request_struct {
+	/** Our controlling session */
+	struct osrf_app_session_struct* session;
+
+	/** our "id" */
+	int request_id;
+	/** True if we have received a 'request complete' message from our request */
+	int complete;
+	/** Our original request payload */
+	osrfMessage* payload;
+	/** List of responses to our request */
+	osrfMessage* result;
+
+	/* if set to true, then a call that is waiting on a response, will reset the 
+	timeout and set this variable back to false */
+	int reset_timeout;
+};
+typedef struct osrf_app_request_struct osrfAppRequest;
+
 /** Send the given message */
 static int _osrf_app_session_send( osrfAppSession*, osrfMessage* msg );
 
@@ -9,7 +28,7 @@ static int osrfAppSessionMakeLocaleRequest(
 		int protocol, osrfStringArray* param_strings, char* locale );
 
 /* the global app_session cache */
-osrfHash* osrfAppSessionCache = NULL;
+static osrfHash* osrfAppSessionCache = NULL;
 
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
@@ -36,7 +55,8 @@ static osrfAppRequest* _osrf_app_request_init(
 
 
 void osrfAppSessionCleanup() {
-	osrfHashFree(osrfAppSessionCache);	
+	osrfHashFree(osrfAppSessionCache);
+	osrfAppSessionCache = NULL;	
 }
 
 /** Frees memory used by an app_request object */
@@ -44,6 +64,16 @@ static void _osrf_app_request_free( void * req ){
 	if( req == NULL ) return;
 	osrfAppRequest* r = (osrfAppRequest*) req;
 	if( r->payload ) osrfMessageFree( r->payload );
+
+	/* Free the messages in the result queue */
+
+	osrfMessage* next_msg;
+	while( r->result ) {
+		next_msg = r->result->next;
+		osrfMessageFree( r->result );
+		r->result = next_msg;
+	}
+	
 	free( r );
 }
 
@@ -118,13 +148,10 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 			/* pop off the first message in the list */
 			osrfLogDebug( OSRF_LOG_MARK,  "app_request_recv received a message, returning it");
 			osrfMessage* ret_msg = req->result;
-			osrfMessage* tmp_msg = ret_msg->next;
-			req->result = tmp_msg;
-			if (ret_msg->sender_locale) {
-				if (req->session->session_locale)
-					free(req->session->session_locale);
-				req->session->session_locale = strdup(ret_msg->sender_locale);
-			}
+			req->result = ret_msg->next;
+			if (ret_msg->sender_locale)
+				osrf_app_session_set_locale(req->session, ret_msg->sender_locale);
+
 			return ret_msg;
 		}
 
@@ -142,13 +169,10 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 			/* pop off the first message in the list */
 			osrfLogDebug( OSRF_LOG_MARK,  "app_request_recv received a message, returning it");
 			osrfMessage* ret_msg = req->result;
-			osrfMessage* tmp_msg = ret_msg->next;
-			req->result = tmp_msg;
-			if (ret_msg->sender_locale) {
-				if (req->session->session_locale)
-					free(req->session->session_locale);
-				req->session->session_locale = strdup(ret_msg->sender_locale);
-			}
+			req->result = ret_msg->next;
+			if (ret_msg->sender_locale)
+				osrf_app_session_set_locale(req->session, ret_msg->sender_locale);
+
 			return ret_msg;
 		}
 		if( req->complete )
@@ -188,15 +212,23 @@ static int _osrf_app_request_resend( osrfAppRequest* req ) {
 // Session API
 // --------------------------------------------------------------------------
 
-/** returns a session from the global session hash */
+/** Install a locale for the session */
 char* osrf_app_session_set_locale( osrfAppSession* session, const char* locale ) {
 	if (!session || !locale)
 		return NULL;
 
-	if(session->session_locale)
-		free(session->session_locale);
+	if(session->session_locale) {
+		if( strlen(session->session_locale) >= strlen(locale) ) {
+			/* There's room available; just copy */
+			strcpy(session->session_locale, locale);
+		} else {
+			free(session->session_locale);
+			session->session_locale = strdup( locale );
+		}
+	} else {
+		session->session_locale = strdup( locale );
+	}
 
-	session->session_locale = strdup( locale );
 	return session->session_locale;
 }
 
@@ -356,27 +388,6 @@ osrfAppSession* osrf_app_server_session_init(
 
 }
 
-
-
-/** frees memory held by a session */
-static void _osrf_app_session_free( osrfAppSession* session ){
-	if(session==NULL)
-		return;
-
-	if( session->userDataFree && session->userData ) 
-		session->userDataFree(session->userData);
-	
-	if(session->session_locale)
-		free(session->session_locale);
-
-	free(session->remote_id);
-	free(session->orig_remote_id);
-	free(session->session_id);
-	free(session->remote_service);
-	osrfListFree(session->request_queue);
-	free(session);
-}
-
 int osrfAppSessionMakeRequest(
 		osrfAppSession* session, const jsonObject* params,
 		const char* method_name, int protocol, osrfStringArray* param_strings ) {
@@ -452,19 +463,26 @@ void osrf_app_session_reset_remote( osrfAppSession* session ){
 	if( session==NULL )
 		return;
 
-	free(session->remote_id);
 	osrfLogDebug( OSRF_LOG_MARK,  "App Session [%s] [%s] resetting remote id to %s",
 			session->remote_service, session->session_id, session->orig_remote_id );
 
-	session->remote_id = strdup(session->orig_remote_id);
+	osrf_app_session_set_remote( session, session->orig_remote_id );
 }
 
 void osrf_app_session_set_remote( osrfAppSession* session, const char* remote_id ) {
 	if(session == NULL)
 		return;
-	if( session->remote_id )
-		free(session->remote_id );
-	session->remote_id = strdup( remote_id );
+
+	if( session->remote_id ) {
+		if( strlen(session->remote_id) >= strlen(remote_id) ) {
+			// There's enough room; just copy it
+			strcpy(session->remote_id, remote_id);
+		} else {
+			free(session->remote_id );
+			session->remote_id = strdup( remote_id );
+		}
+	} else
+		session->remote_id = strdup( remote_id );
 }
 
 /** pushes the given message into the result list of the app_request
@@ -641,11 +659,13 @@ int osrf_app_session_queue_wait( osrfAppSession* session, int timeout, int* recv
 }
 
 /** Disconnects (if client) and removes the given session from the global session cache 
-  * ! This free's all attached app_requests ! 
+  * ! This frees all attached app_requests !
   */
 void osrfAppSessionFree( osrfAppSession* session ){
 	if(session == NULL) return;
 
+	/* Disconnect */
+	
 	osrfLogDebug(OSRF_LOG_MARK,  "AppSession [%s] [%s] destroying self and deleting requests", 
 			session->remote_service, session->session_id );
 	if(session->type == OSRF_SESSION_CLIENT 
@@ -655,8 +675,24 @@ void osrfAppSessionFree( osrfAppSession* session ){
 		osrfMessageFree(dis_msg);
 	}
 
+	/* Remove self from the global session cache */
+	
 	osrfHashRemove( osrfAppSessionCache, session->session_id );
-	_osrf_app_session_free( session );
+	
+	/* Free the memory */
+	
+	if( session->userDataFree && session->userData )
+		session->userDataFree(session->userData);
+	
+	if(session->session_locale)
+		free(session->session_locale);
+
+	free(session->remote_id);
+	free(session->orig_remote_id);
+	free(session->session_id);
+	free(session->remote_service);
+	osrfListFree(session->request_queue);
+	free(session);
 }
 
 osrfMessage* osrfAppSessionRequestRecv(
@@ -689,13 +725,13 @@ int osrfAppRequestRespond( osrfAppSession* ses, int requestId, const jsonObject*
 int osrfAppRequestRespondComplete( 
 		osrfAppSession* ses, int requestId, const jsonObject* data ) {
 
-	osrfMessage* payload = osrf_message_init( RESULT, requestId, 1 );
-	osrf_message_set_status_info( payload, NULL, "OK", OSRF_STATUS_OK );
-
 	osrfMessage* status = osrf_message_init( STATUS, requestId, 1);
 	osrf_message_set_status_info( status, "osrfConnectStatus", "Request Complete", OSRF_STATUS_COMPLETE );
 	
 	if (data) {
+		osrfMessage* payload = osrf_message_init( RESULT, requestId, 1 );
+		osrf_message_set_status_info( payload, NULL, "OK", OSRF_STATUS_OK );
+
 		char* json = jsonObjectToJSON( data );
 		osrf_message_set_result_content( payload, json );
 		free(json);
@@ -705,11 +741,12 @@ int osrfAppRequestRespondComplete(
 		ms[1] = status;
 
 		osrfAppSessionSendBatch( ses, ms, 2 );
+
+		osrfMessageFree( payload );
 	} else {
 		osrfAppSessionSendBatch( ses, &status, 1 );
 	}
 
-	osrfMessageFree( payload );
 	osrfMessageFree( status );
 
 	return 0;

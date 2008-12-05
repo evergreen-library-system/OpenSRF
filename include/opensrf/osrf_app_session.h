@@ -22,33 +22,11 @@ enum OSRF_SESSION_TYPE { OSRF_SESSION_SERVER, OSRF_SESSION_CLIENT };
 /* entry point for data into the stack.  gets set in osrf_stack.c */
 int (*osrf_stack_entry_point) (transport_client* client, int timeout, int* recvd );
 
-struct osrf_app_request_struct {
-	/** Our controlling session */
-	struct osrf_app_session_struct* session;
-
-	/** our "id" */
-	int request_id;
-	/** True if we have received a 'request complete' message from our request */
-	int complete;
-	/** Our original request payload */
-	osrfMessage* payload;
-	/** List of responses to our request */
-	osrfMessage* result;
-
-	/* if set to true, then a call that is waiting on a response, will reset the 
-		timeout and set this variable back to false */
-	int reset_timeout;
-};
-typedef struct osrf_app_request_struct osrfAppRequest;
-
 struct osrf_app_session_struct {
 
 	/** Our messag passing object */
 	transport_client* transport_handle;
 	/** Cache of active app_request objects */
-
-	//osrfAppRequest* request_queue;
-
 	osrfList* request_queue;
 
 	/** The original remote id of the remote service we're talking to */
