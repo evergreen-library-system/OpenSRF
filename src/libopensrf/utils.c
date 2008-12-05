@@ -16,9 +16,6 @@ GNU General Public License for more details.
 #include <opensrf/log.h>
 #include <errno.h>
 
-static const char hex_chars[]   = "0123456789abcdef";
-static unsigned char hex_code[7] = "\\u00";
-
 inline void* safe_malloc( int size ) {
 	void* ptr = (void*) malloc( size );
 	if( ptr == NULL ) {
@@ -284,27 +281,16 @@ char* buffer_data( const growing_buffer *gb) {
 	return strdup( gb->buf );
 }
 
-int buffer_chomp(growing_buffer* gb) {
-	if( gb == NULL ) { return -1; }
-    if(gb->n_used > 0) {
+char buffer_chomp(growing_buffer* gb) {
+	char c = '\0';
+    if(gb && gb->n_used > 0) {
 	    gb->n_used--;
+		c = gb->buf[gb->n_used];
 	    gb->buf[gb->n_used] = '\0';
     }
-    return gb->n_used;
+    return c;
 }
 
-
-/*
-#define OSRF_BUFFER_ADD_CHAR(gb, c)\
-	do {\
-		if(gb) {\
-			if(gb->n_used < gb->size - 1)\
-				gb->buf[gb->n_used++] = c;\
-			else\
-				buffer_add_char(gb, c);\
-		}\
-	}while(0)
-	*/
 
 int buffer_add_char(growing_buffer* gb, char c ) {
 	if(gb && gb->buf) {
@@ -427,112 +413,6 @@ char* uescape( const char* string, int size, int full_escape ) {
 	return buffer_release(buf);
 }
 
-int buffer_append_uescape( growing_buffer* buf, const char* string ) {
-
-	if(NULL == string)
-		return 0;       // Nothing to add?  Nothing to do
-
-	if( NULL == buf )
-		return -1;      // Nothing to add to
-
-	int idx = 0;
-	unsigned long int c;
-
-	while (string[idx]) {
-
-		c = 0x0;
-
-		if ((unsigned char)string[idx] >= 0x80) { // not ASCII
-
-			if ((unsigned char)string[idx] >= 0xC0 && (unsigned char)string[idx] <= 0xF4) { // starts a UTF8 string
-
-				int clen = 1;
-				if (((unsigned char)string[idx] & 0xF0) == 0xF0) {
-					clen = 3;
-					c = (unsigned char)string[idx] ^ 0xF0;
-
-				} else if (((unsigned char)string[idx] & 0xE0) == 0xE0) {
-					clen = 2;
-					c = (unsigned char)string[idx] ^ 0xE0;
-
-				} else if (((unsigned char)string[idx] & 0xC0) == 0xC0) {
-					clen = 1;
-					c = (unsigned char)string[idx] ^ 0xC0;
-				}
-
-				for (;clen;clen--) {
-
-					idx++; // look at the next byte
-					c = (c << 6) | ((unsigned char)string[idx] & 0x3F); // add this byte worth
-				}
-
-				buffer_fadd(buf, "\\u%04x", c);
-
-			} else {
-				return idx + 1;
-			}
-
-		} else if(string[idx] >= ' ' ) { // printable ASCII character
-
-			c = string[idx];
-			switch(c) {
-				case '"':
-				case '\\':
-					OSRF_BUFFER_ADD_CHAR(buf, '\\');
-					OSRF_BUFFER_ADD_CHAR(buf, c);
-					break;
-
-                default:
-			        OSRF_BUFFER_ADD_CHAR(buf, c);
-            }
-
-		} else {
-			c = string[idx];
-
-			/* escape the usual suspects */
-			switch(c) {
-				case '\b':
-					OSRF_BUFFER_ADD_CHAR(buf, '\\');
-					OSRF_BUFFER_ADD_CHAR(buf, 'b');
-					break;
-	
-				case '\f':
-					OSRF_BUFFER_ADD_CHAR(buf, '\\');
-					OSRF_BUFFER_ADD_CHAR(buf, 'f');
-					break;
-	
-				case '\t':
-					OSRF_BUFFER_ADD_CHAR(buf, '\\');
-					OSRF_BUFFER_ADD_CHAR(buf, 't');
-					break;
-	
-				case '\n':
-					OSRF_BUFFER_ADD_CHAR(buf, '\\');
-					OSRF_BUFFER_ADD_CHAR(buf, 'n');
-					break;
-	
-				case '\r':
-					OSRF_BUFFER_ADD_CHAR(buf, '\\');
-					OSRF_BUFFER_ADD_CHAR(buf, 'r');
-					break;
-
-				default:
-				{
-					// Represent as \u followed by four hex characters
-					hex_code[ 4 ] = hex_chars[ c >> 4 ];    // high nybble
-					hex_code[ 5 ] = hex_chars[ c & 0x0F ];  // low nybble
-					hex_code[ 6 ] = '\0';
-					OSRF_BUFFER_ADD(buf, (char *) hex_code);
-					break;
-				}
-			}
-		}
-
-		idx++;
-	}
-
-	return 0;
-}
 
 // A function to turn a process into a daemon 
 int daemonize( void ) {

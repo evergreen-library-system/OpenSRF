@@ -60,7 +60,7 @@ GNU General Public License for more details.
 		if(gb && data) {\
 			__tl = strlen(data) + gb->n_used;\
 			if( __tl < gb->size ) {\
-				strcat(gb->buf, data);\
+				strcpy( gb->buf + gb->n_used, data ); \
 				gb->n_used = __tl; \
 			} else { buffer_add(gb, data); }\
 		}\
@@ -185,6 +185,8 @@ struct growing_buffer_struct {
 };
 typedef struct growing_buffer_struct growing_buffer;
 
+#define buffer_length(x) (x)->n_used
+
 growing_buffer* buffer_init( int initial_num_bytes);
 
 // XXX This isn't defined in utils.c!! removing for now...
@@ -197,7 +199,7 @@ char* buffer_data( const growing_buffer* gb);
 char* buffer_release( growing_buffer* gb );
 int buffer_free( growing_buffer* gb );
 int buffer_add_char(growing_buffer* gb, char c);
-int buffer_chomp(growing_buffer* gb); // removes the last character from the buffer
+char buffer_chomp(growing_buffer* gb); // removes the last character from the buffer
 
 /* returns the size needed to fill in the vsnprintf buffer.  
 	* ! this calls va_end on the va_list argument*
