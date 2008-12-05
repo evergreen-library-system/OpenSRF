@@ -571,7 +571,7 @@ int send_request( char* server,
 
 	osrfAppSession* session = osrfAppSessionClientInit(server);
 
-	if(!osrf_app_session_connect(session)) {
+	if(!osrfAppSessionConnect(session)) {
 		fprintf(stderr, "Unable to communicate with service %s\n", server);
 		osrfLogWarning( OSRF_LOG_MARK,  "Unable to connect to remote service %s\n", server );
 		jsonObjectFree(params);
@@ -835,7 +835,7 @@ static int handle_math( char* words[] ) {
 static int do_math( int count, int style ) {
 
 	osrfAppSession* session = osrfAppSessionClientInit( "opensrf.math" );
-	osrf_app_session_connect(session);
+	osrfAppSessionConnect(session);
 
 	jsonObject* params = jsonParseString("[]");
 	jsonObjectPush(params,jsonNewObject("1"));
