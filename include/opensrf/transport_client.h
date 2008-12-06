@@ -1,42 +1,25 @@
+#ifndef TRANSPORT_CLIENT_H
+#define TRANSPORT_CLIENT_H
+
+#include <time.h>
 #include <opensrf/transport_session.h>
 #include <opensrf/utils.h>
 #include <opensrf/log.h>
 
-#include <time.h>
-
-#ifndef TRANSPORT_CLIENT_H
-#define TRANSPORT_CLIENT_H
-
-#define MESSAGE_LIST_HEAD 1
-#define MESSAGE_LIST_ITEM 2
-
-
-// ---------------------------------------------------------------------------
-// Represents a node in a linked list.  The node holds a pointer to the next
-// node (which is null unless set), a pointer to a transport_message, and
-// and a type variable (which is not really curently necessary).
-// ---------------------------------------------------------------------------
-struct message_list_struct {
-	struct message_list_struct* next;
-	transport_message* message;
-	int type;
-};
-
-typedef struct message_list_struct transport_message_list;
-typedef struct message_list_struct transport_message_node;
+struct message_list_struct;
 
 // ---------------------------------------------------------------------------
 // Our client struct.  We manage a list of messages and a controlling session
 // ---------------------------------------------------------------------------
 struct transport_client_struct {
-	transport_message_list* m_list;
+	struct message_list_struct* m_list;
 	transport_session* session;
 	int error;
 };
 typedef struct transport_client_struct transport_client;
 
 // ---------------------------------------------------------------------------
-// Allocates and initializes and transport_client.  This does no connecting
+// Allocates and initializes a transport_client.  This does no connecting
 // The user must call client_free(client) when finished with the allocated
 // object.
 // if port > 0 => connect via TCP
@@ -63,7 +46,7 @@ int client_disconnect( transport_client* client );
 int client_free( transport_client* client );
 
 // ---------------------------------------------------------------------------
-//  Sends the given message.  The message must at least have the recipient
+// Sends the given message.  The message must at least have the recipient
 // field set.
 // ---------------------------------------------------------------------------
 int client_send_message( transport_client* client, transport_message* msg );
@@ -74,14 +57,7 @@ int client_send_message( transport_client* client, transport_message* msg );
 int client_connected( const transport_client* client );
 
 // ---------------------------------------------------------------------------
-// This is the message handler required by transport_session.  This handler
-// takes all incoming messages and puts them into the back of a linked list
-// of messages.  
-// ---------------------------------------------------------------------------
-void client_message_handler( void* client, transport_message* msg );
-
-// ---------------------------------------------------------------------------
-// If there are any message in the message list, the 'oldest' message is
+// If there are any messages in the message list, the 'oldest' message is
 // returned.  If not, this function will wait at most 'timeout' seconds 
 // for a message to arrive.  Specifying -1 means that this function will not
 // return unless a message arrives.

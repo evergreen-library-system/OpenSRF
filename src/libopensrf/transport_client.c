@@ -1,5 +1,22 @@
 #include <opensrf/transport_client.h>
 
+#define MESSAGE_LIST_HEAD 1
+#define MESSAGE_LIST_ITEM 2
+
+// ---------------------------------------------------------------------------
+// Represents a node in a linked list.  The node holds a pointer to the next
+// node (which is null unless set), a pointer to a transport_message, and
+// and a type variable (which is not really curently necessary).
+// ---------------------------------------------------------------------------
+struct message_list_struct {
+	struct message_list_struct* next;
+	transport_message* message;
+	int type;
+};
+typedef struct message_list_struct transport_message_list;
+typedef struct message_list_struct transport_message_node;
+
+static void client_message_handler( void* client, transport_message* msg );
 
 //int main( int argc, char** argv );
 
@@ -174,8 +191,12 @@ transport_message* client_recv( transport_client* client, int timeout ) {
 	}
 }
 
-/* throw the message into the message queue */
-void client_message_handler( void* client, transport_message* msg ){
+// ---------------------------------------------------------------------------
+// This is the message handler required by transport_session.  This handler
+// takes all incoming messages and puts them into the back of a linked list
+// of messages.
+// ---------------------------------------------------------------------------
+static void client_message_handler( void* client, transport_message* msg ){
 
 	if(client == NULL) return;
 	if(msg == NULL) return; 
