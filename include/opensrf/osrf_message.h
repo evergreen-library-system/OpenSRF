@@ -82,14 +82,13 @@ struct osrf_message_struct {
 	int sender_tz_offset;
 
 };
-typedef struct osrf_message_struct osrf_message;
 typedef struct osrf_message_struct osrfMessage;
 
 /* Set the locale hint for this message.
    default_locale is used if not set.
    Returns NULL if msg or locale is not set, char* to msg->sender_locale on success.
 */
-char* osrf_message_set_locale( osrf_message* msg, const char* locale );
+char* osrf_message_set_locale( osrfMessage* msg, const char* locale );
 
 /* Set the default locale hint to be used for future outgoing messages.
    Returns NULL if locale is NULL, const char* to default_locale otherwise.
@@ -101,18 +100,18 @@ const char* osrf_message_set_default_locale( const char* locale );
 */
 const char* osrf_message_get_last_locale(void);
 
-osrf_message* osrf_message_init( enum M_TYPE type, int thread_trace, int protocol );
-//void osrf_message_set_request_info( osrf_message*, char* param_name, json* params );
-void osrf_message_set_status_info( osrf_message*,
+osrfMessage* osrf_message_init( enum M_TYPE type, int thread_trace, int protocol );
+//void osrf_message_set_request_info( osrfMessage*, char* param_name, json* params );
+void osrf_message_set_status_info( osrfMessage*,
 		const char* status_name, const char* status_text, int status_code );
-void osrf_message_set_result_content( osrf_message*, const char* json_string );
+void osrf_message_set_result_content( osrfMessage*, const char* json_string );
 void osrfMessageFree( osrfMessage* );
-void osrf_message_free( osrf_message* );
-char* osrf_message_to_xml( osrf_message* );
-char* osrf_message_serialize(const osrf_message*);
+void osrf_message_free( osrfMessage* );
+char* osrf_message_to_xml( osrfMessage* );
+char* osrf_message_serialize(const osrfMessage*);
 
 /* count is the max number of messages we'll put into msgs[] */
-int osrf_message_deserialize(const char* json, osrf_message* msgs[], int count);
+int osrf_message_deserialize(const char* json, osrfMessage* msgs[], int count);
 
 
 
@@ -120,12 +119,12 @@ int osrf_message_deserialize(const char* json, osrf_message* msgs[], int count);
   * it is assumed that 'msgs' has beenn pre-allocated.
   * Returns the number of message that are in the buffer.
   */
-int osrf_message_from_xml( char* xml, osrf_message* msgs[] );
+int osrf_message_from_xml( char* xml, osrfMessage* msgs[] );
 
-void osrf_message_set_params( osrf_message* msg, const jsonObject* o );
-void osrf_message_set_method( osrf_message* msg, const char* method_name );
-void osrf_message_add_object_param( osrf_message* msg, const jsonObject* o );
-void osrf_message_add_param( osrf_message*, const char* param_string );
+void osrf_message_set_params( osrfMessage* msg, const jsonObject* o );
+void osrf_message_set_method( osrfMessage* msg, const char* method_name );
+void osrf_message_add_object_param( osrfMessage* msg, const jsonObject* o );
+void osrf_message_add_param( osrfMessage*, const char* param_string );
 
 
 jsonObject* osrfMessageGetResult( osrfMessage* msg );
