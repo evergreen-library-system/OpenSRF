@@ -1,15 +1,11 @@
 #include <opensrf/string_array.h>
 
 osrfStringArray* osrfNewStringArray(int size) {
-	return init_string_array(size);
-}
-
-string_array* init_string_array(int size) {
 	if(size > STRING_ARRAY_MAX_SIZE)
-		osrfLogError( OSRF_LOG_MARK, "init_string_array size is too large");
+		osrfLogError( OSRF_LOG_MARK, "osrfNewStringArray size is too large");
 
-	string_array* arr;
-	OSRF_MALLOC( arr, sizeof(string_array));
+	osrfStringArray* arr;
+	OSRF_MALLOC( arr, sizeof(osrfStringArray));
     arr->list = osrfNewListSize(size);
     osrfListSetDefaultFree(arr->list);
 	arr->size = 0;
@@ -17,14 +13,10 @@ string_array* init_string_array(int size) {
 }
 
 
-void osrfStringArrayAdd(osrfStringArray* arr, char* string) {
-	string_array_add(arr, string);
-}
-
-void string_array_add(string_array* arr, char* str) {
+void osrfStringArrayAdd(osrfStringArray* arr, char* str) {
 	if(arr == NULL || str == NULL ) return;
 	if( arr->size > STRING_ARRAY_MAX_SIZE ) 
-		osrfLogError( OSRF_LOG_MARK, "string_array_add size is too large");
+		osrfLogError( OSRF_LOG_MARK, "osrfStringArrayAdd size is too large");
     osrfListPush(arr->list, strdup(str));
     arr->size = arr->list->size;
 }
@@ -34,20 +26,9 @@ char* osrfStringArrayGetString(osrfStringArray* arr, int index) {
     return OSRF_LIST_GET_INDEX(arr->list, index);
 }
 
-char* string_array_get_string(string_array* arr, int index) {
-    if(!arr) return NULL;
-    return OSRF_LIST_GET_INDEX(arr->list, index);
-}
-
-
 void osrfStringArrayFree(osrfStringArray* arr) {
     OSRF_STRING_ARRAY_FREE(arr);
 }
-
-void string_array_destroy(string_array* arr) {
-    OSRF_STRING_ARRAY_FREE(arr);
-}
-
 
 int osrfStringArrayContains( osrfStringArray* arr, char* string ) {
 	if(!(arr && string)) return 0;
