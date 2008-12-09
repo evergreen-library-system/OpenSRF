@@ -173,6 +173,9 @@ function js2JSONRaw(arg) {
 			s = s.replace(/\f/g, "\\f");
 			return '"' + s + '"';
 
+        case 'boolean':
+            return (arg) ? 'true' : 'false';
+
 		default: return 'null';
 	}
 }
