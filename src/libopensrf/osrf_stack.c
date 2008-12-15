@@ -1,5 +1,6 @@
 #include <opensrf/osrf_stack.h>
 #include <opensrf/osrf_application.h>
+#include <opensrf/osrf_settings.h>
 
 /* the max number of oilsMessage blobs present in any one root packet */
 #define OSRF_MAX_MSGS_PER_PACKET 256
@@ -65,8 +66,23 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 
 	osrfAppSession* session = osrf_app_session_find_session( msg->thread );
 
-	if( !session && my_service ) 
-		session = osrf_app_server_session_init( msg->thread, my_service, msg->sender);
+    if(my_service) {
+
+        if(session) {
+            if(strcmp(msg->sender, session->remote_id) != 0) {
+                /* unexpected client connection.  See if we are running in "migratable" mode */
+                char* mable = osrf_settings_host_value("/apps/%s/migratable", my_service);
+                if(!mable) {
+                    osrfLogError("Connection to service %s from unknown client %s", my_service, msg->sender);
+                    return NULL;
+                }
+                free(mable);
+            }
+
+        } else {
+		    session = osrf_app_server_session_init(msg->thread, my_service, msg->sender);
+        }
+    }
 
 	if( !session ) {
 		message_free( msg );
