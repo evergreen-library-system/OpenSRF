@@ -66,23 +66,23 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 
 	osrfAppSession* session = osrf_app_session_find_session( msg->thread );
 
-    if(my_service) {
+    if( session && 
+        session->type == OSRF_SESSION_SERVER &&
+        (strcmp(msg->sender, session->remote_id) != 0) ) {
 
-        if(session) {
-            if(strcmp(msg->sender, session->remote_id) != 0) {
-                /* unexpected client connection.  See if we are running in "migratable" mode */
-                char* mable = osrf_settings_host_value("/apps/%s/migratable", my_service);
-                if(!mable) {
-                    osrfLogError("Connection to service %s from unknown client %s", my_service, msg->sender);
-                    return NULL;
-                }
-                free(mable);
-            }
-
+        /* unexpected client connection.  See if we are running in "migratable" mode */
+        char* mable = osrf_settings_host_value("/apps/%s/migratable", session->remote_service);
+        if(mable) {
+            // free to migrate
+            free(mable);
         } else {
-		    session = osrf_app_server_session_init(msg->thread, my_service, msg->sender);
+            osrfLogError("Connection to service %s from unknown client %s", session->remote_service, msg->sender);
+            return NULL;
         }
     }
+
+    if( !session && my_service )  
+        session = osrf_app_server_session_init( msg->thread, my_service, msg->sender); 
 
 	if( !session ) {
 		message_free( msg );
