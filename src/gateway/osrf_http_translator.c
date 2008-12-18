@@ -252,7 +252,7 @@ static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
 
         switch(msg->m_type) {
 
-            case REQUEST:
+            case REQUEST: {
                 jsonObject* params = msg->_params;
                 growing_buffer* act = buffer_init(128);	
                 buffer_fadd(act, "[%s] [%s] %s %s", trans->remoteHost, "", trans->service, msg->method_name);
@@ -269,6 +269,7 @@ static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
                 osrfLogActivity(OSRF_LOG_MARK, act->buf);
                 buffer_free(act);
                 break;
+            }
 
             case CONNECT:
                 trans->connecting = 1;
