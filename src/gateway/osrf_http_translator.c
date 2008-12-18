@@ -237,10 +237,12 @@ static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
         msg = msgList[0];
         if(msg->m_type == CONNECT) {
             trans->connectOnly = 1;
+            trans->connecting = 1;
             return 1;
         }
         if(msg->m_type == DISCONNECT) {
             trans->disconnectOnly = 1;
+            trans->disconnecting = 1;
             return 1;
         }
     }
