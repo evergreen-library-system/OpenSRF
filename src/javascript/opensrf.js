@@ -286,6 +286,8 @@ OpenSRF.Stack.handle_message = function(ses, osrf_msg, callbacks) {
 
 function osrfMessage(hash) {
     this.hash = hash;
+    if(!this.hash.locale)
+        this.hash.locale = OpenSRF.locale || 'en-US';
     this._encodehash = true;
 }
 osrfMessage.prototype.threadTrace = function(d) { 
