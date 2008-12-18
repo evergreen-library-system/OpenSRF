@@ -228,7 +228,7 @@ OpenSRF.Stack = function() {
 OpenSRF.Stack.push = function(net_msg, callbacks) {
     var ses = OpenSRF.Session.find_session(net_msg.thread); 
     if(!ses) return;
-    ses.remote_id = net_msg.sender;
+    ses.remote_id = net_msg.from;
     osrf_msgs = JSON2js(net_msg.body);
     for(var i = 0; i < osrf_msgs.length; i++) 
         OpenSRF.Stack.handle_message(ses, osrf_msgs[i], callbacks);        
