@@ -63,8 +63,10 @@ typedef struct {
     int complete;
     int timeout;
     int multipart;
-    int connectOnly;
-    int disconnectOnly;
+    int connectOnly; // there is only 1 message, a CONNECT
+    int disconnectOnly; // there is only 1 message, a DISCONNECT
+    int connecting; // there is a connect message in this batch
+    int disconnecting; // there is a connect message in this batch
     int localXid;
 } osrfHttpTranslator;
 
@@ -107,6 +109,8 @@ static osrfHttpTranslator* osrfNewHttpTranslator(request_rec* apreq) {
     trans->complete = 0;
     trans->connectOnly = 0;
     trans->disconnectOnly = 0;
+    trans->connecting = 0;
+    trans->disconnecting = 0;
     trans->remoteHost = apreq->connection->remote_ip;
     trans->messages = NULL;
 
@@ -245,23 +249,34 @@ static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
     int i;
     for(i = 0; i < numMsgs; i++) {
         msg = msgList[i];
-        if(msg->m_type == REQUEST) {
 
-            jsonObject* params = msg->_params;
-            growing_buffer* act = buffer_init(128);	
-            buffer_fadd(act, "[%s] [%s] %s %s", trans->remoteHost, "", trans->service, msg->method_name);
+        switch(msg->m_type) {
 
-            char* str; 
-            int i = 0;
-            while((str = jsonObjectGetString(jsonObjectGetIndex(params, i++)))) {
-                if( i == 1 )
-                    OSRF_BUFFER_ADD(act, " ");
-                else 
-                    OSRF_BUFFER_ADD(act, ", ");
-                OSRF_BUFFER_ADD(act, str);
-            }
-            osrfLogActivity(OSRF_LOG_MARK, act->buf);
-            buffer_free(act);
+            case REQUEST:
+                jsonObject* params = msg->_params;
+                growing_buffer* act = buffer_init(128);	
+                buffer_fadd(act, "[%s] [%s] %s %s", trans->remoteHost, "", trans->service, msg->method_name);
+
+                char* str; 
+                int i = 0;
+                while((str = jsonObjectGetString(jsonObjectGetIndex(params, i++)))) {
+                    if( i == 1 )
+                        OSRF_BUFFER_ADD(act, " ");
+                    else 
+                        OSRF_BUFFER_ADD(act, ", ");
+                    OSRF_BUFFER_ADD(act, str);
+                }
+                osrfLogActivity(OSRF_LOG_MARK, act->buf);
+                buffer_free(act);
+                break;
+
+            case CONNECT:
+                trans->connecting = 1;
+                break;
+
+            case DISCONNECT:
+                trans->disconnecting = 1;
+                break;
         }
     }
 
@@ -303,10 +318,13 @@ static void osrfHttpTranslatorInitHeaders(osrfHttpTranslator* trans, transport_m
     }
 }
 
-static void osrfHttpTranslatorCacheSession(osrfHttpTranslator* trans) {
+/**
+ * Cache the transaction with the JID of the backend process we are talking to
+ */
+static void osrfHttpTranslatorCacheSession(osrfHttpTranslator* trans, const char* jid) {
     jsonObject* cacheObj = jsonNewObject(NULL);
     jsonObjectSetKey(cacheObj, "ip", jsonNewObject(trans->remoteHost));
-    jsonObjectSetKey(cacheObj, "jid", jsonNewObject(trans->recipient));
+    jsonObjectSetKey(cacheObj, "jid", jsonNewObject(jid));
     jsonObjectSetKey(cacheObj, "service", jsonNewObject(trans->service));
     osrfCachePutObject((char*) trans->thread, cacheObj, CACHE_TIME);
 }
@@ -316,6 +334,7 @@ static void osrfHttpTranslatorCacheSession(osrfHttpTranslator* trans) {
  * Writes a single chunk of multipart/x-mixed-replace content
  */
 static void osrfHttpTranslatorWriteChunk(osrfHttpTranslator* trans, transport_message* msg) {
+    osrfLogInternal(OSRF_LOG_MARK, "sending multipart chunk %s", msg->body);
     ap_rprintf(trans->apreq, 
         "Content-type: %s\n\n%s\n\n", JSON_CONTENT_TYPE, msg->body);
     //osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: Content-type: %s\n\n%s\n\n", JSON_CONTENT_TYPE, msg->body);
@@ -351,6 +370,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
 
     if(trans->disconnectOnly) {
         osrfLogDebug(OSRF_LOG_MARK, "exiting early on disconnect");
+        osrfCacheRemove(trans->thread);
         return OK;
     }
 
@@ -361,6 +381,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
 
         if(trans->handle->error) {
             osrfLogError(OSRF_LOG_MARK, "Transport error");
+            osrfCacheRemove(trans->thread);
             return HTTP_INTERNAL_SERVER_ERROR;
         }
 
@@ -369,6 +390,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
 
         if(msg->is_error) {
             osrfLogError(OSRF_LOG_MARK, "XMPP message resulted in error code %d", msg->error_code);
+            osrfCacheRemove(trans->thread);
             return HTTP_NOT_FOUND;
         }
 
@@ -377,7 +399,8 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
 
         if(firstWrite) {
             osrfHttpTranslatorInitHeaders(trans, msg);
-            osrfHttpTranslatorCacheSession(trans);
+            if(trans->connecting)
+                osrfHttpTranslatorCacheSession(trans, msg->sender);
             firstWrite = 0;
         }
 
@@ -408,6 +431,9 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
             }
         }
     }
+
+    if(trans->disconnecting) // DISCONNECT within a multi-message batch
+        osrfCacheRemove(trans->thread);
 
     return OK;
 }
