@@ -112,6 +112,7 @@ OpenSRF.set_subclass('OpenSRF.ClientSession', 'OpenSRF.Session');
 
 OpenSRF.ClientSession.prototype.connect = function(args) {
     args = (args) ? args : {};
+    this.remote_id = null;
 
     if(args.onconnect)
         this.onconnect = args.onconnect;
