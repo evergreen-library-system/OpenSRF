@@ -310,8 +310,8 @@ int osrf_message_deserialize(const char* string, osrfMessage* msgs[], int count)
 				free( current_locale );
 
 			tmp = jsonObjectGetKeyConst(message, "locale");
-			if(tmp) {
-				new_msg->sender_locale = jsonObjectToSimpleString(tmp);
+
+			if(tmp && (new_msg->sender_locale = jsonObjectToSimpleString(tmp))) {
 				current_locale = strdup( new_msg->sender_locale );
 			} else {
 				current_locale = NULL;
