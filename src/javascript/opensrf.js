@@ -139,11 +139,15 @@ OpenSRF.ClientSession.prototype.disconnect = function(args) {
             'type' : OSRF_MESSAGE_TYPE_DISCONNECT,
         })
     );
+    this.remote_id = null;
 }
 
 
 OpenSRF.ClientSession.prototype.request = function(args) {
-
+    
+    if(this.state != OSRF_APP_SESSION_CONNECTED)
+        this.remote_id = null;
+        
     if(typeof args == 'string') { 
         params = [];
         for(var i = 1; i < arguments.length; i++)
