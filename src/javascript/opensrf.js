@@ -233,7 +233,7 @@ OpenSRF.Stack = function() {
 OpenSRF.Stack.push = function(net_msg, callbacks) {
     var ses = OpenSRF.Session.find_session(net_msg.thread); 
     if(!ses) return;
-    ses.remote_id = net_msg.sender;
+    ses.remote_id = net_msg.from;
     osrf_msgs = JSON2js(net_msg.body);
     for(var i = 0; i < osrf_msgs.length; i++) 
         OpenSRF.Stack.handle_message(ses, osrf_msgs[i], callbacks);        
@@ -291,6 +291,8 @@ OpenSRF.Stack.handle_message = function(ses, osrf_msg, callbacks) {
 
 function osrfMessage(hash) {
     this.hash = hash;
+    if(!this.hash.locale)
+        this.hash.locale = OpenSRF.locale || 'en-US';
     this._encodehash = true;
 }
 osrfMessage.prototype.threadTrace = function(d) { 
