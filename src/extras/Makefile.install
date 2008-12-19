@@ -3,14 +3,20 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (etch), Ubuntu (gutsy), and Gentoo.
+# Currently supports Debian (etch/lenny), Ubuntu (gutsy/hardy/intrepid), and Gentoo.
 # Working towards support of CentOS 5 / RHEL 5.
 # Installs Perl prereqs, libjs with Perl wrapper
 #
 # usage:
-# 	make -f Makefile.install debian
+# 	make -f Makefile.install debian-etch
 # 	- or -
-# 	make -f Makefile.install ubuntu
+# 	make -f Makefile.install debian-lenny
+# 	- or -
+# 	make -f Makefile.install ubuntu-gutsy
+# 	- or -
+# 	make -f Makefile.install ubuntu-hardy
+# 	- or -
+# 	make -f Makefile.install ubuntu-intrepid
 # 	- or -
 # 	make -f Makefile.install centos
 # 	- or -
@@ -38,8 +44,9 @@ SHELL=/bin/bash
 
 # ejabberd is not packaged on CentOS/RHEL, so we have to
 # download the installable package from the source
-EJABBERD_VER=2.0.1
-EJABBERD_PKG=ejabberd-2.0.1_2-linux-x86-installer.bin
+EJABBERD_VER=2.0.2
+EJABBERD_PKG=ejabberd-2.0.2_2-linux-x86-installer.bin
+EJABBERD_PKG_x64=ejabberd-2.0.2_2-linux-x86_64-installer.bin
 EJABBERD_HOST=http://www.process-one.net/downloads/ejabberd
 
 # libmemcache is not packaged on CentOS/RHEL
@@ -73,6 +80,8 @@ DEBS =  \
 	libexpat1-dev\
 	libfile-find-rule-perl\
 	libfreezethaw-perl\
+	libgcrypt-dev \
+	libgdbm-dev \
 	liblog-log4perl-perl\
 	libmemcache-dev\
 	libmodule-build-perl\
@@ -163,7 +172,7 @@ GENTOOS = \
 	net-fs/nfs-utils\
 	dev-libs/apr\
 	dev-perl/Cache-Memcached\
-    dev-perl/DBI\
+	dev-perl/DBI\
 	dev-perl/Log-Log4perl\
 	dev-perl/Unix-Syslog\
 	dev-perl/XML-LibXML\
@@ -186,20 +195,29 @@ GENTOO_PERL = \
 	UNIVERSAL::require
 
 DEB_APACHE_MODS = \
-	expires\
-	include\
-	proxy\
-	proxy_http\
-	rewrite\
 	ssl
- 
 
-# generic CPAN modules
+EXTRA_DEBS = \
+	libdatetime-format-iso8601-perl \
+	libjson-xs-perl \
+	libnet-server-perl
+
+# generic CPAN modules:
+#   * DateTime::Format::ISO8601 is packaged by both Debian Lenny and Ubuntu Intrepid
+#   * JSON::XS is packaged by both Debian Lenny and Ubuntu Intrepid
+#   * libnet-server-perl 0.97 is packaged on Debian Lenny and Ubuntu Intrepid
+#     - is there a specific need for 0.90?
 CPAN_MODULES = \
 	DateTime::Format::ISO8601 \
 	RHANDOM/Net-Server-0.90.tar.gz \
-	JSON::XS \
-	XML::LibXML::XPathContext
+	JSON::XS
+
+#   libxml-libxml-perl on Debian Lenny and Ubuntu Intrepid is 1.66, which
+#   has broken namespace handling. so we still need to install these from
+#   CPAN. *sigh*
+CPAN_MODULES_XML = \
+	XML::LibXML \
+	XML::LibXSLT
 
 # generic CPAN modules to force
 CPAN_MODULES_FORCE = \
@@ -211,26 +229,38 @@ all:
 	@echo "please specify an OS" && exit 0
 
 
-# these should be the same for any distro
-install: install_cpan
-
 centos: install_centos_rpms install_ejabberd install_libmemcache install install_libxml2 install_libxslt install_centos_perl create_ld_local
 
-debian: install_debs install debian_sys_config
+debian-etch: generic_debian etch
+debian-lenny: generic_debian lenny
+etch: install_cpan
+lenny: install_extra_debs
+generic_debian: install_debs install_cpan_force install_cpan_xml debian_sys_config
 
 gentoo: install_gentoos install_gentoo_rc install_gentoo_perl install
 
 rhel: centos
 
-ubuntu: install_debs install debian_sys_config
-
+ubuntu-gutsy: generic_ubuntu hardy 
+ubuntu-hardy: generic_ubuntu hardy
+ubuntu-intrepid: generic_ubuntu intrepid
+hardy: install_cpan
+intrepid: install_extra_debs
+generic_ubuntu: generic_debian
 
 # - COMMON TARGETS ---------------------------------------------------------
 
 # Install the CPAN modules
 install_cpan: 
 	for m in $(CPAN_MODULES); do perl -MCPAN -e "install \"$$m\";"; done
+
+# Install CPAN modules that need to be forced
+install_cpan_force: 
 	for m in $(CPAN_MODULES_FORCE); do perl -MCPAN -e "CPAN::Shell->force(qw#install $$m#);"; done
+
+# Install the CPAN XML modules
+install_cpan_xml: 
+	for m in $(CPAN_MODULES_XML); do perl -MCPAN -e "install \"$$m\";"; done
 
 # Install ejabberd from official project installer binary
 install_ejabberd:    
@@ -280,6 +310,10 @@ debian_sys_config:
 # Install the debian-specific dependencies
 install_debs:
 	$(APT_TOOL) install $(DEBS)
+
+# Install the debian-specific dependencies for more modern distros
+install_extra_debs:
+	$(APT_TOOL) install $(EXTRA_DEBS)
 
 # ------------------------------------------------------------------
 # - GENTOO ---------------------------------------------------------
