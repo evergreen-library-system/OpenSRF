@@ -80,6 +80,8 @@ DEBS =  \
 	libexpat1-dev\
 	libfile-find-rule-perl\
 	libfreezethaw-perl\
+	libgcrypt-dev \
+	libgdbm-dev \
 	liblog-log4perl-perl\
 	libmemcache-dev\
 	libmodule-build-perl\
