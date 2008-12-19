@@ -9,21 +9,36 @@ On Debian and Ubuntu, the easiest way to install these prerequisites
 is to use the Makefile.install prerequisite installer for Evergreen.
 
 Issue the following commands as the root user to install prerequisites
-using the Makefile.install prerequisite installer, substituting "debian"
-or "ubuntu" for <osname> below:
+using the Makefile.install prerequisite installer, substituting your
+operating system identifier for <osname> below:
 
 aptitude install make
 make -f src/extras/Makefile.install <osname>
 
-When the prerequisite installer reaches the Perl module stage, you will
+Well-tested values for <osname> include:
+  * "debian-etch" for Debian 4.0
+  * "debian-lenny" for Debian 5.0
+  * "ubuntu-gutsy" for Ubuntu 7.10
+  * "ubuntu-hardy" for Ubuntu 8.04
+  * "ubuntu-intrepid" for Ubuntu 8.10
+
+Less-tested values for <osname> include:
+  * "centos" for CentOS 5 and Red Hat Enterprise Linux 5
+  * "gentoo" for Gentoo
+
+Patches and suggestions for improvement from users of these distributions,
+or others, are welcome!
+
+When the prerequisite installer reaches the Perl module stage, you may 
 be prompted for configuration of Comprehensive Perl Archive Network (CPAN)
 on your mserver. You can just press <return> for all of the prompts, except
 for the country configuration.
 
-Note: You may also be able to use "centos" to install the OpenSRF
-prerequisites for CentOS 5 and RHEL 5, or "gentoo" for Gentoo - but
-these are less tested distributions. Your patches and suggestions for
-improvement are welcome!
+Note: If you are installing this using a copy of the source code that was
+checked out directly from the OpenSRF Subversion repository rather
+than from a downloaded release of the source code, there are a few
+additional prerequisite tools and steps that you will need to follow.
+See "Developer instructions" at the bottom of the file.
 
 Configuration and compilation instructions:
 ==========================================
@@ -35,6 +50,10 @@ build OpenSRF:
 
 ./configure --prefix=/openils --sysconfdir=/openils/conf
 make
+
+By default, OpenSRF includes C, Perl, and JavaScript support.
+You can add the "--enable-python" option to the configure command
+to build Python support, and "--enable-java" for Java support.
 
 Installation instructions:
 =========================
@@ -181,6 +200,23 @@ $ /etc/init.d/dnsmasq restart
 
 Then edit /etc/resolv.conf and ensure that "nameserver 127.0.0.1" is the first
 entry in the file.
+
+Developer instructions:
+======================
+
+Developers working directly with the source code from the Subversion
+repository will also need to install some extra packages and perform
+one more step before they can proceed with the "./configure" step.
+
+Install the following packages:
+  * autoconf
+  * automake
+  * libtool
+
+Run the following command in the source directory to generate the configure
+script and Makefiles:
+
+$ ./autogen.sh 
 
 Getting help:
 ============
