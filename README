@@ -25,6 +25,12 @@ prerequisites for CentOS 5 and RHEL 5, or "gentoo" for Gentoo - but
 these are less tested distributions. Your patches and suggestions for
 improvement are welcome!
 
+Note: If you are installing this using a copy of the source code that was
+checked out directly from the OpenSRF Subversion repository rather
+than from a downloaded release of the source code, there are a few
+additional prerequisite tools and steps that you will need to follow.
+See "Developer instructions" at the bottom of the file.
+
 Configuration and compilation instructions:
 ==========================================
 
@@ -181,6 +187,23 @@ $ /etc/init.d/dnsmasq restart
 
 Then edit /etc/resolv.conf and ensure that "nameserver 127.0.0.1" is the first
 entry in the file.
+
+Developer instructions:
+======================
+
+Developers working directly with the source code from the Subversion
+repository will also need to install some extra packages and perform
+one more step before they can proceed with the "./configure" step.
+
+Install the following packages:
+  * autoconf
+  * automake
+  * libtool
+
+Run the following command in the source directory to generate the configure
+script and Makefiles:
+
+$ ./autogen.sh 
 
 Getting help:
 ============
