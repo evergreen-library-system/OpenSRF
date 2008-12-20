@@ -112,7 +112,7 @@ vim:et:ts=2:sw=2:
             <trusted_domains>
                 <!-- allow private services to register with this router 
                      and public clients to send requests to this router. -->
-                <server>public.localhost</server>
+                <server>private.localhost</server>
                 <!-- also allow private clients to send to the router so it can receive error messages -->
                 <client>private.localhost</client>
                 <client>public.localhost</client>
