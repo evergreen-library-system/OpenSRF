@@ -120,14 +120,14 @@ vim:et:ts=2:sw=2:
             <transport>
                 <server>public.localhost</server>
                 <port>5222</port>
-                <unixpath>/openils/var/sock/unix_sock</unixpath>
+                <unixpath>LOCALSTATEDIR/sock/unix_sock</unixpath>
                 <username>router</username>
                 <password>osrf</password>
                 <resource>router</resource>
                 <connect_timeout>10</connect_timeout>
                 <max_reconnect_attempts>5</max_reconnect_attempts>
             </transport>
-            <logfile>/openils/var/log/router.log</logfile>
+            <logfile>LOCALSTATEDIR/log/router.log</logfile>
             <!--
             <logfile>syslog</logfile>
             <syslog>local2</syslog>
@@ -149,7 +149,7 @@ vim:et:ts=2:sw=2:
                 <connect_timeout>10</connect_timeout>
                 <max_reconnect_attempts>5</max_reconnect_attempts>
             </transport>
-            <logfile>/openils/var/log/router.log</logfile>
+            <logfile>LOCALSTATEDIR/log/router.log</logfile>
             <!--
             <logfile>syslog</logfile>
             <syslog>local2</syslog>
