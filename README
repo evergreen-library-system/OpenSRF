@@ -43,10 +43,12 @@ See "Developer instructions" at the bottom of the file.
 Configuration and compilation instructions:
 ==========================================
 
-For the time being, we are still installing everything in the /openils/
-directory (with the exception of the Perl modules, which are installed
-into system directories). Issue the following commands to configure and
-build OpenSRF:
+Use the "configure" command to configure OpenSRF, and the "make" command to
+build OpenSRF. The default installation prefix (PREFIX) for OpenSRF is
+"/opensrf/".
+
+If you are building OpenSRF for Evergreen, pass the --prefix and --sysconfdir
+options as follows:
 
 ./configure --prefix=/openils --sysconfdir=/openils/conf
 make
@@ -63,8 +65,9 @@ command as the root user to install OpenSRF:
 
 make install
 
-This will install OpenSRF, including example configuration files in
-/openils/conf/ that you can use as templates for your own configuration files.
+This will install OpenSRF in the prefix directory that you specified in the
+configuration step. This will also install example configuration files that
+you can use as templates for your own configuration files.
 
 Create and set up the opensrf Unix user environment:
 ===================================================
@@ -97,12 +100,12 @@ file for our example domains:
 Adjust the system dynamic library path:
 ======================================
 
-Add /openils/lib/ to the system's dynamic library path, and then run "ldconfig"
+Add <PREFIX>/lib/ to the system's dynamic library path, and then run "ldconfig"
 as root.
 
 On Debian and Ubuntu systems, run the following commands as root:
 
-# echo /openils/lib > /etc/ld.so.conf.d/opensrf.conf
+# echo <PREFIX>/lib > /etc/ld.so.conf.d/opensrf.conf
 # ldconfig
 
 On most other systems, you can add these entries to a /etc/ld.so.conf, or create
@@ -160,8 +163,8 @@ Update the OpenSRF configuration files:
 ======================================
 
 There are two critical files that you must update to make OpenSRF work.
-"SYSCONFDIR" will be /openils/conf/ if you followed the configuration
-suggestion above:
+"SYSCONFDIR" is "/opensrf/etc" by default, or the value that you passed to
+--sysconfdir during the configuration phase:
 
   * SYSCONFDIR/opensrf.xml - this file lists the services that this
     OpenSRF installation supports; if you create a new OpenSRF service,
@@ -188,7 +191,7 @@ suggestion above:
 You should also create a .srfsh.xml file in the home directory of each user
 that you want to enable to use the srfsh to communicate with OpenSRF services.
 
-Copy /openils/conf/srfsh.xml to ~/.srfsh.xml and update the username and
+Copy <SYSCONFDIR>/srfsh.xml to ~/.srfsh.xml and update the username and
 password values with the Jabber "opensrf" user credentials.
 
 Starting and stopping OpenSRF services:
