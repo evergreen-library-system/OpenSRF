@@ -97,7 +97,11 @@ sub listen {
 
         for my $router (@$routers) {
             if(ref $router) {
-                if( !$router->{services} || grep { $_ eq $self->{app} } @{$router->{services}->{service}} ) {
+                if( !$router->{services} || 
+                        ( ref($router->{services}) eq 'ARRAY' and 
+                            grep { $_ eq $self->{app} } @{$router->{services}->{service}} )  ||
+                        $router->{services}->{service} eq $self->{app}) {
+
                     my $name = $router->{name};
                     my $domain = $router->{domain};
                     my $target = "$name\@$domain/router";
@@ -114,7 +118,8 @@ sub listen {
         }
 		
 	} catch Error with {
-		$logger->transport( $self->{app} . ": No routers defined" , WARN ); 
+        my $err = shift;
+		$logger->error($self->{app} . ": No routers defined: $err");
 		# no routers defined
 	};
 
