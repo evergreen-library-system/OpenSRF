@@ -41,9 +41,9 @@ This service should be loaded at system startup.
 			my $host			= $domain;
 			my $resource	= $app . '_listener_at_' . $conf->env->hostname;
 
-			my $router_name = $conf->bootstrap->router_name;
-			# no router, only one listener running..
-			if(!$router_name) { 
+            my $no_router = 0; # make this a config entry if we want to use it
+			if($no_router) { 
+			    # no router, only one listener running..
 				$username = "router";
 				$resource = $app; 
 			}
