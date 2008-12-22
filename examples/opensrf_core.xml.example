@@ -37,6 +37,9 @@ vim:et:ts=2:sw=2:
     <username>client</username>
     <passwd>mypass</passwd>
     <port>5222</port>
+    <!-- name of the router used on our private domain.  
+        this should match one of the <name> of the private router above -->
+    <router_name>router</router_name>
 
     <!-- log file settings ======================================  -->
     <!-- log to a local file -->
