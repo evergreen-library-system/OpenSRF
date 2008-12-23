@@ -18,6 +18,10 @@ GNU General Public License for more details.
 #include <stdio.h>
 #include <time.h>
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 256
+#endif
+
 static int osrfChatXMLErrorOcurred = 0;
 
 /* This is used by code in osrfChatPushData, but that code is
