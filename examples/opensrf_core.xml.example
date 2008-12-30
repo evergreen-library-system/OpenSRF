@@ -86,18 +86,7 @@ vim:et:ts=2:sw=2:
     <!--  the routers's name on the network -->
     <router_name>router</router_name>
 
-    <!--
-    These are the services that the gateway will serve. 
-    Any other requests will receive an HTTP_NOT_FOUND (404) 
-    DO NOT put any services here that you don't want the internet to have access to
-    This section will be soon deprecated for multi-domain mode... 
-    -->
-    <services>
-      <service>opensrf.math</service>
-    </services>
-
     <!-- jabber login info -->
-
     <!-- The gateway connects to the public domain -->
     <domain>public.localhost</domain>
     <username>opensrf</username>
