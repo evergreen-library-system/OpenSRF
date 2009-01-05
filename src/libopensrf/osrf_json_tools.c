@@ -21,11 +21,11 @@ static jsonObject* findMultiPath( const jsonObject* o,
 static jsonObject* findMultiPathRecurse( const jsonObject* o, const char* root );
 static jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClass );
 
-static char* _tabs(int count) {
-	growing_buffer* buf = buffer_init(24);
-	int i;
-	for(i=0;i<count;i++) OSRF_BUFFER_ADD(buf, "  ");
-    return buffer_release(buf);
+static void append_indentation( growing_buffer* buf, int depth ) {
+	size_t n = 2 * depth;
+	char indent[ n ];
+	memset( indent, ' ', n );
+	buffer_add_n( buf, indent, n );
 }
 
 char* jsonFormatString( const char* string ) {
@@ -34,38 +34,31 @@ char* jsonFormatString( const char* string ) {
 	growing_buffer* buf = buffer_init(64);
 	int i;
 	int depth = 0;
-	char* tab = NULL;
 
 	char c;
-	for(i=0; i!= strlen(string); i++) {
+	for(i = 0; string[i]; i++) {
 		c = string[i];
 
 		if( c == '{' || c == '[' ) {
 
-			tab = _tabs(++depth);
-			buffer_fadd( buf, "%c\n%s", c, tab);
-			free(tab);
+			OSRF_BUFFER_ADD_CHAR( buf, c );
+			OSRF_BUFFER_ADD_CHAR( buf, '\n' );
+			append_indentation( buf, ++depth );
 
 		} else if( c == '}' || c == ']' ) {
 
-			tab = _tabs(--depth);
-			buffer_fadd( buf, "\n%s%c", tab, c);
-			free(tab);
-
-			if(string[i+1] != ',') {
-				tab = _tabs(depth);
-				buffer_fadd( buf, "%s", tab );	
-				free(tab);
-			}
+			OSRF_BUFFER_ADD_CHAR( buf, '\n' );
+			append_indentation( buf, --depth );
+			OSRF_BUFFER_ADD_CHAR( buf, c );
 
 		} else if( c == ',' ) {
 
-			tab = _tabs(depth);
-			buffer_fadd(buf, ",\n%s", tab);
-			free(tab);
+			OSRF_BUFFER_ADD_CHAR( buf, ',' );
+			OSRF_BUFFER_ADD_CHAR( buf, '\n' );
+			append_indentation( buf, depth );
 
-		} else { buffer_add_char(buf, c); }
-
+		} else
+			OSRF_BUFFER_ADD_CHAR(buf, c);
 	}
 
     return buffer_release(buf);
@@ -297,7 +290,3 @@ static jsonObject* findMultiPathRecurse(const jsonObject* obj, const char* root)
 
 	return arr;
 }
-
-
-
-
