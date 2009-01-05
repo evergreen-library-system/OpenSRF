@@ -247,6 +247,28 @@ int buffer_add(growing_buffer* gb, const char* data) {
 	return total_len;
 }
 
+/** Append a specified number of characters to a growing_buffer.
+    If the characters so appended include an embedded nul, the results
+    are likely to be unhappy.
+*/
+int buffer_add_n(growing_buffer* gb, const char* data, size_t n) {
+	if(!(gb && data)) return 0;
+
+	if(n == 0) return 0;
+
+	int total_len = n + gb->n_used;
+
+	if( total_len >= gb->size ) {
+		if( buffer_expand( gb, total_len ) )
+			return -1;
+	}
+
+	memcpy( gb->buf + gb->n_used, data, n );
+	gb->buf[total_len] = '\0';
+	gb->n_used = total_len;
+	return total_len;
+}
+
 
 int buffer_reset( growing_buffer *gb){
 	if( gb == NULL ) { return -1; }

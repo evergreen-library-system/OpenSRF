@@ -66,6 +66,21 @@ GNU General Public License for more details.
 		}\
 	} while(0)
 
+#define OSRF_BUFFER_ADD_N(gb, data, n) \
+	do {\
+		growing_buffer* gb__ = gb; \
+		const char* data__ = data; \
+		size_t n__ = n; \
+		if(gb__ && data__) {\
+			int tl__ = n__ + gb__->n_used;\
+			if( tl__ < gb__->size ) {\
+				memcpy( gb__->buf + gb__->n_used, data__, n__ ); \
+				gb__->buf[tl__] = '\0'; \
+				gb__->n_used = tl__; \
+} else { buffer_add_n(gb__, data__, n__); }\
+}\
+} while(0)
+
 #define OSRF_BUFFER_ADD_CHAR(gb, c)\
 	do {\
 		if(gb) {\
@@ -193,6 +208,7 @@ growing_buffer* buffer_init( int initial_num_bytes);
 //int buffer_addchar(growing_buffer* gb, char c);
 
 int buffer_add(growing_buffer* gb, const char* c);
+int buffer_add_n(growing_buffer* gb, const char* data, size_t n);
 int buffer_fadd(growing_buffer* gb, const char* format, ... );
 int buffer_reset( growing_buffer* gb);
 char* buffer_data( const growing_buffer* gb);
