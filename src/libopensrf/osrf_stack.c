@@ -1,16 +1,14 @@
 #include <opensrf/osrf_stack.h>
 #include <opensrf/osrf_application.h>
-#include <opensrf/osrf_settings.h>
 
 /* the max number of oilsMessage blobs present in any one root packet */
 #define OSRF_MAX_MSGS_PER_PACKET 256
 // -----------------------------------------------------------------------------
 
-static int osrf_stack_process( transport_client* client, int timeout, int* msg_received );
-static int osrf_stack_message_handler( osrfAppSession* session, osrfMessage* msg );
-static int osrf_stack_application_handler( osrfAppSession* session, osrfMessage* msg );
-static osrfMessage* _do_client( osrfAppSession*, osrfMessage* );
-static osrfMessage* _do_server( osrfAppSession*, osrfMessage* );
+static int  osrf_stack_process( transport_client* client, int timeout, int* msg_received );
+static void osrf_stack_application_handler( osrfAppSession* session, osrfMessage* msg );
+static void _do_client( osrfAppSession*, osrfMessage* );
+static void _do_server( osrfAppSession*, osrfMessage* );
 
 /* tell osrfAppSession where the stack entry is */
 int (*osrf_stack_entry_point) (transport_client*, int, int*)  = &osrf_stack_process;
@@ -66,23 +64,8 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 
 	osrfAppSession* session = osrf_app_session_find_session( msg->thread );
 
-    if( session && 
-        session->type == OSRF_SESSION_SERVER &&
-        (strcmp(msg->sender, session->remote_id) != 0) ) {
-
-        /* unexpected client connection.  See if we are running in "migratable" mode */
-        char* mable = osrf_settings_host_value("/apps/%s/migratable", session->remote_service);
-        if(mable) {
-            // free to migrate
-            free(mable);
-        } else {
-            osrfLogError("Connection to service %s from unknown client %s", session->remote_service, msg->sender);
-            return NULL;
-        }
-    }
-
-    if( !session && my_service )  
-        session = osrf_app_server_session_init( msg->thread, my_service, msg->sender); 
+	if( !session && my_service ) 
+		session = osrf_app_server_session_init( msg->thread, my_service, msg->sender);
 
 	if( !session ) {
 		message_free( msg );
@@ -94,7 +77,8 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 
 	osrf_app_session_set_remote( session, msg->sender );
 	osrfMessage* arr[OSRF_MAX_MSGS_PER_PACKET];
-	memset(arr, 0, sizeof(arr));
+
+	/* Convert the message body into one or more osrfMessages */
 	int num_msgs = osrf_message_deserialize(msg->body, arr, OSRF_MAX_MSGS_PER_PACKET);
 
 	osrfLogDebug( OSRF_LOG_MARK,  "We received %d messages from %s", num_msgs, msg->sender );
@@ -102,7 +86,7 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 	double starttime = get_timestamp_millis();
 
 	int i;
-	for( i = 0; i != num_msgs; i++ ) {
+	for( i = 0; i < num_msgs; i++ ) {
 
 		/* if we've received a jabber layer error message (probably talking to 
 			someone who no longer exists) and we're not talking to the original
@@ -125,7 +109,10 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 			}
 		}
 
-		osrf_stack_message_handler( session, arr[i] );
+		if( session->type ==  OSRF_SESSION_CLIENT )
+			_do_client( session, arr[i] );
+		else
+			_do_server( session, arr[i] );
 	}
 
 	double duration = get_timestamp_millis() - starttime;
@@ -137,36 +124,14 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 	return session;
 }
 
-static int osrf_stack_message_handler( osrfAppSession* session, osrfMessage* msg ) {
-	if(session == NULL || msg == NULL)
-		return 0;
-
-	osrfMessage* ret_msg = NULL;
-
-	if( session->type ==  OSRF_SESSION_CLIENT )
-		 ret_msg = _do_client( session, msg );
-	else
-		ret_msg= _do_server( session, msg );
-
-	if(ret_msg) {
-		osrfLogDebug( OSRF_LOG_MARK, "passing message %d / session %s to app handler", 
-				msg->thread_trace, session->session_id );
-		osrf_stack_application_handler( session, ret_msg );
-	} else
-		osrfMessageFree(msg);
-
-	return 1;
-
-} 
-
-/** If we return a message, that message should be passed up the stack, 
+/** If we return a message, that message should be passed up the stack,
   * if we return NULL, we're finished for now...
   */
-static osrfMessage* _do_client( osrfAppSession* session, osrfMessage* msg ) {
+static void _do_client( osrfAppSession* session, osrfMessage* msg ) {
 	if(session == NULL || msg == NULL)
-		return NULL;
+		return;
 
-	osrfMessage* new_msg;
+	osrfMessage* further_msg = NULL;
 
 	if( msg->m_type == STATUS ) {
 		
@@ -176,117 +141,136 @@ static osrfMessage* _do_client( osrfAppSession* session, osrfMessage* msg ) {
 				osrfLogDebug( OSRF_LOG_MARK, "We connected successfully");
 				session->state = OSRF_SESSION_CONNECTED;
 				osrfLogDebug( OSRF_LOG_MARK,  "State: %x => %s => %d", session, session->session_id, session->state );
-				return NULL;
+				break;
 
 			case OSRF_STATUS_COMPLETE:
 				osrf_app_session_set_complete( session, msg->thread_trace );
-				return NULL;
+				break;
 
 			case OSRF_STATUS_CONTINUE:
 				osrf_app_session_request_reset_timeout( session, msg->thread_trace );
-				return NULL;
+				break;
 
 			case OSRF_STATUS_REDIRECTED:
 				osrf_app_session_reset_remote( session );
 				session->state = OSRF_SESSION_DISCONNECTED;
 				osrf_app_session_request_resend( session, msg->thread_trace );
-				return NULL;
+				break;
 
 			case OSRF_STATUS_EXPFAILED: 
 				osrf_app_session_reset_remote( session );
 				session->state = OSRF_SESSION_DISCONNECTED;
-				return NULL;
+				break;
 
 			case OSRF_STATUS_TIMEOUT:
 				osrf_app_session_reset_remote( session );
 				session->state = OSRF_SESSION_DISCONNECTED;
 				osrf_app_session_request_resend( session, msg->thread_trace );
-				return NULL;
-
+				break;
 
 			default:
-				new_msg = osrf_message_init( RESULT, msg->thread_trace, msg->protocol );
-				osrf_message_set_status_info( new_msg, 
+				/* Replace the old message with a new one */
+				further_msg = osrf_message_init( RESULT, msg->thread_trace, msg->protocol );
+				osrf_message_set_status_info( further_msg,
 						msg->status_name, msg->status_text, msg->status_code );
 				osrfLogWarning( OSRF_LOG_MARK, "The stack doesn't know what to do with " 
 						"the provided message code: %d, name %s. Passing UP.", 
 						msg->status_code, msg->status_name );
-				new_msg->is_exception = 1;
+				further_msg->is_exception = 1;
 				osrf_app_session_set_complete( session, msg->thread_trace );
 				osrfMessageFree(msg);
-				return new_msg;
+				break;
 		}
 
-		return NULL;
+	} else if( msg->m_type == RESULT ) {
+		further_msg = msg;
+	}
 
-	} else if( msg->m_type == RESULT ) 
-		return msg;
+	if(further_msg) {
+		osrfLogDebug( OSRF_LOG_MARK, "passing client message %d / session %s to app handler",
+					  msg->thread_trace, session->session_id );
+		osrf_stack_application_handler( session, further_msg );
+	}
 
-	return NULL;
+	if(msg != further_msg)
+		osrfMessageFree(msg);
 
+	return;
 }
 
 
 /** If we return a message, that message should be passed up the stack, 
   * if we return NULL, we're finished for now...
   */
-static osrfMessage* _do_server( osrfAppSession* session, osrfMessage* msg ) {
+static void _do_server( osrfAppSession* session, osrfMessage* msg ) {
 
-	if(session == NULL || msg == NULL) return NULL;
+	if(session == NULL || msg == NULL) return;
 
 	osrfLogDebug( OSRF_LOG_MARK, "Server received message of type %d", msg->m_type );
 
+	osrfMessage* further_msg = NULL;
+	
 	switch( msg->m_type ) {
 
 		case STATUS:
-				return NULL;
+			break;
 
 		case DISCONNECT:
-				/* session will be freed by the forker */
-				osrfLogDebug(OSRF_LOG_MARK, "Client sent explicit disconnect");
-				session->state = OSRF_SESSION_DISCONNECTED;
-				return NULL;
+			/* session will be freed by the forker */
+			osrfLogDebug(OSRF_LOG_MARK, "Client sent explicit disconnect");
+			session->state = OSRF_SESSION_DISCONNECTED;
+			break;
 
 		case CONNECT:
-				osrfAppSessionStatus( session, OSRF_STATUS_OK, 
-						"osrfConnectStatus", msg->thread_trace, "Connection Successful" );
-				session->state = OSRF_SESSION_CONNECTED;
-				return NULL;
+			osrfAppSessionStatus( session, OSRF_STATUS_OK,
+					"osrfConnectStatus", msg->thread_trace, "Connection Successful" );
+			session->state = OSRF_SESSION_CONNECTED;
+			break;
 
 		case REQUEST:
 
-				osrfLogDebug( OSRF_LOG_MARK, "server passing message %d to application handler "
-						"for session %s", msg->thread_trace, session->session_id );
-				return msg;
+			osrfLogDebug( OSRF_LOG_MARK, "server passing message %d to application handler "
+					"for session %s", msg->thread_trace, session->session_id );
+			further_msg = msg;
+			break;
 
 		default:
 			osrfLogWarning( OSRF_LOG_MARK, "Server cannot handle message of type %d", msg->m_type );
 			session->state = OSRF_SESSION_DISCONNECTED;
-			return NULL;
-
+			break;
 	}
+
+	if(further_msg) {
+		osrfLogDebug( OSRF_LOG_MARK, "passing server message %d / session %s to app handler",
+					  msg->thread_trace, session->session_id );
+		osrf_stack_application_handler( session, further_msg );
+	}
+
+	if(msg != further_msg)
+		osrfMessageFree(msg);
+
+	return;
 }
 
 
 
-static int osrf_stack_application_handler( osrfAppSession* session, osrfMessage* msg ) {
-	if(session == NULL || msg == NULL) return 0;
+static void osrf_stack_application_handler( osrfAppSession* session, osrfMessage* msg ) {
+	if(session == NULL || msg == NULL) return;
 
 	if(msg->m_type == RESULT && session->type == OSRF_SESSION_CLIENT) {
-		osrf_app_session_push_queue( session, msg ); 
-		return 1;
+		/* Enqueue the RESULT message to be processed later */
+		osrf_app_session_push_queue( session, msg );
 	}
+	else if(msg->m_type == REQUEST) {
+		char* method = msg->method_name;
+		char* app	= session->remote_service;
+		jsonObject* params = msg->_params;
 
-	if(msg->m_type != REQUEST) return 1;
-
-	char* method = msg->method_name;
-	char* app	= session->remote_service;
-	jsonObject* params = msg->_params;
-
-	osrfAppRunMethod( app, method,  session, msg->thread_trace, params );
-	osrfMessageFree(msg);
-		
-	return 1;
+		osrfAppRunMethod( app, method,  session, msg->thread_trace, params );
+		osrfMessageFree(msg);
+	}
+	
+	return;
 }
 
 
