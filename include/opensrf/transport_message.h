@@ -34,6 +34,7 @@ struct transport_message_struct {
 	int error_code;
 	int broadcast;
 	char* msg_xml; /* the entire message as XML complete with entity encoding */
+	struct transport_message_struct* next;
 };
 typedef struct transport_message_struct transport_message;
 
@@ -55,13 +56,6 @@ void message_set_router_info( transport_message* msg, const char* router_from,
 void message_set_osrf_xid( transport_message* msg, const char* osrf_xid );
 
 // ---------------------------------------------------------------------------------
-// Formats the Jabber message as XML for encoding. 
-// Returns NULL on error
-// ---------------------------------------------------------------------------------
-char* message_to_xml( const transport_message* msg );
-
-
-// ---------------------------------------------------------------------------------
 // Call this to create the encoded XML for sending on the wire.
 // This is a seperate function so that encoding will not necessarily have
 // to happen on all messages (i.e. typically only occurs outbound messages).
@@ -73,11 +67,6 @@ int message_prepare_xml( transport_message* msg );
 // Returns 0 on error
 // ---------------------------------------------------------------------------------
 int message_free( transport_message* msg );
-
-// ---------------------------------------------------------------------------------
-// Prepares the shared XML document
-// ---------------------------------------------------------------------------------
-//int message_init_xml();
 
 // ---------------------------------------------------------------------------------
 // Determines the username of a Jabber ID.  This expects a pre-allocated char 

@@ -1,6 +1,5 @@
 #include <opensrf/transport_message.h>
 
-
 // ---------------------------------------------------------------------------------
 // Allocates and initializes a new transport_message
 // ---------------------------------------------------------------------------------
@@ -45,6 +44,7 @@ transport_message* message_init( const char* body, const char* subject,
 	msg->error_code     = 0;
 	msg->broadcast      = 0;
 	msg->msg_xml        = NULL;
+	msg->next           = NULL;
 
 	return msg;
 }
@@ -72,6 +72,7 @@ transport_message* new_message_from_xml( const char* msg_xml ) {
 	new_msg->error_code     = 0;
 	new_msg->broadcast      = 0;
 	new_msg->msg_xml        = NULL;
+	new_msg->next           = NULL;
 
 	xmlKeepBlanksDefault(0);
 	xmlDocPtr msg_doc = xmlReadDoc( BAD_CAST msg_xml, NULL, NULL, 0 );
@@ -160,62 +161,42 @@ transport_message* new_message_from_xml( const char* msg_xml ) {
 		new_msg->body = strdup("");
 
 	new_msg->msg_xml = xmlDocToString(msg_doc, 0);
-   xmlFreeDoc(msg_doc);
-   xmlCleanupParser();
+	xmlFreeDoc(msg_doc);
+	xmlCleanupParser();
 
 	return new_msg;
 }
 
 void message_set_osrf_xid( transport_message* msg, const char* osrf_xid ) {
-   if(!msg) return;
-   if( osrf_xid )
-      msg->osrf_xid = strdup(osrf_xid);
-   else msg->osrf_xid = strdup("");
+	if( msg ) {
+		if( msg->osrf_xid ) free( msg->osrf_xid );
+		msg->osrf_xid = strdup( osrf_xid ? osrf_xid : "" );
+	}
 }
 
 void message_set_router_info( transport_message* msg, const char* router_from,
 		const char* router_to, const char* router_class, const char* router_command,
 		int broadcast_enabled ) {
 
-	if( !msg ) return;
-	
-	if(router_from)
-		msg->router_from		= strdup(router_from);
-	else
-		msg->router_from		= strdup("");
+	if( msg ) {
 
-	if(router_to)
-		msg->router_to			= strdup(router_to);
-	else
-		msg->router_to			= strdup("");
+		/* free old values, if any */
+		if( msg->router_from    ) free( msg->router_from );
+		if( msg->router_to      ) free( msg->router_to );
+		if( msg->router_class   ) free( msg->router_class );
+		if( msg->router_command ) free( msg->router_command );
 
-	if(router_class)
-		msg->router_class		= strdup(router_class);
-	else 
-		msg->router_class		= strdup("");
-	
-	if(router_command)
-		msg->router_command	= strdup(router_command);
-	else
-		msg->router_command	= strdup("");
+		/* install new values */
+		msg->router_from     = strdup( router_from     ? router_from     : "" );
+		msg->router_to       = strdup( router_to       ? router_to       : "" );
+		msg->router_class    = strdup( router_class    ? router_class    : "" );
+		msg->router_command  = strdup( router_command  ? router_command  : "" );
+		msg->broadcast = broadcast_enabled;
 
-	msg->broadcast = broadcast_enabled;
-
-	if( msg->router_from == NULL || msg->router_to == NULL ||
-			msg->router_class == NULL || msg->router_command == NULL ) 
-		osrfLogError(OSRF_LOG_MARK,  "message_set_router_info(): Out of Memory" );
-
-	return;
-}
-
-
-
-/* encodes the message for traversal */
-int message_prepare_xml( transport_message* msg ) {
-	if( !msg ) return 0;
-	if( msg->msg_xml == NULL )
-		msg->msg_xml = message_to_xml( msg );
-	return 1;
+		if( msg->router_from == NULL || msg->router_to == NULL ||
+				msg->router_class == NULL || msg->router_command == NULL ) 
+			osrfLogError(OSRF_LOG_MARK,  "message_set_router_info(): Out of Memory" );
+	}
 }
 
 
@@ -240,16 +221,16 @@ int message_free( transport_message* msg ){
 	free(msg);
 	return 1;
 }
+
+
+// ---------------------------------------------------------------------------------
+// Encodes the message as XML for traversal; stores in msg_xml member
+// ---------------------------------------------------------------------------------
+int message_prepare_xml( transport_message* msg ) {
+
+	if( !msg ) return 0;
+	if( msg->msg_xml ) return 1;   /* already done */
 	
-// ---------------------------------------------------------------------------------
-// Allocates a char* holding the XML representation of this jabber message
-// ---------------------------------------------------------------------------------
-char* message_to_xml( const transport_message* msg ) {
-
-	//int			bufsize;
-	//xmlChar*		xmlbuf;
-	//char*			encoded_body;
-
 	xmlNodePtr	message_node;
 	xmlNodePtr	body_node;
 	xmlNodePtr	thread_node;
@@ -259,11 +240,6 @@ char* message_to_xml( const transport_message* msg ) {
 	xmlDocPtr	doc;
 
 	xmlKeepBlanksDefault(0);
-
-	if( ! msg ) { 
-		osrfLogWarning(OSRF_LOG_MARK,  "Passing NULL message to message_to_xml()"); 
-		return NULL; 
-	}
 
 	doc = xmlReadDoc( BAD_CAST "<message/>", NULL, NULL, XML_PARSE_NSCLEAN );
 	message_node = xmlDocGetRootElement(doc);
@@ -318,11 +294,13 @@ char* message_to_xml( const transport_message* msg ) {
 
 	xmlBufferPtr xmlbuf = xmlBufferCreate();
 	xmlNodeDump( xmlbuf, doc, xmlDocGetRootElement(doc), 0, 0);
-	char* xml = strdup((const char*) (xmlBufferContent(xmlbuf)));
+	msg->msg_xml = strdup((const char*) (xmlBufferContent(xmlbuf)));
+	
 	xmlBufferFree(xmlbuf);
 	xmlFreeDoc( doc );		 
 	xmlCleanupParser();
-	return xml;
+	
+	return 1;
 }
 
 

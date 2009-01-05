@@ -12,7 +12,8 @@ struct message_list_struct;
 // Our client struct.  We manage a list of messages and a controlling session
 // ---------------------------------------------------------------------------
 struct transport_client_struct {
-	struct message_list_struct* m_list;
+	transport_message* msg_q_head;
+	transport_message* msg_q_tail;
 	transport_session* session;
 	int error;
 };
