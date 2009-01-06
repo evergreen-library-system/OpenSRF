@@ -4,6 +4,8 @@
 #define HOST_NAME_MAX 256
 #endif
 
+static void grab_incoming(void* blob, socket_manager* mgr, int sockid, char* data, int parent);
+static int reset_session_buffers( transport_session* session );
 static char* get_xml_attr( const xmlChar** atts, const char* attr_name );
 
 // ---------------------------------------------------------------------------------
@@ -41,30 +43,6 @@ transport_session* init_transport(  const char* server,
 	session->router_command_buffer	= buffer_init( JABBER_JID_BUFSIZE );
 
 	session->router_broadcast   = 0;
-
-	if(	session->body_buffer		== NULL || session->subject_buffer	 == NULL	||
-			session->thread_buffer	== NULL || session->from_buffer		 == NULL	||
-			session->status_buffer	== NULL || session->recipient_buffer == NULL ||
-			session->router_to_buffer	== NULL || session->router_from_buffer	 == NULL ||
-			session->router_class_buffer == NULL || session->router_command_buffer == NULL ||
-			session->session_id == NULL ) { 
-
-		osrfLogError(OSRF_LOG_MARK,  "init_transport(): buffer_init returned NULL" );
-		buffer_free( session->body_buffer );
-		buffer_free( session->subject_buffer );
-		buffer_free( session->thread_buffer );
-		buffer_free( session->from_buffer );
-		buffer_free( session->status_buffer );
-		buffer_free( session->recipient_buffer );
-		buffer_free( session->router_to_buffer );
-		buffer_free( session->router_from_buffer );
-		buffer_free( session->router_class_buffer );
-		buffer_free( session->router_command_buffer );
-		buffer_free( session->session_id );
-		free( session );
-		return 0;
-	}
-
 
 	/* initialize the jabber state machine */
 	session->state_machine = (jabber_machine*) safe_malloc( sizeof(jabber_machine) );
@@ -169,7 +147,6 @@ int session_send_msg(
 	}
 
 	message_prepare_xml( msg );
-	//tcp_send( session->sock_obj, msg->msg_xml );
 	return socket_send( session->sock_id, msg->msg_xml );
 
 }
@@ -189,7 +166,6 @@ int session_connect( transport_session* session,
 	}
 
 
-	//char* server = session->sock_obj->server;
 	char* server = session->server;
 
 	if( ! session->sock_id ) {
@@ -226,14 +202,12 @@ int session_connect( transport_session* session,
 		/* send the first stanze */
 		session->state_machine->connecting = CONNECTING_1;
 
-//		if( ! tcp_send( session->sock_obj, stanza1 ) ) {
 		if( socket_send( session->sock_id, stanza1 ) ) {
 			osrfLogWarning(OSRF_LOG_MARK, "error sending");
 			return 0;
 		}
 	
 		/* wait for reply */
-		//tcp_wait( session->sock_obj, connect_timeout ); /* make the timeout smarter XXX */
 		socket_wait(session->sock_mgr, connect_timeout, session->sock_id);
 	
 		/* server acknowledges our existence, now see if we can login */
@@ -248,7 +222,6 @@ int session_connect( transport_session* session,
 			char stanza2[ size2 ];
 			snprintf( stanza2, sizeof(stanza2), "<handshake>%s</handshake>", hash );
 	
-			//if( ! tcp_send( session->sock_obj, stanza2 )  ) {
 			if( socket_send( session->sock_id, stanza2 )  ) {
 				osrfLogWarning(OSRF_LOG_MARK, "error sending");
 				return 0;
@@ -268,7 +241,6 @@ int session_connect( transport_session* session,
 
 		/* send the first stanze */
 		session->state_machine->connecting = CONNECTING_1;
-		//if( ! tcp_send( session->sock_obj, stanza1 ) ) {
 		if( socket_send( session->sock_id, stanza1 ) ) {
 			osrfLogWarning(OSRF_LOG_MARK, "error sending");
 			return 0;
@@ -276,7 +248,6 @@ int session_connect( transport_session* session,
 
 
 		/* wait for reply */
-		//tcp_wait( session->sock_obj, connect_timeout ); /* make the timeout smarter XXX */
 		socket_wait( session->sock_mgr, connect_timeout, session->sock_id ); /* make the timeout smarter XXX */
 
 		if( auth_type == AUTH_PLAIN ) {
@@ -291,7 +262,6 @@ int session_connect( transport_session* session,
 	
 			/* server acknowledges our existence, now see if we can login */
 			if( session->state_machine->connecting == CONNECTING_2 ) {
-				//if( ! tcp_send( session->sock_obj, stanza2 )  ) {
 				if( socket_send( session->sock_id, stanza2 )  ) {
 					osrfLogWarning(OSRF_LOG_MARK, "error sending");
 					return 0;
@@ -316,7 +286,6 @@ int session_connect( transport_session* session,
 	
 			/* server acknowledges our existence, now see if we can login */
 			if( session->state_machine->connecting == CONNECTING_2 ) {
-				//if( ! tcp_send( session->sock_obj, stanza2 )  ) {
 				if( socket_send( session->sock_id, stanza2 )  ) {
 					osrfLogWarning(OSRF_LOG_MARK, "error sending");
 					return 0;
@@ -329,7 +298,6 @@ int session_connect( transport_session* session,
 
 
 	/* wait for reply */
-	//tcp_wait( session->sock_obj, connect_timeout );
 	socket_wait( session->sock_mgr, connect_timeout, session->sock_id );
 
 	if( session->state_machine->connected ) {
@@ -341,10 +309,10 @@ int session_connect( transport_session* session,
 }
 
 // ---------------------------------------------------------------------------------
-// TCP data callback. Shove the data into the push parser.
+// TCP data callback.  Takes data from the socket handler and pushes it directly
+// into the push parser
 // ---------------------------------------------------------------------------------
-//void grab_incoming( void * session, char* data ) {
-void grab_incoming(void* blob, socket_manager* mgr, int sockid, char* data, int parent) {
+static void grab_incoming(void* blob, socket_manager* mgr, int sockid, char* data, int parent) {
 	transport_session* ses = (transport_session*) blob;
 	if( ! ses ) { return; }
 	xmlParseChunk(ses->parser_ctxt, data, strlen(data), 0);
@@ -573,7 +541,7 @@ void endElementHandler( void *session, const xmlChar *name) {
 	}
 }
 
-int reset_session_buffers( transport_session* ses ) {
+static int reset_session_buffers( transport_session* ses ) {
 	buffer_reset( ses->body_buffer );
 	buffer_reset( ses->subject_buffer );
 	buffer_reset( ses->thread_buffer );
@@ -597,11 +565,8 @@ int reset_session_buffers( transport_session* ses ) {
 void characterHandler(
 		void *session, const xmlChar *ch, int len) {
 
-	char data[len+1];
-	strncpy( data, (const char*) ch, len );
-	data[len] = 0;
+	const char* p = (const char*) ch;
 
-	//printf( "Handling characters: %s\n", data );
 	transport_session* ses = (transport_session*) session;
 	if( ! ses ) { return; }
 
@@ -609,21 +574,21 @@ void characterHandler(
 	if( ses->state_machine->in_message ) {
 
 		if( ses->state_machine->in_message_body ) {
-			buffer_add( ses->body_buffer, data );
+			buffer_add_n( ses->body_buffer, p, len );
 		}
 
 		if( ses->state_machine->in_subject ) {
-			buffer_add( ses->subject_buffer, data );
+			buffer_add_n( ses->subject_buffer, p, len );
 		}
 
 		if( ses->state_machine->in_thread ) {
-			buffer_add( ses->thread_buffer, data );
+			buffer_add_n( ses->thread_buffer, p, len );
 		}
 	}
 
 	/* set the presence status */
 	if( ses->state_machine->in_presence && ses->state_machine->in_status ) {
-		buffer_add( ses->status_buffer, data );
+		buffer_add_n( ses->status_buffer, p, len );
 	}
 
 	if( ses->state_machine->in_error ) {
@@ -657,10 +622,8 @@ void  parseErrorHandler( void *session, const char* msg, ... ){
 
 int session_disconnect( transport_session* session ) {
 	if( session == NULL ) { return 0; }
-	//tcp_send( session->sock_obj, "</stream:stream>");
 	socket_send(session->sock_id, "</stream:stream>");
 	socket_disconnect(session->sock_mgr, session->sock_id);
 	return 0;
-	//return tcp_disconnect( session->sock_obj );
 }
 

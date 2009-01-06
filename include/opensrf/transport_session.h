@@ -34,12 +34,6 @@
 #define JABBER_STATUS_BUFSIZE		16 
 
 // ---------------------------------------------------------------------------------
-// Takes data from the socket handler and pushes it directly into the push parser
-// ---------------------------------------------------------------------------------
-//void grab_incoming( void * session, char* data );
-void grab_incoming(void* blob, socket_manager* mgr, int sockid, char* data, int parent);
-
-// ---------------------------------------------------------------------------------
 // Callback for handling the startElement event.  Much of the jabber logic occurs
 // in this and the characterHandler callbacks.
 // Here we check for the various top level jabber elements: body, iq, etc.
@@ -134,7 +128,6 @@ enum TRANSPORT_AUTH_TYPE { AUTH_PLAIN, AUTH_DIGEST };
 struct transport_session_struct {
 
 	/* our socket connection */
-	//transport_socket* sock_obj;
 	socket_manager* sock_mgr;
 
 	/* our Jabber state machine */
@@ -220,7 +213,5 @@ int session_connect( transport_session* session,
 		enum TRANSPORT_AUTH_TYPE auth_type );
 
 int session_disconnect( transport_session* session );
-
-int reset_session_buffers( transport_session* session );
 
 #endif
