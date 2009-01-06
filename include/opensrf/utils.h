@@ -56,13 +56,15 @@ GNU General Public License for more details.
 
 #define OSRF_BUFFER_ADD(gb, data) \
 	do {\
-		int __tl; \
-		if(gb && data) {\
-			__tl = strlen(data) + gb->n_used;\
-			if( __tl < gb->size ) {\
-				strcpy( gb->buf + gb->n_used, data ); \
-				gb->n_used = __tl; \
-			} else { buffer_add(gb, data); }\
+		int _tl; \
+		growing_buffer* _gb = gb; \
+		const char* _data = data; \
+		if(_gb && _data) {\
+			_tl = strlen(_data) + _gb->n_used;\
+			if( _tl < _gb->size ) {\
+				strcpy( _gb->buf + _gb->n_used, _data ); \
+				_gb->n_used = _tl; \
+			} else { buffer_add(_gb, _data); }\
 		}\
 	} while(0)
 
@@ -83,21 +85,26 @@ GNU General Public License for more details.
 
 #define OSRF_BUFFER_ADD_CHAR(gb, c)\
 	do {\
-		if(gb) {\
-			if(gb->n_used < gb->size - 1) {\
-				gb->buf[gb->n_used++] = c;\
-				gb->buf[gb->n_used]   = '\0';\
+		growing_buffer* _gb = gb;\
+		char _c = c;\
+		if(_gb) {\
+			if(_gb->n_used < _gb->size - 1) {\
+				_gb->buf[_gb->n_used++] = _c;\
+				_gb->buf[_gb->n_used]   = '\0';\
 			}\
 			else\
-				buffer_add_char(gb, c);\
+				buffer_add_char(_gb, _c);\
 		}\
 	}while(0)
 
 #define OSRF_BUFFER_RESET(gb) \
-    memset(gb->buf, 0, gb->size);\
-    gb->n_used = 0;
+	do {\
+		growing_buffer* _gb = gb;\
+    	memset(_gb->buf, 0, _gb->size);\
+    	_gb->n_used = 0;\
+	}while(0)
 
-	
+#define OSRF_BUFFER_C_STR( x ) ((const char *) (x)->buf)
 
 
 /* turns a va_list into a string */
