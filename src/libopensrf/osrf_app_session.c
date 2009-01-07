@@ -599,7 +599,7 @@ static int osrfAppSessionSendBatch( osrfAppSession* session, osrfMessage* msgs[]
 					(msg->m_type != DISCONNECT) &&
 					(session->state != OSRF_SESSION_CONNECTED) ) {
 
-					if(!osrf_app_session_connect( session )) 
+					if(!osrfAppSessionConnect( session )) 
 						return 0;
 				}
 			}
