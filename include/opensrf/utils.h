@@ -33,13 +33,15 @@ GNU General Public License for more details.
 
 #define OSRF_MALLOC(ptr, size) \
 	do {\
-		ptr = (void*) malloc( size ); \
-		if( ptr == NULL ) { \
-			perror("OSRF_MALLOC(): Out of Memory" );\
-			exit(99); \
-		} \
-		memset( ptr, 0, size );\
-	} while(0)
+			size_t _size = size; \
+			void* p = malloc( _size ); \
+			if( p == NULL ) { \
+				perror("OSRF_MALLOC(): Out of Memory" ); \
+				exit(99); \
+			} \
+			memset( p, 0, _size ); \
+			(ptr) = p; \
+		} while(0)
 
 #ifdef NDEBUG
 // The original ... replace with noop once no more errors occur in NDEBUG mode
