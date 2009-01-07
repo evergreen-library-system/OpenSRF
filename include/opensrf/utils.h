@@ -260,12 +260,6 @@ double get_timestamp_millis( void );
 /* returns true if the whole string is a number */
 int stringisnum(const char* s);
 
-/* reads a file and returns the string version of the file
-	user is responsible for freeing the returned char*
-	*/
-char* file_to_string(const char* filename);
-
-
 
 /** 
   Calculates the md5 of the text provided.

@@ -703,21 +703,6 @@ int json_handle_error(char* string, unsigned long* index, char* err_msg) {
 	return -1;
 }
 
-
-jsonObject* legacy_jsonParseFile( const char* filename ) {
-	return json_parse_file( filename );
-}
-	
-jsonObject* json_parse_file(const char* filename) {
-	if(!filename) return NULL;
-	char* data = file_to_string(filename);
-	jsonObject* o = json_parse_string(data);
-	free(data);
-	return o;
-}
-
-
-
 char* legacy_jsonObjectToJSON( const jsonObject* obj ) {
 
 	if(obj == NULL) return strdup("null");

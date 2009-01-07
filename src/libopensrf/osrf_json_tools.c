@@ -164,16 +164,6 @@ static jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClas
 	return newObj;
 }
 
-jsonObject* jsonParseFile( const char* filename ) {
-	if(!filename) return NULL;
-	char* data = file_to_string(filename);
-	jsonObject* o = jsonParseString(data);
-	free(data);
-	return o;
-}
-
-
-
 jsonObject* jsonObjectFindPath( const jsonObject* obj, const char* format, ...) {
 	if(!obj || !format || strlen(format) < 1) return NULL;	
 

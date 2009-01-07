@@ -359,8 +359,6 @@ char* jsonFormatString( const char* jsonString );
 /* sets the error handler for all parsers */
 void jsonSetGlobalErrorHandler(void (*errorHandler) (const char*));
 
-jsonObject* jsonParseFile( const char* filename );
-
 /* ------------------------------------------------------------------------- */
 /**
  * The following methods provide a facility for serializing and

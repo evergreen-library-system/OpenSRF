@@ -479,31 +479,6 @@ int stringisnum(const char* s) {
 	
 
 
-char* file_to_string(const char* filename) {
-
-	if(!filename) return NULL;
-
-	FILE * file = fopen( filename, "r" );
-	if( !file ) {
-		osrfLogError( OSRF_LOG_MARK, "Unable to open file [%s]", filename );
-		return NULL;
-	}
-
-	size_t num_read;
-	char buf[ BUFSIZ + 1 ];
-	growing_buffer* gb = buffer_init(sizeof(buf));
-
-	while( ( num_read = fread( buf, 1, sizeof(buf) - 1, file) ) ) {
-		buf[ num_read ] = '\0';
-		buffer_add(gb, buf);
-	}
-
-	fclose(file);
-
-	return buffer_release(gb);
-}
-
-
 char* md5sum( const char* text, ... ) {
 
 	struct md5_ctx ctx;

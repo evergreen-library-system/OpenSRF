@@ -36,12 +36,6 @@ jsonObject* json_parse_string(char* string);
 jsonObject* legacy_jsonParseString(const char* string);
 jsonObject* legacy_jsonParseStringFmt( const char* string, ... );
 
-jsonObject* json_parse_file( const char* filename );
-
-jsonObject* legacy_jsonParseFile( const char* string );
-
-
-
 /* does the actual parsing work.  returns 0 on success.  -1 on error and
  * -2 if there was no object to build (string was all comments) 
  */
