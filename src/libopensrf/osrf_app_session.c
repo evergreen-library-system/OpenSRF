@@ -498,13 +498,8 @@ int osrf_app_session_push_queue(
 	return 0;
 }
 
-int osrfAppSessionConnect( osrfAppSession* session ) { 
-	return osrf_app_session_connect(session);
-}
-
-
 /** Attempts to connect to the remote service */
-int osrf_app_session_connect(osrfAppSession* session){
+int osrfAppSessionConnect( osrfAppSession* session ) {
 	
 	if(session == NULL)
 		return 0;

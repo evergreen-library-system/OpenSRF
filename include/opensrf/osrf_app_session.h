@@ -123,7 +123,6 @@ int osrf_app_session_push_queue( osrfAppSession*, osrfMessage* msg );
 /** Attempts to connect to the remote service. Returns 1 on successful 
   * connection, 0 otherwise.
   */
-int osrf_app_session_connect( osrfAppSession* );
 int osrfAppSessionConnect( osrfAppSession* );
 
 /** Sends a disconnect message to the remote service.  No response is expected */
