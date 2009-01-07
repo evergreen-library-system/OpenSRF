@@ -106,7 +106,6 @@ void osrf_message_set_status_info( osrfMessage*,
 		const char* status_name, const char* status_text, int status_code );
 void osrf_message_set_result_content( osrfMessage*, const char* json_string );
 void osrfMessageFree( osrfMessage* );
-void osrf_message_free( osrfMessage* );
 char* osrf_message_to_xml( osrfMessage* );
 char* osrf_message_serialize(const osrfMessage*);
 

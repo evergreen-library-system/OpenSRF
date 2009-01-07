@@ -106,10 +106,6 @@ void osrf_message_set_result_content( osrfMessage* msg, const char* json_string 
 
 
 void osrfMessageFree( osrfMessage* msg ) {
-	osrf_message_free( msg );
-}
-
-void osrf_message_free( osrfMessage* msg ) {
 	if( msg == NULL )
 		return;
 
