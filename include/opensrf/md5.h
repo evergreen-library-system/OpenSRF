@@ -12,8 +12,12 @@
 /* Put this in md5.h if you don't like having everything in one big
  * file. */
 
-#ifndef _DMADORE_MD5_H
-#define _DMADORE_MD5_H
+#ifndef DMADORE_MD5_H
+#define DMADORE_MD5_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct md5_ctx {
   /* The four chaining variables */
@@ -31,5 +35,9 @@ void MD5_start (struct md5_ctx *context);
 void MD5_feed (struct md5_ctx *context, unsigned char inb);
 void MD5_stop (struct md5_ctx *context, unsigned char digest[16]);
 
-#endif /* not defined _DMADORE_MD5_H */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* not defined DMADORE_MD5_H */
 
