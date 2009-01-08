@@ -30,6 +30,12 @@
 //
 // =====================================================================================
 
+#ifndef SHA_H
+#define SHA_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //#ifdef WIN32
      char* shahash(const char* str);
@@ -39,3 +45,8 @@
 //}
 //#endif
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif
