@@ -1,3 +1,6 @@
+#ifndef TRANSPORT_MESSAGE_H
+#define TRANSPORT_MESSAGE_H
+
 #include <string.h>
 #include <libxml/globals.h>
 #include <libxml/xmlerror.h>
@@ -10,10 +13,9 @@
 #include <opensrf/xml_utils.h>
 #include <opensrf/log.h>
 
-#ifndef TRANSPORT_MESSAGE_H
-#define TRANSPORT_MESSAGE_H
-
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // ---------------------------------------------------------------------------------
 // Jabber message object.
@@ -85,5 +87,8 @@ void jid_get_domain( const char* jid, char buf[], int size );
 
 void set_msg_error( transport_message*, const char* error_type, int error_code);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
