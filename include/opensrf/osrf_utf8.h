@@ -14,6 +14,10 @@
 #ifndef OSRF_UTF8_H
 #define OSRF_UTF8_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern unsigned char osrf_utf8_mask_[];  // Lookup table of bitmasks
 
 // Meanings of the various bit switches:
@@ -53,5 +57,9 @@ int is__utf8( int c );
 // result to a growing_buffer
 
 int buffer_append_utf8( growing_buffer* buf, const char* string );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
