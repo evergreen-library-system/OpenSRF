@@ -1,9 +1,13 @@
-#ifndef OSRF_HASH_H
-#define OSRF_HASH_H
+#ifndef OSRF_BIG_HASH_H
+#define OSRF_BIG_HASH_H
 
 #include <Judy.h>
 #include <opensrf/utils.h>
 #include <opensrf/string_array.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define OSRF_HASH_MAXKEY 256
 
@@ -83,5 +87,9 @@ void* osrfBigHashIteratorNext( osrfBigHashIterator* itr );
 void osrfBigHashIteratorFree( osrfBigHashIterator* itr );
 
 void osrfBigHashIteratorReset( osrfBigHashIterator* itr );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
