@@ -1,3 +1,6 @@
+#ifndef OSRF_LOG_INCLUDED
+#define OSRF_LOG_INCLUDED
+
 #include <opensrf/utils.h>
 
 #include <syslog.h>
@@ -5,8 +8,9 @@
 #include <time.h>
 #include <errno.h>
 
-#ifndef OSRF_LOG_INCLUDED
-#define OSRF_LOG_INCLUDED
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* log levels */
 #define OSRF_LOG_ERROR 1
@@ -91,5 +95,9 @@ void osrfLogSetActivityEnabled( int enabled );
  * if the facility name is invalid, LOG_LOCAL0 is returned 
  */
 int osrfLogFacilityToInt( char* facility );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
