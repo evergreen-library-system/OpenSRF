@@ -16,7 +16,9 @@
 
 #include "opensrf/osrf_message.h"
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* a router maintains a list of server classes */
 struct _osrfRouterStruct {
@@ -78,6 +80,10 @@ void osrfRouterFree( osrfRouter* router );
   Handles REQUEST messages 
   */
 //int osrfRouterHandleRequestMessage( osrfRouter* router, transport_message* msg );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
