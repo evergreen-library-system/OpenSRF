@@ -13,13 +13,17 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef _OSRF_CONFIG_H
-#define _OSRF_CONFIG_H
+#ifndef OSRF_CONFIG_H
+#define OSRF_CONFIG_H
 
 #include <opensrf/xml_utils.h>
 #include <opensrf/utils.h>
 #include <opensrf/string_array.h>
 #include <opensrf/osrf_json.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
 	jsonObject* config;
@@ -108,5 +112,8 @@ jsonObject* osrfConfigGetValueObject(osrfConfig* cfg, char* path, ...);
 int osrfConfigGetValueList(const osrfConfig* cfg, osrfStringArray* arr,
 		const char* path, ...);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
