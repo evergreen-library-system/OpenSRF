@@ -8,7 +8,9 @@
 #include <opensrf/osrfConfig.h>
 #include <opensrf/osrf_cache.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Connects to jabber.  Returns 1 on success, 0 on failure 
 	contextnode is the location in the config file where we collect config info
@@ -56,5 +58,9 @@ void osrfSystemIgnoreTransportClient();
 
 /** Initialize the cache connection */
 int osrfSystemInitCache(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
