@@ -1,3 +1,6 @@
+#ifndef OSRF_APPLICATION_H
+#define OSRF_APPLICATION_H
+
 #include <opensrf/utils.h>
 #include <opensrf/log.h>
 #include <opensrf/osrf_app_session.h>
@@ -7,6 +10,9 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
   All OpenSRF methods take the signature
@@ -181,4 +187,8 @@ int osrfAppRespondComplete( osrfMethodContext* context, const jsonObject* data )
 int osrfAppRunChildInit(const char* appname);
 void osrfAppRunExitCode();
 
+#ifdef __cplusplus
+}
+#endif
 
+#endif
