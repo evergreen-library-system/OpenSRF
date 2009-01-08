@@ -1,10 +1,13 @@
 #ifndef OSRF_BIG_LIST_H
 #define OSRF_BIG_LIST_H
 
-
 #include <stdio.h>
 #include <opensrf/utils.h>
 #include <Judy.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
   Items are stored as void*'s so it's up to the user to
@@ -138,5 +141,8 @@ void osrfBigListVanillaFree( void* item );
  */
 void osrfBigListSetDefaultFree( osrfBigList* list );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
