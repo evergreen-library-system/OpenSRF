@@ -13,12 +13,16 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef _JSON_H
-#define _JSON_H
+#ifndef JSON_H
+#define JSON_H
 
 #include <opensrf/utils.h>
 #include <opensrf/osrf_list.h>
 #include <opensrf/osrf_hash.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* parser states */
 #define JSON_STATE_IN_OBJECT	0x1
@@ -402,5 +406,8 @@ char* jsonObjectToXML(const jsonObject*);
  */
 jsonObject* jsonXMLToJSONObject(const char* xml);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
