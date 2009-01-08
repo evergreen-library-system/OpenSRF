@@ -3,6 +3,9 @@
 // a SAX push parser as it arrives.  When key Jabber documetn elements are met, 
 // logic ensues.
 // ---------------------------------------------------------------------------------
+#ifndef TRANSPORT_SESSION_H
+#define TRANSPORT_SESSION_H
+
 #include <opensrf/transport_message.h>
 
 #include <opensrf/utils.h>
@@ -20,8 +23,9 @@
 #include <libxml/debugXML.h>
 #include <libxml/xmlmemory.h>
 
-#ifndef TRANSPORT_SESSION_H
-#define TRANSPORT_SESSION_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define CONNECTING_1 1 /* just starting the connection to Jabber */
 #define CONNECTING_2 2 /* First <stream> packet sent and <stream> packet received from server */
@@ -213,5 +217,9 @@ int session_connect( transport_session* session,
 		enum TRANSPORT_AUTH_TYPE auth_type );
 
 int session_disconnect( transport_session* session );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
