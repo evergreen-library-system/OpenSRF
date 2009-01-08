@@ -1,5 +1,5 @@
-#ifndef _OSRF_APP_SESSION
-#define _OSRF_APP_SESSION
+#ifndef OSRF_APP_SESSION_H
+#define OSRF_APP_SESSION_H
 
 #include <opensrf/transport_client.h>
 #include <opensrf/osrf_message.h>
@@ -11,7 +11,9 @@
 
 #include <opensrf/osrf_json.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define	DEF_RECV_TIMEOUT 6 /* receive timeout */
 #define	DEF_QUEUE_SIZE	
@@ -153,6 +155,8 @@ int osrfAppSessionStatus( osrfAppSession* ses, int type,
 
 void osrfAppSessionCleanup();
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif
