@@ -5,7 +5,15 @@
 #include <opensrf/osrf_message.h>
 #include <opensrf/osrf_app_session.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 osrfAppSession*  osrf_stack_transport_handler( transport_message* msg,
 		const char* my_service );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
