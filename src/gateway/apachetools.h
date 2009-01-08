@@ -1,3 +1,6 @@
+#ifndef APACHE_TOOLS_H
+#define APACHE_TOOLS_H
+
 #include "httpd.h"
 #include "http_config.h"
 #include "http_core.h"
@@ -12,8 +15,9 @@
 #include "opensrf/utils.h"
 #include "opensrf/log.h"
 
-#ifndef APACHE_TOOLS_H
-#define APACHE_TOOLS_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define APACHE_TOOLS_MAX_POST_SIZE 10485760 /* 10 MB */
 
@@ -53,5 +57,8 @@ int apacheError( char* msg, ... );
 apr_table_t* apacheParseCookies(request_rec *r);
 */
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
