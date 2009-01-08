@@ -6,6 +6,10 @@
 #include <opensrf/utils.h>
 #include <opensrf/log.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct message_list_struct;
 
 // ---------------------------------------------------------------------------
@@ -65,5 +69,8 @@ int client_connected( const transport_client* client );
 // ---------------------------------------------------------------------------
 transport_message* client_recv( transport_client* client, int timeout );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
