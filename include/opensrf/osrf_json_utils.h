@@ -16,6 +16,10 @@ GNU General Public License for more details.
 #ifndef OSRF_JSON_UTILS_H
 #define OSRF_JSON_UTILS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* ----------------------------------------------------------------------- */
 /* Clients need not include this file.  These are internal utilities only	*/
 /* ----------------------------------------------------------------------- */
@@ -95,6 +99,10 @@ int _jsonParserHandleNumber( jsonParserContext* ctx );
 
 
 void _jsonInsertParserItem( jsonInternalParser* p, jsonObject* newo );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
