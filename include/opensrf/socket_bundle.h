@@ -1,3 +1,6 @@
+#ifndef SOCKET_BUNDLE_H
+#define SOCKET_BUNDLE_H
+
 #include <opensrf/utils.h>
 #include <opensrf/log.h>
 
@@ -23,9 +26,9 @@
 
 #include <signal.h>
 
-#ifndef SOCKET_BUNDLE_H
-#define SOCKET_BUNDLE_H
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SERVER_SOCKET			1
 #define CLIENT_SOCKET			2
@@ -107,5 +110,9 @@ int socket_wait_all(socket_manager* mgr, int timeout);
 void _socket_print_list(socket_manager* mgr);
 
 int socket_connected(int sock_fd);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
