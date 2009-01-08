@@ -1,3 +1,6 @@
+#ifndef osrf_message_h
+#define osrf_message_h
+
 #include <opensrf/string_array.h>
 #include <opensrf/utils.h>
 #include <opensrf/log.h>
@@ -11,10 +14,9 @@
 #include <libxml/xpathInternals.h>
 #include <libxml/tree.h>
 
-
-
-#ifndef osrf_message_h
-#define osrf_message_h
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define OSRF_XML_NAMESPACE "http://open-ils.org/xml/namespaces/oils_v1"
 
@@ -136,5 +138,8 @@ jsonObject* osrfMessageToJSON( const osrfMessage* msg );
 
 char* osrfMessageSerializeBatch( osrfMessage* msgs [], int count );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
