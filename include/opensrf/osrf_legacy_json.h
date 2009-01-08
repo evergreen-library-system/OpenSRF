@@ -25,9 +25,11 @@ GNU General Public License for more details.
 #include <opensrf/osrf_json.h>
 #include <ctype.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-
-/* Parses the given JSON string and returns the built object. 
+/* Parses the given JSON string and returns the built object.
  *	returns NULL (and prints parser error to stderr) on error.  
  */
 
@@ -123,6 +125,9 @@ jsonObjectNode* jsonObjectIteratorNext(jsonObjectIterator* iter);
  */
 int jsonObjectIteratorHasNext(const jsonObjectIterator* iter);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
