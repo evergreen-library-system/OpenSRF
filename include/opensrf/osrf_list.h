@@ -3,6 +3,10 @@
 
 #include <opensrf/utils.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define OSRF_LIST_GET_INDEX(l, i) (!l || i >= l->size) ? NULL: l->arrlist[i]
 
 /**
@@ -139,5 +143,8 @@ void osrfListSetDefaultFree( osrfList* list );
  * list if there are no null slots */
 int osrfListPushFirst( osrfList* list, void* item );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
