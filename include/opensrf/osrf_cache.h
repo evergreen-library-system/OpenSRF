@@ -13,10 +13,16 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
+#ifndef OSRF_CACHE_H
+#define OSRF_CACHE_H
 
 #include <opensrf/osrf_json.h>
 #include <memcache.h>
 #include <opensrf/log.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
   osrfCache is a globally shared cache	API
@@ -84,3 +90,9 @@ int osrfCacheSetExpire( time_t seconds, const char* key, ... );
  * Clean up the global cache handles, etc.
  */
 void osrfCacheCleanup();
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
