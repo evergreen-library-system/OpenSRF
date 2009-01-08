@@ -17,6 +17,9 @@
 #include <opensrf/osrf_settings.h>
 #include <opensrf/osrfConfig.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* we receive data.  we find the next child in
 	line that is available.  pass the data down that childs pipe and go
@@ -30,5 +33,9 @@
 	*/
 
 int osrf_prefork_run(const char* appname);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
