@@ -5,6 +5,10 @@
 #include <opensrf/string_array.h>
 #include <opensrf/osrf_list.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct _osrfHashStruct;
 typedef struct _osrfHashStruct osrfHash;
 
@@ -82,5 +86,9 @@ const char* osrfHashIteratorKey( const osrfHashIterator* itr );
 void osrfHashIteratorFree( osrfHashIterator* itr );
 
 void osrfHashIteratorReset( osrfHashIterator* itr );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
