@@ -22,5 +22,17 @@
  * $Id$
  */
 
+#ifndef STRNLEN_H
+#define STRNLEN_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 size_t	strnlen(const char *, size_t);
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif
