@@ -29,6 +29,10 @@ GNU General Public License for more details.
 #include <string.h>
 //#include <sys/timeb.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "md5.h"
 
 #define OSRF_MALLOC(ptr, size) \
@@ -276,5 +280,9 @@ char* md5sum( const char* text, ... );
   returns 0 if the descriptor is OK
   */
 int osrfUtilsCheckFileDescriptor( int fd );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
