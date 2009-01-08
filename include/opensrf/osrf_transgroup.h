@@ -1,3 +1,6 @@
+#ifndef OSRF_TRANSGROUP_H
+#define OSRF_TRANSGROUP_H
+
 #include <opensrf/transport_client.h>
 #include <opensrf/transport_message.h>
 #include <opensrf/osrf_list.h>
@@ -5,6 +8,10 @@
 #include <opensrf/osrfConfig.h>
 #include <opensrf/utils.h>
 #include <time.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
   Maintains a set of transport clients 
@@ -119,4 +126,9 @@ void osrfTransportGroupSetInactive( osrfTransportGroup* grp, char* domain );
   */
 osrfTransportGroupNode* __osrfTransportGroupFindNode( osrfTransportGroup* grp, char* domain );
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif
 
