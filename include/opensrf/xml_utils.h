@@ -1,9 +1,13 @@
-#ifndef _XML_UTILS_H
-#define _XML_UTILS_H
+#ifndef XML_UTILS_H
+#define XML_UTILS_H
 
 #include <opensrf/osrf_json.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 jsonObject* xmlDocToJSON(xmlDocPtr doc);
 
@@ -29,5 +33,8 @@ char* xmlSaxAttr( const xmlChar** atts, const char* name );
  */
 int xmlAddAttrs( xmlNodePtr node, const xmlChar** atts );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
