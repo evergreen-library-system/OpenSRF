@@ -1,13 +1,17 @@
+#ifndef STRING_ARRAY_H
+#define STRING_ARRAY_H
+
 #include <stdio.h>
 
 #include <opensrf/utils.h>
 #include <opensrf/log.h>
 #include <opensrf/osrf_list.h>
 
-#define STRING_ARRAY_MAX_SIZE 4096
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#ifndef STRING_ARRAY_H
-#define STRING_ARRAY_H
+#define STRING_ARRAY_MAX_SIZE 4096
 
 #define OSRF_STRING_ARRAY_FREE(arr)\
     if(arr) {osrfListFree(arr->list); free(arr);}
@@ -34,5 +38,9 @@ void osrfStringArrayFree(osrfStringArray*);
 int string_array_get_total_size(osrfStringArray* arr);
 
 void osrfStringArrayRemove( osrfStringArray* arr, char* str);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
