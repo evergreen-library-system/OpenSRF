@@ -15,6 +15,9 @@
 #include <opensrf/utils.h>
 #include <opensrf/osrf_list.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  *	Generates an XML representation of a JSON object */
@@ -25,6 +28,10 @@ char* jsonObjectToXML( const jsonObject*);
  * Builds a JSON object from the provided XML 
  */
 jsonObject* jsonXMLToJSONObject(const char* xml);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 #endif
