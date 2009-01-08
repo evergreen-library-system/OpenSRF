@@ -14,6 +14,10 @@
 
 #include <opensrf/osrf_json.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct { 
 	char* hostname; 
 	jsonObject* config; 
@@ -25,6 +29,10 @@ void osrf_settings_free_host_config(osrf_host_config*);
 char* osrf_settings_host_value(const char* path, ...);
 jsonObject* osrf_settings_host_value_object(const char* format, ...);
 int osrf_settings_retrieve(const char* hostname);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
