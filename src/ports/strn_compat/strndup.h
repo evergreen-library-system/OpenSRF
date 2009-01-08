@@ -23,5 +23,17 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef STRNDUP_H
+#define STRNDUP_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 char	*strndup(const char *s, size_t n);
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif
