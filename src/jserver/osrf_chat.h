@@ -33,6 +33,10 @@ GNU General Public License for more details.
 #include <libxml/globals.h>
 #include <libxml/xmlerror.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* client to server XML */
 #define OSRF_CHAT_START_STREAM "<?xml version='1.0'?><stream:stream "\
 	"xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' "\
@@ -258,6 +262,9 @@ static xmlSAXHandler osrfChatSaxHandlerStruct = {
 
 static const xmlSAXHandlerPtr osrfChatSaxHandler = &osrfChatSaxHandlerStruct;
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
