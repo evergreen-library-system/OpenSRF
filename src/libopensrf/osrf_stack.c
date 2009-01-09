@@ -178,7 +178,6 @@ static void _do_client( osrfAppSession* session, osrfMessage* msg ) {
 						msg->status_code, msg->status_name );
 				further_msg->is_exception = 1;
 				osrf_app_session_set_complete( session, msg->thread_trace );
-				osrfMessageFree(msg);
 				break;
 		}
 
