@@ -202,13 +202,6 @@ void osrfChatNodeFinish( osrfChatServer* server, osrfChatNode* node );
 /* initializes the negotiation of a server to server connection */
 int osrfChatInitS2S( osrfChatServer* cs, char* remote, char* toAddr, char* msgXML );
 
-
-void osrfChatStartStream( void* blob );
-void osrfChatStartElement( void* blob, const xmlChar *name, const xmlChar **atts );
-void osrfChatEndElement( void* blob, const xmlChar* name );
-void osrfChatHandleCharacter(void* blob, const xmlChar *ch, int len);
-void osrfChatParseError( void* blob, const char* msg, ... );
-
 int osrfChatHandleNewConnection( osrfChatNode* node, const char* name, const xmlChar** atts );
 int osrfChatHandleConnecting( osrfChatNode* node, const char* name, const xmlChar** atts );
 int osrfChatHandleConnected( osrfChatNode* node, const char* name, const xmlChar** atts );
@@ -220,47 +213,8 @@ int osrfChatHandleS2SConnected( osrfChatNode* node, const char* nm, const xmlCha
 
 void osrfChatS2SMessageFree(void* n);
 
-
-
 /* generates a random sha1 hex key */
 char* osrfChatMkAuthKey();
-
-static xmlSAXHandler osrfChatSaxHandlerStruct = {
-   NULL,								/* internalSubset */
-   NULL,								/* isStandalone */
-   NULL,								/* hasInternalSubset */
-   NULL,								/* hasExternalSubset */
-   NULL,								/* resolveEntity */
-   NULL,								/* getEntity */
-   NULL,								/* entityDecl */
-   NULL,								/* notationDecl */
-   NULL,								/* attributeDecl */
-   NULL,								/* elementDecl */
-   NULL,								/* unparsedEntityDecl */
-   NULL,								/* setDocumentLocator */
-   osrfChatStartStream,			/* startDocument */
-   NULL,								/* endDocument */
-	osrfChatStartElement,		/* startElement */
-	osrfChatEndElement,			/* endElement */
-   NULL,								/* reference */
-	osrfChatHandleCharacter,	/* characters */
-   NULL,								/* ignorableWhitespace */
-   NULL,								/* processingInstruction */
-   NULL,								/* comment */
-   osrfChatParseError,			/* xmlParserWarning */
-   osrfChatParseError,			/* xmlParserError */
-   NULL,								/* xmlParserFatalError : unused */
-   NULL,								/* getParameterEntity */
-   NULL,								/* cdataBlock; */
-   NULL,								/* externalSubset; */
-   1,
-   NULL,
-   NULL,								/* startElementNs */
-   NULL,								/* endElementNs */
-	NULL								/* xmlStructuredErrorFunc */
-};
-
-static const xmlSAXHandlerPtr osrfChatSaxHandler = &osrfChatSaxHandlerStruct;
 
 #ifdef __cplusplus
 }

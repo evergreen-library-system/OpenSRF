@@ -18,6 +18,49 @@ GNU General Public License for more details.
 #include <stdio.h>
 #include <time.h>
 
+static void osrfChatStartStream( void* blob );
+static void osrfChatStartElement( void* blob, const xmlChar *name, const xmlChar **atts );
+static void osrfChatEndElement( void* blob, const xmlChar* name );
+static void osrfChatHandleCharacter(void* blob, const xmlChar *ch, int len);
+static void osrfChatParseError( void* blob, const char* msg, ... );
+
+static xmlSAXHandler osrfChatSaxHandlerStruct = {
+   NULL,						/* internalSubset */
+   NULL,						/* isStandalone */
+   NULL,						/* hasInternalSubset */
+   NULL,						/* hasExternalSubset */
+   NULL,						/* resolveEntity */
+   NULL,						/* getEntity */
+   NULL,						/* entityDecl */
+   NULL,						/* notationDecl */
+   NULL,						/* attributeDecl */
+   NULL,						/* elementDecl */
+   NULL,						/* unparsedEntityDecl */
+   NULL,						/* setDocumentLocator */
+   osrfChatStartStream, 		/* startDocument */
+   NULL,						/* endDocument */
+   osrfChatStartElement,		/* startElement */
+   osrfChatEndElement,			/* endElement */
+   NULL,						/* reference */
+   osrfChatHandleCharacter,		/* characters */
+   NULL,						/* ignorableWhitespace */
+   NULL,						/* processingInstruction */
+   NULL,						/* comment */
+   osrfChatParseError,			/* xmlParserWarning */
+   osrfChatParseError,			/* xmlParserError */
+   NULL,						/* xmlParserFatalError : unused */
+   NULL,						/* getParameterEntity */
+   NULL,						/* cdataBlock; */
+   NULL,						/* externalSubset; */
+   1,
+   NULL,
+   NULL,						/* startElementNs */
+   NULL,						/* endElementNs */
+   NULL							/* xmlStructuredErrorFunc */
+};
+
+static const xmlSAXHandlerPtr osrfChatSaxHandler = &osrfChatSaxHandlerStruct;
+
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 256
 #endif
@@ -437,12 +480,12 @@ int osrfChatPushData( osrfChatServer* server, osrfChatNode* node, char* data ) {
 }
 
 
-void osrfChatStartStream( void* blob ) {
+static void osrfChatStartStream( void* blob ) {
 	osrfLogDebug( OSRF_LOG_MARK, "Starting new client stream...");
 }
 
 
-void osrfChatStartElement( void* blob, const xmlChar *name, const xmlChar **atts ) {
+static void osrfChatStartElement( void* blob, const xmlChar *name, const xmlChar **atts ) {
 	if(!(blob && name)) return;
 	osrfChatNode* node = (osrfChatNode*) blob;
 
@@ -707,7 +750,7 @@ int osrfChatHandleS2SResponse( osrfChatNode* node, const char* name, const xmlCh
 
 
 
-void osrfChatEndElement( void* blob, const xmlChar* name ) {
+static void osrfChatEndElement( void* blob, const xmlChar* name ) {
 	if(!(blob && name)) return;
 	osrfChatNode* node = (osrfChatNode*) blob;
 
@@ -759,14 +802,14 @@ void osrfChatEndElement( void* blob, const xmlChar* name ) {
 }
 
 
-void osrfChatHandleCharacter( void* blob, const xmlChar *ch, int len) {
+static void osrfChatHandleCharacter( void* blob, const xmlChar *ch, int len) {
 	if(!(blob && ch && len)) return;
 	osrfChatNode* node = (osrfChatNode*) blob;
 
 	/*
 	osrfLogDebug( OSRF_LOG_MARK, "Char Handler: state %d, xmlstate %d, chardata %s", 
 			node->state, node->xmlstate, (char*) ch );
-			*/
+	*/
 
 	if( node->state == OSRF_CHAT_STATE_CONNECTING ) {
 		if( node->xmlstate & OSRF_CHAT_STATE_INIQ ) {
@@ -822,7 +865,7 @@ void osrfChatHandleCharacter( void* blob, const xmlChar *ch, int len) {
 }
 
 
-void osrfChatParseError( void* blob, const char* msg, ... ) {
+static void osrfChatParseError( void* blob, const char* msg, ... ) {
 
 	osrfChatXMLErrorOcurred = 1;
 }
