@@ -1,5 +1,72 @@
 #include <opensrf/transport_session.h>
 
+// ---------------------------------------------------------------------------------
+// Callback for handling the startElement event.  Much of the jabber logic occurs
+// in this and the characterHandler callbacks.
+// Here we check for the various top level jabber elements: body, iq, etc.
+// ---------------------------------------------------------------------------------
+static void startElementHandler( 
+		void *session, const xmlChar *name, const xmlChar **atts);
+
+// ---------------------------------------------------------------------------------
+// Callback for handling the endElement event.  Updates the Jabber state machine
+// to let us know the element is over.
+// ---------------------------------------------------------------------------------
+static void endElementHandler( void *session, const xmlChar *name);
+
+// ---------------------------------------------------------------------------------
+// This is where we extract XML text content.  In particular, this is useful for
+// extracting Jabber message bodies.
+// ---------------------------------------------------------------------------------
+static void characterHandler(
+		void *session, const xmlChar *ch, int len);
+
+static void parseWarningHandler( void *session, const char* msg, ... );
+static void parseErrorHandler( void *session, const char* msg, ... );
+
+// ---------------------------------------------------------------------------------
+// Tells the SAX parser which functions will be used as event callbacks
+// ---------------------------------------------------------------------------------
+static xmlSAXHandler SAXHandlerStruct = {
+   NULL,							/* internalSubset */
+   NULL,							/* isStandalone */
+   NULL,							/* hasInternalSubset */
+   NULL,							/* hasExternalSubset */
+   NULL,							/* resolveEntity */
+   NULL,							/* getEntity */
+   NULL,							/* entityDecl */
+   NULL,							/* notationDecl */
+   NULL,							/* attributeDecl */
+   NULL,							/* elementDecl */
+   NULL,							/* unparsedEntityDecl */
+   NULL,							/* setDocumentLocator */
+   NULL,							/* startDocument */
+   NULL,							/* endDocument */
+   startElementHandler,		/* startElement */
+   endElementHandler,		/* endElement */
+   NULL,							/* reference */
+   characterHandler,			/* characters */
+   NULL,							/* ignorableWhitespace */
+   NULL,							/* processingInstruction */
+   NULL,							/* comment */
+   parseWarningHandler,		/* xmlParserWarning */
+   parseErrorHandler,		/* xmlParserError */
+   NULL,							/* xmlParserFatalError : unused */
+   NULL,							/* getParameterEntity */
+   NULL,							/* cdataBlock; */
+   NULL,							/* externalSubset; */
+   1,
+   NULL,
+   NULL,							/* startElementNs */
+   NULL,							/* endElementNs */
+   NULL							/* xmlStructuredErrorFunc */
+};
+
+// ---------------------------------------------------------------------------------
+// Our SAX handler pointer.
+// ---------------------------------------------------------------------------------
+static const xmlSAXHandlerPtr SAXHandler = &SAXHandlerStruct;
+
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 256
 #endif
@@ -319,7 +386,7 @@ static void grab_incoming(void* blob, socket_manager* mgr, int sockid, char* dat
 }
 
 
-void startElementHandler(
+static void startElementHandler(
 	void *session, const xmlChar *name, const xmlChar **atts) {
 
 	transport_session* ses = (transport_session*) session;
@@ -447,7 +514,7 @@ static char* get_xml_attr( const xmlChar** atts, const char* attr_name ) {
 // ------------------------------------------------------------------
 // See which tags are ending
 // ------------------------------------------------------------------
-void endElementHandler( void *session, const xmlChar *name) {
+static void endElementHandler( void *session, const xmlChar *name) {
 	transport_session* ses = (transport_session*) session;
 	if( ! ses ) { return; }
 
@@ -562,7 +629,7 @@ static int reset_session_buffers( transport_session* ses ) {
 // takes data out of the body of the message and pushes it into
 // the appropriate buffer
 // ------------------------------------------------------------------
-void characterHandler(
+static void characterHandler(
 		void *session, const xmlChar *ch, int len) {
 
 	const char* p = (const char*) ch;
@@ -599,7 +666,7 @@ void characterHandler(
 }
 
 /* XXX change to warning handlers */
-void  parseWarningHandler( void *session, const char* msg, ... ) {
+static void  parseWarningHandler( void *session, const char* msg, ... ) {
 
 	va_list args;
 	va_start(args, msg);
@@ -609,7 +676,7 @@ void  parseWarningHandler( void *session, const char* msg, ... ) {
 	fprintf(stderr, "XML WARNING: %s\n", msg ); 
 }
 
-void  parseErrorHandler( void *session, const char* msg, ... ){
+static void  parseErrorHandler( void *session, const char* msg, ... ){
 
 	va_list args;
 	va_start(args, msg);
