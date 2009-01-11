@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#define OSRF_LIST_GET_INDEX(l, i) (!l || i >= l->size) ? NULL: l->arrlist[i]
+#define OSRF_LIST_GET_INDEX(l, i) (!(l) || (i) >= (l)->size) ? NULL: (l)->arrlist[(i)]
 
 /**
   Items are stored as void*'s so it's up to the user to
