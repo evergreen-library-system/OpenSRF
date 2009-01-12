@@ -13,31 +13,26 @@ extern "C" {
 
 #define STRING_ARRAY_MAX_SIZE 4096
 
-#define OSRF_STRING_ARRAY_FREE(arr)\
-    if(arr) {osrfListFree(arr->list); free(arr);}
-        
+#define OSRF_STRING_ARRAY_FREE(arr) osrfListFree( (osrfList*) (arr) )
 
-struct string_array_struct {
-    osrfList* list;
-    int size;
-};
-typedef struct string_array_struct osrfStringArray;
+typedef struct {
+    osrfList list;
+	int size;    // redundant with osrfList.size
+} osrfStringArray;
 
-osrfStringArray* osrfNewStringArray(int size);
+osrfStringArray* osrfNewStringArray( int size );
 
-void osrfStringArrayAdd(osrfStringArray*, char* str);
+void osrfStringArrayAdd( osrfStringArray*, const char* str );
 
-char* osrfStringArrayGetString(osrfStringArray* arr, int index);
+char* osrfStringArrayGetString( osrfStringArray* arr, int index );
 
 /* returns true if this array contains the given string */
-int osrfStringArrayContains( osrfStringArray* arr, char* string );
+int osrfStringArrayContains(
+	const osrfStringArray* arr, const char* string );
 
-void osrfStringArrayFree(osrfStringArray*);
+void osrfStringArrayFree( osrfStringArray* );
 
-/* total size of all included strings */
-int string_array_get_total_size(osrfStringArray* arr);
-
-void osrfStringArrayRemove( osrfStringArray* arr, char* str);
+void osrfStringArrayRemove( osrfStringArray* arr, const char* str );
 
 #ifdef __cplusplus
 }
