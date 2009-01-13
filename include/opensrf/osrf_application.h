@@ -29,50 +29,28 @@ extern "C" {
 
 /** 
   This macro verifies methods receive the correct parameters */
-#define OSRF_METHOD_VERIFY_CONTEXT_(x) \
-	do { \
-		osrfMethodContext* d = x; \
-		if(!d) return -1; \
-		if(!d->session) { \
-			osrfLogError( OSRF_LOG_MARK, "Session is NULL in app reqeust" ); \
-			return -1; \
-		} \
-		if(!d->method) { \
-			osrfLogError( OSRF_LOG_MARK,  "Method is NULL in app reqeust" ); \
-			return -1; \
-		}\
-		if(d->method->argc) { \
-			if(!d->params) { \
-				osrfLogError( OSRF_LOG_MARK, \
-					"Params is NULL in app reqeust %s", d->method->name ); \
-				return -1; \
-			} \
-			if( d->params->type != JSON_ARRAY ) { \
-				osrfLogError( OSRF_LOG_MARK, \
-					"'params' is not a JSON array for method %s", d->method->name);\
-				return -1; }\
-		}\
-		if( !d->method->name ) { \
-			osrfLogError( OSRF_LOG_MARK, "Method name is NULL"); \
-			return -1; \
-		} \
-	} while(0)
+#define _OSRF_METHOD_VERIFY_CONTEXT(d) \
+	if(!d) return -1; \
+	if(!d->session) { osrfLogError( OSRF_LOG_MARK,  "Session is NULL in app reqeust" ); return -1; }\
+	if(!d->method) { osrfLogError( OSRF_LOG_MARK,  "Method is NULL in app reqeust" ); return -1; }\
+	if(d->method->argc) {\
+		if(!d->params) { osrfLogError( OSRF_LOG_MARK,  "Params is NULL in app reqeust %s", d->method->name ); return -1; }\
+		if( d->params->type != JSON_ARRAY ) { \
+			osrfLogError( OSRF_LOG_MARK,  "'params' is not a JSON array for method %s", d->method->name);\
+			return -1; }\
+	}\
+	if( !d->method->name ) { osrfLogError( OSRF_LOG_MARK,  "Method name is NULL"); return -1; } 
 
-#ifdef OSRF_LOG_PARAMS
-#define OSRF_METHOD_VERIFY_CONTEXT(x) \
- 	do { \
- 		osrfMethodContext* d = x; \
-		OSRF_METHOD_VERIFY_CONTEXT_(d); \
-		char* _j = jsonObjectToJSON(d->params); \
-		if(_j) { \
-			osrfLogInfo( OSRF_LOG_MARK, \
-				"CALL:	%s %s - %s", d->session->remote_service, d->method->name, _j); \
-			free(_j); \
-		} \
-	} \
-	while( 0 )
+#ifdef OSRF_LOG_PARAMS 
+#define OSRF_METHOD_VERIFY_CONTEXT(d) \
+	_OSRF_METHOD_VERIFY_CONTEXT(d); \
+	char* __j = jsonObjectToJSON(d->params);\
+	if(__j) { \
+		osrfLogInfo( OSRF_LOG_MARK,  "CALL:	%s %s - %s", d->session->remote_service, d->method->name, __j);\
+		free(__j); \
+	} 
 #else
-#define OSRF_METHOD_VERIFY_CONTEXT(d) OSRF_METHOD_VERIFY_CONTEXT_(d);
+#define OSRF_METHOD_VERIFY_CONTEXT(d) _OSRF_METHOD_VERIFY_CONTEXT(d); 
 #endif
 
 
