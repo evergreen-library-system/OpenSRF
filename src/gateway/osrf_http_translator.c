@@ -260,14 +260,17 @@ static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
                 growing_buffer* act = buffer_init(128);	
                 buffer_fadd(act, "[%s] [%s] %s %s", trans->remoteHost, "", trans->service, msg->method_name);
 
-                char* str; 
+                jsonObject* obj = NULL;
                 int i = 0;
-                while((str = jsonObjectGetString(jsonObjectGetIndex(params, i++)))) {
+                char* str; 
+                while((obj = jsonObjectGetIndex(params, i++))) {
+                    str = jsonObjectToJSON(obj);
                     if( i == 1 )
                         OSRF_BUFFER_ADD(act, " ");
                     else 
                         OSRF_BUFFER_ADD(act, ", ");
                     OSRF_BUFFER_ADD(act, str);
+                    free(str);
                 }
                 osrfLogActivity(OSRF_LOG_MARK, act->buf);
                 buffer_free(act);
