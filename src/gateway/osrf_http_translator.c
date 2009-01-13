@@ -202,7 +202,8 @@ static int osrfHttpTranslatorSetTo(osrfHttpTranslator* trans) {
                     osrfLogDebug(OSRF_LOG_MARK, "Found cached session from host %s and recipient %s", 
                         trans->remoteHost, trans->recipient);
                     stat = 1;
-                    trans->service = jsonObjectGetString(jsonObjectGetKey(sessionCache, "service"));
+                    trans->service = apr_pstrdup(
+                        trans->apreq->pool, jsonObjectGetString(jsonObjectGetKey(sessionCache, "service")));
 
                 } else {
                     osrfLogError(OSRF_LOG_MARK, 
