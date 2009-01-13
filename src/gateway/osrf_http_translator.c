@@ -486,8 +486,8 @@ static int handler(request_rec *r) {
 	osrfLogSetAppname("osrf_http_translator");
     testConnection(r);
 
-    osrfHttpTranslator* trans = osrfNewHttpTranslator(r);
 	osrfLogMkXid();
+    osrfHttpTranslator* trans = osrfNewHttpTranslator(r);
     if(trans->body) {
         stat = osrfHttpTranslatorProcess(trans);
         //osrfHttpTranslatorDebug(trans);
