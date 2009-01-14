@@ -31,10 +31,10 @@ extern "C" {
   This macro verifies methods receive the correct parameters */
 #define _OSRF_METHOD_VERIFY_CONTEXT(d) \
 	if(!d) return -1; \
-	if(!d->session) { osrfLogError( OSRF_LOG_MARK,  "Session is NULL in app reqeust" ); return -1; }\
-	if(!d->method) { osrfLogError( OSRF_LOG_MARK,  "Method is NULL in app reqeust" ); return -1; }\
+	if(!d->session) { osrfLogError( OSRF_LOG_MARK,  "Session is NULL in app request" ); return -1; }\
+	if(!d->method) { osrfLogError( OSRF_LOG_MARK,  "Method is NULL in app request" ); return -1; }\
 	if(d->method->argc) {\
-		if(!d->params) { osrfLogError( OSRF_LOG_MARK,  "Params is NULL in app reqeust %s", d->method->name ); return -1; }\
+		if(!d->params) { osrfLogError( OSRF_LOG_MARK,  "Params is NULL in app request %s", d->method->name ); return -1; }\
 		if( d->params->type != JSON_ARRAY ) { \
 			osrfLogError( OSRF_LOG_MARK,  "'params' is not a JSON array for method %s", d->method->name);\
 			return -1; }\
@@ -186,6 +186,12 @@ int osrfAppRespondComplete( osrfMethodContext* context, const jsonObject* data )
  * Tells the backend process to run its child init function */
 int osrfAppRunChildInit(const char* appname);
 void osrfAppRunExitCode();
+
+/**
+  Determine whether the context looks healthy.
+  Return 0 if it does, or -1 if it doesn't.
+  */
+int osrfMethodVerifyContext( osrfMethodContext* ctx );
 
 #ifdef __cplusplus
 }

@@ -419,7 +419,10 @@ static void _osrfAppSetIntrospectMethod( osrfMethodContext* ctx, const osrfMetho
   message
  */
 static int _osrfAppRunSystemMethod(osrfMethodContext* ctx) {
-	OSRF_METHOD_VERIFY_CONTEXT(ctx);
+	if( osrfMethodVerifyContext( ctx ) < 0 ) {
+		osrfLogError( OSRF_LOG_MARK,  "_osrfAppRunSystemMethod: Received invalid method context" );
+		return -1;
+	}
 
 	if(	!strcmp(ctx->method->name, OSRF_SYSMETHOD_INTROSPECT_ALL ) || 
 			!strcmp(ctx->method->name, OSRF_SYSMETHOD_INTROSPECT_ALL_ATOMIC )) {
@@ -502,12 +505,66 @@ static int osrfAppIntrospectAll( osrfMethodContext* ctx ) {
 }
 
 static int osrfAppEcho( osrfMethodContext* ctx ) {
-	OSRF_METHOD_VERIFY_CONTEXT(ctx);
+	if( osrfMethodVerifyContext( ctx ) < 0 ) {
+		osrfLogError( OSRF_LOG_MARK,  "osrfAppEcho: Received invalid method context" );
+		return -1;
+	}
+	
 	int i;
 	for( i = 0; i < ctx->params->size; i++ ) {
 		const jsonObject* str = jsonObjectGetIndex(ctx->params,i);
 		osrfAppRespond(ctx, str);
 	}
 	return 1;
+}
+
+/**
+  Determine whether the context looks healthy.
+  Return 0 if it does, or -1 if it doesn't.
+ */
+int osrfMethodVerifyContext( osrfMethodContext* ctx )
+{
+	if( !ctx ) {
+		osrfLogError( OSRF_LOG_MARK,  "Context is NULL in app request" );
+		return -1;
+	}
+	
+	if( !ctx->session ) {
+		osrfLogError( OSRF_LOG_MARK,  "Session is NULL in app request" );
+		return -1;
+	}
+
+	if( !ctx->method )
+	{
+		osrfLogError( OSRF_LOG_MARK, "Method is NULL in app request" );
+		return -1;
+	}
+
+	if( ctx->method->argc ) {
+		if( !ctx->params ) {
+			osrfLogError( OSRF_LOG_MARK,
+				"Params is NULL in app request %s", ctx->method->name );
+			return -1;
+		}
+		if( ctx->params->type != JSON_ARRAY ) {
+			osrfLogError( OSRF_LOG_MARK,
+				"'params' is not a JSON array for method %s", ctx->method->name );
+			return -1;
+		}
+	}
+
+	if( !ctx->method->name ) {
+		osrfLogError( OSRF_LOG_MARK, "Method name is NULL" );
+		 return -1;
+	}
+
+	// Log the call, with the method and parameters
+	char* params_str = jsonObjectToJSON( ctx->params );
+	if( params_str ) {
+		osrfLogInfo( OSRF_LOG_MARK, "CALL:	%s %s - %s",
+			 ctx->session->remote_service, ctx->method->name, params_str );
+		free( params_str );
+	}
+	return 0;
 }
 
