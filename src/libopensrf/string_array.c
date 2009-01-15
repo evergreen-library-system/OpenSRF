@@ -100,3 +100,53 @@ void osrfStringArrayRemove( osrfStringArray* arr, const char* tstr ) {
     osrfListSetDefaultFree(&arr->list);
 	arr->size--;
 }
+
+osrfStringArray* osrfStringArrayTokenize( const char* src, char delim )
+{
+	// Take the length so that we know how big a buffer we need,
+	// in the worst case.  Esitimate the number of tokens, assuming
+	// 5 characters per token, and add a few for a pad.
+
+	if( NULL == src || '\0' == *src )		// Got nothing?
+		return osrfNewStringArray( 1 );		// Retrun empty array
+
+	size_t src_len = strlen( src );
+	size_t est_count = src_len / 6 + 5;
+	int in_token = 0;     // boolean
+	char buf[ src_len + 1 ];
+	char* out = buf;
+	osrfStringArray* arr = osrfNewStringArray( est_count );
+
+	for( ;; ++src ) {
+		if( in_token ) {	// We're building a token
+			if( *src == delim ) {
+				*out = '\0';
+				osrfStringArrayAdd( arr, buf );
+				in_token = 0;
+			}
+			else if( '\0' == *src ) {
+				*out = '\0';
+				osrfStringArrayAdd( arr, buf );
+				break;
+			}
+			else {
+				*out++ = *src;
+			}
+		}
+		else {				// We're between tokens
+			if( *src == delim ) {
+				;			// skip it
+			}
+			else if( '\0' == *src ) {
+				break;
+			}
+			else {
+				out = buf;		// Start the next one
+				*out++ = *src;
+				in_token = 1;
+			}
+		}
+	}
+	
+	return arr;
+}

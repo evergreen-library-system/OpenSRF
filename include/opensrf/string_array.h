@@ -34,6 +34,13 @@ void osrfStringArrayFree( osrfStringArray* );
 
 void osrfStringArrayRemove( osrfStringArray* arr, const char* str );
 
+/**
+  Parse a string into tokens separated by a specified delimiter,
+  as if by strtok() or strtok_r().  Load the tokens into an
+  osrfStringArray.
+  */
+osrfStringArray* osrfStringArrayTokenize( const char* src, char delim );
+
 #ifdef __cplusplus
 }
 #endif
