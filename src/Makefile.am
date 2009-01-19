@@ -33,7 +33,7 @@ if BUILDJAVA
 MAYBE_JA = java
 endif
 
-SUBDIRS = libopensrf c-apps router srfsh jserver gateway $(MAYBE_PY) $(MAYBE_JA)
+SUBDIRS = libopensrf c-apps router srfsh jserver gateway perl $(MAYBE_PY) $(MAYBE_JA)
 
 dist_bin_SCRIPTS = @top_srcdir@/bin/osrf_ctl.sh @top_srcdir@/bin/opensrf-perl.pl
 bin_SCRIPTS = @top_srcdir@/bin/osrf_config
@@ -46,7 +46,6 @@ install-exec-local:
 	mkdir -p $(LOG)
 	mkdir -p $(SOCK)
 	mkdir -p $(jsdir)
-	make install-perl
 
 install-exec-hook:
 	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/opensrf.xml.example'
@@ -56,22 +55,6 @@ install-exec-hook:
 	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/srfsh.xml.example'
 	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(DESTDIR)@sysconfdir@/srfsh.xml.example'
 	cp -r @srcdir@/javascript/* $(jsdir)/
-
-
-install-perl:
-	cd ./perl && perl Makefile.PL || make -s install-perl-fail
-	make -C perl
-	make -C perl test || make -s install-perl-fail
-	make -C perl install
-
-install-perl-fail:
-	echo
-	echo ">>> Installation of Perl modules has failed. The most likely"
-	echo ">>> possibility is that a dependency is not pre-installed"
-	echo ">>> or that a test has failed."
-	echo ">>> See the messages above this one for more information."
-	echo
-	exit 1
 
 uninstall-hook:
 	rm @includedir@/opensrf/apachetools.h
