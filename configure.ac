@@ -257,6 +257,7 @@ AC_CONFIG_FILES([Makefile
                  src/java/Makefile
                  src/jserver/Makefile
                  src/libopensrf/Makefile
+                 src/perl/Makefile
                  src/ports/strn_compat/Makefile
                  src/python/Makefile
                  src/router/Makefile
