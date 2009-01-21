@@ -18,8 +18,15 @@ GNU General Public License for more details.
 #include <stdio.h>
 #include <time.h>
 
-int __osrfChatXMLErrorOcurred = 0;
-int __osrfChatClientSentDisconnect = 0;
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 256
+#endif
+
+static int osrfChatXMLErrorOcurred = 0;
+
+/* This is used by code in osrfChatPushData, but that code is
+   currently commented out.  Uncomment the next line if needed. */
+//static int osrfChatClientSentDisconnect = 0;
 
 /* shorter version of strcmp */
 static int eq(const char* a, const char* b) { return (a && b && !strcmp(a,b)); }
@@ -83,14 +90,17 @@ osrfChatServer* osrfNewChatServer( char* domain, char* secret, int s2sport ) {
 	server->deadNodes = osrfNewList();
 	server->nodeList->freeItem = &osrfChatNodeFree;
 	server->domain		= strdup(domain);
+	server->secret      = strdup(secret);
 	server->s2sport	= s2sport;
+	server->port        = 0;
 
+	// Build socket manager
 	server->mgr = safe_malloc(sizeof(socket_manager));
 	server->mgr->data_received = &osrfChatHandleData;
+	server->mgr->socket = NULL;
 	server->mgr->blob = server;
 	server->mgr->on_socket_closed = &osrfChatSocketClosed;
 
-	if(secret) server->secret = strdup(secret);
 	return server;
 }
 
@@ -105,7 +115,11 @@ void osrfChatCleanupClients( osrfChatServer* server ) {
 osrfChatNode* osrfNewChatNode( int sockid, char* domain ) {
 	if(sockid < 1 || !domain) return NULL;
 	osrfChatNode* node	= safe_malloc(sizeof(osrfChatNode));
+	node->sockid            = 0;
+	node->remote            = NULL;
 	node->state				= OSRF_CHAT_STATE_NONE;
+	node->xmlstate          = 0;
+	node->inparse           = 0;
 	node->msgs				= NULL; /* only s2s nodes cache messages */
 	node->parserCtx		= xmlCreatePushParserCtxt(osrfChatSaxHandler, node, "", 0, NULL);
 	node->msgDoc			= xmlNewDoc(BAD_CAST "1.0");
@@ -116,6 +130,7 @@ osrfChatNode* osrfNewChatNode( int sockid, char* domain ) {
 	node->resource			= NULL;
 	node->to					= NULL;
 	node->type = 0;
+	node->parent            = NULL;
 	return node;
 }
 
@@ -192,8 +207,12 @@ void osrfChatServerFree(osrfChatServer* server ) {
 	if(!server) return;
 	osrfHashFree(server->nodeHash);
 	osrfListFree(server->nodeList);
-	free(server->mgr);
+	osrfListFree(server->deadNodes);
+	socket_manager_free(server->mgr);
+	free(server->domain);
 	free(server->secret);
+
+	free(server);
 }
 
 
@@ -270,7 +289,7 @@ int osrfChatSend( osrfChatServer* cs, osrfChatNode* node, char* toAddr, char* fr
 
 	int l = strlen(toAddr);
 	char dombuf[l];
-	bzero(dombuf, l);
+	memset(dombuf, 0, sizeof(dombuf));
 	jid_get_domain( toAddr, dombuf, l );	
 
 	if( eq( dombuf, cs->domain ) ) { /* this is to a user we host */
@@ -367,6 +386,7 @@ int osrfChatInitS2S( osrfChatServer* cs, char* remote, char* toAddr, char* msgXM
 	snode->sockid = socket_open_tcp_client(cs->mgr, cs->s2sport, remote);
 	if(snode->sockid < 1) {
 		osrfLogWarning( OSRF_LOG_MARK, "Unable to connect to remote server at %s", remote );
+		osrfChatNodeFree( snode );
 		return -1;
 	}
 
@@ -399,16 +419,16 @@ int osrfChatPushData( osrfChatServer* server, osrfChatNode* node, char* data ) {
 	xmlParseChunk(node->parserCtx, data, strlen(data), 0);
 	node->inparse = 0;
 
-	if(__osrfChatXMLErrorOcurred) {
-		__osrfChatXMLErrorOcurred = 0;
+	if(osrfChatXMLErrorOcurred) {
+		osrfChatXMLErrorOcurred = 0;
 		return -1;
 	}
 
 	/* we can't do cleanup of the XML handlers while in the middle of a 
 		data push, so set flags in the data push and doe the cleanup here */
 	/*
-	if(__osrfChatClientSentDisconnect) {
-		__osrfChatClientSentDisconnect  = 0;
+	if(osrfChatClientSentDisconnect) {
+		osrfChatClientSentDisconnect  = 0;
 		osrfChatNodeFinish( server, node );
 	}
 	*/
@@ -454,7 +474,10 @@ void osrfChatStartElement( void* blob, const xmlChar *name, const xmlChar **atts
 		case OSRF_CHAT_STATE_S2S_RESPONSE: /* server waiting for client response to challenge */
 			if(eq(nm, "db:result")) {
 				char* remote = xmlSaxAttr(atts, "from");
-				if(remote) node->remote = strdup(remote); /* copy off the client's id */
+				if(remote) {
+					if( node->remote) free( node->remote );
+					node->remote = strdup(remote); /* copy off the client's id */
+				}
 				status = 0;
 				node->xmlstate |= OSRF_CHAT_STATE_INS2SRESULT;
 			} else status = -1; 
@@ -541,6 +564,7 @@ int osrfChatHandleNewConnection( osrfChatNode* node, const char* name, const xml
 
 	if(!eq(name, "stream:stream")) return -1;
 
+	if( node->authkey ) free( node->authkey );
 	node->authkey = osrfChatMkAuthKey();
 	char* ns = xmlSaxAttr(atts, "xmlns");
 	if(!ns) return -1;
@@ -585,9 +609,11 @@ int osrfChatHandleNewConnection( osrfChatNode* node, const char* name, const xml
 
 
 char* osrfChatMkAuthKey() {
+	char hostname[HOST_NAME_MAX + 1] = "";
+	gethostname(hostname, sizeof(hostname) );
+	hostname[HOST_NAME_MAX] = '\0';
 	char keybuf[112];
-	bzero(keybuf, 112);
-	snprintf(keybuf, 111, "%d%d%s", (int) time(NULL), getpid(), getenv("HOSTNAME"));
+	snprintf(keybuf, sizeof(keybuf), "%d%ld%s", (int) time(NULL), (long) getpid(), hostname);
 	return strdup(shahash(keybuf));
 }
 
@@ -607,7 +633,7 @@ int osrfChatHandleConnected( osrfChatNode* node, const char* name, const xmlChar
 	if(eq(name,"message")) {
 
 		/* drop the old message and start with a new one */
-		xmlNodePtr root = xmlNewNode(NULL, name);
+		xmlNodePtr root = xmlNewNode(NULL, BAD_CAST name);
 		xmlAddAttrs(root, atts);
 		xmlNodePtr oldRoot = xmlDocSetRootElement(node->msgDoc, root);
 		free(node->to);
@@ -622,7 +648,7 @@ int osrfChatHandleConnected( osrfChatNode* node, const char* name, const xmlChar
 	} else {
 
 		/* all non "message" nodes are simply added to the message */
-		xmlNodePtr nodep = xmlNewNode(NULL, name);
+		xmlNodePtr nodep = xmlNewNode(NULL, BAD_CAST name);
 		xmlAddAttrs(nodep, atts);
 		xmlAddChild(xmlDocGetRootElement(node->msgDoc), nodep);
 	}
@@ -713,6 +739,7 @@ void osrfChatEndElement( void* blob, const xmlChar* name ) {
 
 			if(eq(nm, "iq")) {
 				node->xmlstate &= ~OSRF_CHAT_STATE_INIQ;
+				if( node->remote ) free( node->remote );
 				node->remote = va_list_to_string( 
 						"%s@%s/%s", node->username, node->domain, node->resource );
 
@@ -787,17 +814,17 @@ void osrfChatHandleCharacter( void* blob, const xmlChar *ch, int len) {
 			osrfLogWarning( OSRF_LOG_MARK, "Server2Server keys do not match!");
 		}
 
+		free( e );
+		free( key );
+
 		/* do the hash dance again */
 	}
-
-	/* XXX free 'e' and 'key' ?? */
-
 }
 
 
 void osrfChatParseError( void* blob, const char* msg, ... ) {
 
-	__osrfChatXMLErrorOcurred = 1;
+	osrfChatXMLErrorOcurred = 1;
 }
 
 
