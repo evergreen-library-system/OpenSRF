@@ -192,7 +192,8 @@ You should also create a .srfsh.xml file in the home directory of each user
 that you want to enable to use the srfsh to communicate with OpenSRF services.
 
 Copy <SYSCONFDIR>/srfsh.xml.example to ~/.srfsh.xml and update the password 
-to match the one for your Jabber "opensrf" with the private.localhost domain.
+to match the one for your Jabber "opensrf" user with the private.localhost 
+domain.
 
 Starting and stopping OpenSRF services:
 ======================================
