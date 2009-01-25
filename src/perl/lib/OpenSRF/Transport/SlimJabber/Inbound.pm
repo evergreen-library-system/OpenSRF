@@ -98,9 +98,11 @@ sub listen {
         for my $router (@$routers) {
             if(ref $router) {
                 if( !$router->{services} || 
-                        ( ref($router->{services}) eq 'HASH' and 
-                            grep { $_ eq $self->{app} } @{$router->{services}->{service}} )  ||
-                        $router->{services}->{service} eq $self->{app}) {
+                    !$router->{services}->{service} || 
+                    ( 
+                        ref($router->{services}->{service}) eq 'ARRAY' and 
+                        grep { $_ eq $self->{app} } @{$router->{services}->{service}} )  ||
+                    $router->{services}->{service} eq $self->{app}) {
 
                     my $name = $router->{name};
                     my $domain = $router->{domain};
