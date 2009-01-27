@@ -34,7 +34,7 @@ my $opt_settings_pause = 0;
 my $opt_help = 0;
 my $verbose = 0;
 my $sclient;
-my $hostname = hostfqdn();
+my $hostname = $ENV{OSRF_HOSTNAME} || hostfqdn();
 my @hosted_services;
 
 GetOptions(
