@@ -34,29 +34,49 @@ static int setupRouter(jsonObject* configChunk);
 int main( int argc, char* argv[] ) {
 
 	if( argc < 3 ) {
-		osrfLogError( OSRF_LOG_MARK,  "Usage: %s <path_to_config_file> <config_context>", argv[0] );
-		exit(0);
+		osrfLogError( OSRF_LOG_MARK,
+			"Usage: %s <path_to_config_file> <config_context>", argv[0] );
+		exit( EXIT_FAILURE );
 	}
 
-	char* config = strdup( argv[1] );
-	char* context = strdup( argv[2] );
+	const char* config_file = argv[1];
+	const char* context = argv[2];
+
+	/* Get a set of router definitions from a config file */
+	
+	osrfConfig* cfg = osrfConfigInit(config_file, context);
+	if( NULL == cfg ) {
+		osrfLogError( OSRF_LOG_MARK, "Router can't load config file %s", config_file );
+		exit( EXIT_FAILURE );
+	}
+	
+	osrfConfigSetDefaultConfig(cfg);
+    jsonObject* configInfo = osrfConfigGetValueObject(NULL, "/router");
+	
+	if( configInfo->size < 1 || NULL == jsonObjectGetIndex( configInfo, 1 ) ) {
+		osrfLogError( OSRF_LOG_MARK, "No routers defined in config file %s, context \"%s\"",
+			config_file, context );
+		exit( EXIT_FAILURE );
+	}
+	
+	/* We're done with the command line now, */
+	/* so we can safely overlay it */
+	
 	init_proc_title( argc, argv );
 	set_proc_title( "OpenSRF Router" );
 
-	osrfConfig* cfg = osrfConfigInit(config, context);
-	osrfConfigSetDefaultConfig(cfg);
-    jsonObject* configInfo = osrfConfigGetValueObject(NULL, "/router");
-
+	/* Spawn child process(es) */
+	
     int i;
     for(i = 0; i < configInfo->size; i++) {
         jsonObject* configChunk = jsonObjectGetIndex(configInfo, i);
-        if(fork() == 0) /* create a new child to run this router instance */
+        if(fork() == 0) { /* create a new child to run this router instance */
             setupRouter(configChunk);
+			break;  /* We're a child; don't spawn any more children here */
+		}
     }
 
-	free(config);
-	free(context);
-    return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }
 
 int setupRouter(jsonObject* configChunk) {
@@ -146,7 +166,7 @@ int setupRouter(jsonObject* configChunk) {
 	signal(SIGTERM,routerSignalHandler);
 
 	if( (osrfRouterConnect(router)) != 0 ) {
-		fprintf(stderr, "Unable to connect router to jabber server %s... exiting", server );
+		fprintf(stderr, "Unable to connect router to jabber server %s... exiting\n", server );
 		osrfRouterFree(router);
 		return -1;
 	}
