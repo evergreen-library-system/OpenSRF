@@ -54,8 +54,10 @@ void osrfAppChildExit() {
 
 
 int osrfMathRun( osrfMethodContext* ctx ) {
-
-	OSRF_METHOD_VERIFY_CONTEXT(ctx); /* see osrf_application.h */
+	if( osrfMethodVerifyContext( ctx ) ) {
+		osrfLogError( OSRF_LOG_MARK,  "Invalid method context" );
+		return -1;
+	}
 
 	/* collect the request params */
 	const jsonObject* x = jsonObjectGetIndex(ctx->params, 0);
