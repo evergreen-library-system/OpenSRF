@@ -30,8 +30,10 @@ int osrfAppChildInit() {
 }
 
 int osrfVersion( osrfMethodContext* ctx ) {
-
-	OSRF_METHOD_VERIFY_CONTEXT(ctx); 
+	if( osrfMethodVerifyContext( ctx ) ) {
+		osrfLogError( OSRF_LOG_MARK,  "Invalid method context" );
+		return -1;
+	}
 
 	/* First, see if the data is in the cache */
 	char* json = jsonObjectToJSON(ctx->params);
