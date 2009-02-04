@@ -17,8 +17,15 @@ if(!dojo._hasResource['DojoSRF']){
 		return this.session_cache[app];
 	}
 
-	OpenSRF.locale = dojo.config.locale;
-	if (!OpenSRF.locale) {
-		OpenSRF.locale = dojo.isIE ? navigator.userLanguage : navigator.language;
-	}
+        localeRE = /^(\w\w)(-\w\w)?$/;
+        localeMatch = localeRE.exec(dojo.config.locale);
+
+        if (!localeMatch[1]) {
+                OpenSRF.locale = dojo.isIE ? navigator.userLanguage : navigator.language;
+        } else {
+                OpenSRF.locale = localeMatch[1].toLowerCase();
+        }
+        if (localeMatch[2]) {
+                OpenSRF.locale = OpenSRF.locale + '-' + localeMatch[2].toUpperCase();
+        }
 }
