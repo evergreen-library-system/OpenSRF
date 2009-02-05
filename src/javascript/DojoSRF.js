@@ -26,6 +26,6 @@ if(!dojo._hasResource['DojoSRF']){
                 OpenSRF.locale = localeMatch[1].toLowerCase();
         }
         if (localeMatch[2]) {
-                OpenSRF.locale = OpenSRF.locale + '-' + localeMatch[2].toUpperCase();
+                OpenSRF.locale = OpenSRF.locale + localeMatch[2].toUpperCase();
         }
 }
