@@ -18,7 +18,7 @@ if(!dojo._hasResource['DojoSRF']){
 	}
 
         localeRE = /^(\w\w)(-\w\w)?$/;
-        localeMatch = localeRE.exec(dojo.config.locale);
+        localeMatch = localeRE.exec(dojo.locale);
 
         if (!localeMatch[1]) {
                 OpenSRF.locale = dojo.isIE ? navigator.userLanguage : navigator.language;
