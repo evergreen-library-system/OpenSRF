@@ -20,6 +20,7 @@ GNU General Public License for more details.
 #include <opensrf/log.h>
 #include <opensrf/osrf_json.h>
 #include <opensrf/osrf_json_utils.h>
+#include <opensrf/osrf_utf8.h>
 
 /* cleans up an object if it is morphing another object, also
  * verifies that the appropriate storage container exists where appropriate */
@@ -382,12 +383,14 @@ jsonIterator* jsonNewIterator(const jsonObject* obj) {
 	jsonIterator* itr;
 	OSRF_MALLOC(itr, sizeof(jsonIterator));
 
-	itr->obj		= (jsonObject*) obj;
-	itr->index	= 0;
-	itr->key		= NULL;
+	itr->obj    = (jsonObject*) obj;
+	itr->index  = 0;
+	itr->key    = NULL;
 
 	if( obj->type == JSON_HASH )
 		itr->hashItr = osrfNewHashIterator(obj->value.h);
+	else
+		itr->hashItr = NULL;
 	
 	return itr;
 }
