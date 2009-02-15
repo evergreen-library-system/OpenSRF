@@ -266,7 +266,7 @@ install_cpan_xml:
 install_ejabberd:    
 	if [ ! -f $(EJABBERD_PKG).gz ]; then wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG).gz; fi;
 	gunzip $(EJABBERD_PKG).gz
-	chmod u+x $(EJABBERD_PKG).gz
+	chmod u+x $(EJABBERD_PKG)
 	./$(EJABBERD_PKG) --mode unattended --prefix /opt/ejabberd --adminpw opensrf
 
 # Install libmemcache from the official project source
