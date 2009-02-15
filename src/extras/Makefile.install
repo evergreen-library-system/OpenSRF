@@ -229,7 +229,7 @@ all:
 	@echo "please specify an OS" && exit 0
 
 
-centos: install_centos_rpms install_ejabberd install_libmemcache install install_libxml2 install_libxslt install_centos_perl create_ld_local
+centos: install_centos_rpms install_ejabberd install_libmemcache install_libxml2 install_libxslt install_centos_perl create_ld_local
 
 debian-etch: generic_debian etch
 debian-lenny: generic_debian lenny
