@@ -80,11 +80,14 @@ sub JSONObject2Perl {
 			return undef;
 		}
         for my $k (keys %$obj) {
-            $obj->{$k} = (ref($obj->{$k}) eq 'JSON::XS::Boolean') ? 
-                $obj->{$k} : $class->JSONObject2Perl($obj->{$k});
+            $obj->{$k} = $class->JSONObject2Perl($obj->{$k}) 
+                unless ref($obj->{$k}) eq 'JSON::XS::Boolean';
         }
 	} elsif( $ref eq 'ARRAY' ) {
-		$obj->[$_] = $class->JSONObject2Perl($obj->[$_]) for(0..scalar(@$obj) - 1);
+		for my $i (0..scalar(@$obj) - 1) {
+		    $obj->[$i] = $class->JSONObject2Perl($obj->[$i]) 
+                unless ref($obj->[$i]) eq 'JSON::XS::Boolean';
+        }
 	}
 	return $obj;
 }
