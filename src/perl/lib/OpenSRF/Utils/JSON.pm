@@ -79,7 +79,10 @@ sub JSONObject2Perl {
 			}
 			return undef;
 		}
-		$obj->{$_} = $class->JSONObject2Perl($obj->{$_}) for (keys %$obj);
+        for my $k (keys %$obj) {
+            $obj->{$k} = (ref($obj->{$k}) eq 'JSON::XS::Boolean') ? 
+                $obj->{$k} : $class->JSONObject2Perl($obj->{$k});
+        }
 	} elsif( $ref eq 'ARRAY' ) {
 		$obj->[$_] = $class->JSONObject2Perl($obj->[$_]) for(0..scalar(@$obj) - 1);
 	}
