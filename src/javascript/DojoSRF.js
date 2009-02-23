@@ -2,6 +2,7 @@ if(!dojo._hasResource['DojoSRF']){
 
 	dojo._hasResource['DojoSRF'] = true;
 	dojo.provide('DojoSRF');
+	dojo.provide('OpenSRF');
 
 	// Note: this file was renamed from OpenSRF.js to DojoSRF.js,
 	// but still provides resources with the OpenSRF namespace
