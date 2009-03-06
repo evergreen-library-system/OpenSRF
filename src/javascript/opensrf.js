@@ -54,7 +54,7 @@ OpenSRF.set_subclass = function(cls, pcls) {
     var str = cls+'.prototype = new '+pcls+'();';
     str += cls+'.prototype.constructor = '+cls+';';
     str += cls+'.baseClass = '+pcls+'.prototype.constructor;';
-    str += cls+'.prototype.super = '+pcls+'.prototype;';
+    str += cls+'.prototype["super"] = '+pcls+'.prototype;';
     eval(str);
 }
 
@@ -123,7 +123,7 @@ OpenSRF.ClientSession.prototype.connect = function(args) {
 
     message = new osrfMessage({
         'threadTrace' : this.reqid, 
-        'type' : OSRF_MESSAGE_TYPE_CONNECT,
+        'type' : OSRF_MESSAGE_TYPE_CONNECT
     });
 
     this.send(message, {'timeout' : this.timeout});
@@ -137,7 +137,7 @@ OpenSRF.ClientSession.prototype.disconnect = function(args) {
     this.send(
         new osrfMessage({
             'threadTrace' : this.reqid, 
-            'type' : OSRF_MESSAGE_TYPE_DISCONNECT,
+            'type' : OSRF_MESSAGE_TYPE_DISCONNECT
         })
     );
     this.remote_id = null;

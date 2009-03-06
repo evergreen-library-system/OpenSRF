@@ -27,7 +27,16 @@ var OSRF_POST_CONTENT_TYPE = 'application/x-www-form-urlencoded';
 OpenSRF.XHRequest = function(osrf_msg, args) {
     this.message = osrf_msg;
     this.args = args;
-    this.xreq = new XMLHttpRequest(); /* XXX browser check */
+    try {
+	    this.xreq =  new XMLHttpRequest();
+    } catch(e) {
+	    try { 
+		    this.xreq = new ActiveXObject("Msxml2.XMLHTTP"); 
+	    } catch (e2) {
+			this.xreq = new ActiveXObject("Microsoft.XMLHTTP"); 
+	    }
+    }
+
 }
 
 OpenSRF.XHRequest.prototype.send = function() {
