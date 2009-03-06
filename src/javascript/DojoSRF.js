@@ -21,12 +21,12 @@ if(!dojo._hasResource['DojoSRF']){
         localeRE = /^(\w\w)(-\w\w)?$/;
         localeMatch = localeRE.exec(dojo.locale);
 
-        if (!localeMatch[1]) {
+        if (!localeMatch || !localeMatch[1]) {
                 OpenSRF.locale = dojo.isIE ? navigator.userLanguage : navigator.language;
         } else {
                 OpenSRF.locale = localeMatch[1].toLowerCase();
         }
-        if (localeMatch[2]) {
+        if (localeMatch && localeMatch[2]) {
                 OpenSRF.locale = OpenSRF.locale + localeMatch[2].toUpperCase();
         }
 }
