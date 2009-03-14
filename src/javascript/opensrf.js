@@ -46,7 +46,7 @@ var OSRF_STATUS_INTERNALSERVERERROR = 500;
 var OSRF_STATUS_NOTIMPLEMENTED = 501;
 var OSRF_STATUS_VERSIONNOTSUPPORTED = 505;
 
-var OpenSRF = {};
+OpenSRF = {};
 OpenSRF.locale = null;
 
 /* makes cls a subclass of pcls */
