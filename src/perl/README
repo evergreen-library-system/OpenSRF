@@ -1,0 +1,33 @@
+OpenSRF
+
+OpenSRF (Open OpenSRF (Open Scalable Request Framework) is a core
+subsystem of the Evergreen ILS.
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+	perl Makefile.PL
+	make
+	make test
+	make install
+
+SUPPORT AND DOCUMENTATION
+
+After installing, you can find documentation for this module with the
+perldoc command.
+
+    perldoc OpenSRF
+
+You can also look for information at:
+
+    http://svn.open-ils.org/trac/OpenSRF
+
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2008 Equinox Software, Inc.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+

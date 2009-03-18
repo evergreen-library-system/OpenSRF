@@ -370,12 +370,12 @@ span.subcode { color:darkblue;}        </style>
     <!--#if expr="$QUERY_STRING = /param=%22[^&]+%22/" -->
       <!-- virtual="/gateway?format=xml&${QUERY_STRING}"-->
       <!-- virtual="/restgateway?${QUERY_STRING}"-->
-      <!--#include virtual='/gateway?format=xml&service=$service&method=opensrf.system.method&param="$param"&param=$limit&param=$offset'-->
+      <!--#include virtual='/gateway?format=xml&input_format=json&service=$service&method=opensrf.system.method&param="$param"&param=$limit&param=$offset'-->
     <!--#endif -->
     <!--#if expr="$QUERY_STRING = /all=on/" -->
       <!-- virtual="/gateway?format=xml&${QUERY_STRING}"-->
       <!-- virtual="/restgateway?${QUERY_STRING}"-->
-      <!--#include virtual='/gateway?format=xml&service=$service&method=opensrf.system.method.all&param=$limit&param=$offset' -->
+      <!--#include virtual='/gateway?format=xml&input_format=json&service=$service&method=opensrf.system.method.all&param=$limit&param=$offset' -->
     <!--#endif -->
   <!--#endif -->
 
