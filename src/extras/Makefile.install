@@ -58,7 +58,7 @@ XSLT=libxslt-1.1.22
 XSLT_HOST=ftp://ftp.gnome.org/pub/GNOME/sources/libxslt/1.1
 
 # libxslt depends on a newer version of libxml2:
-XML2=libxml2-2.6.30.tar.gz
+XML2=libxml2-2.6.30
 XML2_HOST=ftp://ftp.gnome.org/pub/GNOME/sources/libxml2/2.6
 
 APT_TOOL=aptitude
