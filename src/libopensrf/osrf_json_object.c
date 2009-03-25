@@ -325,7 +325,6 @@ static void add_json_to_buffer( const jsonObject* obj, growing_buffer * buf ) {
 			    char* data = osrfHashIteratorKey(itr);
 			    int len = strlen(data);
 			    char* output = uescape(data, len, 1);
-			    OSRF_BUFFER_ADD(buf, output);
 				buffer_fadd(buf, "\"%s\":", output);
 			    free(output);
 				add_json_to_buffer( item, buf );
