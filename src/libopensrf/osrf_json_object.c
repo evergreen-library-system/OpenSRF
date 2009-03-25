@@ -352,7 +352,7 @@ static void add_json_to_buffer( const jsonObject* obj,
 			while( (item = osrfHashIteratorNext(itr)) ) {
 				if(i++ > 0) OSRF_BUFFER_ADD_CHAR(buf, ',');
 				OSRF_BUFFER_ADD_CHAR(buf, '"');
-				OSRF_BUFFER_ADD(buf, osrfHashIteratorKey(itr));
+                buffer_append_utf8(buf, osrfHashIteratorKey(itr));
 				OSRF_BUFFER_ADD(buf, "\":");
 				add_json_to_buffer( item, buf, do_classname, second_pass );
 			}
