@@ -462,7 +462,7 @@ int osrf_system_disconnect_client( void ) {
 
 static int shutdownComplete = 0;
 int osrf_system_shutdown( void ) {
-    if(shutdownComplete) return;
+    if(shutdownComplete) return 0;
 	osrfConfigCleanup();
     osrfCacheCleanup();
 	osrf_system_disconnect_client();
