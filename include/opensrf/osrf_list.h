@@ -113,6 +113,15 @@ void osrfListFree( osrfList* list );
 void* osrfListRemove( osrfList* list, unsigned int position );
 
 /**
+  Removes the list item at the given index, without freeing it
+  @param list The list
+  @param position The position of the item to remove
+  @return A pointer to the item extracted, or NULL
+  if there is nothing to extract
+ */
+void* osrfListExtract( osrfList* list, unsigned int position );
+		
+/**
   Finds the list item whose void* is the same as the one passed in
   @param list The list
   @param addr The pointer connected to the list item we're to find

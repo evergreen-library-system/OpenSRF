@@ -107,6 +107,16 @@ void* osrfListRemove( osrfList* list, unsigned int position ) {
 	return olditem;
 }
 
+void* osrfListExtract( osrfList* list, unsigned int position ) {
+	if(!list || position >= list->size || position < 0) return NULL;
+
+	void* olditem = list->arrlist[position];
+	list->arrlist[position] = NULL;
+
+	if( position == list->size - 1 ) list->size--;
+	return olditem;
+}
+
 
 int osrfListFind( const osrfList* list, void* addr ) {
 	if(!(list && addr)) return -1;

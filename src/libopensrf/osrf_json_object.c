@@ -352,7 +352,7 @@ static void add_json_to_buffer( const jsonObject* obj,
 			while( (item = osrfHashIteratorNext(itr)) ) {
 				if(i++ > 0) OSRF_BUFFER_ADD_CHAR(buf, ',');
 				OSRF_BUFFER_ADD_CHAR(buf, '"');
-                buffer_append_utf8(buf, osrfHashIteratorKey(itr));
+				buffer_append_utf8(buf, osrfHashIteratorKey(itr));
 				OSRF_BUFFER_ADD(buf, "\":");
 				add_json_to_buffer( item, buf, do_classname, second_pass );
 			}
@@ -437,6 +437,14 @@ unsigned long jsonObjectRemoveIndex(jsonObject* dest, unsigned long index) {
 		return dest->value.l->size;
 	}
 	return -1;
+}
+
+
+jsonObject* jsonObjectExtractIndex(jsonObject* dest, unsigned long index) {
+	if( dest && dest->type == JSON_ARRAY ) {
+		return osrfListExtract(dest->value.l, index);
+	} else
+		return NULL;
 }
 
 

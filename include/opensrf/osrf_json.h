@@ -284,10 +284,15 @@ jsonObject* jsonObjectGetIndex( const jsonObject* obj, unsigned long index );
  */
 unsigned long jsonObjectSetIndex(jsonObject* dest, unsigned long index, jsonObject* newObj);
 
-/* removes the object at the given index and, if more items exist,
- * re-indexes (shifts down by 1) the rest of the objects in the array
+/* removes and deallocates the object at the given index, replacing
+   it with a NULL pointer
  */
 unsigned long jsonObjectRemoveIndex(jsonObject* dest, unsigned long index);
+
+/* removes (but does not deallocate) the object at the given index,
+ * replacing it with a NULL pointer; returns a pointer to the object removed
+ */
+jsonObject* jsonObjectExtractIndex(jsonObject* dest, unsigned long index);
 
 /* removes (and deallocates) the object with key 'key' if it exists */
 unsigned long jsonObjectRemoveKey( jsonObject* dest, const char* key);
