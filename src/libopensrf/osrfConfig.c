@@ -76,22 +76,24 @@ char* osrfConfigGetValue(const osrfConfig* cfg, const char* path, ...) {
 	if(!path) return NULL;
 	if(!cfg) cfg = osrfConfigDefault;
 	if(!cfg) { 
-        osrfLogWarning( OSRF_LOG_MARK, "No Config object in osrfConfigGetValue()"); 
-        return NULL; 
-    }
+		osrfLogWarning( OSRF_LOG_MARK, "No Config object in osrfConfigGetValue()"); 
+		return NULL; 
+	}
 
 	VA_LIST_TO_STRING(path);
 	jsonObject* obj;
 
-	if(cfg->configContext) 
-		obj = jsonObjectGetIndex(
-            jsonObjectFindPath(cfg->config, "//%s%s", cfg->configContext, VA_BUF), 0);
-	else
+	if(cfg->configContext) {
+		jsonObject* outer_obj =
+			jsonObjectFindPath(cfg->config, "//%s%s", cfg->configContext, VA_BUF);
+		obj = jsonObjectExtractIndex( outer_obj, 0 );
+		jsonObjectFree( outer_obj );
+	} else
 		obj = jsonObjectFindPath( cfg->config, VA_BUF);
 
 	char* val = jsonObjectToSimpleString(obj);
-    jsonObjectFree(obj);
-    return val;
+	jsonObjectFree(obj);
+	return val;
 }
 
 jsonObject* osrfConfigGetValueObject(osrfConfig* cfg, char* path, ...) {
