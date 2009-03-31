@@ -635,6 +635,7 @@ int send_request( char* server,
 						omsg->status_name, omsg->status_text, code );
 
 				fflush(stdout);
+				osrfMessageFree(omsg);
 			}
 
 		} else {
@@ -674,6 +675,7 @@ int send_request( char* server,
 				char code[16];
 				snprintf( code, sizeof(code), "%d", omsg->status_code );
 				buffer_add( resp_buffer, code );
+				osrfMessageFree(omsg);
 			}
 		}
 
