@@ -270,7 +270,7 @@ OpenSRF.Stack.handle_message = function(ses, osrf_msg, callbacks) {
             }
         }
 
-        if(status == OSRF_STATUS_NOTFOUND) {
+        if(status == OSRF_STATUS_NOTFOUND || status == OSRF_STATUS_INTERNALSERVERERROR) {
             req = ses.find_request(osrf_msg.threadTrace());
             if(callbacks.onmethoderror) 
                 return callbacks.onmethoderror(req, status, status_text);
@@ -398,6 +398,19 @@ osrfResult.prototype.content = function() {
         this.hash.content = d; 
     return this.hash.content; 
 }
-
+function osrfServerError(hash) { 
+    this.hash = hash;
+    this._encodehash = true;
+}
+osrfServerError.prototype.status = function() {
+    if(arguments.length == 1) 
+        this.hash.status = d; 
+    return this.hash.status; 
+}
+osrfServerError.prototype.statusCode = function() {
+    if(arguments.length == 1) 
+        this.hash.statusCode = d; 
+    return this.hash.statusCode; 
+}
 
 
