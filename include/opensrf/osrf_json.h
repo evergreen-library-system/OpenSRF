@@ -163,6 +163,16 @@ jsonObject* jsonParseStringRaw( const char* str );
 jsonObject* jsonParseStringFmt( const char* str, ... );
 
 /**
+ * Similar to jsonParseString(), jsonParseStringRaw() and
+ * jsonParseStringFmt(), but with stricter and more robust
+ * syntax validation
+ */
+jsonObject* jsonParse( const char* s );
+jsonObject* jsonParseRaw( const char* s );
+jsonObject* jsonParseFmt( const char* str, ... );
+
+
+/**
  * Parses a JSON string;
  * @param str The string to parser
  * @return The resulting JSON object or NULL on error
