@@ -67,6 +67,7 @@ TARGS_HEADS = 	 $(OSRF_INC)/transport_message.h \
 		 $(OSRF_INC)/osrf_json_xml.h 
 
 JSON_TARGS = 			osrf_json_object.c\
+				osrf_parse_json.c \
 				osrf_json_parser.c \
 				osrf_json_tools.c \
 				osrf_legacy_json.c \
