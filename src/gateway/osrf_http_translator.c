@@ -272,7 +272,7 @@ static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
                     OSRF_BUFFER_ADD(act, str);
                     free(str);
                 }
-                osrfLogActivity(OSRF_LOG_MARK, act->buf);
+                osrfLogActivity(OSRF_LOG_MARK, "%s", act->buf);
                 buffer_free(act);
                 break;
             }
