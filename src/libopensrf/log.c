@@ -20,11 +20,6 @@ static void _osrfLogDetail( int level, const char* filename, int line, char* msg
 static void _osrfLogToFile( const char* msg, ... );
 static void _osrfLogSetXid( const char* xid );
 
-#define OSRF_LOG_GO(f,li,m,l)	\
-        if(!m) return;		\
-        VA_LIST_TO_STRING(m);	\
-        _osrfLogDetail( l, f, li, VA_BUF );
-
 void osrfLogCleanup( void ) {
 	free(_osrfLogAppname);
 	_osrfLogAppname = NULL;
@@ -153,27 +148,60 @@ int osrfLogGetLevel( void ) {
 	return _osrfLogLevel;
 }
 
-void osrfLogError( const char* file, int line, const char* msg, ... ) 
-	{ OSRF_LOG_GO(file, line, msg, OSRF_LOG_ERROR); }
-void osrfLogWarning( const char* file, int line, const char* msg, ... ) 
-	{ OSRF_LOG_GO(file, line, msg, OSRF_LOG_WARNING); }
-void osrfLogInfo( const char* file, int line, const char* msg, ... ) 
-	{ OSRF_LOG_GO(file, line, msg, OSRF_LOG_INFO); }
-void osrfLogDebug( const char* file, int line, const char* msg, ... ) 
-	{ OSRF_LOG_GO(file, line, msg, OSRF_LOG_DEBUG); }
-void osrfLogInternal( const char* file, int line, const char* msg, ... ) 
-	{ OSRF_LOG_GO(file, line, msg, OSRF_LOG_INTERNAL); }
-void osrfLogActivity( const char* file, int line, const char* msg, ... ) { 
-	OSRF_LOG_GO(file, line, msg, OSRF_LOG_ACTIVITY); 
-	_osrfLogDetail( OSRF_LOG_INFO, file, line, VA_BUF ); /* also log at info level */
+void osrfLogError( const char* file, int line, const char* msg, ... ) {
+	if( !msg ) return;
+	if( _osrfLogLevel < OSRF_LOG_ERROR ) return;
+	VA_LIST_TO_STRING( msg );
+	_osrfLogDetail( OSRF_LOG_ERROR, file, line, VA_BUF );
+}
+
+void osrfLogWarning( const char* file, int line, const char* msg, ... ) {
+	if( !msg ) return;
+	if( _osrfLogLevel < OSRF_LOG_WARNING ) return;
+	VA_LIST_TO_STRING( msg );
+	_osrfLogDetail( OSRF_LOG_WARNING, file, line, VA_BUF );
+}
+
+void osrfLogInfo( const char* file, int line, const char* msg, ... ) {
+	if( !msg ) return;
+	if( _osrfLogLevel < OSRF_LOG_INFO ) return;
+	VA_LIST_TO_STRING( msg );
+	_osrfLogDetail( OSRF_LOG_INFO, file, line, VA_BUF );
+}
+
+void osrfLogDebug( const char* file, int line, const char* msg, ... ) {
+	if( !msg ) return;
+	if( _osrfLogLevel < OSRF_LOG_DEBUG ) return;
+	VA_LIST_TO_STRING( msg );
+	_osrfLogDetail( OSRF_LOG_DEBUG, file, line, VA_BUF );
+}
+
+void osrfLogInternal( const char* file, int line, const char* msg, ... ) {
+	if( !msg ) return;
+	if( _osrfLogLevel < OSRF_LOG_INTERNAL ) return;
+	VA_LIST_TO_STRING( msg );
+	_osrfLogDetail( OSRF_LOG_INTERNAL, file, line, VA_BUF );
+}
+
+void osrfLogActivity( const char* file, int line, const char* msg, ... ) {
+	if( !msg ) return;
+	if( _osrfLogLevel >= OSRF_LOG_INFO
+		|| ( _osrfLogActivityEnabled && _osrfLogLevel >= OSRF_LOG_ACTIVITY ) )
+	{
+		VA_LIST_TO_STRING( msg );
+
+		if( _osrfLogActivityEnabled && _osrfLogLevel >= OSRF_LOG_ACTIVITY )
+			_osrfLogDetail( OSRF_LOG_ACTIVITY, file, line, VA_BUF );
+
+		/* also log at info level */
+		if( _osrfLogLevel >= OSRF_LOG_INFO )
+			_osrfLogDetail( OSRF_LOG_INFO, file, line, VA_BUF );
+	}
 }
 
 /** Actually does the logging */
 static void _osrfLogDetail( int level, const char* filename, int line, char* msg ) {
 
-	if( level == OSRF_LOG_ACTIVITY && ! _osrfLogActivityEnabled ) return;
-	if( level > _osrfLogLevel ) return;
-	if(!msg) return;
 	if(!filename) filename = "";
 
 	char* label = "INFO";		/* level name */
