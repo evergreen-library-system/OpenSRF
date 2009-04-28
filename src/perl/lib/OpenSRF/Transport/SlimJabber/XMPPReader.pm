@@ -288,7 +288,6 @@ sub start_element {
     } elsif($name eq 'error') {
         $self->{message}->{err_type} = $attrs{'type'};
         $self->{message}->{err_code} = $attrs{'code'};
-        $self->{stream_state} = DISCONNECTED;
     }
 }
 
