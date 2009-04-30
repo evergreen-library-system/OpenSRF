@@ -32,6 +32,7 @@
 #define OSRF_HTTP_HEADER_SERVICE "X-OpenSRF-service"
 #define OSRF_HTTP_HEADER_MULTIPART "X-OpenSRF-multipart"
 
+
 char* configFile = DEFAULT_TRANSLATOR_CONFIG_FILE;
 char* configCtx = DEFAULT_TRANSLATOR_CONFIG_CTX;
 char* cacheServers = DEFAULT_TRANSLATOR_CACHE_SERVERS;
@@ -84,8 +85,8 @@ static const char* osrfHttpTranslatorGetCacheServer(cmd_parms *parms, void *conf
 	return NULL;
 }
 
-/** set up the configuratoin handlers */
-static const command_rec osrf_json_gateway_cmds[] = {
+/** set up the configuration handlers */
+static const command_rec osrfHttpTranslatorCmds[] = {
 	AP_INIT_TAKE1( OSRF_TRANSLATOR_CONFIG_FILE, osrfHttpTranslatorGetConfigFile,
 			NULL, RSRC_CONF, "osrf translator config file"),
 	AP_INIT_TAKE1( OSRF_TRANSLATOR_CONFIG_CTX, osrfHttpTranslatorGetConfigFileCtx,
@@ -515,7 +516,7 @@ module AP_MODULE_DECLARE_DATA osrf_http_translator_module = {
 	NULL,
     NULL,
 	NULL,
-    NULL,
+    osrfHttpTranslatorCmds,
 	registerHooks,
 };
 
