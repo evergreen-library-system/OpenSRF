@@ -404,8 +404,6 @@ static void _osrfAppSetIntrospectMethod( osrfMethodContext* ctx, const osrfMetho
 			jsonNewNumberObject( (method->options & OSRF_METHOD_ATOMIC) ? 1 : 0 ));
 	jsonObjectSetKey(resp, "cachable",	
 			jsonNewNumberObject( (method->options & OSRF_METHOD_CACHABLE) ? 1 : 0 ));
-
-	jsonObjectSetClass(resp, "method");
 }
 
 /**
