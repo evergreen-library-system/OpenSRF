@@ -82,12 +82,12 @@ def do_start():
     osrf.system.System.net_connect(
         config_file = config_file, config_context = config_ctx)
 
-    osrf.set.load(osrf.conf.get('domain'))
-    settings = osrf.json.to_json(osrf.set.get('apps/%s' % service))
+#    osrf.set.load(osrf.conf.get('domain'))
+#    settings = osrf.json.to_json(osrf.set.get('apps/%s' % service))
 
-    if settings['language'].lower() != 'python':
-        print '%s is not a Python application' % service
-        return
+#    if settings['language'].lower() != 'python':
+#        print '%s is not a Python application' % service
+#        return
 
     # XXX load the settings configs...
     osrf.app.Application.load(service, 'osrf.apps.example') # XXX example only for now
@@ -98,6 +98,7 @@ def do_start():
     controller.max_requests = 100
     controller.max_children = 6
     controller.min_children = 3
+    controller.keepalive = 5
 
     if as_daemon:
         osrf.system.System.daemonize()
