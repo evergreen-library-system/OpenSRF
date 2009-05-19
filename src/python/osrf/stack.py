@@ -36,6 +36,8 @@ def push(net_msg):
     if isinstance(ses, osrf.ses.ServerSession):
         osrf.log.log_info("Message processing duration %f" % duration)
 
+    return ses
+
 def handle_message(session, message):
 
     osrf.log.log_internal("handle_message(): processing message of "
@@ -104,7 +106,7 @@ def handle_server(session, message):
 
     if message.type() == osrf.const.OSRF_MESSAGE_TYPE_CONNECT:
         osrf.log.log_debug("server received CONNECT from %s" % session.remote_id)
-        session.state == osrf.const.OSRF_APP_SESSION_CONNECTED 
+        session.state = osrf.const.OSRF_APP_SESSION_CONNECTED 
         session.send_connect_ok(message.threadTrace())
         return
 

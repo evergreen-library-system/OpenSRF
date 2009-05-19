@@ -46,6 +46,7 @@ class Session(object):
         self.thread = None
         self.service = None
 
+
     @staticmethod
     def find_or_create(thread):
         if thread in Session.session_cache:
@@ -113,6 +114,7 @@ class ClientSession(Session):
 
         # cache this session in the global session cache
         Session.session_cache[self.thread] = self
+
 
     def reset_request_timeout(self, rid):
         req = self.find_request(rid)
@@ -334,6 +336,7 @@ class ServerSession(Session):
     def __init__(self, thread):
         Session.__init__(self)
         self.thread = thread
+        Session.session_cache[thread] = self
 
     def send_status(self, thread_trace, payload):
         self.send(
