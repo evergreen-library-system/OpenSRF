@@ -18,7 +18,7 @@
 # 02110-1301, USA
 # -----------------------------------------------------------------------
 
-import os, sys, threading, logging, fcntl, socket, errno, signal, time
+import os, sys, threading, fcntl, socket, errno, signal, time
 import osrf.log, osrf.conf, osrf.net, osrf.system, osrf.stack, osrf.app, osrf.const
 
 
@@ -90,7 +90,10 @@ class Controller(object):
         self.handle_signals()
 
         time.sleep(.5) # give children a chance to connect before we start taking data
-        self.osrf_handle = osrf.system.System.net_connect(resource = '%s_listener' % self.service)
+        self.osrf_handle = osrf.system.System.net_connect(
+            resource = '%s_listener' % self.service,
+            service = self.service
+        )
 
         # clear the recv callback so inbound messages do not filter through the opensrf stack
         self.osrf_handle.receive_callback = None
@@ -348,6 +351,9 @@ class Child(object):
     def init(self):
         ''' Connects the opensrf xmpp handle '''
         osrf.net.clear_network_handle()
-        osrf.system.System.net_connect(resource = '%s_drone' % self.controller.service)
+        osrf.system.System.net_connect(
+            resource = '%s_drone' % self.controller.service, 
+            service = self.controller.service
+        )
         osrf.app.Application.application.child_init()
 

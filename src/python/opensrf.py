@@ -31,6 +31,9 @@ def do_help():
             start   -- Start a service
             stop    -- stop a service
             restart -- restart a service
+            start_all -- Start all services
+            stop_all -- Stop all services
+            restart_all -- Restart all services
 
         -s <service>
             The service name
@@ -48,6 +51,9 @@ def do_help():
             If set, run in daemon (background) mode.  This creates a PID 
             file for managing the process.
 
+        -l
+            If set, run in 'localhost' mode
+
         -h
             Prints help message
     '''
@@ -57,74 +63,146 @@ def do_help():
 # Parse the command line options
 ops, args = None, None
 try:
-    ops, args = getopt.getopt(sys.argv[1:], 'a:s:f:c:p:dh')
+    ops, args = getopt.getopt(sys.argv[1:], 'a:s:f:c:p:dhl')
 except getopt.GetoptError, e:
     print '* %s' % str(e)
     do_help()
 
 options = dict(ops)
 
-if '-a' not in options or '-s' not in options or '-f' not in options:
+if '-a' not in options or '-f' not in options:
     do_help()
 
 action = options['-a']
-service = options['-s']
 config_file = options['-f']
+pid_dir = options['-p']
+
+service = options.get('-s')
 config_ctx = options.get('-c', 'config.opensrf')
-pid_dir = options.get('-p', '/tmp')
+as_localhost = '-l' in options
 as_daemon = '-d' in options
-pidfile = "%s/osrf_py_%s.pid" % (pid_dir, service)
+
+domain = None
+settings = None
+services = {}
 
 
-def do_start():
+def get_pid_file(service):
+    return "%s/%s.pid" % (pid_dir, service)
+
+def do_init():
+    global domain
+    global settings
 
     # connect to the OpenSRF network
     osrf.system.System.net_connect(
         config_file = config_file, config_context = config_ctx)
 
-#    osrf.set.load(osrf.conf.get('domain'))
-#    settings = osrf.json.to_json(osrf.set.get('apps/%s' % service))
+    if as_localhost:
+        domain = 'localhost'
+    else:
+        domain = osrf.conf.get('domain')
 
-#    if settings['language'].lower() != 'python':
-#        print '%s is not a Python application' % service
-#        return
+    osrf.set.load(domain)
 
-    # XXX load the settings configs...
-    osrf.app.Application.load(service, 'osrf.apps.example') # XXX example only for now
-    osrf.app.Application.register_sysmethods()
-    osrf.app.Application.application.global_init()
+    settings = osrf.set.get('apps')
 
-    controller = osrf.server.Controller(service)
-    controller.max_requests = 100
-    controller.max_children = 6
-    controller.min_children = 3
-    controller.keepalive = 5
+    for key in settings.keys():
+        svc = settings[key]
+        if isinstance(svc, dict) and svc['language'] == 'python':
+            services[key] = svc
+
+
+def do_start(service):
+
+    pidfile = get_pid_file(service)
+
+    if service not in services:
+        print "* service %s is not a 'python' application" % service
+        return
+
+    if os.path.exists(pidfile):
+        print "* service %s already running" % service
+        return
+
+    print "* starting %s" % service
 
     if as_daemon:
-        osrf.system.System.daemonize()
+
+        if osrf.system.System.daemonize(False):
+            return # parent process returns
+
+        # write PID file
         file = open(pidfile, 'w')
         file.write(str(os.getpid()))
         file.close()
 
-    controller.run()
+    settings = services[service];
 
-def do_stop():
+    osrf.app.Application.load(service, settings['implementation'])
+    osrf.app.Application.register_sysmethods()
+    osrf.app.Application.application.global_init()
+
+    controller = osrf.server.Controller(service)
+    controller.max_requests = settings['unix_config']['max_requests']
+    controller.max_children = settings['unix_config']['max_children']
+    controller.min_children = settings['unix_config']['min_children']
+    controller.keepalive = settings['keepalive']
+
+    controller.run()
+    os._exit(0)
+
+def do_start_all():
+    print "* starting all services for %s " % domain
+    for service in services.keys():
+        do_start(service)
+
+def do_stop_all():
+    print "* stopping all services for %s " % domain
+    for service in services.keys():
+        do_stop(service)
+
+def do_stop(service):
+    pidfile = get_pid_file(service)
+
+    if not os.path.exists(pidfile):
+        print "* %s is not running" % service
+        return
+
+    print "* stopping %s" % service
+
     file = open(pidfile)
     pid = file.read()
     file.close()
-    os.kill(int(pid), signal.SIGTERM)
+    try:
+        os.kill(int(pid), signal.SIGTERM)
+    except:
+        pass
     os.remove(pidfile)
 
+# -----------------------------------------------------
+
+do_init()
 
 if action == 'start':
-    do_start()
+    do_start(service)
 
 elif action == 'stop':
-    do_stop()
+    do_stop(service)
 
 elif action == 'restart':
-    do_stop()
-    do_start()
+    do_stop(service)
+    do_start(service)
+
+elif action == 'start_all':
+    do_start_all()
+
+elif action == 'stop_all':
+    do_stop_all()
+
+elif action == 'restart_all':
+    do_stop_all()
+    do_start_all()
 
 elif action == 'help':
     do_help()

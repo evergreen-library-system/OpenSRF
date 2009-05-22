@@ -45,7 +45,8 @@ class System(object):
             osrf.conf.get('loglevel'), 
             osrf.conf.get_no_ex('syslog'),
             osrf.conf.get_no_ex('logfile'),
-            osrf.conf.get_no_ex('client') == 'true')
+            osrf.conf.get_no_ex('client') == 'true',
+            kwargs.get('service'))
 
         # connect to the opensrf network
         network = Network(
@@ -93,8 +94,11 @@ class System(object):
             if not osrf.cache.CacheClient.get_client():
                 osrf.cache.CacheClient.connect(cache_servers)
 
+    ''' 
+    @return 0 if child, pid if parent
+    '''
     @staticmethod
-    def daemonize():
+    def daemonize(parentExit=True):
         pid = os.fork() 
         if pid == 0:
             os.chdir('/')
@@ -102,7 +106,9 @@ class System(object):
             sys.stdin.close()
             sys.stdout.close()
             sys.stderr.close()
-        else:
+        elif parentExit:
             os._exit(0)
+
+        return pid
 
 

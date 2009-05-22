@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------
 # Copyright (C) 2007  Georgia Public Library Service
-# Bill Erickson <billserickson@gmail.com>
+# Bill Erickson <erickson@esilibrary.com>
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -31,9 +31,9 @@ _xid_ctr = 0
 _xid_is_client = False # true if we are the request origin
 
 
-def initialize(level, facility=None, logfile=None, is_client=False):
+def initialize(level, facility=None, logfile=None, is_client=False, syslog_ident=None):
     """Initialize the logging subsystem."""
-    global LOG_LEVEL, LOG_TYPE, LOG_FILE, _xid_is_client
+    global LOG_LEVEL, LOG_TYPE, LOG_FILE, _xid_is_client 
 
     _xid_is_client = is_client
     LOG_LEVEL = level
@@ -46,7 +46,7 @@ def initialize(level, facility=None, logfile=None, is_client=False):
             return
 
         LOG_TYPE = OSRF_LOG_TYPE_SYSLOG
-        initialize_syslog(facility, level)
+        initialize_syslog(facility, syslog_ident)
         return
         
     if logfile:
@@ -171,11 +171,12 @@ def __log_file(msg):
         
     logfile.close()
 
-def initialize_syslog(facility, level):
+def initialize_syslog(facility, ident=None):
     """Connect to syslog and set the logmask based on the level provided."""
 
     import syslog
-    level = int(level)
+    if not ident:
+        ident = sys.argv[0]
 
     if facility == 'local0':
         facility = syslog.LOG_LOCAL0
@@ -191,7 +192,8 @@ def initialize_syslog(facility, level):
         facility = syslog.LOG_LOCAL5
     if facility == 'local6':
         facility = syslog.LOG_LOCAL6
-    # add other facility maps if necessary...
+    if facility == 'local7':
+        facility = syslog.LOG_LOCAL7
 
-    syslog.openlog(sys.argv[0], 0, facility)
+    syslog.openlog(str(ident), 0, facility)
 
