@@ -87,7 +87,8 @@ while getopts  "a:d:c:lh" flag; do
 	esac;
 done
 
-OSRF_CONFIG=`find $BASEDIR -name osrf_config`
+OSRF_CONFIG=`which osrf_config`
+[ -z "$OSRF_CONFIG" ] && OSRF_CONFIG=`find $BASEDIR -name osrf_config`
 
 [ -z "$OPT_CONFIG" ] && OPT_CONFIG=`$OSRF_CONFIG --sysconfdir`/opensrf_core.xml;
 if [ ! -r "$OPT_CONFIG" ]; then
