@@ -263,6 +263,7 @@ AC_CONFIG_FILES([Makefile
                  src/python/Makefile
                  src/router/Makefile
                  src/srfsh/Makefile
+                 bin/opensrf-perl.pl
                  bin/osrf_config
                  bin/osrf_ctl.sh])
 

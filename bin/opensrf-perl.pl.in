@@ -27,8 +27,8 @@ use OpenSRF::Utils::Config;
 
 my $opt_action = undef;
 my $opt_service = undef;
-my $opt_config = undef;
-my $opt_pid_dir = '/tmp';
+my $opt_config = "@sysconfdir@/opensrf_core.xml";
+my $opt_pid_dir = "@TMP@";
 my $opt_no_daemon = 0;
 my $opt_settings_pause = 0;
 my $opt_help = 0;
@@ -209,7 +209,7 @@ sub msg {
 sub do_help {
     print <<HELP;
 
-    Usage: perl $0 --pid_dir /var/run/opensrf --config /etc/opensrf/opensrf_core.xml --service opensrf.settings --action start
+    Usage: perl $0 --pid_dir @TMP@ --config @sysconfdir@/opensrf_core.xml --service opensrf.settings --action start
 
     --action <action>
         Actions include start, stop, restart, and start_all, stop_all, and restart_all
