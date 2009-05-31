@@ -10,6 +10,12 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
  
+# Strictness to avoid folly
+set -e
+set -u
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
 
 OPT_ACTION=""
 OPT_CONFIG=""
@@ -57,23 +63,6 @@ function usage {
 	exit;
 }
 
-# Get root directory of this script
-function basepath {
-	BASEDIR=""
-	script_path="$1"
-	IFS="/"
-	for p in $script_path
-	do
-		if [ -z "$BASEDIR" ] && [ -n "$p" ]; then
-			BASEDIR="$p"
-		fi;
-	done
-	BASEDIR="/$BASEDIR"
-	IFS=
-}
-
-basepath $0
-
 # ---------------------------------------------------------------------------
 # Load the command line options and set the global vars
 # ---------------------------------------------------------------------------
@@ -87,8 +76,8 @@ while getopts  "a:d:c:lh" flag; do
 	esac;
 done
 
-OSRF_CONFIG=`which osrf_config`
-[ -z "$OSRF_CONFIG" ] && OSRF_CONFIG=`find $BASEDIR -name osrf_config`
+OSRF_CONFIG="@bindir@/osrf_config"
+[ ! -f "$OSRF_CONFIG" ] && OSRF_CONFIG=`which osrf_config`
 
 [ -z "$OPT_CONFIG" ] && OPT_CONFIG=`$OSRF_CONFIG --sysconfdir`/opensrf_core.xml;
 if [ ! -r "$OPT_CONFIG" ]; then

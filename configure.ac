@@ -29,6 +29,7 @@ AC_PREFIX_DEFAULT([/opensrf/])
 
 AC_SUBST(prefix)
 AC_SUBST(sysconfdir)
+AC_SUBST(bindir)
 
 
 AC_DEFUN([AC_PYTHON_MOD],[
@@ -113,19 +114,19 @@ AC_PROG_MAKE_SET
 # Set install path variables
 #------------------------------
 AC_ARG_WITH([tmp],
-[  --with-tmp=path              location for the tmp dir for openSRF (default is /tmp)],
+[  --with-tmp=path                  location for the temporary dir for OpenSRF (default is /tmp)],
 [TMP=${withval}],
 [TMP=/tmp])
 AC_SUBST([TMP])
 
 AC_ARG_WITH([apxs],
-[  --with-apxs=path                 location of apxs (default is /usr/bin/apxs2)],
+[  --with-apxs=path                 location of the apxs Apache configuration tool (default is /usr/bin/apxs2)],
 [APXS2=${withval}],
 [APXS2=/usr/bin/apxs2])
 AC_SUBST([APXS2])
 
 AC_ARG_WITH([apache],
-[  --with-apache=path               location of the apache headers (default is /usr/include/apache2)],
+[  --with-apache=path               location of the Apache headers (default is /usr/include/apache2)],
 [APACHE2_HEADERS=${withval}],
 [APACHE2_HEADERS=/usr/include/apache2])
 AC_SUBST([APACHE2_HEADERS])
@@ -262,7 +263,8 @@ AC_CONFIG_FILES([Makefile
                  src/python/Makefile
                  src/router/Makefile
                  src/srfsh/Makefile
-                 bin/osrf_config], [if test -e "./bin/osrf_config"; then chmod 755 bin/osrf_config; fi])
+                 bin/osrf_config
+                 bin/osrf_ctl.sh])
 
 
 AC_OUTPUT
