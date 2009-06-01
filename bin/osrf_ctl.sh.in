@@ -20,6 +20,7 @@ exec_prefix=@exec_prefix@
 OPT_ACTION=""
 OPT_CONFIG=""
 OPT_PID_DIR=""
+OSRF_HOSTNAME=""
 
 # ---------------------------------------------------------------------------
 # Make sure we're running as the correct user
