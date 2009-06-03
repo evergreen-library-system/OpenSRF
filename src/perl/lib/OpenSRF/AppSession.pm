@@ -947,11 +947,14 @@ sub status {
 	$self->session->send( 'STATUS',$msg, $self->threadTrace );
 }
 
-sub stream_push {
-	my $self = shift;
-	my $msg = shift;
-	$self->respond( $msg );
-}
+# TODO stream_push only works when server sessions can accept RESULT 
+# messages, which is no longer supported.  Create a new OpenSRF message
+# type to support client-to-server streams.
+#sub stream_push {
+#	my $self = shift;
+#	my $msg = shift;
+#	$self->respond( $msg );
+#}
 
 sub respond {
 	my $self = shift;

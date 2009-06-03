@@ -321,32 +321,22 @@ sub end_element {
     }
 }
 
+
+# read all the data on the jabber socket through the 
+# parser and drop the resulting message
 sub flush_socket {
 	my $self = shift;
-	my $socket = $self->socket;
-    return 0 unless $socket and $socket->connected;
+    return 0 unless $self->connected;
 
-    my $flags = fcntl($socket, F_GETFL, 0);
-    fcntl($socket, F_SETFL, $flags | O_NONBLOCK);
-
-    while( my $n = sysread( $socket, my $buf, 8192 ) ) {
-        $logger->debug("flush_socket dropped $n bytes of data");
-        $logger->error("flush_socket dropped data on disconnected socket: $buf")
-            unless($socket->connected);
+    while ($self->wait(0)) {
+        # TODO remove this log line
+        $logger->info("flushing data from socket...");
     }
 
-    fcntl($socket, F_SETFL, $flags);
-    return 0 unless $socket->connected;
-    return 1;
+    return $self->connected;
 }
 
 
 
-
-
 1;
-
-
-
-
 
