@@ -221,11 +221,11 @@ sub handler {
 sub do_server {
 	my( $self, $session, $mtype, $api_level, $tT ) = @_;
 
-	# A Server should never receive STATUS messages.  If so, we drop them.
-	# This is to keep STATUS's from dead client sessions from creating new server
+	# A Server should never receive STATUS or RESULT messages.  If so, we drop them.
+	# This is to keep STATUS/RESULT's from dead client sessions from creating new server
 	# sessions which send mangled session exceptions to backends for messages 
 	# that they are not aware of any more.
-	if( $mtype eq 'STATUS' ) { return 0; }
+    if( $mtype eq 'STATUS' or $mtype eq 'RESULT' ) { return 0; }
 
 	
 	if ($mtype eq 'DISCONNECT') {
