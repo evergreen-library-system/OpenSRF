@@ -255,6 +255,8 @@ sub interval_to_seconds {
 	my $self = shift;
         my $interval = shift || $self;
 
+	$interval =~ s/(\d{2}):(\d{2}):(\d{2})/ $1 h $2 min $3 s /go;
+
         $interval =~ s/and/,/g;
         $interval =~ s/,/ /g;
 
