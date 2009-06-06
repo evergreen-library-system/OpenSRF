@@ -64,6 +64,7 @@ static int print_help( void );
 //static void sig_child_handler( int s );
 //static void sig_int_handler( int s );
 
+static char* get_request( void );
 static int load_history( void );
 static int handle_math( char* words[] );
 static int do_math( int count, int style );
@@ -114,24 +115,23 @@ int main( int argc, char* argv[] ) {
 	/* --------------------------------------------- */
 	load_history();
 
-
 	client = osrfSystemGetTransportClient();
 
+	// Disable special treatment for tabs by readline
+	// (by default they invoke command completion, which
+	// is not useful for srfsh)
+	rl_bind_key( '\t', rl_insert );
+	
 	/* main process loop */
 	int newline_needed = 1;  /* used as boolean */
 	char* request;
-	while((request=readline(prompt))) {
+	while( (request = get_request()) ) {
 
 		// Find first non-whitespace character
 		
 		char * cmd = request;
 		while( isspace( (unsigned char) *cmd ) )
 			++cmd;
-
-		// ignore comments and empty lines
-
-		if( '\0' == *cmd || '#' == *cmd )
-			continue;
 
 		// Remove trailing whitespace.  We know at this point that
 		// there is at least one non-whitespace character somewhere,
@@ -187,6 +187,74 @@ int main( int argc, char* argv[] ) {
 	return 0;
 }
 
+// Get a logical line from one or more calls to readline(),
+// skipping blank lines and comments.  Stitch continuation
+// lines together as needed.  Caller is responsible for
+// freeing the string returned.
+// If EOF appears before a logical line is completed, 
+// return NULL.
+static char* get_request( void ) {
+	char* line;
+	char* p;
+
+	// Get the first physical line of the logical line
+	while( 1 ) {
+		line = readline( prompt );
+		if( ! line )
+			return NULL;     // end of file
+
+		// Skip leading white space
+		for( p = line; isspace( *p ); ++p )
+			;
+
+		if( '\\' == *p && '\0' == p[1] ) {
+			// Just a trailing backslash; skip to next line
+			free( line );
+			continue;
+		} else if( '\0' == p[0] || '#' == *p ) {
+			free( line );
+			continue;  // blank line or comment; skip it
+		} else
+			break;     // Not blank, not comment; take it
+	}
+
+	char* end = line + strlen( line ) - 1;
+	if( *end != '\\' )
+		return line;    // No continuation line; we're done
+
+	// Remove the trailing backslash and collect
+	// the continuation line(s) into a growing_buffer
+	*end = '\0';
+
+	growing_buffer* logical_line = buffer_init( 256 );
+	buffer_add( logical_line, p );
+	free( line );
+
+	// Append any continuation lines
+	int finished = 0;      // boolean
+	while( !finished ) {
+		line = readline( "> " );
+		if( line ) {
+
+			// Check for another continuation
+			end = line + strlen( line ) - 1;
+			if( '\\' == *end )
+				*end = '\0';
+			else
+				finished = 1;
+
+			buffer_add( logical_line, line );
+			free( line );
+		} else {
+			fprintf( stderr, "Expected continuation line; found end of file\n" );
+			buffer_free( logical_line );
+			return NULL;
+		}
+	}
+
+	return buffer_release( logical_line );
+}
+
 static int load_history( void ) {
 
 	char* home = getenv("HOME");
@@ -204,7 +272,6 @@ static int load_history( void ) {
 
 
 static int parse_error( char* words[] ) {
-
 	if( ! words )
 		return 0;
 
@@ -235,7 +302,7 @@ static int parse_request( char* request ) {
 
 
 	char* req = request;
-	char* cur_tok = strtok( req, " " );
+	char* cur_tok = strtok( req, " \t" );
 
 	if( cur_tok == NULL )
 	{
@@ -249,7 +316,7 @@ static int parse_request( char* request ) {
 	while(cur_tok != NULL) {
 		if( i < COMMAND_BUFSIZE - 1 ) {
 			words[i++] = cur_tok;
-			cur_tok = strtok( NULL, " " );
+			cur_tok = strtok( NULL, " \t" );
 		} else {
 			fprintf( stderr, "Too many tokens in command\n" );
 			free( original_request );
