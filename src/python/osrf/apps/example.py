@@ -47,6 +47,19 @@ class Example(Application):
             idx -= 1
 
     # ---------------------------------------------------------
+
+    Application.register_method(
+        api_name = 'opensrf.stateful_session_test',
+        method = 'session_test',
+        argc = 0
+    )
+
+    def session_test(self, request):
+        c = request.session.session_data.get('counter', 0) + 1
+        request.session.session_data['counter'] = c
+        return c
+
+    # ---------------------------------------------------------
     # These example methods override methods from 
     # osrf.app.Application.  They are not required.
     # ---------------------------------------------------------

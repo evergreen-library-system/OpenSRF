@@ -102,7 +102,7 @@ class Application(object):
         ''' Find the handler, construct the server request, then run the method '''
 
         req_method = osrf_msg.payload()
-        params = req_method.params()
+        params = req_method.params() or []
         method = Application.methods[req_method.method()]
         handler = method.get_func()
 
