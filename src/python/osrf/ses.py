@@ -60,7 +60,7 @@ class Session(object):
         """Wait up to <timeout> seconds for data to arrive on the network"""
         osrf.log.log_internal("Session.wait(%d)" % timeout)
         handle = osrf.net.get_network_handle()
-        handle.recv(timeout)
+        return handle.recv(timeout)
 
     def send(self, omessages):
         """Sends an OpenSRF message"""
@@ -356,10 +356,24 @@ class ServerSession(Session):
         })
         self.send_status(thread_trace, status_msg)
 
+    def send_method_not_found(self, thread_trace, method_name):
+        status_msg = osrf.net_obj.NetworkObject.osrfConnectStatus({   
+            'status' : 'Method [%s] not found for %s' % (method_name, self.service),
+            'statusCode': osrf.const.OSRF_STATUS_NOTFOUND
+        })
+        self.send_status(thread_trace, status_msg)
+
+
+    def run_callback(self, type):
+        if type in self.callbacks:
+            self.callbacks[type](self)
+
+    def register_callback(self, type, func):
+        self.callbacks[type] = func
+
     def cleanup(self):
         Session.cleanup(self)
-        if 'death' in self.callbacks:
-            self.callbacks['death'](self)
+        self.run_callbacks('death')
 
 
 class ServerRequest(Request):

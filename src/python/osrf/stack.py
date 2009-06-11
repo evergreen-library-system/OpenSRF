@@ -101,7 +101,9 @@ def handle_server(session, message):
 
     if message.type() == osrf.const.OSRF_MESSAGE_TYPE_REQUEST:
         osrf.log.log_debug("server received REQUEST from %s" % session.remote_id)
+        session.run_callback('pre_request')
         osrf.app.Application.handle_request(session, message)
+        session.run_callback('post_request')
         return
 
     if message.type() == osrf.const.OSRF_MESSAGE_TYPE_CONNECT:
@@ -113,11 +115,15 @@ def handle_server(session, message):
     if message.type() == osrf.const.OSRF_MESSAGE_TYPE_DISCONNECT:
         osrf.log.log_debug("server received DISCONNECT from %s" % session.remote_id)
         session.state = osrf.const.OSRF_APP_SESSION_DISCONNECTED
+        session.run_callback('disconnect')
         return
 
     if message.type() == osrf.const.OSRF_MESSAGE_TYPE_STATUS:
-        # Should never get here
-        osrf.log.log_warn("server received STATUS from %s" % session.remote_id)
+        osrf.log.log_debug("server ignoring STATUS from %s" % session.remote_id)
+        return
+
+    if message.type() == osrf.const.OSRF_MESSAGE_TYPE_RESULT:
+        osrf.log.log_debug("server ignoring RESULT from %s" % session.remote_id)
         return
 
 

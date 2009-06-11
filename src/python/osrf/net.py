@@ -58,7 +58,6 @@ def clear_network_handle():
     handle = THREAD_SESSIONS.get(threading.currentThread().getName())
     if handle:
         osrf.log.log_internal("clearing network handle %s" % handle.jid.as_utf8())
-        #handle.disconnect()
         del THREAD_SESSIONS[threading.currentThread().getName()]
         return handle
 
@@ -245,6 +244,15 @@ class Network(JabberClient):
                 self.receive_callback(msg)
 
         return msg
+
+
+    def flush_inbound_data(self):
+        ''' Read all pending inbound messages from the socket and discard them '''
+        cb = self.receive_callback
+        self.receive_callback = None
+        while self.recv(0): pass 
+        self.receive_callback = cb
+
 
 
 

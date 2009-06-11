@@ -103,7 +103,13 @@ class Application(object):
 
         req_method = osrf_msg.payload()
         params = req_method.params() or []
-        method = Application.methods[req_method.method()]
+        method_name = req_method.method()
+        method = Application.methods.get(method_name)
+
+        if method is None:
+            session.send_method_not_found(osrf_msg.threadTrace(), method_name)
+            return
+            
         handler = method.get_func()
 
         param_json = osrf.json.to_json(params)

@@ -47,6 +47,8 @@ class Example(Application):
             idx -= 1
 
     # ---------------------------------------------------------
+    # Session data test
+    # ---------------------------------------------------------
 
     Application.register_method(
         api_name = 'opensrf.stateful_session_test',
@@ -58,6 +60,41 @@ class Example(Application):
         c = request.session.session_data.get('counter', 0) + 1
         request.session.session_data['counter'] = c
         return c
+
+    # ---------------------------------------------------------
+    # Session callbacks test
+    # ---------------------------------------------------------
+    Application.register_method(
+        api_name = 'opensrf.session_callback_test',
+        method = 'callback_test',
+        argc = 0
+    )
+
+    def callback_test(self, request):
+        
+        def pre_req_cb(ses):
+            osrf.log.log_info("running pre_request callback")
+
+        def post_req_cb(ses):
+            osrf.log.log_info("running post_request callback")
+
+        def disconnect_cb(ses):
+            osrf.log.log_info("running disconnect callback")
+
+        def death_cb(ses):
+            osrf.log.log_info("running death callback")
+
+        ses = request.session
+
+        ses.register_callback('pre_request', pre_req_cb)
+        ses.register_callback('post_request', post_req_cb)
+        ses.register_callback('disconnect', disconnect_cb)
+        ses.register_callback('death', death_cb)
+
+        c = ses.session_data.get('counter', 0) + 1
+        ses.session_data['counter'] = c
+        return c
+
 
     # ---------------------------------------------------------
     # These example methods override methods from 

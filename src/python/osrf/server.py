@@ -300,6 +300,7 @@ class Child(object):
                 size = int(self.read_data.recv(SIZE_PAD) or 0)
                 data = self.read_data.recv(size)
                 osrf.log.log_internal("recv'd data " + data)
+                osrf.net.get_network_handle().flush_inbound_data()
                 session = osrf.stack.push(osrf.net.NetworkMessage.from_xml(data))
                 self.keepalive_loop(session)
                 self.num_requests += 1
@@ -316,15 +317,13 @@ class Child(object):
 
         while session.state == osrf.const.OSRF_APP_SESSION_CONNECTED:
 
-            start = time.time()
-            session.wait(keepalive)
-            end = time.time()
+            status = session.wait(keepalive)
 
             if session.state == osrf.const.OSRF_APP_SESSION_DISCONNECTED:
                 osrf.log.log_internal("client sent disconnect, exiting keepalive")
                 break
 
-            if (end - start) >= keepalive: # exceeded keepalive timeout
+            if status is None: # no msg received before keepalive timeout expired
 
                 osrf.log.log_info("No request was received in %d seconds, exiting stateful session" % int(keepalive));
 
@@ -338,6 +337,7 @@ class Child(object):
 
                 break
 
+        session.run_callback('death')
         return
 
     def send_status(self):
