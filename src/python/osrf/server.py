@@ -337,7 +337,7 @@ class Child(object):
 
                 break
 
-        session.run_callback('death')
+        session.cleanup()
         return
 
     def send_status(self):

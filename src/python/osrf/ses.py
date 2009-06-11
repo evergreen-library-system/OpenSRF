@@ -373,7 +373,7 @@ class ServerSession(Session):
 
     def cleanup(self):
         Session.cleanup(self)
-        self.run_callbacks('death')
+        self.run_callback('death')
 
 
 class ServerRequest(Request):
