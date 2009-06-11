@@ -149,6 +149,7 @@ function do_action {
 function start_router {
 	do_action "start" $PID_ROUTER "OpenSRF Router";
 	opensrf_router $OPT_CONFIG routers
+    sleep 2;
 	pid=$(ps ax | grep "OpenSRF Router" | grep -v grep | awk '{print $1}')
 	echo $pid > $PID_ROUTER;
 	return 0;
@@ -181,6 +182,7 @@ function start_c {
 
 	do_action "start" $PID_OSRF_C "OpenSRF C (host=$host)";
 	opensrf-c $host $OPT_CONFIG opensrf;
+    sleep 1;
 	pid=$(ps ax | grep "OpenSRF System-C" | grep -v grep | awk '{print $1}')
 	echo $pid > "$PID_OSRF_C";
 	return 0;
