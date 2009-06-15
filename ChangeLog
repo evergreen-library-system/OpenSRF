@@ -1,1 +1,37 @@
-#ChangeLog
+2009-04-27  erickson
+
+	* : pass unknown string as second param to osrfLog to avoid literal
+	  % parsing in vsnprintf
+
+2009-04-28  erickson
+
+	* : backport 1697: don't set stream state to disconnected on a
+	  non-stream error.
+
+2009-04-30  erickson
+
+	* : activate the config options, need to that if you're going to
+	  use a cache server that's not == localhost:11211
+
+2009-05-29  erickson
+
+	* : try finding osrf_config in the users PATH first to prevent the
+	  use of 'find' when possible (find + NFS = watching paint dry)
+
+2009-06-03  erickson
+
+	* : flush_socket now flushes data through the xml stream parser to
+	  prevent the destorying the validity of the stream. now discarding
+	  RESULT messages passed to server sessions.
+
+2009-06-11  erickson
+
+	* : until we make the router / C processes write their own PID
+	  file, put a short sleep in after startup to give each time to
+	  show up in the 'ps' output. this should help prevent lingering
+	  router processes after service stop
+
+2009-06-15  miker
+
+	* .: Tagging 1.0.7
+
