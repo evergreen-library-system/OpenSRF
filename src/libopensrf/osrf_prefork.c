@@ -158,23 +158,31 @@ static void osrf_prefork_send_router_registration(const char* appname, const cha
 /** parses a single "complex" router configuration chunk */
 static void osrf_prefork_parse_router_chunk(const char* appname, jsonObject* routerChunk) {
 
-    char* routerName = jsonObjectGetString(jsonObjectGetKey(routerChunk, "name"));
-    char* domain = jsonObjectGetString(jsonObjectGetKey(routerChunk, "domain"));
-    jsonObject* services = jsonObjectGetKey(routerChunk, "services");
-    osrfLogDebug(OSRF_LOG_MARK, "found router config with domain %s and name %s", routerName, domain);
+	char* routerName = jsonObjectGetString(jsonObjectGetKey(routerChunk, "name"));
+	char* domain = jsonObjectGetString(jsonObjectGetKey(routerChunk, "domain"));
+	jsonObject* services = jsonObjectGetKey(routerChunk, "services");
+	osrfLogDebug(OSRF_LOG_MARK, "found router config with domain %s and name %s", routerName, domain);
 
-    if(services && services->type == JSON_HASH) {
-        osrfLogDebug(OSRF_LOG_MARK, "investigating router information...");
-        services = jsonObjectGetKey(services, "service");
-        int j;
-        for(j = 0; j < services->size; j++ ) {
-            char* service = jsonObjectGetString(jsonObjectGetIndex(services, j));
-            if(!strcmp(appname, service))
-                osrf_prefork_send_router_registration(appname, routerName, domain);
-        }
-    } else {
-        osrf_prefork_send_router_registration(appname, routerName, domain);
-    }
+	if( services && services->type == JSON_HASH ) {
+		osrfLogDebug(OSRF_LOG_MARK, "investigating router information...");
+		jsonObject* service_obj = jsonObjectGetKey(services, "service");
+		if( !service_obj )
+			;    // do nothing (shouldn't happen)
+		else if( JSON_ARRAY == service_obj->type ) {
+			int j;
+			for(j = 0; j < service_obj->size; j++ ) {
+				const char* service = jsonObjectGetString(jsonObjectGetIndex(service_obj, j));
+				if( service && !strcmp( appname, service ))
+					osrf_prefork_send_router_registration(appname, routerName, domain);
+			}
+		}
+		else if( JSON_STRING == service_obj->type ) {
+			if( !strcmp(appname, jsonObjectGetString( service_obj )) )
+				osrf_prefork_send_router_registration(appname, routerName, domain);
+		}
+	} else {
+		osrf_prefork_send_router_registration(appname, routerName, domain);
+	}
 }
 
 static void osrf_prefork_register_routers( const char* appname ) {
