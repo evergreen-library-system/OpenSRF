@@ -70,9 +70,14 @@ static int handle_math( char* words[] );
 static int do_math( int count, int style );
 static int handle_introspect(char* words[]);
 static int handle_login( char* words[]);
+static int handle_open( char* words[]);
+static int handle_close( char* words[]);
+static void close_all_sessions( void );
 
 static int recv_timeout = 120;
 static int is_from_script = 0;
+
+static osrfHash* server_hash = NULL;
 
 int main( int argc, char* argv[] ) {
 
@@ -180,8 +185,14 @@ int main( int argc, char* argv[] ) {
 	if(history_file != NULL )
 		write_history(history_file);
 
+	// Free stuff
 	free(request);
 	free(login_session);
+	if( server_hash ) {
+		if( osrfHashGetCount( server_hash ) > 0 )
+			close_all_sessions();
+		osrfHashFree( server_hash );
+	}
 
 	osrf_system_shutdown();
 	return 0;
@@ -357,6 +368,12 @@ static int parse_request( char* request ) {
 	else if (!strcmp(words[0],"login"))
 		ret_val = handle_login(words);
 
+	else if (!strcmp(words[0],"open"))
+		ret_val = handle_open(words);
+
+	else if (!strcmp(words[0],"close"))
+		ret_val = handle_close(words);
+
 	else if (words[0][0] == '!') {
 		system( original_request + 1 );
 		ret_val = 1;
@@ -476,6 +493,96 @@ static int handle_login( char* words[]) {
 	}
 
 	return 0;
+}
+
+/**
+ * Open connections to one or more specified services
+ */
+static int handle_open( char* words[]) {
+	if( NULL == words[ 1 ] ) {
+		if( ! server_hash || osrfHashGetCount( server_hash ) == 0 ) {
+			printf( "No services are currently open\n" );
+			return 1;
+		}
+
+		printf( "Service(s) currently open:\n" );
+
+		osrfHashIterator* itr = osrfNewHashIterator( server_hash );
+		while( osrfHashIteratorNext( itr ) ) {
+			printf( "\t%s\n", osrfHashIteratorKey( itr ) );
+		}
+		osrfHashIteratorFree( itr );
+		return 1;
+	}
+
+	if( ! server_hash )
+		server_hash = osrfNewHash( 6 );
+
+	int i;
+	for( i = 1; words[ i ]; ++i ) {    // for each requested service
+		const char* server = words[ i ];
+		if( osrfHashGet( server_hash, server ) ) {
+			printf( "Service %s is already open\n", server );
+			continue;
+		}
+
+		// Try to open a session with the current specified server
+		osrfAppSession* session = osrfAppSessionClientInit(server);
+
+		if(!osrfAppSessionConnect(session)) {
+			fprintf(stderr, "Unable to open service %s\n", server);
+			osrfLogWarning( OSRF_LOG_MARK, "Unable to open remote service %s\n", server );
+			osrfAppSessionFree( session );
+		} else {
+			osrfHashSet( server_hash, session, server );
+			printf( "Service %s opened\n", server );
+		}
+	}
+
+	return 1;
+}
+
+/**
+ * Close connections to one or more specified services
+ */
+static int handle_close( char* words[]) {
+	if( NULL == words[ 1 ] ) {
+		fprintf( stderr, "No service specified for close\n" );
+		return 0;
+	}
+
+	int i;
+	for( i = 1; words[ i ]; ++i ) {
+		const char* server = words[ i ];
+
+		osrfAppSession* session = osrfHashRemove( server_hash, server );
+		if( ! session ) {
+			printf( "Service \"%s\" is not open\n", server );
+			continue;
+		}
+
+		osrf_app_session_disconnect( session );
+		osrfAppSessionFree( session );
+		printf( "Service \"%s\" closed\n", server );
+	}
+
+	return 1;
+}
+
+/**
+ * Close all currently open connections to services
+ */
+static void close_all_sessions( void ) {
+
+	osrfAppSession* session;
+	osrfHashIterator* itr = osrfNewHashIterator( server_hash );
+
+	while(( session = osrfHashIteratorNext( itr ) )) {
+		osrf_app_session_disconnect( session );
+		osrfAppSessionFree( session );
+	}
+
+	osrfHashIteratorFree( itr );
 }
 
 static int handle_set( char* words[]) {
@@ -629,18 +736,25 @@ int send_request( char* server,
 		}
 	}
 
-
 	if(buffer->n_used > 0 && params == NULL) {
 		fprintf(stderr, "JSON error detected, not executing\n");
 		jsonObjectFree(params);
 		return 1;
 	}
 
-	osrfAppSession* session = osrfAppSessionClientInit(server);
+	int session_is_temporary;    // boolean
+	osrfAppSession* session = osrfHashGet( server_hash, server );
+	if( session ) {
+		session_is_temporary = 0;     // use an existing session
+	} else {
+		session = osrfAppSessionClientInit(server);   // open a session
+		session_is_temporary = 1;                     // just for this request
+	}
 
 	if(!osrfAppSessionConnect(session)) {
 		fprintf(stderr, "Unable to communicate with service %s\n", server);
 		osrfLogWarning( OSRF_LOG_MARK,  "Unable to connect to remote service %s\n", server );
+		osrfAppSessionFree( session );
 		jsonObjectFree(params);
 		return 1;
 	}
@@ -654,8 +768,8 @@ int send_request( char* server,
 
 	if(!omsg) 
 		printf("\nReceived no data from server\n");
-	
-	
+
+
 	signal(SIGPIPE, SIG_IGN);
 
 	FILE* less; 
@@ -746,7 +860,6 @@ int send_request( char* server,
 			}
 		}
 
-
 		omsg = osrfAppSessionRequestRecv( session, req_id, recv_timeout );
 
 	}
@@ -766,9 +879,11 @@ int send_request( char* server,
 	pclose(less); 
 
 	osrf_app_session_request_finish( session, req_id );
-	osrf_app_session_disconnect( session );
-	osrfAppSessionFree( session );
 
+	if( session_is_temporary ) {
+		osrf_app_session_disconnect( session );
+		osrfAppSessionFree( session );
+	}
 
 	return 1;
 
