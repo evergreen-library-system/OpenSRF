@@ -252,7 +252,13 @@ void* osrfHashRemove( osrfHash* hash, const char* key, ... ) {
 }
 
 
-void* osrfHashGet( osrfHash* hash, const char* key, ... ) {
+void* osrfHashGet( osrfHash* hash, const char* key ) {
+	osrfHashNode* node = find_item( hash, key, NULL );
+	if( !node ) return NULL;
+	return node->item;
+}
+
+void* osrfHashGetFmt( osrfHash* hash, const char* key, ... ) {
 	if(!(hash && key )) return NULL;
 	VA_LIST_TO_STRING(key);
 

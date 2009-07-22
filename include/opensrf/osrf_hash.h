@@ -42,8 +42,9 @@ void* osrfHashSet( osrfHash* hash, void* item, const char* key, ... );
   */
 void* osrfHashRemove( osrfHash* hash, const char* key, ... );
 
-void* osrfHashGet( osrfHash* hash, const char* key, ... );
+void* osrfHashGet( osrfHash* hash, const char* key );
 
+void* osrfHashGetFmt( osrfHash* hash, const char* key, ... );
 
 /**
   @return A list of strings representing the keys of the hash. 
