@@ -208,13 +208,15 @@ sub wait {
     # now slurp the data off the socket
     my $buf;
     my $read_size = 1024;
+    my $nonblock = 0;
     while(my $n = sysread($socket, $buf, $read_size)) {
         $self->{parser}->parse_more($buf) if $buf;
         if($n < $read_size or $self->peek_msg) {
-            set_block($socket);
+            set_block($socket) if $nonblock;
             last;
         }
-        set_nonblock($socket);
+        set_nonblock($socket) unless $nonblock;
+        $nonblock = 1;
     }
 
     return $self->next_msg;
