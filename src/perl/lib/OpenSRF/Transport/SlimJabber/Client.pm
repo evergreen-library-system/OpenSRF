@@ -113,6 +113,7 @@ sub send {
 	my $self = shift;
     my $msg = OpenSRF::Transport::SlimJabber::XMPPMessage->new(@_);
     $msg->osrf_xid($logger->get_osrf_xid);
+    $msg->from($self->xmpp_id);
     $self->reader->send($msg->to_xml);
 }
 
@@ -129,8 +130,6 @@ sub initialize {
 	my $username	= $self->params->{username};
 	my $resource	= $self->params->{resource};
 	my $password	= $self->params->{password};
-
-    my $jid = "$username\@$host/$resource";
 
 	my $conf = OpenSRF::Utils::Config->current;
 
@@ -153,7 +152,16 @@ sub initialize {
     throw OpenSRF::EX::Jabber("Could not authenticate with Jabber server: $@")
 	    unless ( $self->reader->connected );
 
+    $self->xmpp_id("$username\@$host/$resource");
 	return $self;
+}
+
+
+# Our full login:  username@host/resource
+sub xmpp_id {
+    my($self, $xmpp_id) = @_;
+    $self->{xmpp_id} = $xmpp_id if $xmpp_id;
+    return $self->{xmpp_id};
 }
 
 
