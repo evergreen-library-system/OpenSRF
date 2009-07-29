@@ -20,6 +20,8 @@ struct transport_client_struct {
 	transport_message* msg_q_tail;
 	transport_session* session;
 	int error;
+    char* host;
+    char* xmpp_id;
 };
 typedef struct transport_client_struct transport_client;
 

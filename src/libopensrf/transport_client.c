@@ -62,6 +62,7 @@ transport_client* client_init( const char* server, int port, const char* unix_pa
 
 	client->session->message_callback = client_message_handler;
 	client->error = 0;
+    client->host = strdup(server);
 
 	return client;
 }
@@ -71,6 +72,7 @@ int client_connect( transport_client* client,
 		const char* username, const char* password, const char* resource, 
 		int connect_timeout, enum TRANSPORT_AUTH_TYPE  auth_type ) {
 	if(client == NULL) return 0; 
+    client->xmpp_id = va_list_to_string("%s@%s/%s", username, client->host, resource);
 	return session_connect( client->session, username, 
 			password, resource, connect_timeout, auth_type );
 }
@@ -89,6 +91,7 @@ int client_connected( const transport_client* client ) {
 int client_send_message( transport_client* client, transport_message* msg ) {
 	if(client == NULL) return 0;
 	if( client->error ) return -1;
+    msg->sender = strdup(client->xmpp_id); // free'd in message_free
 	return session_send_msg( client->session, msg );
 }
 
@@ -186,6 +189,8 @@ int client_free( transport_client* client ){
 		current = next;
 	}
 
+    free(client->host);
+    free(client->xmpp_id);
 	free( client );
 	return 1;
 }
