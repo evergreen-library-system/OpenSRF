@@ -28,21 +28,23 @@ GNU General Public License for more details.
 	if( _obj_->type == JSON_HASH && newtype != JSON_HASH ) {			\
 		osrfHashFree(_obj_->value.h);			\
 		_obj_->value.h = NULL; 					\
-} else if( _obj_->type == JSON_ARRAY && newtype != JSON_ARRAY ) {	\
+	} else if( _obj_->type == JSON_ARRAY && newtype != JSON_ARRAY ) {	\
 		osrfListFree(_obj_->value.l);			\
 		_obj_->value.l = NULL;					\
-} else if( _obj_->type == JSON_STRING || _obj_->type == JSON_NUMBER ) { \
-		free(_obj_->value.s);						\
+	} else if( _obj_->type == JSON_STRING || _obj_->type == JSON_NUMBER ) { \
+		free(_obj_->value.s);					\
 		_obj_->value.s = NULL;					\
-} \
-	_obj_->type = newtype;\
+	} else if( _obj_->type == JSON_BOOL && newtype != JSON_BOOL ) { \
+		_obj_->value.l = NULL;					\
+	} \
+	_obj_->type = newtype; \
 	if( newtype == JSON_HASH && _obj_->value.h == NULL ) {	\
 		_obj_->value.h = osrfNewHash();		\
 		osrfHashSetCallback( _obj_->value.h, _jsonFreeHashItem ); \
-} else if( newtype == JSON_ARRAY && _obj_->value.l == NULL ) {	\
+	} else if( newtype == JSON_ARRAY && _obj_->value.l == NULL ) {	\
 		_obj_->value.l = osrfNewList();		\
 		_obj_->value.l->freeItem = _jsonFreeListItem;\
-}
+	}
 
 static int unusedObjCapture = 0;
 static int unusedObjRelease = 0;
