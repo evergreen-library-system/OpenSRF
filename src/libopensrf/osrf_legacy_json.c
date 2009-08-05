@@ -767,7 +767,7 @@ char* legacy_jsonObjectToJSON( const jsonObject* obj ) {
 
 				buffer_add(buf, "\"");
 
-				char* key = itr->key;
+				const char* key = itr->key;
 				int len = strlen(key);
 				char* output = uescape(key, len, 1);
 				buffer_add(buf, output);

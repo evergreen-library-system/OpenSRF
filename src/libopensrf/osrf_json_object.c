@@ -397,7 +397,6 @@ jsonIterator* jsonNewIterator(const jsonObject* obj) {
 
 void jsonIteratorFree(jsonIterator* itr) {
 	if(!itr) return;
-	free(itr->key);
 	osrfHashIteratorFree(itr->hashItr);
 	free(itr);
 }
@@ -405,11 +404,14 @@ void jsonIteratorFree(jsonIterator* itr) {
 jsonObject* jsonIteratorNext(jsonIterator* itr) {
 	if(!(itr && itr->obj)) return NULL;
 	if( itr->obj->type == JSON_HASH ) {
-		if(!itr->hashItr) return NULL;
+		if(!itr->hashItr)
+			return NULL;
+
 		jsonObject* item = osrfHashIteratorNext(itr->hashItr);
-        if(!item) return NULL;
-		free(itr->key);
-		itr->key = strdup( osrfHashIteratorKey(itr->hashItr) );
+		if( item )
+			itr->key = osrfHashIteratorKey(itr->hashItr);
+		else
+			itr->key = NULL;
 		return item;
 	} else {
 		return jsonObjectGetIndex( itr->obj, itr->index++ );
@@ -629,14 +631,14 @@ int jsonIsNumeric( const char* s ) {
 		if( '0' == *p++ ) {
 
 			// If the first digit is zero, it must be the
-			// only digit to the lerft of the decimal
+			// only digit to the left of the decimal
 
 			if( isdigit( (unsigned char) *p ) )
 				return 0;
 		}
 		else {
 
-			// Skip oer the following digits
+			// Skip over the following digits
 
 			while( isdigit( (unsigned char) *p ) ) ++p;
 		}

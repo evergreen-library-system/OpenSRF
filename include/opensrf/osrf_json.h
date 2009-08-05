@@ -120,7 +120,7 @@ typedef struct _jsonObjectStruct jsonObject;
 struct _jsonIteratorStruct {
 	jsonObject* obj; /* the object we're traversing */
 	osrfHashIterator* hashItr; /* the iterator for this hash */
-	char* key; /* if this object is an object, the current key */
+	const char* key; /* if this object is a hash, the current key */
 	unsigned long index; /* if this object is an array, the index */
 };
 typedef struct _jsonIteratorStruct jsonIterator;
