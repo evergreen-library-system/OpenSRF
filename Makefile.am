@@ -31,7 +31,11 @@ export SOCK			= @localstatedir@/lock/opensrf
 export LOG			= @localstatedir@/log/opensrf
 export srcdir			= @srcdir@
 
+ACLOCAL_AMFLAGS = -I m4
+
 AM_CFLAGS = $(DEF_CFLAGS)
+
+DISTCLEANFILES = Makefile.in Makefile aclocal.m4 config.guess config.log config.sub config.status configure depcomp install-sh ltmain.sh missing
 
 DOC_FILES = @srcdir@/doc/Application-HOWTO.txt \
 	    @srcdir@/doc/dokuwiki-doc-stubber.pl \
@@ -126,3 +130,6 @@ javascript-install:
 install-data-hook:
 	cp @srcdir@/src/gateway/apachetools.h @includedir@/opensrf/apachetools.h
 
+distclean-local:
+	rm -rf ./autom4te.cache
+	rm -rf ./m4
