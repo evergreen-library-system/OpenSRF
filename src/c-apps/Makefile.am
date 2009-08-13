@@ -15,6 +15,8 @@
 AM_CFLAGS = $(DEF_CFLAGS) -DORSF_LOG_PARAMS 
 AM_LDFLAGS = $(DEF_LDFLAGS) -L@top_builddir@/src/libopensrf
 
+DISTCLEANFILES = Makefile.in Makefile
+
 noinst_PROGRAMS = timejson
 lib_LTLIBRARIES = osrf_dbmath.la osrf_math.la osrf_version.la
 

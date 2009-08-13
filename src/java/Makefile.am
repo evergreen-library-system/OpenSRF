@@ -1,3 +1,5 @@
+DISTCLEANFILES = Makefile.in Makefile
+
 JAVAC=javac -J-Xmx256m
 JAVA=java -Xmx256m 
 JAVA_LIBDIR = .lib
@@ -53,5 +55,3 @@ install-data-local:
 
 dep_clean:
 	rm -rf deps
-
- 	

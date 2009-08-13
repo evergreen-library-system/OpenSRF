@@ -16,6 +16,8 @@ LDADD = -lxml2 $(DEF_LDLIBS)
 AM_CFLAGS = $(DEF_CFLAGS) -D_GNU_SOURCE -L@top_builddir@/src/libopensrf
 AM_LDFLAGS = $(DEF_LDFLAGS)
 
+DISTCLEANFILES = Makefile.in Makefile
+
 bin_PROGRAMS = chopchop
 chopchop_SOURCES = osrf_chat.c osrf_chat.h osrf_chat_main.c
 

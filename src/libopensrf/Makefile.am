@@ -16,6 +16,8 @@ AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fn
 AM_LDFLAGS = $(DEF_LDFLAGS) -R $(libdir)
 LDADD = -lxml2 -ldl -lmemcache -lopensrf
 
+DISTCLEANFILES = Makefile.in Makefile
+
 OSRF_INC = @top_srcdir@/include/opensrf
 
 TARGS = 		osrf_message.c \

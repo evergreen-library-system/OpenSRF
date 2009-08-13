@@ -17,6 +17,8 @@ EXTRA_DIST = @srcdir@/apachetools.c @srcdir@/apachetools.h @srcdir@/osrf_json_ga
 AM_CFLAGS = -D_LARGEFILE64_SOURCE -Wall -I@abs_top_srcdir@/include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS)
 AM_LDFLAGS = -L$(LIBDIR) -L@top_builddir@/src/libopensrf
 
+DISTCLEANFILES = Makefile.in Makefile
+
 install-exec-local: 
 	if [ ! "$$(grep mod_placeholder `apxs2 -q SYSCONFDIR`/httpd.conf)" ]; \
 		then echo -e "#\n#LoadModule mod_placeholder /usr/lib/apache2/modules/mod_placeholder.so" \

@@ -16,5 +16,7 @@ LDADD = -lreadline -lxml2 -lncurses $(DEF_LDLIBS)
 AM_CFLAGS = $(DEF_CFLAGS) -DEXEC_DEFAULT -L@top_builddir@/src/libopensrf
 AM_LDFLAGS = $(DEF_LDFLAGS)
 
+DISTCLEANFILES = Makefile.in Makefile
+
 bin_PROGRAMS = srfsh
 srfsh_SOURCES = srfsh.c

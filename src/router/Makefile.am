@@ -16,6 +16,8 @@ LDADD = -lxml2 $(DEF_LDLIBS)
 AM_CFLAGS = $(DEF_CFLAGS) -D_ROUTER -L@top_builddir@/src/libopensrf
 AM_LDFLAGS = $(DEF_LDFLAGS)
 
+DISTCLEANFILES = Makefile.in Makefile
+
 bin_PROGRAMS = opensrf_router
 opensrf_router_SOURCES = osrf_router.c osrf_router_main.c osrf_router.h 
 
