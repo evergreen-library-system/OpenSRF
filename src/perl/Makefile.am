@@ -12,10 +12,7 @@
 # GNU General Public License for more details.
 
 all:
-	cp Makefile Makefile.osrf
-	perl Makefile.PL || make -f Makefile.osrf -s install-perl-fail
-	make 
-	make test || make -f Makefile.osrf -s install-perl-fail
+	perl Build.PL || make -s install-perl-fail
 
 install-perl-fail:
 	echo
