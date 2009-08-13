@@ -25,7 +25,7 @@ AM_INIT_AUTOMAKE([OpenSRF], [trunk])
 AC_REVISION($Revision: 0.1 $)
 AC_CONFIG_SRCDIR([configure.ac])
 AC_PREFIX_DEFAULT([/opensrf/])
-
+AC_CONFIG_MACRO_DIR([m4])
 
 AC_SUBST(prefix)
 AC_SUBST(sysconfdir)
