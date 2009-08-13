@@ -7,10 +7,9 @@ INSTALLATION
 
 To install this module, run the following commands:
 
-	perl Makefile.PL
-	make
-	make test
-	make install
+	perl Build.PL
+
+and if all goes well, the module will be built, tested, and installed.
 
 SUPPORT AND DOCUMENTATION
 
