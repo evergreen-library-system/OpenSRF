@@ -22,6 +22,9 @@ my $build = Module::Build->new( module_name => 'OpenSRF',
                                               'DateTime::Format::ISO8601' => 0,
                                             },
                               );
-$build->dispatch('build');
-$build->dispatch('test');
-$build->dispatch('install');
+
+$build->create_build_script;
+
+# $build->dispatch('build');
+# $build->dispatch('test');
+# $build->dispatch('install');
