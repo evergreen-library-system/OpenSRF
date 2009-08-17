@@ -11,14 +11,20 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+CLEANFILES = Build
 DISTCLEANFILES = Makefile.in Makefile
 
 all:
-	perl Build.PL || make -s install-perl-fail
+	perl Build.PL || make -s build-perl-fail
+	./Build || make -s build-perl-fail
+	./Build test || make -s build-perl-fail
 
-install-perl-fail:
+install:
+	./Build install
+
+build-perl-fail:
 	echo
-	echo ">>> Installation of Perl modules has failed. The most likely"
+	echo ">>> Build/test of Perl modules has failed. The most likely"
 	echo ">>> possibility is that a dependency is not pre-installed"
 	echo ">>> or that a test has failed."
 	echo ">>> See the messages above this one for more information."
