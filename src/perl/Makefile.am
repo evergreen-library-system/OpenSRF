@@ -31,6 +31,13 @@ build-perl-fail:
 	echo
 	exit 1
 
+install-perl-fail:
+	echo
+	echo ">>> Install of Perl modules has failed."
+	echo ">>> Are you root?"
+	echo ">>> See the message above this one for more information."
+	echo
+
 distclean-local:
 	rm -rf ./_build
 	rm -rf ./blib
