@@ -17,6 +17,8 @@ DISTCLEANFILES = Makefile.in Makefile
 all:
 	perl Build.PL || make -s build-perl-fail
 	./Build || make -s build-perl-fail
+
+check:
 	./Build test || make -s build-perl-fail
 
 install:
