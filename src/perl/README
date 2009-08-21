@@ -8,6 +8,9 @@ INSTALLATION
 To install this module, run the following commands:
 
 	perl Build.PL
+        ./Build
+        ./Build test
+        ./Build install
 
 and if all goes well, the module will be built, tested, and installed.
 
