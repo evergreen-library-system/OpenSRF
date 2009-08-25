@@ -2,13 +2,13 @@ package OpenSRF::Utils::Config::Section;
 
 no strict 'refs';
 
-use vars qw/@ISA $AUTOLOAD $VERSION/;
+use vars qw/@ISA $AUTOLOAD/;
 push @ISA, qw/OpenSRF::Utils/;
 
 use OpenSRF::Utils (':common');
 use Net::Domain qw/hostfqdn/;
 
-$VERSION = do { my @r=(q$Revision$=~/\d+/g); sprintf "%d."."%02d"x$#r,@r };
+our $VERSION = "1.000";
 
 my %SECTIONCACHE;
 my %SUBSECTION_FIXUP;
@@ -189,11 +189,6 @@ though.
 
 =head1 METHODS
 
-
-=cut
-
-
-$VERSION = do { my @r=(q$Revision$=~/\d+/g); sprintf "%d."."%02d"x$#r,@r };
 
 
 =head2 OpenSRF::Utils::Config->load( config_file => '/some/config/file.cnf' )

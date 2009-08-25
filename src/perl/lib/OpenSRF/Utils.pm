@@ -1,50 +1,47 @@
 package OpenSRF::Utils;
 
-=head1 NAME 
-
-OpenSRF::Utils
-
-=head1 DESCRIPTION 
-
-This is a container package for methods that are useful to derived modules.
-It has no constructor, and is generally not useful by itself... but this
-is where most of the generic methods live.
- 
-
-=head1 METHODS 
-
-
-=cut
-
-use vars qw/@ISA $AUTOLOAD %EXPORT_TAGS @EXPORT_OK @EXPORT $VERSION/;
-push @ISA, 'Exporter';
-
-$VERSION = do { my @r=(q$Revision$=~/\d+/g); sprintf "%d."."%02d"x$#r,@r };
-
 use Time::Local;
 use Errno;
 use POSIX;
 use FileHandle;
-#use Cache::FileCache;
-#use Storable qw(dclone);
 use Digest::MD5 qw(md5 md5_hex md5_base64);
 use Exporter;
 use DateTime;
 use DateTime::Format::ISO8601;
 use DateTime::TimeZone;
 
-our $date_parser = DateTime::Format::ISO8601->new;
+=head1 NAME
 
-# This turns errors into warnings, so daemons don't die.
-#$Storable::forgive_me = 1;
+OpenSRF::Utils
+
+=head1 DESCRIPTION
+
+This is a container package for methods that are useful to derived modules.
+It has no constructor, and is generally not useful by itself... but this
+is where most of the generic methods live.
+
+=head1 VERSION
+
+=cut
+
+our $VERSION = 1.000;
+
+use vars qw/@ISA $AUTOLOAD %EXPORT_TAGS @EXPORT_OK @EXPORT/;
+push @ISA, 'Exporter';
 
 %EXPORT_TAGS = (
 	common		=> [qw(interval_to_seconds seconds_to_interval sendmail tree_filter)],
 	daemon		=> [qw(safe_fork set_psname daemonize)],
 	datetime	=> [qw(clense_ISO8601 gmtime_ISO8601 interval_to_seconds seconds_to_interval)],
 );
-
 Exporter::export_ok_tags('common','daemon','datetime');  # add aa, cc and dd to @EXPORT_OK
+
+our $date_parser = DateTime::Format::ISO8601->new;
+
+=head1 METHODS
+
+
+=cut
 
 sub AUTOLOAD {
 	my $self = shift;
