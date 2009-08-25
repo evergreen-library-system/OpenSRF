@@ -1,6 +1,6 @@
 Revision history for OpenSRF
 
-1.0.7   2009/??/??
+1.4.0   2009/??/??
         Dropped Module::Install for Module::Build
 
 1.0.0   2008/12/17
