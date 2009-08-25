@@ -73,8 +73,6 @@ my $log = 'OpenSRF::Utils::Logger';
 
 sub toString {
 	my $self = shift;
-	my $pretty = shift;
-	return OpenSRF::Utils::JSON->perl2prettyJSON($self) if ($pretty);
 	return OpenSRF::Utils::JSON->perl2JSON($self);
 }
 
@@ -88,7 +86,7 @@ sub new {
 	my %args = (	status => $default_status,
 			statusCode => $default_statusCode,
 			@_ );
-	
+
 	return bless( \%args => $class );
 }
 

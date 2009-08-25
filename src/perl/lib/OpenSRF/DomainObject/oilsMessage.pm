@@ -10,8 +10,6 @@ OpenSRF::Utils::JSON->register_class_hint(hint => 'osrfMessage', name => 'OpenSR
 
 sub toString {
 	my $self = shift;
-	my $pretty = shift;
-	return OpenSRF::Utils::JSON->perl2prettyJSON($self) if ($pretty);
 	return OpenSRF::Utils::JSON->perl2JSON($self);
 }
 
