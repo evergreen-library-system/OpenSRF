@@ -16,9 +16,48 @@ OpenSRF::Utils::JSON - Bucket-o-Routines for JSON
 
 =head1 SYNOPSIS
 
+C<O::U::JSON> is a functional-style package which exports nothing. All
+calls to routines must use the fully-qualified name, and expect an
+invocant, as in
 
+    OpenSRF::Utils::JSON->JSON2perl($string);
+
+Most routines are straightforward data<->JSON transformation wrappers
+around L<JSON::XS>, but some (like L</register_class_hint>) provide
+OpenSRF functionality.
 
 =head1 ROUTINES
+
+=head2 register_class_hint
+
+=cut
+
+sub register_class_hint {
+    my $class = shift;
+    my %args = @_;
+    $_class_map{hints}{$args{hint}} = \%args;
+    $_class_map{classes}{$args{name}} = \%args;
+}
+
+=head2 lookup_class
+
+=cut
+
+sub lookup_class {
+    my $self = shift;
+    my $hint = shift;
+    return $_class_map{hints}{$hint}{name}
+}
+
+=head2 lookup_hint
+
+=cut
+
+sub lookup_hint {
+    my $self = shift;
+    my $class = shift;
+    return $_class_map{classes}{$class}{hint}
+}
 
 =head2 JSON2perl
 
@@ -51,7 +90,7 @@ sub rawJSON2perl {
     return $parser->decode($json);
 }
 
-=head2 perl2JSON
+=head2 rawPerl2JSON
 
 =cut
 
@@ -59,6 +98,10 @@ sub rawPerl2JSON {
     my ($class, $perl) = @_;
     return $parser->encode($perl);
 }
+
+=head2 JSONObject2Perl
+
+=cut
 
 sub JSONObject2Perl {
     my $class = shift;
@@ -89,6 +132,10 @@ sub JSONObject2Perl {
     return $obj;
 }
 
+=head2 perl2JSONObject
+
+=cut
+
 sub perl2JSONObject {
     my $class = shift;
     my $obj = shift;
@@ -115,31 +162,20 @@ sub perl2JSONObject {
     return $newobj;
 }
 
+=head2 true
+
+=cut
+
 sub true {
     return $parser->true();
 }
 
+=head2 false
+
+=cut
+
 sub false {
     return $parser->false();
-}
-
-sub register_class_hint {
-    my $class = shift;
-    my %args = @_;
-    $_class_map{hints}{$args{hint}} = \%args;
-    $_class_map{classes}{$args{name}} = \%args;
-}
-
-sub lookup_class {
-    my $self = shift;
-    my $hint = shift;
-    return $_class_map{hints}{$hint}{name}
-}
-
-sub lookup_hint {
-    my $self = shift;
-    my $class = shift;
-    return $_class_map{classes}{$class}{hint}
 }
 
 sub _json_hint_to_class {
