@@ -33,8 +33,7 @@ OpenSRF functionality.
 =cut
 
 sub register_class_hint {
-    my $class = shift;
-    my %args = @_;
+    my ($pkg, %args) = @_;
     $_class_map{hints}{$args{hint}} = \%args;
     $_class_map{classes}{$args{name}} = \%args;
 }
@@ -44,8 +43,7 @@ sub register_class_hint {
 =cut
 
 sub lookup_class {
-    my $self = shift;
-    my $hint = shift;
+    my ($pkg, $hint) = @_;
     return $_class_map{hints}{$hint}{name}
 }
 
@@ -54,8 +52,7 @@ sub lookup_class {
 =cut
 
 sub lookup_hint {
-    my $self = shift;
-    my $class = shift;
+    my ($pkg, $class) = @_;
     return $_class_map{classes}{$class}{hint}
 }
 
@@ -64,7 +61,7 @@ sub lookup_hint {
 =cut
 
 sub JSON2perl {
-    my( $class, $string ) = @_;
+    my( $pkg, $string ) = @_;
     my $perl = $class->rawJSON2perl($string);
     return $class->JSONObject2Perl($perl);
 }
@@ -74,23 +71,28 @@ sub JSON2perl {
 =cut
 
 sub perl2JSON {
-    my( $class, $obj ) = @_;
-    my $json = $class->perl2JSONObject($obj);
-    return $class->rawPerl2JSON($json);
+    my( $pkg, $obj ) = @_;
+    my $json = $pkg->perl2JSONObject($obj);
+    return $pkg->rawPerl2JSON($json);
 }
 
 =head2 rawJSON2perl
 
+Internal routine used by L</JSON2Perl>. Wrapper around
+L<JSON::XS::decode>.
+
 =cut
 
 sub rawJSON2perl {
-    my $class = shift;
-    my $json = shift;
+    my ($class, $json) = @_;
     return undef unless defined $json and $json !~ /^\s*$/o;
     return $parser->decode($json);
 }
 
 =head2 rawPerl2JSON
+
+Internal routine used by L</Perl2JSON>. Wrapper around
+L<JSON::XS::encode>.
 
 =cut
 
@@ -104,28 +106,27 @@ sub rawPerl2JSON {
 =cut
 
 sub JSONObject2Perl {
-    my $class = shift;
-    my $obj = shift;
-    my $ref = ref($obj);
+    my ($pkg, $obj) = @_;
+    my $ref = ref $obj;
     if( $ref eq 'HASH' ) {
         if( defined($obj->{$JSON_CLASS_KEY})) {
-            my $cls = $obj->{$JSON_CLASS_KEY};
-            $cls =~ s/^\s+//o;
-            $cls =~ s/\s+$//o;
-            if( $obj = $class->JSONObject2Perl($obj->{$JSON_PAYLOAD_KEY}) ) {
-                $cls = $class->lookup_class($cls) || $cls;
-                return bless(\$obj, $cls) unless ref($obj);
-                return bless($obj, $cls);
+            my $class = $obj->{$JSON_CLASS_KEY};
+            $class =~ s/^\s+//o;
+            $class =~ s/\s+$//o;
+            if( $obj = $pkg->JSONObject2Perl($obj->{$JSON_PAYLOAD_KEY}) ) {
+                $class = $pkg->lookup_class($class) || $class;
+                return bless(\$obj, $class) unless ref($obj);
+                return bless($obj, $class);
             }
             return undef;
         }
         for my $k (keys %$obj) {
-            $obj->{$k} = $class->JSONObject2Perl($obj->{$k})
+            $obj->{$k} = $pkg->JSONObject2Perl($obj->{$k})
               unless ref($obj->{$k}) eq 'JSON::XS::Boolean';
         }
     } elsif( $ref eq 'ARRAY' ) {
         for my $i (0..scalar(@$obj) - 1) {
-            $obj->[$i] = $class->JSONObject2Perl($obj->[$i])
+            $obj->[$i] = $pkg->JSONObject2Perl($obj->[$i])
               unless ref($obj->[$i]) eq 'JSON::XS::Boolean';
         }
     }
@@ -164,18 +165,21 @@ sub perl2JSONObject {
 
 =head2 true
 
+Wrapper for JSON::XS::true. J::X::true and J::X::false, according to
+its documentation, "are JSON atoms become JSON::XS::true and
+JSON::XS::false, respectively. They are overloaded to act almost
+exactly like the numbers 1 and 0"
+
 =cut
 
-sub true {
-    return $parser->true();
-}
+sub true { return $parser->true }
 
 =head2 false
 
+See L</true>
+
 =cut
 
-sub false {
-    return $parser->false();
-}
+sub false { return $parser->false }
 
 1;
