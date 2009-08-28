@@ -1,13 +1,13 @@
 package OpenSRF::Utils::JSON;
 use JSON::XS;
 
-my $parser = JSON::XS->new;
+our $parser = JSON::XS->new;
 $parser->ascii(1);        # output \u escaped strings for any char with a value over 127
 $parser->allow_nonref(1); # allows non-reference values to equate to themselves (see perldoc)
 
-my %_class_map = ();
-my $JSON_CLASS_KEY = '__c';
-my $JSON_PAYLOAD_KEY = '__p';
+our %_class_map = ();
+our $JSON_CLASS_KEY = '__c';
+our $JSON_PAYLOAD_KEY = '__p';
 
 
 =head1 NAME
