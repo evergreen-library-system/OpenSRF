@@ -178,18 +178,4 @@ sub false {
     return $parser->false();
 }
 
-sub _json_hint_to_class {
-    my $type = shift;
-    my $hint = shift;
-
-    return $_class_map{hints}{$hint}{name} if (exists $_class_map{hints}{$hint});
-
-    $type = 'hash' if ($type eq '}');
-    $type = 'array' if ($type eq ']');
-
-	OpenSRF::Utils::JSON->register_class_hint(name => $hint, hint => $hint, type => $type);
-
-    return $hint;
-}
-
 1;
