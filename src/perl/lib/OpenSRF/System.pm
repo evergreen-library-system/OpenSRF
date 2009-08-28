@@ -7,7 +7,6 @@ use OpenSRF::Transport::Listener;
 use OpenSRF::Transport;
 use OpenSRF::UnixServer;
 use OpenSRF::Utils;
-use OpenSRF::Utils::LogServer;
 use OpenSRF::EX qw/:try/;
 use POSIX qw/setsid :sys_wait_h/;
 use OpenSRF::Utils::Config; 
