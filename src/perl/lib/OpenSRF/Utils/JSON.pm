@@ -1,4 +1,5 @@
 package OpenSRF::Utils::JSON;
+use strict; use warnings;
 use JSON::XS;
 
 our $parser = JSON::XS->new;
@@ -62,8 +63,8 @@ sub lookup_hint {
 
 sub JSON2perl {
     my( $pkg, $string ) = @_;
-    my $perl = $class->rawJSON2perl($string);
-    return $class->JSONObject2Perl($perl);
+    my $perl = $pkg->rawJSON2perl($string);
+    return $pkg->JSONObject2Perl($perl);
 }
 
 =head2 perl2JSON
