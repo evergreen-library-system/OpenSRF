@@ -14,6 +14,16 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
+/**
+	@file utils.h
+	
+	@brief Prototypes for various low-level utility functions, and related macros.
+	
+	Many of these facilities concern the growing_buffer structure,
+	a sort of poor man's string class that allocates more space for
+	itself as needed.
+*/
+
 #ifndef UTILS_H
 #define UTILS_H
 
@@ -34,7 +44,11 @@ extern "C" {
 #endif
 
 #include "md5.h"
-
+/**
+	@brief Macro version of safe_malloc()
+	@param Pointer to be updated to point to newly allocated memory
+	@param How many bytes to allocate
+*/
 #define OSRF_MALLOC(ptr, size) \
 	do {\
 			size_t _size = size; \
@@ -48,9 +62,17 @@ extern "C" {
 		} while(0)
 
 #ifdef NDEBUG
-// The original ... replace with noop once no more errors occur in NDEBUG mode
 #define osrf_clearbuf( s, n ) memset( s, 0, n )
 #else
+/**
+	 @brief Fills a buffer with binary zeros (normal mode) or exclamation points (debugging mode)
+	 @param s Pointer to buffer
+	 @param n Length of buffer
+
+	 This macro is used to help ferret out code that inappropriately assumes that a newly
+	 allocated buffer is filled with binary zeros.  No code should rely on it to do
+	 anything in particular.  Someday it may turn into a no-op.
+ */
 #define osrf_clearbuf( s, n ) \
 	do { \
 		char * clearbuf_temp_s = (s); \
@@ -59,6 +81,12 @@ extern "C" {
 		clearbuf_temp_s[ clearbuf_temp_n - 1 ] = '\0'; \
 	} while( 0 )
 #endif
+
+/**
+	@brief Macro version of buffer_add()
+	@param gb Pointer to a growing_buffer
+	@param data Pointer to the string to be appended
+*/
 
 #define OSRF_BUFFER_ADD(gb, data) \
 	do {\
@@ -74,6 +102,12 @@ extern "C" {
 		}\
 	} while(0)
 
+/**
+	@brief Macro version of buffer_add_n()
+	@param gb Pointer to a growing_buffer
+	@param data Pointer to the bytes to be appended
+	@param n How many characters to append
+*/
 #define OSRF_BUFFER_ADD_N(gb, data, n) \
 	do {\
 		growing_buffer* gb__ = gb; \
@@ -89,6 +123,11 @@ extern "C" {
 }\
 } while(0)
 
+/**
+	@brief Macro version of buffer_add_char()
+	@param gb Pointer to a growing buffer
+	@param c Character to be appended
+*/
 #define OSRF_BUFFER_ADD_CHAR(gb, c)\
 	do {\
 		growing_buffer* _gb = gb;\
@@ -103,6 +142,10 @@ extern "C" {
 		}\
 	}while(0)
 
+/**
+	@brief Macro version of buffer_reset()
+	@param gb Pointer to the growing_buffer to be reset
+*/
 #define OSRF_BUFFER_RESET(gb) \
 	do {\
 		growing_buffer* _gb = gb;\
@@ -110,10 +153,23 @@ extern "C" {
     	_gb->n_used = 0;\
 	}while(0)
 
+/**
+	@brief Resolves to a const pointer to the string inside a growing_buffer
+	@param Pointer to a growing_buffier
+*/
 #define OSRF_BUFFER_C_STR( x ) ((const char *) (x)->buf)
 
 
-/* turns a va_list into a string */
+/**
+	@brief Turn a printf-style format string and a va_list into a string.
+	@param x A printf-style format string.
+
+	This macro can work only in a variadic function.
+
+	The resulting string is constructed in a local buffer, whose address is
+	given by the pointer VA_BUF,  This buffer is NOT allocated dynamically,
+	so don't try to free it.
+*/
 #define VA_LIST_TO_STRING(x) \
 	unsigned long __len = 0;\
 	va_list args; \
@@ -130,7 +186,13 @@ extern "C" {
 	va_end(a_copy); \
 	char* VA_BUF = _b; \
 
-/* turns a long into a string */
+/**
+	@brief Format a long into a string.
+	@param l A long
+
+	The long is formatted into a local buffer whose address is given by the pointer
+	LONG_TO_STRING.  This buffer is NOT allocated dynamically, so don't try to free it.
+*/
 #define LONG_TO_STRING(l) \
 	unsigned int __len = snprintf(NULL, 0, "%ld", l) + 2;\
 	char __b[__len]; \
@@ -138,6 +200,13 @@ extern "C" {
 	snprintf(__b, __len - 1, "%ld", l); \
 	char* LONGSTR = __b;
 
+/**
+	@brief Format a double into a string.
+	@param l A double
+
+	The double is formatted into a local buffer whose address is given by the pointer
+	LONG_TO_STRING.  This buffer is NOT allocated dynamically, so don't try to free it.
+ */
 #define DOUBLE_TO_STRING(l) \
 	unsigned int __len = snprintf(NULL, 0, "%f", l) + 2; \
 	char __b[__len]; \
@@ -145,6 +214,13 @@ extern "C" {
 	snprintf(__b, __len - 1, "%f", l); \
 	char* DOUBLESTR = __b;
 
+/**
+	@brief Format a long double into a string.
+	@param l A long double
+
+	The long double is formatted into a local buffer whose address is given by the pointer
+	LONG_TO_STRING.  This buffer is NOT allocated dynamically, so don't try to free it.
+ */
 #define LONG_DOUBLE_TO_STRING(l) \
 	unsigned int __len = snprintf(NULL, 0, "%Lf", l) + 2; \
 	char __b[__len]; \
@@ -153,6 +229,13 @@ extern "C" {
 	char* LONGDOUBLESTR = __b;
 
 
+/**
+	@brief Format an int into a string.
+	@param l An int
+
+	The int is formatted into a local buffer whose address is given by the pointer
+	LONG_TO_STRING.  This buffer is NOT allocated dynamically, so don't try to free it.
+ */
 #define INT_TO_STRING(l) \
 	unsigned int __len = snprintf(NULL, 0, "%d", l) + 2; \
 	char __b[__len]; \
@@ -184,6 +267,9 @@ extern "C" {
 	
 
 
+/**
+	@brief The maximum buffer size for a growing_buffer
+*/
 #define BUFFER_MAX_SIZE 10485760 
 
 /* these are evil and should be condemned 
@@ -192,7 +278,7 @@ extern "C" {
 	set_proc_title. 
 	the title is only allowed to be as big as the
 	initial process name of the process (full size of argv[]).
-	truncation may occurr.
+	truncation may occur.
  */
 int init_proc_title( int argc, char* argv[] );
 int set_proc_title( const char* format, ... );
@@ -206,13 +292,30 @@ void* safe_calloc(int size);
 // ---------------------------------------------------------------------------------
 // Generic growing buffer. Add data all you want
 // ---------------------------------------------------------------------------------
+/**
+	@brief A poor man's string class in C.
+
+	A growing_buffer stores a character string.  Related functions append data
+	and otherwise manage the string, allocating more memory automatically as needed
+	when the string gets too big for its buffer.
+
+	A growing_buffer is designed for text, not binary data.  In particular: if you
+	try to store embedded nuls in one, something bad will almost certainly happen.
+*/
 struct growing_buffer_struct {
+	/** @brief Pointer to the internal buffer */
 	char *buf;
+	/** @brief Length of the stored string */
 	int n_used;
+	/** @brief Size of the internal buffer */
 	int size;
 };
 typedef struct growing_buffer_struct growing_buffer;
 
+/**
+	@brief The length of the string stored by a growing_buffer.
+	@param x A pointer to the growing buffer.
+*/
 #define buffer_length(x) (x)->n_used
 
 growing_buffer* buffer_init( int initial_num_bytes);
@@ -267,14 +370,14 @@ double get_timestamp_millis( void );
 int stringisnum(const char* s);
 
 
-/** 
+/* 
   Calculates the md5 of the text provided.
   The returned string must be freed by the caller.
   */
 char* md5sum( const char* text, ... );
 
 
-/**
+/*
   Checks the validity of the file descriptor
   returns -1 if the file descriptor is invalid
   returns 0 if the descriptor is OK
