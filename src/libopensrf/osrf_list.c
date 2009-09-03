@@ -1,13 +1,52 @@
-#include <opensrf/osrf_list.h>
+/**
+	@file osrf_list.c	
+	@brief Implementation of osrfList, sort of like a vector class.
+	
+	An osrfList manages an array of void pointers, allocating additional memory as
+	needed when the array needs to grow.  Optionally, it may call a designated callback
+	function as a destructor when one of the void pointers is removed, or when the
+	array itself is destroyed.
 
+	The callback function must be of type void and accept a void pointer as its parameter.
+	There is no specific function for installing or uninstalling such a callback; just assign
+	directly to the freeItem member of the osrfList structure.
+
+	Unlike a typical vector class in, or example, C++, an osrfList does NOT shift items
+	around to fill in the gap when you remove an item.  Items stay put.
+
+	The use of void pointers involves the usual risk of type errors, so be careful.
+
+	NULL pointers are a special case.  On the one hand an osrfList will happily store
+	a NULL if you ask it to.  On the other hand it may overwrite a NULL pointer previously
+	stored, treating it as disposable.  Conclusion: you can store NULLs in an osrfList, but
+	not safely, unless you are familiar with the internal details of the implementation and
+	work around them accordingly.
+*/
+
+#include <opensrf/osrf_list.h>
+/** @brief The initial size of the array when none is specified */
 #define OSRF_LIST_DEFAULT_SIZE 48 /* most opensrf lists are small... */
+/** @brief How many slots to add at a time when the array grows */
 #define OSRF_LIST_INC_SIZE 256
 //#define OSRF_LIST_MAX_SIZE 10240
 
+/**
+	@brief  Create a new osrfList with OSRF_LIST_DEFAULT_SIZE slots.
+	@return A pointer to the new osrfList.
+
+	The calling code is responsible for freeing the osrfList by calling osrfListFree().
+*/
 osrfList* osrfNewList() {
 	return osrfNewListSize( OSRF_LIST_DEFAULT_SIZE );
 }
 
+/**
+	@brief Create a new osrfList with a specified number of slots.
+	@param size How many pointers to store initially.
+	@return A pointer to the new osrfList.
+
+	The calling code is responsible for freeing the osrfList by calling osrfListFree().
+*/
 osrfList* osrfNewListSize( unsigned int size ) {
 	osrfList* list;
 	OSRF_MALLOC(list, sizeof(osrfList));
@@ -22,17 +61,40 @@ osrfList* osrfNewListSize( unsigned int size ) {
 	int i;
 	for( i = 0; i < list->arrsize; ++i )
 		list->arrlist[ i ] = NULL;
-	
+
 	return list;
 }
 
 
+/**
+	@brief Add a pointer to the end of the array.
+	@param list A pointer to the osrfList
+	@param item A pointer to be added to the list.
+	@return Zero if successful, or -1 if the list parameter is NULL.
+
+	The item pointer is stored one position past the last slot that might be in use.  The calling
+	code should, in general, make no assumptions about where that position is.  See the discussion
+	of osrfListGetCount() for the dirty details.
+*/
 int osrfListPush( osrfList* list, void* item ) {
 	if(!(list)) return -1;
 	osrfListSet( list, item, list->size );
 	return 0;
 }
 
+/**
+	@brief Store a pointer in the first unoccupied slot.
+	@param list A pointer to the osrfList.
+	@param item The pointer to be stored.
+	@return If successful, the number of slots currently in use, or -1 if either of the
+		parameters is NULL.
+
+	Find the lowest-numbered position holding a NULL and overwrite it with the specified
+	item pointer.
+
+	The meaning of the return value (other than -1) is fuzzy and probably not useful,
+	because some of the slots counted as "in use" may in fact hold NULLs.
+*/
 int osrfListPushFirst( osrfList* list, void* item ) {
 	if(!(list && item)) return -1;
 	int i;
@@ -42,6 +104,24 @@ int osrfListPushFirst( osrfList* list, void* item ) {
 	return list->size;
 }
 
+/**
+	@brief Store a pointer at a specified position in an osrfList.
+	@param list A pointer to the osrfList.
+	@param item The pointer to be stored.
+	@param position Where to store it (a zero-based subscript).
+	@return A pointer to the previous occupant of the specified slot, if any, or NULL if
+		it was unoccupied, or if we have freed the occupant.
+
+	If the pointer previously stored in the specified slot is not NULL, then the behavior
+	depends on whether the calling code has provided a callback function for freeing stored
+	items.  If there is such a callback function, we call it for the previously stored
+	pointer, and return NULL.  Otherwise we return the previously stored pointer, so that
+	the calling code can free it if it needs to.
+
+	If the specified position is beyond the physical bounds of the array, we replace the
+	existing array with one that's big enough.  This replacement is transparent to the
+	calling code.
+*/
 void* osrfListSet( osrfList* list, void* item, unsigned int position ) {
 	if(!list || position < 0) return NULL;
 
@@ -73,11 +153,28 @@ void* osrfListSet( osrfList* list, void* item, unsigned int position ) {
 }
 
 
+/**
+	@brief Fetch the pointer stored at a specified position.
+	@param list A pointer to an osrfList.
+	@param position A zero-based index specifying which item to fetch.
+	@return The pointer stored at the specified position, if any, or NULL.
+
+	The contents of the osrfList are unchanged.
+
+	If either parameter is invalid, the return value is NULL.
+*/
 void* osrfListGetIndex( const osrfList* list, unsigned int position ) {
 	if(!list || position >= list->size || position < 0) return NULL;
 	return list->arrlist[position];
 }
 
+/**
+	@brief Free an osrfList, and, optionally, everything in it.
+	@param list A pointer to the osrfList to be freed.
+
+	If the calling code has specified a function for freeing items, it is called for every
+	non-NULL pointer in the array.
+*/
 void osrfListFree( osrfList* list ) {
 	if(!list) return;
 
@@ -93,6 +190,22 @@ void osrfListFree( osrfList* list ) {
 	free(list);
 }
 
+/**
+	@brief Remove the pointer from a specified position.
+	@param list A pointer to the osrfList.
+	@param position A zero-based index identifying the pointer to be removed.
+	@return A copy of the pointer removed, or NULL if the item was freed.
+
+	Returns NULL if either parameter is invalid.  Otherwise:
+
+	If a callback function has been installed for freeing the item to which the pointer
+	points, it is called, and osrfListRemove returns NULL.  Otherwise it returns the pointer
+	at the specified position in the array.  In either case it overwrites the pointer in
+	the array with NULL.
+
+	Note that other positions in the array are not affected; i.e. osrfListRemove does NOT
+	shift other pointers down to fill in the hole left by the removal.
+*/
 void* osrfListRemove( osrfList* list, unsigned int position ) {
 	if(!list || position >= list->size || position < 0) return NULL;
 
@@ -107,6 +220,15 @@ void* osrfListRemove( osrfList* list, unsigned int position ) {
 	return olditem;
 }
 
+/**
+	@brief Remove a pointer from a specified position and return it.
+	@param list A pointer to the osrfList.
+	@param position A zero-based subscript identifying the pointer to be extracted.
+	@return The pointer at the specified position.
+
+	This function is identical to osrfListRemove(), except that it never frees the item
+	to which the pointer points, even if an item-freeing function has been designated.
+*/
 void* osrfListExtract( osrfList* list, unsigned int position ) {
 	if(!list || position >= list->size || position < 0) return NULL;
 
@@ -118,6 +240,18 @@ void* osrfListExtract( osrfList* list, unsigned int position ) {
 }
 
 
+/**
+	@brief Find the position where a given pointer is stored.
+	@param list A pointer to the osrfList.
+	@param addr A void pointer possibly stored in the osrfList.
+	@return A zero-based index indicating where the specified pointer resides in the array,
+		or -1 if no such pointer is found.
+
+	If either parameter is NULL, osrfListFind returns -1.
+
+	If the pointer in question is stored in more than one slot, osrfListFind returns the
+		lowest applicable index.
+*/
 int osrfListFind( const osrfList* list, void* addr ) {
 	if(!(list && addr)) return -1;
 	int index;
@@ -129,18 +263,66 @@ int osrfListFind( const osrfList* list, void* addr ) {
 }
 
 
+/**
+	@brief Return the number of slots in use.
+	@param list A pointer to an osrfList.
+	@return The number of slots in use.
+
+	The concept of "in use" is highly counter-intuitive and not, in general, very useful for the
+	calling code.  It is an internal optimization trick: it keeps track of how many slots *might*
+	contain non-NULL pointers, not how many slots *do* contain non_NULL pointers.  It
+	represents how many slots certain operations need to look at before they can safely stop.
+
+	Extreme example: starting with an empty osrfList, call osrfListSet()
+	to add a pointer at slot 15.  If you then call osrfListGetCount(),
+	it returns 16, because you installed the pointer in the sixteenth slot (counting from 1),
+	even though the array contains only one non-NULL pointer.
+
+	Now call osrfListRemove() to remove the pointer you just added. If you then call
+	osrfListGetCount(), it returns 15, even though all the pointers in the array are NULL,
+	because osrfListRemove() simply decremented the counter from its previous value of 16.
+
+	Conclusion: osrfListGetCount() tells you next to nothing about the contents of the array.
+	The value returned reflects not only the current state of the array but also the history
+	and sequence of previous operations.
+
+	If you have changed the contents of the array only by calls to osrfListPush() and/or
+	osrfListPushFirst(), thereby leaving no holes in the array at any time, then
+	osrfListGetCount() will return the answer you expect.  Otherwise all bets are off.
+*/
 unsigned int osrfListGetCount( const osrfList* list ) {
 	if(!list) return -1;
 	return list->size;
 }
 
 
+/**
+	@brief Remove the last pointer from the array.
+	@param list A pointer to an osrfList.
+	@return The pointer so removed, or NULL.
+
+	As with osrfListRemove(), if a callback function has been defined, osrfListPop() calls it
+	for the pointer it removes, and returns NULL.  Otherwise it returns the removed pointer.
+
+	The concept of "last pointer" is non-intuitive.  It reflects, in part, the history and
+	sequence of previous operations on the osrfList.  The pointer removed is the one with
+	subscript n - 1, where n is the value returned by osrfListGetCount().  See the discussion
+	of the latter function for the dirty details.
+
+	In brief, osrfListPop() will behave in the obvious and expected way as long as you never
+	create holes in the array via calls to osrfListSet(), osrfListRemove(), or osrfListExtract().
+*/
 void* osrfListPop( osrfList* list ) {
 	if(!list) return NULL;
 	return osrfListRemove( list, list->size - 1 );
 }
 
 
+/**
+	@brief Create and initialize an osrfListIterator for a given osrfList.
+	@param list A pointer to an osrfList.
+	@return A pointer to the newly constructed osrfListIterator.
+*/
 osrfListIterator* osrfNewListIterator( const osrfList* list ) {
 	if(!list) return NULL;
 	osrfListIterator* itr;
@@ -150,29 +332,54 @@ osrfListIterator* osrfNewListIterator( const osrfList* list ) {
 	return itr;
 }
 
+/**
+	@brief Advance an osrfListIterator to the next position in the array.
+	@param itr A pointer to the osrfListIterator to be advanced.
+	@return The pointer at the next position in the array; or NULL, if the osrfIterator
+		is already past the end.
+
+	The first call to osrfListIteratorNext() for a given osrfListIterator returns the first
+	pointer in the array (i.e slot zero, counting from zero).  Subsequent calls return successive
+	pointers from the array.  Once it has returned the last pointer, the iterator responds to
+	subsequent calls by returning NULL, unless it is restored to an initial state by a call to
+	osrfListIteratorReset().
+
+	A return value of NULL does not necessarily indicate that the iterator has reached the end
+	of the array.  Depending on the history and sequence of previous operations, the array may
+	include NULLs that are regarded as part of the array.  See the discussions of osrfListPop()
+	and osrfListGetCount().
+*/
 void* osrfListIteratorNext( osrfListIterator* itr ) {
 	if(!(itr && itr->list)) return NULL;
 	if(itr->current >= itr->list->size) return NULL;
 	return itr->list->arrlist[itr->current++];
 }
 
+/**
+	@brief Free an osrfListIterator.
+	@param itr A pointer to the osrfListIterator to be freed.
+*/
 void osrfListIteratorFree( osrfListIterator* itr ) {
 	if(!itr) return;
 	free(itr);
 }
 
 
+/**
+	@brief Reset an osrfListIterator to the beginning of the associated osrfList.
+	@param itr A pointer to the osrfListIterator to be reset.
+*/
 void osrfListIteratorReset( osrfListIterator* itr ) {
 	if(!itr) return;
 	itr->current = 0;
 }
 
 
-void osrfListVanillaFree( void* item ) {
-	free(item);
-}
-
+/**
+	@brief Install a default item-freeing callback function (the ANSI standard free() function).
+	@param list A pointer to the osrfList where the callback function will be installed.
+ */
 void osrfListSetDefaultFree( osrfList* list ) {
 	if(!list) return;
-	list->freeItem = osrfListVanillaFree;
+	list->freeItem = free;
 }
