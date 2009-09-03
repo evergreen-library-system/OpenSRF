@@ -46,8 +46,8 @@ extern "C" {
 #include "md5.h"
 /**
 	@brief Macro version of safe_malloc()
-	@param Pointer to be updated to point to newly allocated memory
-	@param How many bytes to allocate
+	@param ptr Pointer to be updated to point to newly allocated memory
+	@param size How many bytes to allocate
 */
 #define OSRF_MALLOC(ptr, size) \
 	do {\
@@ -155,7 +155,7 @@ extern "C" {
 
 /**
 	@brief Resolves to a const pointer to the string inside a growing_buffer
-	@param Pointer to a growing_buffier
+	@param x Pointer to a growing_buffier
 */
 #define OSRF_BUFFER_C_STR( x ) ((const char *) (x)->buf)
 

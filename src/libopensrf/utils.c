@@ -236,17 +236,15 @@ char* va_list_to_string(const char* format, ...) {
 	va_list a_copy;
 
 	va_copy(a_copy, args);
-
 	va_start(args, format);
-	len = va_list_size(format, args);
 
-	char buf[len];
-	osrf_clearbuf(buf, sizeof(buf));
+	char* buf = safe_malloc( va_list_size(format, args) );
+	*buf = '\0';
 
 	va_start(a_copy, format);
 	vsnprintf(buf, len - 1, format, a_copy);
 	va_end(a_copy);
-	return strdup(buf);
+	return buf;
 }
 
 // ---------------------------------------------------------------------------------
@@ -286,6 +284,7 @@ growing_buffer* buffer_init(int num_initial_bytes) {
 /**
 	@brief Allocate more memory for a growing_buffer.
 	@param gb A pointer to the growing_buffer.
+	@param total_len How much total memory we need for the buffer.
 	@return 0 if successful, or 1 if not.
 
 	This function fails if it is asked to allocate BUFFER_MAX_SIZE
@@ -477,7 +476,7 @@ char* buffer_data( const growing_buffer *gb) {
 /**
 	@brief Remove the last character from a growing_buffer.
 	@param gb A pointer to the growing_buffer.
-	@return The character removed (or '\0' if the string is already empty).
+	@return The character removed (or a nul byte if the string is already empty).
 */
 char buffer_chomp(growing_buffer* gb) {
 	char c = '\0';
@@ -496,7 +495,7 @@ char buffer_chomp(growing_buffer* gb) {
 	@param c The character to be appended.
 	@return The length of the resulting string.
 
-	If the character appended is a nul byte (i.e. '\0') it will still be appended as if
+	If the character appended is a nul byte it will still be appended as if
 	it were a normal character.  The results are likely to be unpleasant.
 */
 int buffer_add_char(growing_buffer* gb, char c ) {
