@@ -4,7 +4,7 @@
   <router_name>router</router_name>
   <domain>private.localhost</domain>
   <username>opensrf</username>
-  <passwd>mypassword</passwd>
+  <passwd>password</passwd>
   <port>5222</port>
   <logfile>LOCALSTATEDIR/log/srfsh.log</logfile>
   <loglevel>4</loglevel>
