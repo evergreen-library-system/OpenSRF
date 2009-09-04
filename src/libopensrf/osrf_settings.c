@@ -2,13 +2,30 @@
 
 osrf_host_config* config = NULL;
 
+/**
+	@brief Fetch a specified string from an already-loaded configuration.
+	@param format A printf-style format string.  Subsequent parameters, if any, will be formatted
+		and inserted into the format string.
+	@return If the value is found, a pointer to a newly-allocated string containing the value;
+		otherwise NULL.
+
+	The format string, after expansion, defines a search path through a configuration previously
+	loaded and stored as a jsonObject.
+
+	The configuration must have been already been loaded via a call to osrf_settings_retrieve()
+	(probably via a call to osrfSystemBootstrap()).  Otherwise this function will call exit()
+	immediately.
+
+	The calling code is responsible for freeing the string.
+*/
 char* osrf_settings_host_value(const char* format, ...) {
 	VA_LIST_TO_STRING(format);
 
 	if( ! config ) {
-		const char * msg = "NULL config pointer";
-		fprintf( stderr, "osrf_settings_host_value: %s\n", msg );
-		osrfLogError( OSRF_LOG_MARK, msg );
+		const char * msg = "NULL config pointer; looking for config_context ";
+		fprintf( stderr, "osrf_settings_host_value: %s\"%s\"\n",
+			msg, VA_BUF );
+		osrfLogError( OSRF_LOG_MARK, "%s\"%s\"", msg, VA_BUF );
 		exit( 99 );
 	}
 
@@ -18,13 +35,30 @@ char* osrf_settings_host_value(const char* format, ...) {
 	return val;
 }
 
+/**
+	@brief Fetch a specified subset of an already-loaded configuration.
+	@param format A printf-style format string.  Subsequent parameters, if any, will be formatted
+		and inserted into the format string.
+	@return If the value is found, a pointer to a newly created jsonObject containing the
+		specified subset; otherwise NULL.
+
+	The format string, after expansion, defines a search path through a configuration previously
+	loaded and stored as a jsonObject.
+
+	The configuration must have been already been loaded via a call to osrf_settings_retrieve()
+	(probably via a call to osrfSystemBootstrap()).  Otherwise this function will call exit()
+	immediately.
+
+	The calling code is responsible for freeing the jsonObject.
+ */
 jsonObject* osrf_settings_host_value_object(const char* format, ...) {
 	VA_LIST_TO_STRING(format);
 
 	if( ! config ) {
-		const char * msg = "config pointer is NULL";
-		fprintf( stderr, "osrf_settings_host_value_object: %s\n", msg );
-		osrfLogError( OSRF_LOG_MARK, msg );
+		const char * msg = "config pointer is NULL; looking for config context ";
+		fprintf( stderr, "osrf_settings_host_value_object: %s\"%s\"\n",
+			msg, VA_BUF );
+		osrfLogError( OSRF_LOG_MARK, "%s\"%s\"", msg, VA_BUF );
 		exit( 99 );
 	}
 
@@ -50,7 +84,7 @@ int osrf_settings_retrieve(const char* hostname) {
 			osrfMessageFree(omsg);
 			osrfLogError(
 				OSRF_LOG_MARK,
-			"NULL or non-existant osrfMessage result content received from host %s, "
+			"NULL or non-existent osrfMessage result content received from host %s, "
 				"broken message or no settings for host",
 				hostname
 			);
