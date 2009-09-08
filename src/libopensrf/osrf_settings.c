@@ -1,6 +1,25 @@
+/**
+	@file osrf_settings.c
+	@brief Facility for retrieving server configuration settings.
+*/
 #include <opensrf/osrf_settings.h> 
 
-osrf_host_config* config = NULL;
+/**
+	@brief Stores a copy of server configuration settings as a jsonObject.
+
+	It also stores the host name of the settings server which supplied the configuration
+	settings.  In practice nothing uses the stored copy of the host name.
+*/
+struct osrf_host_config_ {
+	/** @brief The host name of the settings server */
+	char* hostname;
+	/** @brief The configuration settings as a jsonObject */
+jsonObject* config;
+};
+
+static osrf_host_config* osrf_settings_new_host_config(const char* hostname);
+
+static osrf_host_config* config = NULL;
 
 /**
 	@brief Fetch a specified string from an already-loaded configuration.
@@ -66,6 +85,22 @@ jsonObject* osrf_settings_host_value_object(const char* format, ...) {
 }
 
 
+/**
+	@brief Look up the configuration settings and cache them for future reference.
+	@param hostname The host name for the settings server.
+	@return Zero if successful, or -1 if not.
+
+	The configuration settings come from a settings server.  This arrangement is intended for
+	use by servers, so that all server settings can be stored in a single location.  Typically
+	a client process (that is not also a server in its own right) will read its own
+	configuration file locally.
+
+	The settings are cached as a jsonObject for future lookups by the functions
+	osrf_settings_host_value() and osrf_settings_host_value_object().
+
+	The calling code is responsible for freeing the cached settings by calling
+	osrf_settings_free_host_config().
+ */
 int osrf_settings_retrieve(const char* hostname) {
 
 	if(!config) {
@@ -106,7 +141,12 @@ int osrf_settings_retrieve(const char* hostname) {
 	return 0;
 }
 
-osrf_host_config* osrf_settings_new_host_config(const char* hostname) {
+/**
+	@brief Allocate and initialize an osrf_host_config for a given host name.
+	@param hostname Pointer to a host name.
+	@return Pointer to a newly created osrf_host_config.
+*/
+static osrf_host_config* osrf_settings_new_host_config(const char* hostname) {
 	if(!hostname) return NULL;
 	osrf_host_config* c = safe_malloc(sizeof(osrf_host_config));
 	c->hostname = strdup(hostname);
@@ -114,10 +154,18 @@ osrf_host_config* osrf_settings_new_host_config(const char* hostname) {
 	return c;
 }
 
+/**
+	@brief Deallocate an osrf_host_config and its contents.
+	@param c A pointer to the osrf_host_config to be deallocated.
+*/
 void osrf_settings_free_host_config(osrf_host_config* c) {
-	if(!c) c = config;
-	if(!c) return;
-	free(c->hostname);
-	jsonObjectFree(c->config);	
-	free(c);
+	if( !c ) {
+		c = config;
+		config = NULL;
+	}
+	if( c ) {
+		free(c->hostname);
+		jsonObjectFree(c->config);
+		free(c);
+	}
 }
