@@ -13,6 +13,7 @@ class GatewayRequest:
         self.method = method
         self.params = params
         self.path = 'gateway'
+        self.bytes_read = 0 # for now this, this is really characters read
 
     def setPath(self, path):
         self.path = path
@@ -62,8 +63,11 @@ class JSONGatewayRequest(GatewayRequest):
         return self.getFormat()
 
     def handleResponse(self, response):
-        s = response.read()
-        obj = to_object(s)
+
+        data = response.read()
+        self.bytes_read = len(str(response.headers)) + len(data)
+        obj = to_object(data)
+
         if obj['status'] != 200:
             sys.stderr.write('JSON gateway returned status %d:\n%s\n' % (obj['status'], s))
             return None
