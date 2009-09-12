@@ -1,3 +1,12 @@
+/**
+	@file string_array.h
+	@brief Header for osrfStringArray, a vector of strings.
+
+	An osrfStringArray manages an array of character pointers pointing to nul-terminated
+	strings.  New entries are added at the end.  When a string is removed, entries above
+	it are shifted down to fill in the gap.
+*/
+
 #ifndef STRING_ARRAY_H
 #define STRING_ARRAY_H
 
@@ -11,13 +20,25 @@
 extern "C" {
 #endif
 
+/**
+	@brief Maximum number of strings in an osrfStringArray.
+
+	This ostensible limit is not enforced.  If you exceed it, you'll get an error message,
+	but only as a slap on the wrist.  You'll still get your big list of strings.
+*/
 #define STRING_ARRAY_MAX_SIZE 4096
 
+/** @brief Macro version of osrfStringArrayFree() */
 #define OSRF_STRING_ARRAY_FREE(arr) osrfListFree( (osrfList*) (arr) )
 
+/**
+	@brief Structure of an osrfStringArray.
+*/
 typedef struct {
+	/** @brief The underlying container of pointers. */
     osrfList list;
-	int size;    // redundant with osrfList.size
+	/** @brief The number of strings stored. */
+	int size;    // redundant with list.size
 } osrfStringArray;
 
 osrfStringArray* osrfNewStringArray( int size );
@@ -26,7 +47,6 @@ void osrfStringArrayAdd( osrfStringArray*, const char* str );
 
 char* osrfStringArrayGetString( osrfStringArray* arr, int index );
 
-/* returns true if this array contains the given string */
 int osrfStringArrayContains(
 	const osrfStringArray* arr, const char* string );
 
@@ -34,11 +54,6 @@ void osrfStringArrayFree( osrfStringArray* );
 
 void osrfStringArrayRemove( osrfStringArray* arr, const char* str );
 
-/**
-  Parse a string into tokens separated by a specified delimiter,
-  as if by strtok() or strtok_r().  Load the tokens into an
-  osrfStringArray.
-  */
 osrfStringArray* osrfStringArrayTokenize( const char* src, char delim );
 
 #ifdef __cplusplus

@@ -1,5 +1,27 @@
+/**
+	@file string_array.c
+	@brief Implement osrfStringArray, a vector of character strings.
+
+	An osrfStringArray is implemented as a thin wrapper around an osrfList.  The latter is
+	incorporated bodily in the osrfStringArray structure, not as a pointer, so as to avoid
+	a layer of malloc() and free().
+
+	Operations on the osrfList are restricted so as not to leave NULL pointers in the middle.
+*/
+
 #include <opensrf/string_array.h>
 
+/**
+	@brief Create and initialize an osrfStringArray.
+	@param size How many strings to allow space for initially.
+	@return Pointer to a newly created osrfStringArray.
+
+	If the size parameter is zero, osrfNewStringArray uses a default value.  If the initial
+	allocation isn't big enough, more space will be added as needed.
+
+	The calling code is responsible for freeing the osrfStringArray by calling
+	osrfStringArrayFree().
+*/
 osrfStringArray* osrfNewStringArray(int size) {
 	if(size > STRING_ARRAY_MAX_SIZE)
 		osrfLogError( OSRF_LOG_MARK, "osrfNewStringArray size is too large");
@@ -27,6 +49,15 @@ osrfStringArray* osrfNewStringArray(int size) {
 	return arr;
 }
 
+/**
+	@brief Add a string to the end of an osrfStringArray.
+	@param arr Pointer to the osrfStringArray to which the string will be added.
+	@param string Pointer to the character string to be added.
+
+	The string stored is a copy; the original is not affected.
+
+	If either parameter is NULL, nothing happens.
+*/
 void osrfStringArrayAdd( osrfStringArray* arr, const char* string ) {
 	if(arr == NULL || string == NULL ) return;
 	if( arr->list.size > STRING_ARRAY_MAX_SIZE )
@@ -35,11 +66,25 @@ void osrfStringArrayAdd( osrfStringArray* arr, const char* string ) {
     arr->size = arr->list.size;
 }
 
+/**
+	@brief Return a pointer to the string stored at a specified position in an osrfStringArray.
+	@param arr Pointer to the osrfStringArray.
+	@param index A zero-based index into the array
+	@return A pointer to the string stored at the specified position. if it exists;
+		or else NULL.
+
+	The calling code should treat the returned pointer as if it were const.  Some day,
+	maybe it will be.
+*/
 char* osrfStringArrayGetString( osrfStringArray* arr, int index ) {
     if(!arr) return NULL;
 	return OSRF_LIST_GET_INDEX(&arr->list, index);
 }
 
+/**
+	@brief Free an osrfStringArray, and all the strings inside it.
+	@param arr Pointer to the osrfStringArray to be freed.
+*/
 void osrfStringArrayFree(osrfStringArray* arr) {
 
 	// This function is a sleazy hack designed to avoid the
@@ -55,42 +100,60 @@ void osrfStringArrayFree(osrfStringArray* arr) {
 	//
 	// If these facts ever cease to be true, we'll have to
 	// revisit this function.
-	
+
 	osrfListFree( (osrfList*) arr );
 }
 
+/**
+	@brief Determine whether an osrfStringArray contains a specified string.
+	@param arr Pointer to the osrfStringArray.
+	@param string Pointer to the string to be sought.
+	@return A boolean: 1 if the string is present in the osrfStringArray, or 0 if it isn't.
+
+	The search is case-sensitive.
+*/
 int osrfStringArrayContains(
 	const osrfStringArray* arr, const char* string ) {
 	if(!(arr && string)) return 0;
 	int i;
 	for( i = 0; i < arr->size; i++ ) {
         char* str = OSRF_LIST_GET_INDEX(&arr->list, i);
-		if(str && !strcmp(str, string)) 
+		if(str && !strcmp(str, string))
             return 1;
 	}
 
 	return 0;
 }
 
+/**
+	@brief Remove the first occurrence, if any, of a specified string from an osrfStringArray.
+	@param arr Pointer to the osrfStringArray.
+	@param tstr Pointer to a string to be removed.
+*/
 void osrfStringArrayRemove( osrfStringArray* arr, const char* tstr ) {
 	if(!(arr && tstr)) return;
 	int i;
     char* str;
+	int removed = 0;  // boolean
 
 	for( i = 0; i < arr->size; i++ ) {
-        /* find and remove the string */
-        str = OSRF_LIST_GET_INDEX(&arr->list, i);
+		/* find and remove the string */
+		str = OSRF_LIST_GET_INDEX(&arr->list, i);
 		if(str && !strcmp(str, tstr)) {
-            osrfListRemove(&arr->list, i);
+			osrfListRemove(&arr->list, i);
+			removed = 1;
 			break;
 		}
 	}
 
-    /* disable automatic item freeing on delete and shift
-     * items up in the array to fill in the gap
+	if( ! removed )
+		return;         // Nothing was removed
+
+    /* disable automatic item freeing on delete, and shift
+     * items down in the array to fill in the gap
      */
     arr->list.freeItem = NULL;
-	for( ; i < arr->size - 1; i++ ) 
+	for( ; i < arr->size - 1; i++ )
         osrfListSet(&arr->list, OSRF_LIST_GET_INDEX(&arr->list, i+1), i);
 
     /* remove the last item since it was shifted up */
@@ -101,14 +164,27 @@ void osrfStringArrayRemove( osrfStringArray* arr, const char* tstr ) {
 	arr->size--;
 }
 
+/**
+	@brief Tokenize a string into an array of substrings separated by a specified delimiter.
+	@param src A pointer to the string to be parsed.
+	@param delim The delimiter character.
+	@return Pointer to a newly constructed osrfStringArray containing the tokens.
+
+	A series of consecutive delimiter characters is treated as a single separator.
+
+	The input string is left unchanged.
+
+	The calling code is responsible for freeing the osrfStringArray by calling
+	osrfStringArrayFree().
+*/
 osrfStringArray* osrfStringArrayTokenize( const char* src, char delim )
 {
 	// Take the length so that we know how big a buffer we need,
-	// in the worst case.  Esitimate the number of tokens, assuming
+	// in the worst case.  Estimate the number of tokens, assuming
 	// 5 characters per token, and add a few for a pad.
 
 	if( NULL == src || '\0' == *src )		// Got nothing?
-		return osrfNewStringArray( 1 );		// Retrun empty array
+		return osrfNewStringArray( 1 );		// Return empty array
 
 	size_t src_len = strlen( src );
 	size_t est_count = src_len / 6 + 5;
@@ -147,6 +223,6 @@ osrfStringArray* osrfStringArrayTokenize( const char* src, char delim )
 			}
 		}
 	}
-	
+
 	return arr;
 }
