@@ -129,7 +129,7 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 		}
 		jsonObjectFree(apps);
 
-		char* appname = NULL;
+		const char* appname = NULL;
 		i = 0;
 		while( (appname = osrfStringArrayGetString(arr, i++)) ) {
 
