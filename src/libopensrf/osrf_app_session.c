@@ -267,7 +267,7 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 
 	osrfStringArray* arr = osrfNewStringArray(8);
 	osrfConfigGetValueList(NULL, arr, "/domain");
-	char* domain = osrfStringArrayGetString(arr, 0);
+	const char* domain = osrfStringArrayGetString(arr, 0);
 
 	if (!domain) {
 		osrfLogWarning( OSRF_LOG_MARK, "No domains specified in the OpenSRF config file");
