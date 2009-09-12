@@ -114,7 +114,7 @@ void osrfBigHashFree( osrfBigHash* hash ) {
 	osrfStringArray* keys = osrfBigHashKeys( hash );
 
 	for( i = 0; i != keys->size; i++ )  {
-		char* key = (char*) osrfStringArrayGetString( keys, i );
+		const char* key = osrfStringArrayGetString( keys, i );
 		osrfBigHashRemove( hash, key );
 	}
 
