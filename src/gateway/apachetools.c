@@ -132,8 +132,8 @@ osrfStringArray* apacheGetParamValues(osrfStringArray* params, char* key) {
 	osrfLogDebug(OSRF_LOG_MARK, "Fetching URL values for key %s", key);
 	int i;
 	for( i = 0; i < params->size; i++ ) {
-		char* nkey = osrfStringArrayGetString(params, i++);
-		if(key && !strcmp(nkey, key)) 
+		const char* nkey = osrfStringArrayGetString(params, i++);
+		if(nkey && !strcmp(nkey, key)) 
 			osrfStringArrayAdd(sarray, osrfStringArrayGetString(params, i));
 	}
 	return sarray;
@@ -146,8 +146,8 @@ char* apacheGetFirstParamValue(osrfStringArray* params, char* key) {
 	int i;
 	osrfLogDebug(OSRF_LOG_MARK, "Fetching first URL value for key %s", key);
 	for( i = 0; i < params->size; i++ ) {
-		char* nkey = osrfStringArrayGetString(params, i++);
-		if(key && !strcmp(nkey, key)) 
+		const char* nkey = osrfStringArrayGetString(params, i++);
+		if(nkey && !strcmp(nkey, key)) 
 			return strdup(osrfStringArrayGetString(params, i));
 	}
 
