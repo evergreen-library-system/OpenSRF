@@ -242,7 +242,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		if(!strcasecmp(input_format, "json")) {
 			jsonObject * arr = jsonNewObject(NULL);
 
-			char* str;
+			const char* str;
 			int i = 0;
 
 			while( (str = osrfStringArrayGetString(mparams, i++)) ) 
@@ -258,7 +258,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 			if(!strcasecmp(input_format, "xml")) {
 				jsonObject* jsonParams = jsonNewObject(NULL);
 
-				char* str;
+				const char* str;
 				int i = 0;
 				while( (str = osrfStringArrayGetString(mparams, i++)) ) {
 					jsonObjectPush(jsonParams, jsonXMLToJSONObject(str));
@@ -286,7 +286,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		if(!authtoken) authtoken = "";
 		growing_buffer* act = buffer_init(128);	
 		buffer_fadd(act, "[%s] [%s] [%s] %s %s", r->connection->remote_ip, authtoken, osrf_locale, service, method );
-		char* str; int i = 0;
+		const char* str; int i = 0;
 		while( (str = osrfStringArrayGetString(mparams, i++)) ) {
 			if( i == 1 ) {
 				OSRF_BUFFER_ADD(act, " ");
