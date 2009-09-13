@@ -45,7 +45,7 @@ osrfStringArray* osrfNewStringArray( int size );
 
 void osrfStringArrayAdd( osrfStringArray*, const char* str );
 
-char* osrfStringArrayGetString( osrfStringArray* arr, int index );
+const char* osrfStringArrayGetString( const osrfStringArray* arr, int index );
 
 int osrfStringArrayContains(
 	const osrfStringArray* arr, const char* string );

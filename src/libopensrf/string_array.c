@@ -72,11 +72,8 @@ void osrfStringArrayAdd( osrfStringArray* arr, const char* string ) {
 	@param index A zero-based index into the array
 	@return A pointer to the string stored at the specified position. if it exists;
 		or else NULL.
-
-	The calling code should treat the returned pointer as if it were const.  Some day,
-	maybe it will be.
 */
-char* osrfStringArrayGetString( osrfStringArray* arr, int index ) {
+const char* osrfStringArrayGetString( const osrfStringArray* arr, int index ) {
     if(!arr) return NULL;
 	return OSRF_LIST_GET_INDEX(&arr->list, index);
 }
