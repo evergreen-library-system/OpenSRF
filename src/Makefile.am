@@ -17,7 +17,6 @@
 export OPENSRF	= opensrf
 export BINDIR	= @bindir@
 export LIBDIR	= @libdir@
-jsdir = $(LIBDIR)/javascript
 export OSRF_JAVA_DEPSDIR = @OSRF_JAVA_DEPSDIR@
 etcdir = $(ETCDIR)
 
@@ -34,30 +33,35 @@ if BUILDJAVA
 MAYBE_JA = java
 endif
 
-SUBDIRS = libopensrf c-apps router srfsh jserver gateway perl $(MAYBE_PY) $(MAYBE_JA)
+if INSTALLJAVASCRIPT
+MAYBE_JAVASCRIPT = javascript
+jsdir = $(prefix)/lib/javascript
+js_SCRIPTS = javascript/DojoSRF.js javascript/JSON_v0.js javascript/JSON_v1.js javascript/md5.js javascript/opensrf.js javascript/opensrf_xhr.js javascript/opensrf_xmpp.js
+endif
 
+if BUILDCORE
+MAYBE_CORE = libopensrf c-apps router srfsh jserver gateway perl
 dist_bin_SCRIPTS = @top_srcdir@/bin/opensrf-perl.pl
 bin_SCRIPTS = @top_srcdir@/bin/osrf_config @top_srcdir@/bin/osrf_ctl.sh 
-
 dist_sysconf_DATA = @top_srcdir@/examples/opensrf.xml.example @top_srcdir@/examples/opensrf_core.xml.example @top_srcdir@/examples/srfsh.xml.example 
+endif
+
+SUBDIRS = $(MAYBE_CORE) $(MAYBE_PY) $(MAYBE_JA)
 
 install-exec-local:
 	mkdir -p $(VAR)
 	mkdir -p $(PID)
 	mkdir -p $(LOG)
 	mkdir -p $(SOCK)
-	mkdir -p $(jsdir)
 
 install-exec-hook:
-	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/opensrf.xml.example'
-	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(DESTDIR)@sysconfdir@/opensrf.xml.example'
-	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/opensrf_core.xml.example'
-	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(DESTDIR)@sysconfdir@/opensrf_core.xml.example'
-	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/srfsh.xml.example'
-	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(DESTDIR)@sysconfdir@/srfsh.xml.example'
-	cp -r @srcdir@/javascript/* $(jsdir)/
+	if [ $(MAYBE_CORE) ]; then sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/opensrf.xml.example' && \
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(DESTDIR)@sysconfdir@/opensrf.xml.example' && \
+	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/opensrf_core.xml.example' && \
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(DESTDIR)@sysconfdir@/opensrf_core.xml.example' && \
+	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/srfsh.xml.example' && \
+	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(DESTDIR)@sysconfdir@/srfsh.xml.example'; fi
 
 uninstall-hook:
-	rm @includedir@/opensrf/apachetools.h
-	rm -R $(jsdir)
+	rm -f @includedir@/opensrf/apachetools.h
 

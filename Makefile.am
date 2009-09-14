@@ -81,40 +81,40 @@ libosrf_FILES = @srcdir@/src/libopensrf/basic_client.c \
 
 EXTRA_DIST = $(DOC_FILES) $(EXAMPLES_FILES) $(libosrf_FILES) $(strn_compat_FILES) $(python_FILES) $(java_FILES) @srcdir@/autogen.sh @srcdir@/src/extras @srcdir@/COPYING @srcdir@/DCO-1.1.txt @srcdir@/LICENSE.txt @srcdir@/src/perl @srcdir@/src/javascript
 
-opensrfincludedir = @includedir@/opensrf
-
 OSRFINC=@srcdir@/include/opensrf
 
-opensrfinclude_HEADERS = $(OSRFINC)/log.h \
-				$(OSRFINC)/md5.h \
-				$(OSRFINC)/osrf_application.h \
-				$(OSRFINC)/osrf_app_session.h \
-				$(OSRFINC)/osrf_big_hash.h \
-				$(OSRFINC)/osrf_big_list.h \
-				$(OSRFINC)/osrf_cache.h \
-				$(OSRFINC)/osrfConfig.h \
-				$(OSRFINC)/osrf_hash.h \
-				$(OSRFINC)/osrf_json.h \
-				$(OSRFINC)/osrf_json_utils.h \
-				$(OSRFINC)/osrf_json_xml.h \
-				$(OSRFINC)/osrf_legacy_json.h \
-				$(OSRFINC)/osrf_list.h \
-				$(OSRFINC)/osrf_message.h \
-				$(OSRFINC)/osrf_prefork.h \
-				$(OSRFINC)/osrf_settings.h \
-				$(OSRFINC)/osrf_stack.h \
-				$(OSRFINC)/osrf_system.h \
-				$(OSRFINC)/osrf_transgroup.h \
-				$(OSRFINC)/sha.h \
-				$(OSRFINC)/socket_bundle.h \
-				$(OSRFINC)/string_array.h \
-				$(OSRFINC)/transport_client.h \
-				$(OSRFINC)/transport_message.h \
-				$(OSRFINC)/transport_session.h \
-				$(OSRFINC)/utils.h \
-				$(OSRFINC)/xml_utils.h
+if BUILDCORE
+	include_HEADERS = $(OSRFINC)/log.h \
+		$(OSRFINC)/md5.h \
+		$(OSRFINC)/osrf_application.h \
+		$(OSRFINC)/osrf_app_session.h \
+		$(OSRFINC)/osrf_big_hash.h \
+		$(OSRFINC)/osrf_big_list.h \
+		$(OSRFINC)/osrf_cache.h \
+		$(OSRFINC)/osrfConfig.h \
+		$(OSRFINC)/osrf_hash.h \
+		$(OSRFINC)/osrf_json.h \
+		$(OSRFINC)/osrf_json_utils.h \
+		$(OSRFINC)/osrf_json_xml.h \
+		$(OSRFINC)/osrf_legacy_json.h \
+		$(OSRFINC)/osrf_list.h \
+		$(OSRFINC)/osrf_message.h \
+		$(OSRFINC)/osrf_prefork.h \
+		$(OSRFINC)/osrf_settings.h \
+		$(OSRFINC)/osrf_stack.h \
+		$(OSRFINC)/osrf_system.h \
+		$(OSRFINC)/osrf_transgroup.h \
+		$(OSRFINC)/sha.h \
+		$(OSRFINC)/socket_bundle.h \
+		$(OSRFINC)/string_array.h \
+		$(OSRFINC)/transport_client.h \
+		$(OSRFINC)/transport_message.h \
+		$(OSRFINC)/transport_session.h \
+		$(OSRFINC)/utils.h \
+		$(OSRFINC)/xml_utils.h \
+		src/gateway/apachetools.h
 
-
+endif
 
 SUBDIRS = src
 
@@ -123,12 +123,6 @@ jserver:
 
 jserver-install:
 	make -s -C src jserver-install
-
-javascript-install:
-	make -s -C src javascript-install
-
-install-data-hook:
-	cp @srcdir@/src/gateway/apachetools.h @includedir@/opensrf/apachetools.h
 
 distclean-local:
 	rm -rf ./autom4te.cache

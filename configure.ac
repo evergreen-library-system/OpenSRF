@@ -68,6 +68,33 @@ esac],
 AM_CONDITIONAL([BUILDJAVA], [test x$OSRF_INSTALL_JAVA = xtrue])
 AC_SUBST([OSRF_INSTALL_JAVA])
 
+# install the javascript files?
+AC_ARG_ENABLE([javascript],
+[  --disable-javascript    disable installing JavaScript libraries],
+[case "${enableval}" in
+    yes) OSRF_INSTALL_JAVASCRIPT=true ;;
+    no) OSRF_INSTALL_JAVASCRIPT=false ;; 
+  *) AC_MSG_ERROR([please choose another value for --disable-javascript (supported values are yes or no)]) ;;
+esac],
+[OSRF_INSTALL_JAVASCRIPT=true])
+
+AM_CONDITIONAL([INSTALLJAVASCRIPT], [test x$OSRF_INSTALL_JAVASCRIPT = xtrue])
+AC_SUBST([OSRF_INSTALL_JAVASCRIPT])
+
+# install the OpenSRF core files?
+AC_ARG_ENABLE([core],
+[  --disable-core    disable installing core files],
+[case "${enableval}" in
+    yes) OSRF_INSTALL_CORE=true ;;
+    no) OSRF_INSTALL_CORE=false ;; 
+  *) AC_MSG_ERROR([please choose another value for --disable-core (supported values are yes or no)]) ;;
+esac],
+[OSRF_INSTALL_CORE=true])
+
+AM_CONDITIONAL([BUILDCORE], [test x$OSRF_INSTALL_CORE = xtrue])
+AC_SUBST([OSRF_INSTALL_CORE])
+
+
 # build and install the python modules
 AC_ARG_ENABLE([python],
 [  --enable-python  enable building and installing python modules],
@@ -92,13 +119,10 @@ AC_ARG_ENABLE(debug,
 esac],[debug=false])
 AM_CONDITIONAL(DEBUG, test x$debug = xtrue)
  
-
 # path to the directory containing the java dependency jar files (included if java installs)
 if test $OSRF_INSTALL_JAVA; then
 	AC_SUBST([OSRF_JAVA_DEPSDIR], [/opt/java])
 fi
-
-
 
 #--------------------------------
 # Checks for programs.
@@ -176,97 +200,99 @@ AC_SUBST(LIBDIRS)
 
 IFS=${IFSBAK}
 
-#--------------------------------
-# Check for dependencies.
-#--------------------------------
-
-#APACHE PREFORK DEV TEST
-AC_MSG_CHECKING([APXS])
-if test -f "${APXS2}"; then
-AC_MSG_RESULT([yes])
-else
-AC_MSG_ERROR([*** apxs not found, aborting])
-fi  
-
-#PYTHON TESTS
-if test x$OSRF_INSTALL_PYTHON = xtrue; then
-        AC_CHECK_PROG([HAVE_PYTHON],python,yes,no)
-        if test $HAVE_PYTHON = "no"; then
-                AC_MSG_ERROR([*** python not found, aborting])
-        fi
-        AC_PYTHON_MOD([setuptools])
-fi
-
-
-#-----------------------------
-# Checks for libraries.
-#-----------------------------
-
-AC_CHECK_LIB([dl], [dlerror], [],AC_MSG_ERROR(***OpenSRF requires libdl))
-AC_SEARCH_LIBS([mc_req_free], [memcache], [], AC_MSG_ERROR(***OpenSRF requires memcache development headers))
-AC_CHECK_LIB([ncurses], [initscr], [], AC_MSG_ERROR(***OpenSRF requires ncurses development headers))
-AC_CHECK_LIB([readline], [readline], [], AC_MSG_ERROR(***OpenSRF requires readline development headers))
-AC_CHECK_LIB([xml2], [xmlAddID], [], AC_MSG_ERROR(***OpenSRF requires xml2 development headers))
-
-
-
-#-----------------------------
-# Checks for header files.
-#-----------------------------
-
-AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h malloc.h netdb.h netinet/in.h stdlib.h string.h strings.h sys/socket.h sys/time.h sys/timeb.h syslog.h unistd.h])
-
-#------------------------------------------------------------------
-# Checks for typedefs, structures, and compiler characteristics.
-#------------------------------------------------------------------
-
-AC_C_CONST
-AC_C_INLINE
-AC_TYPE_PID_T
-AC_TYPE_SIZE_T
-AC_HEADER_TIME
-AC_STRUCT_TM
-
-#----------------------------------
-# Checks for library functions.
-#----------------------------------
-
-AC_FUNC_FORK
-AC_FUNC_MALLOC
-AC_FUNC_SELECT_ARGTYPES
-AC_TYPE_SIGNAL
-AC_FUNC_STRFTIME
-AC_FUNC_STRTOD
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname gettimeofday memset select socket strcasecmp strchr strdup strerror strncasecmp strndup strrchr strtol])
-
-#------------------------------------
-# Configuration and output
-#------------------------------------
-
 AC_CONFIG_FILES([Makefile
-                 doc/dokuwiki-doc-stubber.pl
-                 examples/math_xul_client/Makefile
-                 examples/math_bench.pl
-                 examples/math_client.py
-                 examples/multisession-test.pl
-                 src/Makefile
-                 src/c-apps/Makefile
-                 src/gateway/Makefile
-                 src/java/Makefile
-                 src/jserver/Makefile
-                 src/libopensrf/Makefile
-                 src/perl/Makefile
-                 src/ports/strn_compat/Makefile
-                 src/python/Makefile
-                 src/router/Makefile
-                 src/srfsh/Makefile
-                 bin/opensrf-perl.pl
-                 bin/osrf_config
-                 bin/osrf_ctl.sh])
+	src/Makefile])
 
+if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
+	#--------------------------------
+	# Check for dependencies.
+	#--------------------------------
+
+	#APACHE PREFORK DEV TEST
+	AC_MSG_CHECKING([APXS])
+	if test -f "${APXS2}"; then
+	AC_MSG_RESULT([yes])
+	else
+	AC_MSG_ERROR([*** apxs not found, aborting])
+	fi  
+
+	#PYTHON TESTS
+	if test x$OSRF_INSTALL_PYTHON = xtrue; then
+		AC_CHECK_PROG([HAVE_PYTHON],python,yes,no)
+		if test $HAVE_PYTHON = "no"; then
+			AC_MSG_ERROR([*** python not found, aborting])
+		fi
+		AC_PYTHON_MOD([setuptools])
+	fi
+
+
+	#-----------------------------
+	# Checks for libraries.
+	#-----------------------------
+
+	AC_CHECK_LIB([dl], [dlerror], [],AC_MSG_ERROR(***OpenSRF requires libdl))
+	AC_SEARCH_LIBS([mc_req_free], [memcache], [], AC_MSG_ERROR(***OpenSRF requires memcache development headers))
+	AC_CHECK_LIB([ncurses], [initscr], [], AC_MSG_ERROR(***OpenSRF requires ncurses development headers))
+	AC_CHECK_LIB([readline], [readline], [], AC_MSG_ERROR(***OpenSRF requires readline development headers))
+	AC_CHECK_LIB([xml2], [xmlAddID], [], AC_MSG_ERROR(***OpenSRF requires xml2 development headers))
+
+
+
+	#-----------------------------
+	# Checks for header files.
+	#-----------------------------
+
+	AC_HEADER_STDC
+	AC_HEADER_SYS_WAIT
+	AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h malloc.h netdb.h netinet/in.h stdlib.h string.h strings.h sys/socket.h sys/time.h sys/timeb.h syslog.h unistd.h])
+
+	#------------------------------------------------------------------
+	# Checks for typedefs, structures, and compiler characteristics.
+	#------------------------------------------------------------------
+
+	AC_C_CONST
+	AC_C_INLINE
+	AC_TYPE_PID_T
+	AC_TYPE_SIZE_T
+	AC_HEADER_TIME
+	AC_STRUCT_TM
+
+	#----------------------------------
+	# Checks for library functions.
+	#----------------------------------
+
+	AC_FUNC_FORK
+	AC_FUNC_MALLOC
+	AC_FUNC_SELECT_ARGTYPES
+	AC_TYPE_SIGNAL
+	AC_FUNC_STRFTIME
+	AC_FUNC_STRTOD
+	AC_FUNC_VPRINTF
+	AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname gettimeofday memset select socket strcasecmp strchr strdup strerror strncasecmp strndup strrchr strtol])
+
+	#------------------------------------
+	# Configuration and output
+	#------------------------------------
+
+	AC_CONFIG_FILES([doc/dokuwiki-doc-stubber.pl
+			 examples/math_xul_client/Makefile
+			 examples/math_bench.pl
+			 examples/math_client.py
+			 examples/multisession-test.pl
+			 src/c-apps/Makefile
+			 src/gateway/Makefile
+			 src/java/Makefile
+			 src/jserver/Makefile
+			 src/libopensrf/Makefile
+			 src/perl/Makefile
+			 src/ports/strn_compat/Makefile
+			 src/python/Makefile
+			 src/router/Makefile
+			 src/srfsh/Makefile
+			 bin/opensrf-perl.pl
+			 bin/osrf_config
+			 bin/osrf_ctl.sh])
+fi
 
 AC_OUTPUT
 
