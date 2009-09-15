@@ -67,7 +67,7 @@ is (OpenSRF::Utils::JSON->rawPerl2JSON(''), '""', "Null string as argument");
 is_deeply (OpenSRF::Utils::JSON->rawJSON2perl(OpenSRF::Utils::JSON->rawPerl2JSON($struct)),
            [ { foo => 'bar' }, 'baz', 'quux', 'x']);
 is (OpenSRF::Utils::JSON->rawJSON2perl(), undef, "Null argument");
-is (OpenSRF::Utils::JSON->rawJSON2perl(''), undef, "Null string as argument");
+is (OpenSRF::Utils::JSON->rawJSON2perl(''), undef, "Null string as argument"); # note inconsistency with above
 
 
 #

@@ -97,7 +97,8 @@ sub perl2JSON {
 
 =head2 rawJSON2perl
 
-Intermediate routine called by L</JSON2Perl>.
+Performs actual JSON -> data transformation, before
+L</JSONObject2Perl> is called.
 
 =cut
 
@@ -110,7 +111,8 @@ sub rawJSON2perl {
 
 =head2 rawPerl2JSON
 
-Intermediate routine used by L</Perl2JSON>.
+Performs actual data -> JSON transformation, after L</perl2JSONObject>
+has been called.
 
 =cut
 
@@ -124,7 +126,14 @@ sub rawPerl2JSON {
 
 =head2 JSONObject2Perl
 
-Intermediate routine called by L</rawJSON2perl>.
+Routine called by L</JSON2perl> after L</rawJSON2perl> is called.
+
+At this stage, the JSON string will have been vivified as data. This
+routine's job is to turn it back into an OpenSRF system object of some
+sort, if possible.
+
+If it's not possible, the original data (structure), or one very much
+like it will be returned.
 
 =cut
 
@@ -174,6 +183,22 @@ sub JSONObject2Perl {
 
 =head2 perl2JSONObject
 
+Routine called by L</perl2JSON> before L</rawPerl2JSON> is called.
+
+For OpenSRF system objects which have had hints about their classes
+stowed via L</register_class_hint>, this routine acts as a wrapper,
+encapsulating the incoming object in metadata about itself. It is not
+unlike the process of encoding IP datagrams.
+
+The only metadata encoded at the moment is the class hint, which is
+used to reinflate the data as an object of the appropriate type in the
+L</JSONObject2perl> routine.
+
+Other forms of data more-or-less come out as they went in, although
+C<CODE> or C<SCALAR> references will return what looks like an OpenSRF
+packet, but with a class hint of their reference type and an C<undef>
+payload.
+
 =cut
 
 sub perl2JSONObject {
@@ -204,6 +229,9 @@ sub perl2JSONObject {
 
 =head2 lookup_class
 
+Given a class hint, returns the classname matching it. Returns undef
+on failure.
+
 =cut
 
 sub lookup_class {
@@ -218,6 +246,9 @@ sub lookup_class {
 
 
 =head2 lookup_hint
+
+Given a classname, returns the class hint matching it. Returns undef
+on failure.
 
 =cut
 
