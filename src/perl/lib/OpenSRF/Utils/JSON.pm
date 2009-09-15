@@ -50,11 +50,13 @@ as.
 =cut
 
 sub register_class_hint {
-    # FIXME hint can't be a dupe
-    # FIXME fail unless we have hint and name
+    # FIXME hint can't be a dupe?
+    # FIXME fail unless we have hint and name?
+    # FIXME validate hint against IDL?
     my ($pkg, %args) = @_;
-    # FIXME why is the same thing shoved into two places? One mapping
-    # would suffice if class and hint were always returned together...
+    # FIXME maybe not just store a reference to %args; the lookup
+    # functions are really confusing at first glance as a side effect
+    # of this
     $_class_map{hints}{$args{hint}} = \%args;
     $_class_map{classes}{$args{name}} = \%args;
 }
@@ -101,9 +103,22 @@ Intermediate routine called by L</JSON2Perl>.
 
 sub rawJSON2perl {
     my ($pkg, $json) = @_;
-    # FIXME change regex conditional to '=~ /\S/'
-    return undef unless (defined $json and $json !~ /^\s*$/o);
+    return undef unless (defined $json and $json =~ /\S/o);
     return $parser->decode($json);
+}
+
+
+=head2 rawPerl2JSON
+
+Intermediate routine used by L</Perl2JSON>.
+
+=cut
+
+sub rawPerl2JSON {
+    # FIXME is there a reason this doesn't return undef with no
+    # content as rawJSON2perl does?
+    my ($pkg, $perl) = @_;
+    return $parser->encode($perl);
 }
 
 
@@ -152,19 +167,6 @@ sub JSONObject2Perl {
 }
 
 
-=head2 rawPerl2JSON
-
-Intermediate routine used by L</Perl2JSON>.
-
-=cut
-
-sub rawPerl2JSON {
-    # FIXME no validation of any sort
-    my ($pkg, $perl) = @_;
-    return $parser->encode($perl);
-}
-
-
 =head2 perl2JSONObject
 
 =cut
@@ -205,6 +207,7 @@ sub lookup_class {
     # they're named after. best case: flatten _class_map, since hints
     # and classes are identical
     my ($pkg, $hint) = @_;
+    return undef unless $hint;
     return $_class_map{hints}{$hint}{name}
 }
 
@@ -215,6 +218,7 @@ sub lookup_class {
 
 sub lookup_hint {
     my ($pkg, $class) = @_;
+    return undef unless $class;
     return $_class_map{classes}{$class}{hint}
 }
 
