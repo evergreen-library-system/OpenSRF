@@ -1,5 +1,7 @@
 package OpenSRF::Utils::JSON;
-use strict; use warnings;
+
+use warnings;
+use strict;
 use JSON::XS;
 
 our $parser = JSON::XS->new;
@@ -7,13 +9,13 @@ $parser->ascii(1);        # output \u escaped strings for any char with a value 
 $parser->allow_nonref(1); # allows non-reference values to equate to themselves (see perldoc)
 
 our %_class_map = ();
-our $JSON_CLASS_KEY = '__c';
-our $JSON_PAYLOAD_KEY = '__p';
+our $JSON_CLASS_KEY = '__c';   # points to the classname of encoded objects
+our $JSON_PAYLOAD_KEY = '__p'; # same, for payload
 
 
 =head1 NAME
 
-OpenSRF::Utils::JSON - Bucket-o-Routines for JSON
+OpenSRF::Utils::JSON - Serialize/Vivify objects
 
 =head1 SYNOPSIS
 
@@ -23,39 +25,35 @@ invocant, as in
 
     OpenSRF::Utils::JSON->JSON2perl($string);
 
-Most routines are straightforward data<->JSON transformation wrappers
-around L<JSON::XS>, but some (like L</register_class_hint>) provide
-OpenSRF functionality.
+The routines which are called by existing external code all deal with
+the serialization/stringification of objects and their revivification.
 
 =head1 ROUTINES
 
 =head2 register_class_hint
 
+This routine is used by objects which wish to serialize themselves
+with the L</perl2JSON> routine. It has two required arguments, C<name>
+and C<hint>.
+
+    OpenSRF::Util::JSON->register_class_hint( hint => 'osrfException',
+                                              name => 'OpenSRF::DomainObject::oilsException');
+
+Where C<hint> can be any unique string (but canonically is the name
+from the IDL which matches the object being operated on), and C<name>
+is the language-specific classname which objects will be revivified
+as.
+
 =cut
 
 sub register_class_hint {
+    # FIXME hint can't be a dupe
+    # FIXME fail unless we have hint and name
     my ($pkg, %args) = @_;
     $_class_map{hints}{$args{hint}} = \%args;
     $_class_map{classes}{$args{name}} = \%args;
 }
 
-=head2 lookup_class
-
-=cut
-
-sub lookup_class {
-    my ($pkg, $hint) = @_;
-    return $_class_map{hints}{$hint}{name}
-}
-
-=head2 lookup_hint
-
-=cut
-
-sub lookup_hint {
-    my ($pkg, $class) = @_;
-    return $_class_map{classes}{$class}{hint}
-}
 
 =head2 JSON2perl
 
@@ -67,6 +65,7 @@ sub JSON2perl {
     return $pkg->JSONObject2Perl($perl);
 }
 
+
 =head2 perl2JSON
 
 =cut
@@ -77,30 +76,6 @@ sub perl2JSON {
     return $pkg->rawPerl2JSON($json);
 }
 
-=head2 rawJSON2perl
-
-Internal routine used by L</JSON2Perl>. Wrapper around
-L<JSON::XS::decode>.
-
-=cut
-
-sub rawJSON2perl {
-    my ($class, $json) = @_;
-    return undef unless defined $json and $json !~ /^\s*$/o;
-    return $parser->decode($json);
-}
-
-=head2 rawPerl2JSON
-
-Internal routine used by L</Perl2JSON>. Wrapper around
-L<JSON::XS::encode>.
-
-=cut
-
-sub rawPerl2JSON {
-    my ($class, $perl) = @_;
-    return $parser->encode($perl);
-}
 
 =head2 JSONObject2Perl
 
@@ -134,13 +109,13 @@ sub JSONObject2Perl {
     return $obj;
 }
 
+
 =head2 perl2JSONObject
 
 =cut
 
 sub perl2JSONObject {
-    my $class = shift;
-    my $obj = shift;
+    my ($pkg, $obj) = @_;
     my $ref = ref($obj);
 
     return $obj unless $ref;
@@ -150,18 +125,69 @@ sub perl2JSONObject {
 
     if(UNIVERSAL::isa($obj, 'HASH')) {
         $newobj = {};
-        $newobj->{$_} = $class->perl2JSONObject($obj->{$_}) for (keys %$obj);
+        $newobj->{$_} = $pkg->perl2JSONObject($obj->{$_}) for (keys %$obj);
     } elsif(UNIVERSAL::isa($obj, 'ARRAY')) {
         $newobj = [];
-        $newobj->[$_] = $class->perl2JSONObject($obj->[$_]) for(0..scalar(@$obj) - 1);
+        $newobj->[$_] = $pkg->perl2JSONObject($obj->[$_]) for(0..scalar(@$obj) - 1);
     }
 
     if($ref ne 'HASH' and $ref ne 'ARRAY') {
-        $ref = $class->lookup_hint($ref) || $ref;
+        $ref = $pkg->lookup_hint($ref) || $ref;
         $newobj = {$JSON_CLASS_KEY => $ref, $JSON_PAYLOAD_KEY => $newobj};
     }
 
     return $newobj;
+}
+
+
+=head2 rawJSON2perl
+
+Internal routine used by L</JSON2Perl>. Wrapper around
+L<JSON::XS::decode>.
+
+=cut
+
+sub rawJSON2perl {
+    my ($pkg, $json) = @_;
+    return undef unless defined $json and $json !~ /^\s*$/o;
+    return $parser->decode($json);
+}
+
+
+=head2 rawPerl2JSON
+
+Internal routine used by L</Perl2JSON>. Wrapper around
+L<JSON::XS::encode>.
+
+=cut
+
+sub rawPerl2JSON {
+    my ($pkg, $perl) = @_;
+    return $parser->encode($perl);
+}
+
+
+=head2 lookup_class
+
+=cut
+
+sub lookup_class {
+    # FIXME when there are tests, see if these two routines can be
+    # rewritten as one, or at least made to do lookup in the structure
+    # they're named after. best case: flatten _class_map, since hints
+    # and classes are identical
+    my ($pkg, $hint) = @_;
+    return $_class_map{hints}{$hint}{name}
+}
+
+
+=head2 lookup_hint
+
+=cut
+
+sub lookup_hint {
+    my ($pkg, $class) = @_;
+    return $_class_map{classes}{$class}{hint}
 }
 
 =head2 true
