@@ -13,6 +13,7 @@ our $JSON_CLASS_KEY = '__c';   # points to the classname of encoded objects
 our $JSON_PAYLOAD_KEY = '__p'; # same, for payload
 
 
+
 =head1 NAME
 
 OpenSRF::Utils::JSON - Serialize/Vivify objects
@@ -28,6 +29,8 @@ invocant, as in
 The routines which are called by existing external code all deal with
 the serialization/stringification of objects and their revivification.
 
+
+
 =head1 ROUTINES
 
 =head2 register_class_hint
@@ -36,8 +39,8 @@ This routine is used by objects which wish to serialize themselves
 with the L</perl2JSON> routine. It has two required arguments, C<name>
 and C<hint>.
 
-    OpenSRF::Util::JSON->register_class_hint( hint => 'osrfException',
-                                              name => 'OpenSRF::DomainObject::oilsException');
+    O::U::J->register_class_hint( hint => 'osrfException',
+                                  name => 'OpenSRF::DomainObject::oilsException');
 
 Where C<hint> can be any unique string (but canonically is the name
 from the IDL which matches the object being operated on), and C<name>
@@ -50,6 +53,8 @@ sub register_class_hint {
     # FIXME hint can't be a dupe
     # FIXME fail unless we have hint and name
     my ($pkg, %args) = @_;
+    # FIXME why is the same thing shoved into two places? One mapping
+    # would suffice if class and hint were always returned together...
     $_class_map{hints}{$args{hint}} = \%args;
     $_class_map{classes}{$args{name}} = \%args;
 }
@@ -57,9 +62,13 @@ sub register_class_hint {
 
 =head2 JSON2perl
 
+Given a JSON-encoded string, returns a vivified Perl object built from
+that string.
+
 =cut
 
 sub JSON2perl {
+    # FIXME $string is not checked for any criteria, even existance
     my( $pkg, $string ) = @_;
     my $perl = $pkg->rawJSON2perl($string);
     return $pkg->JSONObject2Perl($perl);
@@ -68,45 +77,91 @@ sub JSON2perl {
 
 =head2 perl2JSON
 
+Given a Perl object, returns a JSON stringified representation of that
+object.
+
 =cut
 
 sub perl2JSON {
     my( $pkg, $obj ) = @_;
+    # FIXME no validation of any sort
     my $json = $pkg->perl2JSONObject($obj);
     return $pkg->rawPerl2JSON($json);
 }
 
 
+
+=head1 INTERNAL ROUTINES
+
+=head2 rawJSON2perl
+
+Intermediate routine called by L</JSON2Perl>.
+
+=cut
+
+sub rawJSON2perl {
+    my ($pkg, $json) = @_;
+    # FIXME change regex conditional to '=~ /\S/'
+    return undef unless (defined $json and $json !~ /^\s*$/o);
+    return $parser->decode($json);
+}
+
+
 =head2 JSONObject2Perl
+
+Final routine in the object re-vivification chain, called by L</rawJSON2perl>.
 
 =cut
 
 sub JSONObject2Perl {
     my ($pkg, $obj) = @_;
-    my $ref = ref $obj;
-    if( $ref eq 'HASH' ) {
-        if( defined($obj->{$JSON_CLASS_KEY})) {
+
+    # if $obj is a hash
+    if ( ref $obj eq 'HASH' ) {
+        # and if it has the "I'm a class!" marker
+        if ( defined $obj->{$JSON_CLASS_KEY} ) {
+            # vivify the payload
+            my $vivobj = $pkg->JSONObject2Perl($obj->{$JSON_PAYLOAD_KEY});
+            return undef unless defined $vivobj;
+
+            # and bless it back into an object
             my $class = $obj->{$JSON_CLASS_KEY};
-            $class =~ s/^\s+//o;
-            $class =~ s/\s+$//o;
-            if( $obj = $pkg->JSONObject2Perl($obj->{$JSON_PAYLOAD_KEY}) ) {
-                $class = $pkg->lookup_class($class) || $class;
-                return bless(\$obj, $class) unless ref($obj);
-                return bless($obj, $class);
-            }
-            return undef;
+            $class =~ s/^\s+//; # FIXME pretty sure these lines could condense to 's/\s+//g'
+            $class =~ s/\s+$//;
+            $class = $pkg->lookup_class($class) || $class;
+            return bless(\$vivobj, $class) unless ref $vivobj;
+            return bless($vivobj, $class);
         }
+
+        # is a hash, but no class marker; simply revivify innards
         for my $k (keys %$obj) {
             $obj->{$k} = $pkg->JSONObject2Perl($obj->{$k})
-              unless ref($obj->{$k}) eq 'JSON::XS::Boolean';
+              unless ref $obj->{$k} eq 'JSON::XS::Boolean';
         }
-    } elsif( $ref eq 'ARRAY' ) {
+    } elsif ( ref $obj eq 'ARRAY' ) {
+        # not a hash; an array. revivify.
         for my $i (0..scalar(@$obj) - 1) {
             $obj->[$i] = $pkg->JSONObject2Perl($obj->[$i])
-              unless ref($obj->[$i]) eq 'JSON::XS::Boolean';
+              unless ref $obj->[$i] eq 'JSON::XS::Boolean';
         }
     }
+
+    # return vivified non-class hashes, all arrays, and anything that
+    # isn't a hash or array ref
     return $obj;
+}
+
+
+=head2 rawPerl2JSON
+
+Intermediate routine used by L</Perl2JSON>.
+
+=cut
+
+sub rawPerl2JSON {
+    # FIXME no validation of any sort
+    my ($pkg, $perl) = @_;
+    return $parser->encode($perl);
 }
 
 
@@ -116,7 +171,7 @@ sub JSONObject2Perl {
 
 sub perl2JSONObject {
     my ($pkg, $obj) = @_;
-    my $ref = ref($obj);
+    my $ref = ref $obj;
 
     return $obj unless $ref;
 
@@ -137,33 +192,6 @@ sub perl2JSONObject {
     }
 
     return $newobj;
-}
-
-
-=head2 rawJSON2perl
-
-Internal routine used by L</JSON2Perl>. Wrapper around
-L<JSON::XS::decode>.
-
-=cut
-
-sub rawJSON2perl {
-    my ($pkg, $json) = @_;
-    return undef unless defined $json and $json !~ /^\s*$/o;
-    return $parser->decode($json);
-}
-
-
-=head2 rawPerl2JSON
-
-Internal routine used by L</Perl2JSON>. Wrapper around
-L<JSON::XS::encode>.
-
-=cut
-
-sub rawPerl2JSON {
-    my ($pkg, $perl) = @_;
-    return $parser->encode($perl);
 }
 
 
