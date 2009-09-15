@@ -124,7 +124,7 @@ sub rawPerl2JSON {
 
 =head2 JSONObject2Perl
 
-Final routine in the object re-vivification chain, called by L</rawJSON2perl>.
+Intermediate routine called by L</rawJSON2perl>.
 
 =cut
 
@@ -157,7 +157,12 @@ sub JSONObject2Perl {
         # not a hash; an array. revivify.
         for my $i (0..scalar(@$obj) - 1) {
             $obj->[$i] = $pkg->JSONObject2Perl($obj->[$i])
-              unless ref $obj->[$i] eq 'JSON::XS::Boolean';
+              unless (ref $obj->[$i] eq 'JSON::XS::Boolean');
+              # FIXME? This does nothing except leave any Booleans in
+              # place, without recursively calling this sub on
+              # them. I'm not sure if that's what's supposed to
+              # happen, or if they're supposed to be thrown out of the
+              # array
         }
     }
 
@@ -176,24 +181,24 @@ sub perl2JSONObject {
     my $ref = ref $obj;
 
     return $obj unless $ref;
-
     return $obj if $ref eq 'JSON::XS::Boolean';
-    my $newobj;
+
+    my $jsonobj;
 
     if(UNIVERSAL::isa($obj, 'HASH')) {
-        $newobj = {};
-        $newobj->{$_} = $pkg->perl2JSONObject($obj->{$_}) for (keys %$obj);
+        $jsonobj = {};
+        $jsonobj->{$_} = $pkg->perl2JSONObject($obj->{$_}) for (keys %$obj);
     } elsif(UNIVERSAL::isa($obj, 'ARRAY')) {
-        $newobj = [];
-        $newobj->[$_] = $pkg->perl2JSONObject($obj->[$_]) for(0..scalar(@$obj) - 1);
+        $jsonobj = [];
+        $jsonobj->[$_] = $pkg->perl2JSONObject($obj->[$_]) for(0..scalar(@$obj) - 1);
     }
 
     if($ref ne 'HASH' and $ref ne 'ARRAY') {
-        $ref = $pkg->lookup_hint($ref) || $ref;
-        $newobj = {$JSON_CLASS_KEY => $ref, $JSON_PAYLOAD_KEY => $newobj};
+        $ref = $pkg->lookup_hint($ref) if $pkg->lookup_hint($ref);
+        $jsonobj = {$JSON_CLASS_KEY => $ref, $JSON_PAYLOAD_KEY => $jsonobj};
     }
 
-    return $newobj;
+    return $jsonobj;
 }
 
 
