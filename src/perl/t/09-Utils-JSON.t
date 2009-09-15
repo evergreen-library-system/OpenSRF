@@ -1,6 +1,6 @@
 #!perl -T
 
-use Test::More tests => 38;
+use Test::More tests => 49;
 
 use OpenSRF::Utils::JSON;
 
@@ -115,6 +115,27 @@ is (OpenSRF::Utils::JSON->JSONObject2Perl($coderef), $coderef, "Returns argument
 is_deeply (OpenSRF::Utils::JSON->JSONObject2Perl([11, 12]), [11, 12], "Arrayrefs get reconstructed as themselves");
 is_deeply (OpenSRF::Utils::JSON->JSONObject2Perl([11, OpenSRF::Utils::JSON->true, 12]), [11, OpenSRF::Utils::JSON->true, 12],
            "Even when they contain JSON::XS::Booleans; those just don't get recursed upon");
-           # note: [11, 1, 12] doesn't work here, even though you can
-           # do math on J:X:Booleans
+           # note: [11, 1, 12] doesn't work here, even though you can do math on J:X:Booleans
 
+is_deeply (OpenSRF::Utils::JSON->JSONObject2Perl($hashref), { foo => 'bar' }, "Hashrefs without the class flag also get turned into themselves");
+is_deeply (OpenSRF::Utils::JSON->JSONObject2Perl({ foo => OpenSRF::Utils::JSON->true, bar => 'baz' }), 
+           { foo => OpenSRF::Utils::JSON->true, bar => 'baz'},
+           "Even when they contain JSON::XS::Booleans; those just don't get recursed upon");
+
+my $vivobj = OpenSRF::Utils::JSON->JSONObject2Perl($jsonobj);
+is (ref $vivobj, 'OpenSRF::DomainObject::oilsException');
+is_deeply ($vivobj, { foo => 'bar' }, "perl2JSONObject-packaged things get blessed to their original contents and class");
+
+my $codeobj = OpenSRF::Utils::JSON->perl2JSONObject($coderef);
+is_deeply (OpenSRF::Utils::JSON->JSONObject2Perl($codeobj), undef, "Things with undefined payloads (see above)return undef");
+
+$vivobj = OpenSRF::Utils::JSON->JSONObject2Perl({ __c => 'foo', __p => 'bar' });
+is (ref $vivobj, 'foo');
+is_deeply ($vivobj, \'bar', "Scalar payload and non-resolvable class hint vivifies to a scalar *ref* and a class of the class flag");
+
+
+#
+# json2Perl
+my $perlobj = OpenSRF::Utils::JSON->JSON2perl($jsonstr);
+is (ref $perlobj, 'OpenSRF::DomainObject::oilsException');
+is_deeply ($perlobj,  { foo => 'bar' }, "Successful revivification from JSON in one step");

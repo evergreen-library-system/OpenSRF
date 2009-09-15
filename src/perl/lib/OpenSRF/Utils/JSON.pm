@@ -143,7 +143,7 @@ sub JSONObject2Perl {
             my $class = $obj->{$JSON_CLASS_KEY};
             $class =~ s/^\s+//; # FIXME pretty sure these lines could condense to 's/\s+//g'
             $class =~ s/\s+$//;
-            $class = $pkg->lookup_class($class) || $class;
+            $class = $pkg->lookup_class($class) if $pkg->lookup_class($class);
             return bless(\$vivobj, $class) unless ref $vivobj;
             return bless($vivobj, $class);
         }
