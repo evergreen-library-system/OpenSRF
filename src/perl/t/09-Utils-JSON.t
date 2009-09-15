@@ -16,3 +16,4 @@ is (OpenSRF::Utils::JSON::true, 1);
 is (OpenSRF::Utils::JSON->true, 1);
 is (OpenSRF::Utils::JSON->false, 0);
 
+# shove some hints in
