@@ -32,7 +32,6 @@ lib/OpenSRF/Utils/Cache.pm
 lib/OpenSRF/Utils/Config.pm
 lib/OpenSRF/Utils/JSON.pm
 lib/OpenSRF/Utils/Logger.pm
-lib/OpenSRF/Utils/LogServer.pm
 lib/OpenSRF/Utils/SettingsClient.pm
 lib/OpenSRF/Utils/SettingsParser.pm
 t/00-load.t
