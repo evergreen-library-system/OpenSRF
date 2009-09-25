@@ -13,6 +13,38 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
+/**
+	@file osrf_json.h
+	@brief Header for parsing JSON structures and representing them in memory.
+
+	JSON is a format for representing hierarchical data structures as text.
+
+	A JSON string may be a quoted string, a numeric literal, or any of the keywords true, false
+	and null.
+
+	A JSON string may also be an array, i.e. a series of values, separated by commas and enclosed
+	in square brackets.  For example: [ "Adams", 42, null, true ]
+
+	A JSON string may also be an object, i.e. a series of name/value pairs, separated by commas
+	and enclosed by curly braces.  Each name/value pair is a quoted string, followed by a colon,
+	followed by a value.  For example: { "Author":"Adams", "answer":42, "question":null,
+	"profound": true }
+
+	The values in a JSON array or object may themselves be arrays or objects, nested to any
+	depth, in a hierarchical structure of arbitrary complexity.  For more information about
+	JSON, see http://json.org/.
+
+	Like a JSON string, a jsonObject can take several different forms.  It can hold a string, a
+	number, a boolean, or a null.  It can also hold an array, implemented internally by an
+	osrfList (see osrf_list.h).  It can also hold a series of name/value pairs, implemented
+	internally by an osrfHash (see osrf_hash.h).
+
+	A jsonObject can also tag its contents with a class name, typically referring to a
+	database table or view.  Such an object can be translated into a JSON string where the
+	class is encoded as the value of a name/value pair, with the original jsonObject encoded
+	as the value of a second name/value pair.
+*/
+
 #ifndef JSON_H
 #define JSON_H
 
@@ -25,6 +57,14 @@ extern "C" {
 #endif
 
 /* parser states */
+/**
+	@name Parser states
+	@brief Used internally by a JSON parser.
+
+	A jsonParserContext stores these values in order to remember where the parser is in the
+	parsing.
+*/
+/*@{*/
 #define JSON_STATE_IN_OBJECT	0x1
 #define JSON_STATE_IN_ARRAY		0x2
 #define JSON_STATE_IN_STRING	0x4
@@ -40,53 +80,107 @@ extern "C" {
 #define JSON_STATE_START_COMMEN	0x1000
 #define JSON_STATE_IN_COMMENT	0x2000
 #define JSON_STATE_END_COMMENT	0x4000
+/*@}*/
 
+/**
+	@name Parser state operations
+	@ Macros to manipulate the parser state in a jsonParserContext.
+*/
+/*@{*/
+/** Set a state. */
+#define JSON_STATE_SET(ctx,s) ctx->state |= s; 
+/** Unset a state. */
+#define JSON_STATE_REMOVE(ctx,s) ctx->state &= ~s;
+/** Check if a state is set. */
+#define JSON_STATE_CHECK(ctx,s) (ctx->state & s) ? 1 : 0
+/** Pop a state off the stack. */
+#define JSON_STATE_POP(ctx) osrfListPop( ctx->stateStack );
+/** Push a state on the stack. */
+#define JSON_STATE_PUSH(ctx, state) osrfListPush( ctx->stateStack,(void*) state );
+/** Check which container type we're currently in. */
+#define JSON_STATE_PEEK(ctx) osrfListGetIndex(ctx->stateStack, ctx->stateStack->size -1)
+/** Compare stack values. */
+#define JSON_STATE_CHECK_STACK(ctx, s) (JSON_STATE_PEEK(ctx) == (void*) s ) ? 1 : 0
+/** Check if a parser state is set. */
+#define JSON_PARSE_FLAG_CHECK(ctx, f) (ctx->flags & f) ? 1 : 0
+/*@}*/
 
-/* object and array (container) states are pushed onto a stack so we
- * can keep track of the object nest.  All other states are
- * simply stored in the state field of the parser */
-#define JSON_STATE_SET(ctx,s) ctx->state |= s; /* set a state */
-#define JSON_STATE_REMOVE(ctx,s) ctx->state &= ~s; /* unset a state */
-#define JSON_STATE_CHECK(ctx,s) (ctx->state & s) ? 1 : 0 /* check if a state is set */
-#define JSON_STATE_POP(ctx) osrfListPop( ctx->stateStack ); /* remove a state from the stack */
-#define JSON_STATE_PUSH(ctx, state) osrfListPush( ctx->stateStack,(void*) state );/* push a state on the stack */
-#define JSON_STATE_PEEK(ctx) osrfListGetIndex(ctx->stateStack, ctx->stateStack->size -1) /* check which container type we're currently in */
-#define JSON_STATE_CHECK_STACK(ctx, s) (JSON_STATE_PEEK(ctx) == (void*) s ) ? 1 : 0  /* compare stack values */
+/**
+	@name JSON types
+	@brief Macros defining types of jsonObject.
 
-/* JSON types */
+	A jsonObject includes a @em type member with one of these values, identifying the type of
+	jsonObject.  Client code should treat the @em type member as read-only.
+*/
+/*@{*/
 #define JSON_HASH 	0
 #define JSON_ARRAY	1
 #define JSON_STRING	2
 #define JSON_NUMBER	3
-#define JSON_NULL 	4	
+#define JSON_NULL 	4
 #define JSON_BOOL 	5
+/*@}*/
 
+/**
+	This macro is used only by a JSON parser.  It probably has no business being published
+	in a header.
+*/
 #define JSON_PARSE_LAST_CHUNK 0x1 /* this is the last part of the string we're parsing */
 
-#define JSON_PARSE_FLAG_CHECK(ctx, f) (ctx->flags & f) ? 1 : 0 /* check if a parser state is set */
+/**
+	@name JSON extensions
 
+	These two macros define tags used for encoding class information.  @em JSON_CLASS_KEY
+	labels a class name, and @em JSON_DATA_KEY labels an associated value.
+
+	Because each of these macros is subject to an ifndef clause, client code may override
+	the default choice of labels by defining alternatives before including this header.
+	At this writing, this potential for customization is unused.
+*/
+/*@{*/
 #ifndef JSON_CLASS_KEY
 #define JSON_CLASS_KEY "__c"
 #endif
 #ifndef JSON_DATA_KEY
 #define JSON_DATA_KEY "__p"
 #endif
+/*@}*/
 
+/**
+	@brief Stores the current state of a JSON parser.
 
+	One form of JSON parser operates as a finite state machine.  It stores the various
+	JSON_STATE_* values in order to keep track of what it's doing.  It also maintains a
+	stack of previous states in order to keep track of nesting.
+
+	The internals of this struct are published in the header in order to provide the client
+	with a window into the operations of the parser.  By installing its own callback functions,
+	and possibly by tinkering with the insides of the jsonParserContext, the client code can
+	customize the behavior of the parser.
+
+	In practice only the default callbacks are ever installed, at this writing.  The potential
+	for customized parsing is unused.
+*/
 struct jsonParserContextStruct {
-	int state;						/* what are we currently parsing */
-	const char* chunk;				/* the chunk we're currently parsing */
-	int index;						/* where we are in parsing the current chunk */
-	int chunksize;					/* the size of the current chunk */
-	int flags;						/* parser flags */
-	osrfList* stateStack;		/* represents the nest of object/array states */
-	growing_buffer* buffer;		/* used to hold JSON strings, number, true, false, and null sequences */
-	growing_buffer* utfbuf;		/* holds the current unicode characters */
-	void* userData;				/* opaque user pointer.  we ignore this */
-	const struct jsonParserHandlerStruct* handler; /* the event handler struct */
+	int state;                  /**< What are we currently parsing. */
+	const char* chunk;          /**< The chunk we're currently parsing. */
+	int index;                  /**< Where we are in parsing the current chunk. */
+	int chunksize;              /**< Size of the current chunk. */
+	int flags;                  /**< Parser flags. */
+	osrfList* stateStack;       /**< The nest of object/array states. */
+	growing_buffer* buffer;     /**< Buffer for building strings, numbers, and keywords. */
+	growing_buffer* utfbuf;     /**< Holds the current unicode characters. */
+	void* userData;             /**< Opaque user pointer.  We ignore this. */
+	const struct jsonParserHandlerStruct* handler; /**< The event handler struct. */
 };
 typedef struct jsonParserContextStruct jsonParserContext;
 
+/**
+	@brief A collection of function pointers for customizing parser behavior.
+
+	The client code can install pointers to its own functions in this struct, in order to
+	customize the behavior of the parser at various points in the parsing.
+*/
 struct jsonParserHandlerStruct {
 	void (*handleStartObject)	(void* userData);
 	void (*handleObjectKey)		(void* userData, char* key);
@@ -94,234 +188,194 @@ struct jsonParserHandlerStruct {
 	void (*handleStartArray)	(void* userData);
 	void (*handleEndArray)		(void* userData);
 	void (*handleNull)			(void* userData);
-	void (*handleString)			(void* userData, char* string);
+	void (*handleString)		(void* userData, char* string);
 	void (*handleBool)			(void* userData, int boolval);
 	void (*handleNumber)		(void* userData, const char* numstr);
 	void (*handleError)			(void* userData, char* err, ...);
 };
 typedef struct jsonParserHandlerStruct jsonParserHandler;
 
+/**
+	@brief Representation of a JSON string in memory
+
+	Different types of jsonObject use different members of the @em value union.
+
+	Numbers are stored as character strings, using the same buffer that we use for
+	strings.  As a result, a JSON_NUMBER can store numbers that cannot be represented
+	by native C types.
+
+	(We used to store numbers as doubles.  We still have the @em n member lying around as
+	a relic of those times, but we don't use it.  We can't get rid of it yet, either.  Long
+	story.)
+*/
 struct _jsonObjectStruct {
-	unsigned long size;	/* number of sub-items */
-	char* classname;		/* optional class hint (not part of the JSON spec) */
-	int type;				/* JSON type */
-	struct _jsonObjectStruct* parent;	/* who we're attached to */
-	union __jsonValue {	/* cargo */
-		osrfHash*	h;		/* object container */
-		osrfList*	l;		/* array container */
-		char* 		s;		/* string */
-		int 			b;		/* bool */
-//		double	n;		/* number */
-		double	n;		/* number */
+	unsigned long size;     /**< Number of sub-items. */
+	char* classname;        /**< Optional class hint (not part of the JSON spec). */
+	int type;               /**< JSON type. */
+	struct _jsonObjectStruct* parent;   /**< Whom we're attached to. */
+	/** Union used for various types of cargo. */
+	union _jsonValue {
+		osrfHash*	h;      /**< Object container. */
+		osrfList*	l;      /**< Array container. */
+		char* 		s;      /**< String or number. */
+		int 		b;      /**< Bool. */
+		double	n;          /**< Number (no longer used). */
 	} value;
 };
 typedef struct _jsonObjectStruct jsonObject;
 
+/**
+	@brief Iterator for traversing a jsonObject.
+
+	A jsonIterator traverses a jsonIterator only at a single level.  It does @em not descend
+	into lower levels to traverse them recursively.
+*/
 struct _jsonIteratorStruct {
-	jsonObject* obj; /* the object we're traversing */
-	osrfHashIterator* hashItr; /* the iterator for this hash */
-	const char* key; /* if this object is a hash, the current key */
-	unsigned long index; /* if this object is an array, the index */
+	jsonObject* obj;           /**< The object we're traversing. */
+	osrfHashIterator* hashItr; /**< The iterator for this hash. */
+	const char* key;           /**< If this object is a hash, the current key. */
+	unsigned long index;       /**< If this object is an array, the index. */
 };
 typedef struct _jsonIteratorStruct jsonIterator;
 
 
 
 /** 
- * Allocates a new parser context object
- * @param handler The event handler struct
- * @param userData Opaque user pointer which is available in callbacks
- * and ignored by the parser
- * @return An allocated parser context, NULL on error
- */
+	@brief Allocate a new parser context object.
+	@param handler Pointer to a collection of function pointers for callback functions.
+	@param userData Opaque user pointer which is available to callbacks; ignored by the parser.
+	@return An allocated parser context, or NULL on error.
+*/
 jsonParserContext* jsonNewParser( const jsonParserHandler* handler, void* userData);
 
 /**
- * Deallocates a parser context
- * @param ctx The context object
- */
+	@brief Free a jsonParserContext.
+	@param ctx Pointer to the jsonParserContext to be freed.
+*/
 void jsonParserFree( jsonParserContext* ctx );
 
 /**
- * Parse a chunk of data.
- * @param ctx The parser context
- * @param data The data to parse
- * @param datalen The size of the chunk to parser
- * @param flags Reserved
- */
+	@brief Parse a chunk of data.
+	@param ctx Pointer to the parser context.
+	@param data Pointer the data to parse.
+	@param datalen The size of the chunk to parse.
+	@param flags Reserved.
+*/
 int jsonParseChunk( jsonParserContext* ctx, const char* data, int datalen, int flags );
 
-
 /**
- * Parses a JSON string;
- * @param str The string to parser
- * @return The resulting JSON object or NULL on error
- */
+	@name Parsing functions
+	
+	There are two sets of parsing functions, which are mostly plug-compatible with each other.
+	The older series:
+
+	- jsonParseString()
+	- jsonParseStringRaw()
+	- jsonParseStringFmt()
+
+	...and a newer series:
+
+	- jsonParseString();
+	- jsonParseStringRaw();
+	- jsonParseStringFmt();
+
+	The first series is based on a finite state machine.  Its innards are accessible, in
+	theory, through the jsonParserContext structure and through callback functions.  In
+	practice this flexibility is unused at this writing.
+
+	The second series is based on recursive descent.  It doesn't use the jsonParserContext
+	structure, nor does it accept callback functions.  However it is faster than the first
+	parser.  In addition its syntax checking is much stricter -- it catches many kinds of
+	syntax errors that slip through the first parser.
+*/
+/*@{*/
+/**
+	@brief Parse a JSON string;
+	@param str Pointer to the JSON string to parse.
+	@return The resulting JSON object, or NULL on error.
+*/
 jsonObject* jsonParseString( const char* str );
 jsonObject* jsonParseStringRaw( const char* str );
-
 jsonObject* jsonParseStringFmt( const char* str, ... );
 
 /**
- * Similar to jsonParseString(), jsonParseStringRaw() and
- * jsonParseStringFmt(), but with stricter and more robust
- * syntax validation
+	@brief Parse a JSON string;
+	@param s Pointer to the JSON string to parse.
+	@return The resulting JSON object, or NULL on error.
  */
 jsonObject* jsonParse( const char* s );
 jsonObject* jsonParseRaw( const char* s );
 jsonObject* jsonParseFmt( const char* str, ... );
-
+/*@}*/
 
 /**
- * Parses a JSON string;
- * @param str The string to parser
- * @return The resulting JSON object or NULL on error
+	@brief Parses a JSON string, using a customized error handler.
+	@param errorHandler A function pointer to an error-handling function.
+	@param str The string to parse.
+	@return The resulting JSON object, or NULL on error.
  */
 jsonObject* jsonParseStringHandleError( void (*errorHandler) (const char*), char* str, ... );
 
-
-
-/**
- * Creates a new json object
- * @param data The string data this object will hold if 
- * this object happens to be a JSON_STRING, NULL otherwise
- * @return The allocated json object.  Must be freed with 
- * jsonObjectFree()
- */
 jsonObject* jsonNewObject(const char* data);
+
 jsonObject* jsonNewObjectFmt(const char* data, ...);
 
-/**
- * Creates a new object of the given type
- */
 jsonObject* jsonNewObjectType(int type);
 
-/**
- * Creates a new number object from a double
- */
 jsonObject* jsonNewNumberObject( double num );
 
-/**
- * Creates a new number object from a numeric string
- */
 jsonObject* jsonNewNumberStringObject( const char* numstr );
 
-/**
- * Creates a new json bool
- */
 jsonObject* jsonNewBoolObject(int val);
 
-/**
- * Deallocates an object
- */
 void jsonObjectFree( jsonObject* o );
 
-/**
- * Returns all unused jsonObjects to the heap
- */
 void jsonObjectFreeUnused( void );
 
-/**
- * Forces the given object to become an array (if it isn't already one) 
- * and pushes the new object into the array
- */
 unsigned long jsonObjectPush(jsonObject* o, jsonObject* newo);
 
-/**
- * Forces the given object to become a hash (if it isn't already one)
- * and assigns the new object to the key of the hash
- */
 unsigned long jsonObjectSetKey(
 		jsonObject* o, const char* key, jsonObject* newo);
 
-
-/**
+/*
  * Turns the object into a JSON string.  The string must be freed by the caller */
 char* jsonObjectToJSON( const jsonObject* obj );
 char* jsonObjectToJSONRaw( const jsonObject* obj );
 
-
-/**
- * Retrieves the object at the given key
- */
 jsonObject* jsonObjectGetKey( jsonObject* obj, const char* key );
+
 const jsonObject* jsonObjectGetKeyConst( const jsonObject* obj, const char* key );
 
-
-
-
-
-/** Allocates a new iterator 
-	@param obj The object over which to iterate.
-*/
 jsonIterator* jsonNewIterator(const jsonObject* obj);
 
+void jsonIteratorFree(jsonIterator* itr);
 
-/** 
-	De-allocates an iterator 
-	@param iter The iterator object to free
-*/
-void jsonIteratorFree(jsonIterator* iter);
-
-/** 
-	Returns the object_node currently pointed to by the iterator
-  	and increments the pointer to the next node
-	@param iter The iterator in question.
- */
 jsonObject* jsonIteratorNext(jsonIterator* iter);
 
+int jsonIteratorHasNext(const jsonIterator* itr);
 
-/** 
-	@param iter The iterator.
-	@return True if there is another node after the current node.
- */
-int jsonIteratorHasNext(const jsonIterator* iter);
-
-
-/** 
-	Returns a pointer to the object at the given index.  This call is
-	only valid if the object has a type of JSON_ARRAY.
-	@param obj The object
-	@param index The position within the object
-	@return The object at the given index.
-*/
 jsonObject* jsonObjectGetIndex( const jsonObject* obj, unsigned long index );
 
-
-/* removes (and deallocates) the object at the given index (if one exists) and inserts 
- * the new one.  returns the size on success, -1 on error 
- * If obj is NULL, inserts a new object into the list with is_null set to true
- */
 unsigned long jsonObjectSetIndex(jsonObject* dest, unsigned long index, jsonObject* newObj);
 
-/* removes and deallocates the object at the given index, replacing
-   it with a NULL pointer
- */
 unsigned long jsonObjectRemoveIndex(jsonObject* dest, unsigned long index);
 
-/* removes (but does not deallocate) the object at the given index,
- * replacing it with a NULL pointer; returns a pointer to the object removed
- */
 jsonObject* jsonObjectExtractIndex(jsonObject* dest, unsigned long index);
 
-/* removes (and deallocates) the object with key 'key' if it exists */
 unsigned long jsonObjectRemoveKey( jsonObject* dest, const char* key);
 
-/* returns a pointer to the string data held by this object if this object
-	is a string.  Otherwise returns NULL*/
 char* jsonObjectGetString(const jsonObject*);
 
 double jsonObjectGetNumber( const jsonObject* obj );
 
-/* sets the string data */
 void jsonObjectSetString(jsonObject* dest, const char* string);
 
-/* sets the number value for the object */
 void jsonObjectSetNumber(jsonObject* dest, double num);
+
 int jsonObjectSetNumberString(jsonObject* dest, const char* string);
 
-/* sets the class hint for this object */
 void jsonObjectSetClass(jsonObject* dest, const char* classname );
+
 const char* jsonObjectGetClass(const jsonObject* dest);
 
 int jsonBoolIsTrue( const jsonObject* boolObj );
@@ -330,79 +384,68 @@ void jsonSetBool(jsonObject* bl, int val);
 
 jsonObject* jsonObjectClone( const jsonObject* o );
 
-
-/* tries to extract the string data from an object.
-	if object	-> NULL (the C NULL)
-	if array		->	NULL  
-	if null		-> NULL 
-	if bool		-> NULL
-	if string/number the string version of either of those
-	The caller is responsible for freeing the returned string
-	*/
 char* jsonObjectToSimpleString( const jsonObject* o );
 
-/**
- Allocate a buffer and format a specified numeric value into it,
- with up to 30 decimal digits of precision.   Caller is responsible
- for freeing the buffer.
- **/
 char* doubleToString( double num );
 
-/**
- Return 1 if the string is numeric, otherwise return 0.
- This validation follows the rules defined by the grammar at:
- http://www.json.org/
- **/
 int jsonIsNumeric( const char* s );
 
-/**
- Allocate and reformat a numeric string into one that is valid
- by JSON rules.  If the string is not numeric, return NULL.
- Caller is responsible for freeing the buffer.
- **/
 char* jsonScrubNumber( const char* s );
 
-/* provides an XPATH style search interface (e.g. /some/node/here) and 
-	return the object at that location if one exists.  Naturally,  
-	every element in the path must be a proper object ("hash" / {}).
-	Returns NULL if the specified node is not found 
-	Note also that the object returned is a clone and
-	must be freed by the caller
+/**
+	@brief Provide an XPATH style search interface to jsonObjects.
+	@param obj Pointer to the jsonObject to be searched.
+	@param path Pointer to a printf-style format string specifying the search path.  Subsequent
+		parameters, if any, are formatted and inserted into the formatted string.
+	@return A copy of the object at the specified location, if it exists, or NULL if it doesn't.
+
+	Example search path: /some/node/here.
+	
+	Every element in the path must be a proper object, a JSON_HASH.
+
+	The calling code is responsible for freeing the jsonObject to which the returned pointer
+	points.
 */
 jsonObject* jsonObjectFindPath( const jsonObject* obj, const char* path, ... );
 
 
-/* formats a JSON string from printing.  User must free returned string */
+/**
+	@brief Prettify a JSON string for printing, by adding newlines and other white space.
+	@param jsonString Pointer to the original JSON string.
+	@return Pointer to a prettified JSON string.
+
+	The calling code is responsible for freeing the returned string.
+*/
 char* jsonFormatString( const char* jsonString );
 
 /* sets the error handler for all parsers */
 void jsonSetGlobalErrorHandler(void (*errorHandler) (const char*));
 
 /* ------------------------------------------------------------------------- */
-/**
+/*
  * The following methods provide a facility for serializing and
  * deserializing "classed" JSON objects.  To give a JSON object a 
- * class, simply call jsonObjectSetClass().  
+ * class, simply call jsonObjectSetClass().
  * Then, calling jsonObjectEncodeClass() will convert the JSON
- * object (and any sub-objects) to a JSON object with class 
+ * object (and any sub-objects) to a JSON object with class
  * wrapper objects like so:
- * { _c : "classname", _d : <json_thing> }
- * In this example _c is the class key and _d is the data (object)
+ * { "__c" : "classname", "__p" : [json_thing] }
+ * In this example __c is the class key and __p is the data (object)
  * key.  The keys are defined by the constants 
- * OSRF_JSON_CLASS_KEY and OSRF_JSON_DATA_KEY
+ * JSON_CLASS_KEY and JSON_DATA_KEY
  * To revive a serialized object, simply call
  * jsonObjectDecodeClass()
  */
 
 
-/** Converts a class-wrapped object into an object with the
+/* Converts a class-wrapped object into an object with the
  * classname set
  * Caller must free the returned object 
  */ 
 jsonObject* jsonObjectDecodeClass( const jsonObject* obj );
 
 
-/** Converts an object with a classname into a
+/* Converts an object with a classname into a
  * class-wrapped (serialized) object
  * Caller must free the returned object 
  */ 
@@ -411,10 +454,9 @@ jsonObject* jsonObjectEncodeClass( const jsonObject* obj );
 /* ------------------------------------------------------------------------- */
 
 
-/**
+/*
  *	Generates an XML representation of a JSON object */
 char* jsonObjectToXML(const jsonObject*);
-
 
 /*
  * Builds a JSON object from the provided XML 
