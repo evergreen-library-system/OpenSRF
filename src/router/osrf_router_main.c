@@ -84,15 +84,15 @@ int setupRouter(jsonObject* configChunk) {
     if(!jsonObjectGetKey(configChunk, "transport"))
         return 0; /* these are not the configs you're looking for */
 
-	char* server = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/server"));
-	char* port = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/port"));
-	char* username = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/username"));
-	char* password = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/password"));
-	char* resource = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/resource"));
+	const char* server   = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/server"));
+	const char* port     = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/port"));
+	const char* username = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/username"));
+	const char* password = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/password"));
+	const char* resource = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/resource"));
 
-	char* level = jsonObjectGetString(jsonObjectFindPath(configChunk, "/loglevel"));
-	char* log_file = jsonObjectGetString(jsonObjectFindPath(configChunk, "/logfile"));
-	char* facility = jsonObjectGetString(jsonObjectFindPath(configChunk, "/syslog"));
+	const char* level    = jsonObjectGetString(jsonObjectFindPath(configChunk, "/loglevel"));
+	const char* log_file = jsonObjectGetString(jsonObjectFindPath(configChunk, "/logfile"));
+	const char* facility = jsonObjectGetString(jsonObjectFindPath(configChunk, "/syslog"));
 
 	int llevel = 1;
 	if(level) llevel = atoi(level);
@@ -107,10 +107,6 @@ int setupRouter(jsonObject* configChunk) {
 		osrfLogInit( OSRF_LOG_TYPE_FILE, "router", llevel );
 		osrfLogSetFile( log_file );
 	}
-
-	free(facility);
-	free(level);
-	free(log_file);
 
 	osrfLogInfo(  OSRF_LOG_MARK, "Router connecting as: server: %s port: %s "
 			"user: %s resource: %s", server, port, username, resource );
@@ -128,24 +124,24 @@ int setupRouter(jsonObject* configChunk) {
 
     if(tserversList->type == JSON_ARRAY) {
 	    for( i = 0; i != tserversList->size; i++ ) {
-            char* serverDomain = jsonObjectGetString(jsonObjectGetIndex(tserversList, i));
+            const char* serverDomain = jsonObjectGetString(jsonObjectGetIndex(tserversList, i));
 		    osrfLogInfo( OSRF_LOG_MARK,  "Router adding trusted server: %s", serverDomain);
             osrfStringArrayAdd(tservers, serverDomain);
         }
     } else {
-        char* serverDomain = jsonObjectGetString(tserversList);
+        const char* serverDomain = jsonObjectGetString(tserversList);
         osrfLogInfo( OSRF_LOG_MARK,  "Router adding trusted server: %s", serverDomain);
         osrfStringArrayAdd(tservers, serverDomain);
     }
 
     if(tclientsList->type == JSON_ARRAY) {
 	    for( i = 0; i != tclientsList->size; i++ ) {
-            char* clientDomain = jsonObjectGetString(jsonObjectGetIndex(tclientsList, i));
+            const char* clientDomain = jsonObjectGetString(jsonObjectGetIndex(tclientsList, i));
 		    osrfLogInfo( OSRF_LOG_MARK,  "Router adding trusted client: %s", clientDomain);
             osrfStringArrayAdd(tclients, clientDomain);
         }
     } else {
-        char* clientDomain = jsonObjectGetString(tclientsList);
+        const char* clientDomain = jsonObjectGetString(tclientsList);
         osrfLogInfo( OSRF_LOG_MARK,  "Router adding trusted client: %s", clientDomain);
         osrfStringArrayAdd(tclients, clientDomain);
     }

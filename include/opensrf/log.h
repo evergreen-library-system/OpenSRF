@@ -94,7 +94,7 @@ void osrfLogSetActivityEnabled( int enabled );
 /* returns the int representation of the log facility based on the facility name
  * if the facility name is invalid, LOG_LOCAL0 is returned 
  */
-int osrfLogFacilityToInt( char* facility );
+int osrfLogFacilityToInt( const char* facility );
 
 #ifdef __cplusplus
 }

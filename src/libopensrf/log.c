@@ -299,7 +299,7 @@ static void _osrfLogToFile( const char* msg, ... ) {
 }
 
 
-int osrfLogFacilityToInt( char* facility ) {
+int osrfLogFacilityToInt( const char* facility ) {
 	if(!facility) return LOG_LOCAL0;
 	if(strlen(facility) < 6) return LOG_LOCAL0;
 	switch( facility[5] ) {

@@ -452,7 +452,7 @@ static int _osrfAppRunSystemMethod(osrfMethodContext* ctx) {
 static int osrfAppIntrospect( osrfMethodContext* ctx ) {
 
 	jsonObject* resp = NULL;
-	char* methodSubstring = jsonObjectGetString( jsonObjectGetIndex(ctx->params, 0) );
+	const char* methodSubstring = jsonObjectGetString( jsonObjectGetIndex(ctx->params, 0) );
 	osrfApplication* app = _osrfAppFindApplication( ctx->session->remote_service );
 	int len = 0;
 

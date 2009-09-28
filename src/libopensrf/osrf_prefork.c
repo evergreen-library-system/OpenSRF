@@ -158,14 +158,14 @@ static void osrf_prefork_send_router_registration(const char* appname, const cha
 /** parses a single "complex" router configuration chunk */
 static void osrf_prefork_parse_router_chunk(const char* appname, jsonObject* routerChunk) {
 
-	char* routerName = jsonObjectGetString(jsonObjectGetKey(routerChunk, "name"));
-	char* domain = jsonObjectGetString(jsonObjectGetKey(routerChunk, "domain"));
-	jsonObject* services = jsonObjectGetKey(routerChunk, "services");
+	const char* routerName = jsonObjectGetString(jsonObjectGetKeyConst(routerChunk, "name"));
+	const char* domain = jsonObjectGetString(jsonObjectGetKeyConst(routerChunk, "domain"));
+	const jsonObject* services = jsonObjectGetKeyConst(routerChunk, "services");
 	osrfLogDebug(OSRF_LOG_MARK, "found router config with domain %s and name %s", routerName, domain);
 
 	if( services && services->type == JSON_HASH ) {
 		osrfLogDebug(OSRF_LOG_MARK, "investigating router information...");
-		jsonObject* service_obj = jsonObjectGetKey(services, "service");
+		const jsonObject* service_obj = jsonObjectGetKeyConst(services, "service");
 		if( !service_obj )
 			;    // do nothing (shouldn't happen)
 		else if( JSON_ARRAY == service_obj->type ) {
