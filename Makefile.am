@@ -30,6 +30,7 @@ export PID			= @localstatedir@/run/opensrf
 export SOCK			= @localstatedir@/lock/opensrf
 export LOG			= @localstatedir@/log/opensrf
 export srcdir			= @srcdir@
+opensrfincludedir		= @includedir@/opensrf
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -84,7 +85,7 @@ EXTRA_DIST = $(DOC_FILES) $(EXAMPLES_FILES) $(libosrf_FILES) $(strn_compat_FILES
 OSRFINC=@srcdir@/include/opensrf
 
 if BUILDCORE
-include_HEADERS = $(OSRFINC)/log.h \
+opensrfinclude_HEADERS = $(OSRFINC)/log.h \
 	$(OSRFINC)/md5.h \
 	$(OSRFINC)/osrf_application.h \
 	$(OSRFINC)/osrf_app_session.h \
