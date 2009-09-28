@@ -1,3 +1,13 @@
+/**
+	@file osrf_router_main.c
+	@brief top level of OSRF Router
+
+	This top level loads a configuration file and forks into one or more child 
+	processes.  Each child process configures itself, daemonizes itself, and then (via a
+	call to osrfRouterRun()) goes into an infinite loop to route messages among clients
+	and servers.
+*/
+
 #include "osrf_router.h"
 #include <opensrf/osrfConfig.h>
 #include <opensrf/utils.h>
@@ -5,8 +15,15 @@
 #include <opensrf/osrf_json.h>
 #include <signal.h>
 
+/**
+	An osrfRouter contains various bits and scraps that the router uses for networking.
+*/
 static osrfRouter* router = NULL;
 
+/**
+	@brief Respond to signal by exiting immediately.
+	@param signo The signal number.
+*/
 void routerSignalHandler( int signo ) {
 	osrfLogWarning( OSRF_LOG_MARK, "Received signal [%d], cleaning up...", signo );
 
@@ -28,9 +45,17 @@ void routerSignalHandler( int signo ) {
 	raise( signo );
 }
 
-static int setupRouter(jsonObject* configChunk);
+static void setupRouter(jsonObject* configChunk);
 
 
+/**
+	@brief The top-level function of the router program.
+	@param argc Number of items in command line.
+	@param argv Pointer to array of items on command line.
+	@return System return code.
+
+	Load configuration file, spawn one or more child processes, and exit.
+*/
 int main( int argc, char* argv[] ) {
 
 	if( argc < 3 ) {
@@ -79,25 +104,39 @@ int main( int argc, char* argv[] ) {
 	return EXIT_SUCCESS;
 }
 
-int setupRouter(jsonObject* configChunk) {
+/**
+	@brief Configure and run a child process.
+	@param configChunk Pointer to a subset of the loaded configuration.
 
-    if(!jsonObjectGetKey(configChunk, "transport"))
-        return 0; /* these are not the configs you're looking for */
+	Configure oneself, daemonize, and then call osrfRouterRun() to go into an infinite
+	loop.  Do not return unless something goes wrong.
+*/
+static void setupRouter(jsonObject* configChunk) {
 
-	const char* server   = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/server"));
-	const char* port     = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/port"));
-	const char* username = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/username"));
-	const char* password = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/password"));
-	const char* resource = jsonObjectGetString(jsonObjectFindPath(configChunk, "/transport/resource"));
+	jsonObject* transport_cfg = jsonObjectGetKey( configChunk, "transport" );
+	if( ! transport_cfg ) {
+		fprintf( stderr, "Child router process %ld has no transport configuration\n", (long) getpid() );
+		return; /* these are not the configs you're looking for */
+	}
 
-	const char* level    = jsonObjectGetString(jsonObjectFindPath(configChunk, "/loglevel"));
-	const char* log_file = jsonObjectGetString(jsonObjectFindPath(configChunk, "/logfile"));
-	const char* facility = jsonObjectGetString(jsonObjectFindPath(configChunk, "/syslog"));
+	const char* server   = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "server" ) );
+	const char* port     = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "port" ) );
+	const char* username = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "username" ) );
+	const char* password = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "password" ) );
+	const char* resource = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "resource" ) );
+
+	const char* level    = jsonObjectGetString( jsonObjectGetKey( configChunk, "loglevel" ) );
+	const char* log_file = jsonObjectGetString( jsonObjectGetKey( configChunk, "logfile" ) );
+	const char* facility = jsonObjectGetString( jsonObjectGetKey( configChunk, "syslog" ) );
 
 	int llevel = 1;
 	if(level) llevel = atoi(level);
 
-	if(!log_file) { fprintf(stderr, "Log file name not specified\n"); return -1; }
+	if(!log_file)
+	{ 
+		fprintf(stderr, "Log file name not specified for router\n");
+		return;
+	}
 
 	if(!strcmp(log_file, "syslog")) {
 		osrfLogInit( OSRF_LOG_TYPE_SYSLOG, "router", llevel );
@@ -108,8 +147,8 @@ int setupRouter(jsonObject* configChunk) {
 		osrfLogSetFile( log_file );
 	}
 
-	osrfLogInfo(  OSRF_LOG_MARK, "Router connecting as: server: %s port: %s "
-			"user: %s resource: %s", server, port, username, resource );
+	osrfLogInfo( OSRF_LOG_MARK, "Router connecting as: server: %s port: %s "
+		"user: %s resource: %s", server, port, username, resource );
 
 	int iport = 0;
 	if(port)	iport = atoi( port );
@@ -151,7 +190,7 @@ int setupRouter(jsonObject* configChunk) {
 		osrfLogError( OSRF_LOG_MARK, "We need trusted servers and trusted client to run the router...");
 		osrfStringArrayFree( tservers );
 		osrfStringArrayFree( tclients );
-		return -1;
+		return;
 	}
 
 	router = osrfNewRouter( server,
@@ -164,7 +203,7 @@ int setupRouter(jsonObject* configChunk) {
 	if( (osrfRouterConnect(router)) != 0 ) {
 		fprintf(stderr, "Unable to connect router to jabber server %s... exiting\n", server );
 		osrfRouterFree(router);
-		return -1;
+		return;
 	}
 
 	daemonize();
@@ -175,8 +214,8 @@ int setupRouter(jsonObject* configChunk) {
 
 	osrfRouterFree(router);
 	router = NULL;
-	
-	return -1;
+
+	return;
 }
 
 
