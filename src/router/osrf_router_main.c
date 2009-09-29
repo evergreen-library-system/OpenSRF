@@ -6,6 +6,14 @@
 	processes.  Each child process configures itself, daemonizes itself, and then (via a
 	call to osrfRouterRun()) goes into an infinite loop to route messages among clients
 	and servers.
+
+	The first command-line parameter is the name of the configuration file.
+	
+	The second command-line parameter is the context -- an XML tag identifying the subset
+	of the configuration file that is relevant to this application (since a configuration
+	file may include information for multiple applications).
+
+	Any subsequent command-line parameters are silently ignored.
 */
 
 #include "osrf_router.h"
@@ -29,8 +37,8 @@ void routerSignalHandler( int signo ) {
 
     /* for now, just forcibly exit.  This is not a friendly way to clean up, but
      * there is a bug in osrfRouterFree() (in particular with cleaning up sockets),
-     * that can cause the router process to stick around.  If we do this, we 
-     * are guaranteed to exit.  
+     * that can cause the router process to stick around.  If we do this, we
+     * are guaranteed to exit.
      */
     _exit(0);
 
@@ -54,7 +62,7 @@ static void setupRouter(jsonObject* configChunk);
 	@param argv Pointer to array of items on command line.
 	@return System return code.
 
-	Load configuration file, spawn one or more child processes, and exit.
+	Load configuration file, spawn zero or more child processes, and exit.
 */
 int main( int argc, char* argv[] ) {
 
@@ -95,6 +103,19 @@ int main( int argc, char* argv[] ) {
     int i;
     for(i = 0; i < configInfo->size; i++) {
         jsonObject* configChunk = jsonObjectGetIndex(configInfo, i);
+		if( ! jsonObjectGetKey( configChunk, "transport" ) )
+		{
+			// In searching the configuration file for a given context, we may have found a spurious
+			// hit on an unrelated part of the configuration file that happened to use the same XML
+			// tag.  In fact this happens routinely in practice.
+			
+			// If we don't see a member for "transport" then this is presumably such a spurious hit,
+			// so we silently ignore it.
+			
+			// It is also possible that it's the right part of the configuration file but it has a
+			// typo or other such error, making it look spurious.  In that case, well, too bad.
+			continue;
+		}
         if(fork() == 0) { /* create a new child to run this router instance */
             setupRouter(configChunk);
 			break;  /* We're a child; don't spawn any more children here */
@@ -114,10 +135,6 @@ int main( int argc, char* argv[] ) {
 static void setupRouter(jsonObject* configChunk) {
 
 	jsonObject* transport_cfg = jsonObjectGetKey( configChunk, "transport" );
-	if( ! transport_cfg ) {
-		//fprintf( stderr, "Child router process %ld has no transport configuration\n", (long) getpid() );
-		return; /* these are not the configs you're looking for */
-	}
 
 	const char* server   = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "server" ) );
 	const char* port     = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "port" ) );
