@@ -115,7 +115,7 @@ static void setupRouter(jsonObject* configChunk) {
 
 	jsonObject* transport_cfg = jsonObjectGetKey( configChunk, "transport" );
 	if( ! transport_cfg ) {
-		fprintf( stderr, "Child router process %ld has no transport configuration\n", (long) getpid() );
+		//fprintf( stderr, "Child router process %ld has no transport configuration\n", (long) getpid() );
 		return; /* these are not the configs you're looking for */
 	}
 
