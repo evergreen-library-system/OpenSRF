@@ -668,8 +668,9 @@ void jsonIteratorFree(jsonIterator* itr) {
 	detectably corrupted, or if the jsonObject to be traversed is of a type other than
 	JSON_HASH or JSON_ARRAY.
 
-	Once jsonIteratorNext has returned NULL, subsequent calls using the same iterator will
-	continue to return NULL.  There is no available function to start over at the beginning.
+	Once jsonIteratorNext has reached the end of the jsonObject that it is traversing,
+	subsequent calls using the same iterator will continue to return NULL.  There is no available
+	function to start over at the beginning.
 
 	The pointer returned, if not NULL, points to an internal element of the jsonObject being
 	traversed.  The calling code should @em not try to free it, but it may modify its contents.
@@ -819,12 +820,8 @@ char* doubleToString( double num ) {
 	If @a obj points to a jsonObject of type JSON_STRING or JSON_NUMBER, the returned value
 	points to the string stored internally (a numeric string in the case of a JSON_NUMBER).
 	Otherwise the returned value is NULL.
-
-	The returned pointer should be treated as a pointer to const.  In particular it should
-	@em not be freed.  In a future release, the returned pointer may indeed be a pointer
-	to const.
 */
-char* jsonObjectGetString(const jsonObject* obj) {
+const char* jsonObjectGetString(const jsonObject* obj) {
 	if(obj)
 	{
 		if( obj->type == JSON_STRING )

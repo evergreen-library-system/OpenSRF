@@ -389,7 +389,7 @@ jsonObject* jsonObjectExtractIndex(jsonObject* dest, unsigned long index);
 
 unsigned long jsonObjectRemoveKey( jsonObject* dest, const char* key);
 
-char* jsonObjectGetString(const jsonObject*);
+const char* jsonObjectGetString(const jsonObject*);
 
 double jsonObjectGetNumber( const jsonObject* obj );
 
