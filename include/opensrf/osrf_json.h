@@ -275,9 +275,9 @@ int jsonParseChunk( jsonParserContext* ctx, const char* data, int datalen, int f
 
 	...and a newer series:
 
-	- jsonParseString();
-	- jsonParseStringRaw();
-	- jsonParseStringFmt();
+	- jsonParse();
+	- jsonParseRaw();
+	- jsonParseFmt();
 
 	The first series is based on a finite state machine.  Its innards are accessible, in
 	theory, through the jsonParserContext structure and through callback functions.  In
@@ -290,22 +290,47 @@ int jsonParseChunk( jsonParserContext* ctx, const char* data, int datalen, int f
 */
 /*@{*/
 /**
-	@brief Parse a JSON string;
+	@brief Parse a JSON string, with translation to classname hints.
 	@param str Pointer to the JSON string to parse.
-	@return The resulting JSON object, or NULL on error.
+	@return A pointer to the resulting JSON object, or NULL on error.
+
+	If any node in the jsonObject tree is of type JSON_HASH, with a tag of JSON_CLASS_KEY
+	and another tag of JSON_DATA_KEY, the parser will collapse a level.  The subobject
+	tagged with JSON_DATA_KEY will replace the JSON_HASH, and the string tagged as
+	JSON_CLASS_KEY will be stored as its classname.
+
+	The calling code is responsible for freeing the resulting jsonObject.
 */
 jsonObject* jsonParseString( const char* str );
-jsonObject* jsonParseStringRaw( const char* str );
-jsonObject* jsonParseStringFmt( const char* str, ... );
 
 /**
-	@brief Parse a JSON string;
-	@param s Pointer to the JSON string to parse.
-	@return The resulting JSON object, or NULL on error.
- */
-jsonObject* jsonParse( const char* s );
-jsonObject* jsonParseRaw( const char* s );
-jsonObject* jsonParseFmt( const char* str, ... );
+	@brief Parse a JSON string, with no translation to classname hints.
+	@param str Pointer to the JSON string to parse.
+	@return A pointer to the resulting JSON object, or NULL on error.
+
+	This function is similar to jsonParseString(), except that it does not give any special
+	treatment to a JSON_HASH with tags JSON_CLASS_KEY or JSON_DATA_KEY.
+
+	The calling code is responsible for freeing the resulting jsonObject.
+*/
+jsonObject* jsonParseStringRaw( const char* str );
+
+/**
+	@brief Parse a JSON string received as a printf-style format string.
+	@param str A printf-style format string.  Subsequent arguments, if any, are formatted
+		and inserted into the JSON string before parsing.
+	@return A pointer to the resulting JSON object, or NULL on error.
+
+	Unlike jsonParseString(), this function does not give any special treatment to a
+	JSON_HASH with tags JSON_CLASS_KEY or JSON_DATA_KEY.
+
+	The calling code is responsible for freeing the resulting jsonObject.
+*/
+jsonObject* jsonParseStringFmt( const char* str, ... );
+
+jsonObject* jsonParse( const char* str );
+jsonObject* jsonParseRaw( const char* str );
+jsonObject* jsonParseFmt( const char* s, ... );
 /*@}*/
 
 /**
@@ -313,7 +338,7 @@ jsonObject* jsonParseFmt( const char* str, ... );
 	@param errorHandler A function pointer to an error-handling function.
 	@param str The string to parse.
 	@return The resulting JSON object, or NULL on error.
- */
+*/
 jsonObject* jsonParseStringHandleError( void (*errorHandler) (const char*), char* str, ... );
 
 jsonObject* jsonNewObject(const char* data);

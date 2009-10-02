@@ -13,6 +13,11 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
+/**
+	@file osrf_parse_json.c
+	@brief  Recursive descent parser for JSON.
+*/
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -20,14 +25,27 @@ GNU General Public License for more details.
 #include <opensrf/osrf_json.h>
 #include <opensrf/osrf_json_utils.h>
 
+/**
+	@brief A collection of things the parser uses to keep track of what it's doing.
+*/
 typedef struct {
-	growing_buffer* str_buf;  // for building strings
-	size_t index;             // index into buffer
-	const char* buff;         // client's buffer holding current chunk of input
+	growing_buffer* str_buf;  /**< for building strings */
+	size_t index;             /**< index into input buffer */
+	const char* buff;         /**< client's buffer holding current chunk of input */
 } Parser;
 
-// For building Unicode byte sequences
+/**
+	@brief A small buffer for building Unicode byte sequences.
+
+	Because we pass a Unibuff* instead of a bare char*, the receiving function doesn't
+	have to worry about the size of the supplied buffer.  The size is known.
+*/
 typedef struct {
+	/** @brief A small working buffer.
+
+		We fill the buffer with four hex characters, and then transform them into a byte
+		sequence up to three bytes long (plus terminal nul) encoding a UTF-8 character.
+	*/
 	unsigned char buff[ 4 ];
 } Unibuff;
 
@@ -46,12 +64,22 @@ static int get_utf8( Parser* parser, Unibuff* unibuff );
 static char skip_white_space( Parser* parser );
 static inline void parser_ungetc( Parser* parser );
 static inline char parser_nextc( Parser* parser );
-static void report_error( Parser* parser, char badchar, char* err );
+static void report_error( Parser* parser, char badchar, const char* err );
 
 /* ------------------------------------- */
 
-// Parse a JSON string; expand classes; construct a jsonObject.
-// Return NULL if the JSON string is invalid.
+/**
+	@brief Parse a JSON string, with translation to classname hints.
+	@param str Pointer to the JSON string to parse.
+	@return A pointer to the resulting JSON object, or NULL on error.
+
+	If any node in the jsonObject tree is of type JSON_HASH, with a tag of JSON_CLASS_KEY
+	and another tag of JSON_DATA_KEY, the parser will collapse a level.  The subobject
+	tagged with JSON_DATA_KEY will replace the JSON_HASH, and the string tagged as
+	JSON_CLASS_KEY will be stored as its classname.
+
+	The calling code is responsible for freeing the resulting jsonObject.
+*/
 jsonObject* jsonParse( const char* str ) {
 	if(!str)
 		return NULL;
@@ -67,8 +95,17 @@ jsonObject* jsonParse( const char* str ) {
 	return obj2;
 }
 
-// Parse a JSON string with variable arguments; construct a jsonObject.
-// Return NULL if the resulting JSON string is invalid.
+/**
+	@brief Parse a JSON string received as a printf-style format string.
+	@param str A printf-style format string.  Subsequent arguments, if any, are formatted
+		and inserted into the JSON string before parsing.
+	@return A pointer to the resulting JSON object, or NULL on error.
+
+	Unlike jsonParse(), this function does not give any special treatment to a JSON_HASH
+	with tags JSON_CLASS_KEY or JSON_DATA_KEY.
+
+	The calling code is responsible for freeing the resulting jsonObject.
+*/
 jsonObject* jsonParseFmt( const char* str, ... ) {
 	if( !str )
 		return NULL;
@@ -76,8 +113,16 @@ jsonObject* jsonParseFmt( const char* str, ... ) {
 	return jsonParseRaw( VA_BUF );
 }
 
-// Parse a JSON string; construct a jsonObject.
-// Return NULL if the JSON string is invalid.
+/**
+	@brief Parse a JSON string, with no translation to classname hints.
+	@param s Pointer to the JSON string to parse.
+	@return A pointer to the resulting JSON object, or NULL on error.
+
+	This function is similar to jsonParse(), except that it does not give any special
+	treatment to a JSON_HASH with tags JSON_CLASS_KEY or JSON_DATA_KEY.
+
+	The calling code is responsible for freeing the resulting jsonObject.
+*/
 jsonObject* jsonParseRaw( const char* s ) {
 
 	if( !s || !*s )
@@ -95,7 +140,18 @@ jsonObject* jsonParseRaw( const char* s ) {
 	return obj;
 }
 
-// Parse a text string into a jsonObject.
+/**
+	@brief Parse a JSON string into a jsonObject.
+	@param parser Pointer to a Parser.
+	@return Pointer to the newly created jsonObject.
+
+	Call get_json_thing() to do the real work, then make sure that there's nothing but
+	white spaqce at the end.
+
+	Currently we call this function only from jsonParseRaw(), and its code could have been
+	incorporated there in-line.  Having it in a separate function is intended to make
+	certain future developments easier.
+*/
 static jsonObject* parse( Parser* parser ) {
 
 	if( ! parser->buff ) {
@@ -115,8 +171,18 @@ static jsonObject* parse( Parser* parser ) {
 	return obj;
 }
 
-// Get the next JSON node -- be it string, number, hash, or whatever.
-// Return a pointer to it if successful, or NULL if not.
+/**
+	@brief Get the next JSON node -- be it string, number, hash, or whatever.
+	@param parser Pointer to a Parser.
+	@param firstc The first character in the part that we're parsing.
+	@return Pointer to the next JSON node, or NULL upon error.
+
+	The first character tells us what kind of thing we're parsing next: a string, an array,
+	a hash, a number, a boolean, or a null.  Branch accordingly.
+
+	In the case of an array or a hash, this function indirectly calls itself in order to
+	parse subordinate nodes.
+*/
 static jsonObject* get_json_thing( Parser* parser, char firstc ) {
 
 	jsonObject* obj = NULL;
@@ -154,9 +220,17 @@ static jsonObject* get_json_thing( Parser* parser, char firstc ) {
 	return obj;
 }
 
-// Collect characters from the input stream into a character
-// string, terminated by '"'.  Return a char* if successful,
-// or NULL if not.
+/**
+	@brief Collect characters into a character string.
+	@param parser Pointer to a Parser.
+	@return Pointer to parser->str_buf if successful, or NULL upon error.
+
+	Translate the usual escape sequences.  In particular, "\u" escapes a sequence of four
+	hex characters; turn the hex into the corresponding UTF-8 byte sequence.
+
+	Return the string we have built, without the enclosing quotation marks, in
+	parser->str_buf.  In case of error, log an error message.
+*/
 static const char* get_string( Parser* parser ) {
 
 	if( parser->str_buf )
@@ -167,8 +241,6 @@ static const char* get_string( Parser* parser ) {
 	growing_buffer* gb = parser->str_buf;
 
 	// Collect the characters.
-	// This is a naive implementation so far.
-	// We need to worry about UTF-8.
 	for( ;; ) {
 		char c = parser_nextc( parser );
 		if( '"' == c )
@@ -180,9 +252,9 @@ static const char* get_string( Parser* parser ) {
 		} else if( '\\' == c ) {
 			c = parser_nextc( parser );
 			switch( c ) {
-				case '"'  : OSRF_BUFFER_ADD_CHAR( gb, '"'  );  break;
+				case '"'  : OSRF_BUFFER_ADD_CHAR( gb, '"'  ); break;
 				case '\\' : OSRF_BUFFER_ADD_CHAR( gb, '\\' ); break;
-				case '/'  : OSRF_BUFFER_ADD_CHAR( gb, '/'  );  break;
+				case '/'  : OSRF_BUFFER_ADD_CHAR( gb, '/'  ); break;
 				case 'b'  : OSRF_BUFFER_ADD_CHAR( gb, '\b' ); break;
 				case 'f'  : OSRF_BUFFER_ADD_CHAR( gb, '\f' ); break;
 				case 'n'  : OSRF_BUFFER_ADD_CHAR( gb, '\n' ); break;
@@ -210,10 +282,20 @@ static const char* get_string( Parser* parser ) {
 	return OSRF_BUFFER_C_STR( gb );
 }
 
-// We found what looks like the first character of a number.
-// Collect all the eligible characters, and verify that they
-// are numeric (possibly after some scrubbing).  Return a
-// pointer to a JSON_NUMBER if successful, or NULL if not.
+/**
+	@brief Collect characters into a number, and create a JSON_NUMBAER for it.
+	@param parser Pointer to a parser.
+	@param firstc The first character in the number.
+	@return Pointer to a newly created jsonObject of type JSON_NUMBER, or NULL upon error.
+
+	Collect digits, signs, decimal points, and 'E' or 'e' (for scientific notation) into
+	a buffer.  Make sure that the result is numeric.  If it's not numeric by strict JSON
+	rules, try to make it numeric by some judicious massaging (we aren't quite as strict
+	as the official JSON rules).
+
+	If successful, construct a jsonObject of type JSON_NUMBER containing the resulting
+	numeric string.  Otherwise log an error message and return NULL.
+*/
 static jsonObject* get_number( Parser* parser, char firstc ) {
 
 	growing_buffer* gb = buffer_init( 32 );
@@ -256,7 +338,17 @@ static jsonObject* get_number( Parser* parser, char firstc ) {
 	return obj;
 }
 
-// We found a '['.  Create a JSON_ARRAY with all its subordinates.
+/**
+	@brief Parse an array, and create a JSON_ARRAY for it.
+	@param parser Pointer to a Parser.
+	@return Pointer to a newly created jsonObject of type JSON_ARRAY, or NULL upon error.
+
+	Look for a series of JSON nodes, separated by commas and terminated by a right square
+	bracket.  Parse each node recursively, collect them all into a newly created jsonObject
+	of type JSON_ARRAY, and return a pointer to the result.
+
+	Upon error, log an error message and return NULL.
+*/
 static jsonObject* get_array( Parser* parser ) {
 
 	jsonObject* array = jsonNewObjectType( JSON_ARRAY );
@@ -290,7 +382,20 @@ static jsonObject* get_array( Parser* parser ) {
 	return array;
 }
 
-// We found '{' Get a JSON_HASH, with all its subordinates.
+/**
+	@brief Parse a hash (JSON object), and create a JSON_HASH for it.
+	@param parser Pointer to a Parser.
+	@return Pointer to a newly created jsonObject of type JSON_HASH, or NULL upon error.
+
+	Look for a series of name/value pairs, separated by commas and terminated by a right
+	curly brace.  Each name/value pair consists of a quoted string, followed by a colon,
+	followed a JSON node of any sort.  Parse the value recursively.
+
+	Collect the name/value pairs into a newly created jsonObject of type JSON_ARRAY, and
+	return a pointer to it.
+
+	Upon error, log an error message and return NULL.
+*/
 static jsonObject* get_hash( Parser* parser ) {
 	jsonObject* hash = jsonNewObjectType( JSON_HASH );
 
@@ -359,8 +464,17 @@ static jsonObject* get_hash( Parser* parser ) {
 	return hash;
 }
 
-// We found an 'n'.  Verify that the next four characters are "ull",
-// and that there are no further characters in the token.
+/**
+	@brief Parse the JSON keyword "null", and create a JSON_NULL for it.
+	@param parser Pointer to a Parser.
+	@return Pointer to a newly created jsonObject of type JSON_NULL, or NULL upon error.
+
+	We already saw an 'n', or we wouldn't be here.  Make sure that the next three characters
+	are 'u', 'l', and 'l', and that the character after that is not a letter or a digit.
+
+	If all goes well, create a jsonObject of type JSON_NULL, and return a pointer to it.
+	Otherwise log an error message and return NULL.
+*/
 static jsonObject* get_null( Parser* parser ) {
 
 	if( parser_nextc( parser ) != 'u' ||
@@ -371,24 +485,31 @@ static jsonObject* get_null( Parser* parser ) {
 		return NULL;
 	}
 
-	// Sneak a peek at the next character
-	// to make sure that it's kosher
+	// Peek at the next character to make sure that it's kosher
 	char c = parser_nextc( parser );
 	if( ! isspace( (unsigned char) c ) )
 		parser_ungetc( parser );
 
 	if( isalnum( (unsigned char) c ) ) {
-		report_error( parser, c,
-				"Found letter or number after \"null\"" );
+		report_error( parser, c, "Found letter or number after \"null\"" );
 		return NULL;
 	}
 
-	// Everythings okay.  Return a JSON_BOOL.
+	// Everything's okay.  Return a JSON_NULL.
 	return jsonNewObject( NULL );
 }
 
-// We found a 't'.  Verify that the next four characters are "rue",
-// and that there are no further characters in the token.
+/**
+	@brief Parse the JSON keyword "true", and create a JSON_BOOL for it.
+	@param parser Pointer to a Parser.
+	@return Pointer to a newly created jsonObject of type JSON_BOOL, or NULL upon error.
+
+	We already saw a 't', or we wouldn't be here.  Make sure that the next three characters
+	are 'r', 'u', and 'e', and that the character after that is not a letter or a digit.
+
+	If all goes well, create a jsonObject of type JSON_BOOL, and return a pointer to it.
+	Otherwise log an error message and return NULL.
+*/
 static jsonObject* get_true( Parser* parser ) {
 
 	if( parser_nextc( parser ) != 'r' ||
@@ -399,24 +520,31 @@ static jsonObject* get_true( Parser* parser ) {
 		return NULL;
 	}
 
-	// Sneak a peek at the next character
-	// to make sure that it's kosher
+	// Peek at the next character to make sure that it's kosher
 	char c = parser_nextc( parser );
 	if( ! isspace( (unsigned char) c ) )
 		parser_ungetc( parser );
 
 	if( isalnum( (unsigned char) c ) ) {
-		report_error( parser, c,
-				"Found letter or number after \"true\"" );
+		report_error( parser, c, "Found letter or number after \"true\"" );
 		return NULL;
 	}
 
-	// Everythings okay.  Return a JSON_NULL.
+	// Everything's okay.  Return a JSON_BOOL.
 	return jsonNewBoolObject( 1 );
 }
 
-// We found an 'f'.  Verify that the next four characters are "alse",
-// and that there are no further characters in the token.
+/**
+	@brief Parse the JSON keyword "false", and create a JSON_BOOL for it.
+	@param parser Pointer to a Parser.
+	@return Pointer to a newly created jsonObject of type JSON_BOOL, or NULL upon error.
+
+	We already saw a 'f', or we wouldn't be here.  Make sure that the next four characters
+	are 'a', 'l', 's', and 'e', and that the character after that is not a letter or a digit.
+
+	If all goes well, create a jsonObject of type JSON_BOOL, and return a pointer to it.
+	Otherwise log an error message and return NULL.
+*/
 static jsonObject* get_false( Parser* parser ) {
 
 	if( parser_nextc( parser ) != 'a' ||
@@ -428,24 +556,51 @@ static jsonObject* get_false( Parser* parser ) {
 		return NULL;
 	}
 
-	// Sneak a peek at the next character
-	// to make sure that it's kosher
+	// Peek at the next character to make sure that it's kosher
 	char c = parser_nextc( parser );
 	if( ! isspace( (unsigned char) c ) )
 		parser_ungetc( parser );
 
 	if( isalnum( (unsigned char) c ) ) {
-		report_error( parser, c,
-				"Found letter or number after \"false\"" );
+		report_error( parser, c, "Found letter or number after \"false\"" );
 		return NULL;
 	}
 
-	// Everythings okay.  Return a JSON_BOOL.
+	// Everything's okay.  Return a JSON_BOOL.
 	return jsonNewBoolObject( 0 );
 }
 
-// We found \u.  Grab the next 4 characters, confirm that they are hex,
-// and convert them to Unicode.
+/**
+	@brief Convert a hex digit to the corresponding numeric value.
+	@param x A hex digit
+	@return The corresponding numeric value.
+
+	Warning #1: The calling code must ensure that the character to be converted is, in fact,
+	a hex character.  Otherwise the results will be strange.
+
+	Warning #2. This macro evaluates its argument three times.  Beware of side effects.
+	(It might make sense to convert this macro to a static inline function.)
+
+	Warning #3: This code assumes that the characters [a-f] and [A-F] are contiguous in the
+	execution character set, and that the lower 4 bits for 'a' and 'A' are 0001.  Those
+	assumptions are true for ASCII and EBCDIC, but there may be some character sets for
+	which it is not true.
+*/
+#define hexdigit(x) ( ((x) <= '9') ? (x) - '0' : ((x) & 7) + 9)
+
+/**
+	@brief Translate the next four characters into a UTF-8 character.
+	@param parser Pointer to a Parser.
+	@param unibuff Pointer to a small buffer in which to return the results.
+	@return 0 if successful, or 1 if not.
+
+	Collect the next four characters into @a unibuff, and make sure that they're all hex.
+	Translate them into a nul-terminated UTF-8 byte sequence, and return the result via
+	@a unibuff.
+
+	(Note that a UTF-8 byte sequence is guaranteed not to contain a nul byte.  Hence using
+	a nul as a terminator creates no ambiguity.)
+*/
 static int get_utf8( Parser* parser, Unibuff* unibuff ) {
 	char ubuff[ 5 ];
 	int i = 0;
@@ -470,9 +625,8 @@ static int get_utf8( Parser* parser, Unibuff* unibuff ) {
 	/* The following code is adapted with permission from
 	 * json-c http://oss.metaparadigm.com/json-c/
 	 */
-	#define hexdigit(x) ( ((x) <= '9') ? (x) - '0' : ((x) & 7) + 9)
 
-	// Convert the hex sequence into a single integer
+	// Convert the hex sequence to a single integer
 	unsigned int ucs_char =
 			(hexdigit(ubuff[ 0 ]) << 12) +
 			(hexdigit(ubuff[ 1 ]) <<  8) +
@@ -500,7 +654,11 @@ static int get_utf8( Parser* parser, Unibuff* unibuff ) {
 	return 0;
 }
 
-// Return the next non-whitespace character in the input stream.
+/**
+	@brief Skip over white space.
+	@param parser Pointer to a Parser.
+	@return The next non-whitespace character.
+*/
 static char skip_white_space( Parser* parser ) {
 	char c;
 	do {
@@ -510,21 +668,40 @@ static char skip_white_space( Parser* parser ) {
 	return c;
 }
 
-// Put a character back into the input stream.
-// It is the responsibility of the caller not to back up
-// past the beginning of the input string.
+/**
+	@brief Back up by one character.
+	@param parser Pointer to a Parser.
+
+	Decrement an index into the input string.  We don't guard against a negative index, so
+	the calling code should make sure that it doesn't do anything stupid.
+*/
 static inline void parser_ungetc( Parser* parser ) {
 	--parser->index;
 }
 
-// Get the next character.  It is the responsibility of
-//the caller not to read past the end of the input string.
+/**
+	@brief Get the next character
+	@param parser Pointer to a Parser.
+	@return The next character.
+
+	Increment an index into the input string and return the corresponding character.
+	The calling code should make sure that it doesn't try to read past the terminal nul.
+*/
 static inline char parser_nextc( Parser* parser ) {
 	return parser->buff[ parser->index++ ];
 }
 
-// Report a syntax error to standard error.
-static void report_error( Parser* parser, char badchar, char* err ) {
+/**
+	@brief Report a syntax error to the log.
+	@param parser Pointer to a Parser.
+	@param badchar The character at the position where the error was detected.
+	@param err Pointer to a descriptive error message.
+
+	Format and log an error message.  Identify the location of the error and
+	the character at that location.  Show the neighborhood of the error within
+	the input string.
+*/
+static void report_error( Parser* parser, char badchar, const char* err ) {
 
 	// Determine the beginning and ending points of a JSON
 	// fragment to display, from the vicinity of the error
@@ -545,7 +722,6 @@ static void report_error( Parser* parser, char badchar, char* err ) {
 	}
 
 	// Copy the fragment into a buffer
-
 	int len = post - pre + 1;  // length of fragment
 	char buf[len + 1];
 	memcpy( buf, parser->buff + pre, len );
