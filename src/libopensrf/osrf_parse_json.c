@@ -32,6 +32,7 @@ typedef struct {
 	growing_buffer* str_buf;  /**< for building strings */
 	size_t index;             /**< index into input buffer */
 	const char* buff;         /**< client's buffer holding current chunk of input */
+	int decode;               /**< boolean; true if we are decoding class hints */
 } Parser;
 
 /**
@@ -49,13 +50,14 @@ typedef struct {
 	unsigned char buff[ 4 ];
 } Unibuff;
 
-static jsonObject* parse( Parser* parser );
+static jsonObject* parse_it( const char* s, int decode );
 
-static jsonObject* get_json_thing( Parser* parser, char firstc );
+static jsonObject* get_json_node( Parser* parser, char firstc );
 static const char* get_string( Parser* parser );
 static jsonObject* get_number( Parser* parser, char firstc );
 static jsonObject* get_array( Parser* parser );
 static jsonObject* get_hash( Parser* parser );
+static jsonObject* get_decoded_hash( Parser* parser );
 static jsonObject* get_null( Parser* parser );
 static jsonObject* get_true( Parser* parser );
 static jsonObject* get_false( Parser* parser );
@@ -69,30 +71,34 @@ static void report_error( Parser* parser, char badchar, const char* err );
 /* ------------------------------------- */
 
 /**
-	@brief Parse a JSON string, with translation to classname hints.
+	@brief Parse a JSON string, with decoding of classname hints.
 	@param str Pointer to the JSON string to parse.
 	@return A pointer to the resulting JSON object, or NULL on error.
 
 	If any node in the jsonObject tree is of type JSON_HASH, with a tag of JSON_CLASS_KEY
 	and another tag of JSON_DATA_KEY, the parser will collapse a level.  The subobject
 	tagged with JSON_DATA_KEY will replace the JSON_HASH, and the string tagged as
-	JSON_CLASS_KEY will be stored as its classname.
+	JSON_CLASS_KEY will be stored as its classname.  If there is no tag of JSON_DATA_KEY,
+	the hash will be replaced by a jsonObject of type JSON_NULL.
 
 	The calling code is responsible for freeing the resulting jsonObject.
 */
 jsonObject* jsonParse( const char* str ) {
-	if(!str)
-		return NULL;
+	return parse_it( str, 1 );
+}
 
-	jsonObject* obj  = jsonParseRaw( str );
+/**
+	@brief Parse a JSON string, with no decoding of classname hints.
+	@param s Pointer to the JSON string to parse.
+	@return A pointer to the resulting JSON object, or NULL on error.
 
-	jsonObject* obj2 = NULL;
-	if( obj )
-		obj2 = jsonObjectDecodeClass( obj );
+	This function is similar to jsonParse(), except that it does not give any special
+	treatment to a JSON_HASH with the JSON_CLASS_KEY tag.
 
-	jsonObjectFree( obj  );
-
-	return obj2;
+	The calling code is responsible for freeing the resulting jsonObject.
+*/
+jsonObject* jsonParseRaw( const char* s ) {
+	return parse_it( s, 0 );
 }
 
 /**
@@ -109,21 +115,20 @@ jsonObject* jsonParse( const char* str ) {
 jsonObject* jsonParseFmt( const char* str, ... ) {
 	if( !str )
 		return NULL;
-	VA_LIST_TO_STRING(str);
-	return jsonParseRaw( VA_BUF );
+	VA_LIST_TO_STRING( str );
+	return parse_it( VA_BUF, 0 );
 }
 
 /**
-	@brief Parse a JSON string, with no translation to classname hints.
-	@param s Pointer to the JSON string to parse.
-	@return A pointer to the resulting JSON object, or NULL on error.
+	@brief Parse a JSON string into a jsonObject.
+	@param s Pointer to the string to be parsed.
+	@param decode A boolean; true means decode class hints, false means don't.
+	@return Pointer to the newly created jsonObject.
 
-	This function is similar to jsonParse(), except that it does not give any special
-	treatment to a JSON_HASH with tags JSON_CLASS_KEY or JSON_DATA_KEY.
-
-	The calling code is responsible for freeing the resulting jsonObject.
+	Set up a Parser.  Call get_json_node() to do the real work, then make sure that there's
+	nothing but white space at the end.
 */
-jsonObject* jsonParseRaw( const char* s ) {
+static jsonObject* parse_it( const char* s, int decode ) {
 
 	if( !s || !*s )
 		return NULL;    // Nothing to parse
@@ -133,41 +138,19 @@ jsonObject* jsonParseRaw( const char* s ) {
 	parser.str_buf = NULL;
 	parser.index = 0;
 	parser.buff = s;
+	parser.decode = decode;
 
-	jsonObject* obj = parse( &parser );
+	jsonObject* obj = get_json_node( &parser, skip_white_space( &parser ) );
 
-	buffer_free( parser.str_buf );
-	return obj;
-}
-
-/**
-	@brief Parse a JSON string into a jsonObject.
-	@param parser Pointer to a Parser.
-	@return Pointer to the newly created jsonObject.
-
-	Call get_json_thing() to do the real work, then make sure that there's nothing but
-	white spaqce at the end.
-
-	Currently we call this function only from jsonParseRaw(), and its code could have been
-	incorporated there in-line.  Having it in a separate function is intended to make
-	certain future developments easier.
-*/
-static jsonObject* parse( Parser* parser ) {
-
-	if( ! parser->buff ) {
-		osrfLogError( OSRF_LOG_MARK, "Internal error; no input buffer available" );
-		return NULL;         // Should never happen
-	}
-
-	jsonObject* obj = get_json_thing( parser, skip_white_space( parser ) );
-
+	// Make sure there's nothing but white space at the end
 	char c;
-	if( obj && (c = skip_white_space( parser )) ) {
-		report_error( parser, c, "Extra material follows JSON string" );
+	if( obj && (c = skip_white_space( &parser )) ) {
+		report_error( &parser, c, "Extra material follows JSON string" );
 		jsonObjectFree( obj );
 		obj = NULL;
 	}
 
+	buffer_free( parser.str_buf );
 	return obj;
 }
 
@@ -183,7 +166,7 @@ static jsonObject* parse( Parser* parser ) {
 	In the case of an array or a hash, this function indirectly calls itself in order to
 	parse subordinate nodes.
 */
-static jsonObject* get_json_thing( Parser* parser, char firstc ) {
+static jsonObject* get_json_node( Parser* parser, char firstc ) {
 
 	jsonObject* obj = NULL;
 
@@ -198,7 +181,10 @@ static jsonObject* get_json_thing( Parser* parser, char firstc ) {
 	} else if( '[' == firstc ) {
 		obj = get_array( parser );
 	} else if( '{' == firstc ) {
-		obj = get_hash( parser );
+		if( parser->decode )
+			obj = get_decoded_hash( parser );
+		else
+			obj = get_hash( parser );
 	} else if( 'n' == firstc ) {
 		obj = get_null( parser );
 	} else if( 't' == firstc ) {
@@ -283,7 +269,7 @@ static const char* get_string( Parser* parser ) {
 }
 
 /**
-	@brief Collect characters into a number, and create a JSON_NUMBAER for it.
+	@brief Collect characters into a number, and create a JSON_NUMBER for it.
 	@param parser Pointer to a parser.
 	@param firstc The first character in the number.
 	@return Pointer to a newly created jsonObject of type JSON_NUMBER, or NULL upon error.
@@ -298,7 +284,12 @@ static const char* get_string( Parser* parser ) {
 */
 static jsonObject* get_number( Parser* parser, char firstc ) {
 
-	growing_buffer* gb = buffer_init( 32 );
+	if( parser->str_buf )
+		buffer_reset( parser->str_buf );
+	else
+		parser->str_buf = buffer_init( 64 );
+
+	growing_buffer* gb = parser->str_buf;
 	OSRF_BUFFER_ADD_CHAR( gb, firstc );
 
 	char c;
@@ -319,7 +310,7 @@ static jsonObject* get_number( Parser* parser, char firstc ) {
 		}
 	}
 
-	char* s = buffer_release( gb );
+	char* s = buffer_data( gb );
 	if( ! jsonIsNumeric( s ) ) {
 		char* temp = jsonScrubNumber( s );
 		free( s );
@@ -358,7 +349,7 @@ static jsonObject* get_array( Parser* parser ) {
 		return array;          // Empty array
 
 	for( ;; ) {
-		jsonObject* obj = get_json_thing( parser, c );
+		jsonObject* obj = get_json_node( parser, c );
 		if( !obj ) {
 			jsonObjectFree( array );
 			return NULL;         // Failed to get anything
@@ -408,6 +399,91 @@ static jsonObject* get_hash( Parser* parser ) {
 		// Get the key string
 		if( '"' != c ) {
 			report_error( parser, c,
+						  "Expected quotation mark to begin hash key; didn't find it\n" );
+			jsonObjectFree( hash );
+			return NULL;
+		}
+
+		const char* key = get_string( parser );
+		if( ! key ) {
+			jsonObjectFree( hash );
+			return NULL;
+		}
+		char* key_copy = strdup( key );
+
+		if( jsonObjectGetKey( hash, key_copy ) ) {
+			report_error( parser, '"', "Duplicate key in JSON object" );
+			jsonObjectFree( hash );
+			return NULL;
+		}
+
+		// Get the colon
+		c = skip_white_space( parser );
+		if( c != ':' ) {
+			report_error( parser, c,
+						  "Expected colon after hash key; didn't find it\n" );
+			free( key_copy );
+			jsonObjectFree( hash );
+			return NULL;
+		}
+
+		// Get the associated value
+		jsonObject* obj = get_json_node( parser, skip_white_space( parser ) );
+		if( !obj ) {
+			free( key_copy );
+			jsonObjectFree( hash );
+			return NULL;
+		}
+
+		// Add a new entry to the hash
+		jsonObjectSetKey( hash, key_copy, obj );
+		free( key_copy );
+
+		// Look for comma or right brace
+		c = skip_white_space( parser );
+		if( '}' == c )
+			break;
+		else if( c != ',' ) {
+			report_error( parser, c,
+						  "Expected comma or brace in hash, didn't find it" );
+			jsonObjectFree( hash );
+			return NULL;
+		}
+		c = skip_white_space( parser );
+	}
+
+	return hash;
+}
+
+/**
+	@brief Parse a hash (JSON object), and create a JSON_HASH for it; decode class hints.
+	@param parser Pointer to a Parser.
+	@return Pointer to a newly created jsonObject, or NULL upon error.
+
+	This function is similar to get_hash(), @em except:
+
+	If the hash includes a member with a key equal to JSON_CLASS_KEY ("__c" by default),
+	then look for a member whose key is JSON_DATA_KEY ("__p" by default).  If you find one,
+	return the data associated with it; otherwise return a jsonObject of type JSON_NULL.
+
+	If there is no member with a key equal to JSON_CLASS_KEY, then return the same sort of
+	jsonObject as get_hash() would return (except of course that lower levels may be
+	decoded as described above).
+*/
+static jsonObject* get_decoded_hash( Parser* parser ) {
+	jsonObject* hash = jsonNewObjectType( JSON_HASH );
+
+	char c = skip_white_space( parser );
+	if( '}' == c )
+		return hash;           // Empty hash
+
+	char* class_name = NULL;
+
+	for( ;; ) {
+
+		// Get the key string
+		if( '"' != c ) {
+			report_error( parser, c,
 					"Expected quotation mark to begin hash key; didn't find it\n" );
 			jsonObjectFree( hash );
 			return NULL;
@@ -437,7 +513,7 @@ static jsonObject* get_hash( Parser* parser ) {
 		}
 
 		// Get the associated value
-		jsonObject* obj = get_json_thing( parser, skip_white_space( parser ) );
+		jsonObject* obj = get_json_node( parser, skip_white_space( parser ) );
 		if( !obj ) {
 			free( key_copy );
 			jsonObjectFree( hash );
@@ -446,6 +522,11 @@ static jsonObject* get_hash( Parser* parser ) {
 
 		// Add a new entry to the hash
 		jsonObjectSetKey( hash, key_copy, obj );
+
+		// Save info for class hint, if present
+		if( !strcmp( key_copy, JSON_CLASS_KEY ) )
+			class_name = jsonObjectToSimpleString( obj );
+
 		free( key_copy );
 
 		// Look for comma or right brace
@@ -459,6 +540,27 @@ static jsonObject* get_hash( Parser* parser ) {
 			return NULL;
 		}
 		c = skip_white_space( parser );
+	}
+
+	if( class_name ) {
+		// We found a class hint.  Extract the data node and return it.
+		jsonObject* class_data = osrfHashExtract( hash->value.h, JSON_DATA_KEY );
+		if( class_data ) {
+			class_data->parent = NULL;
+			jsonObjectFree( hash );
+			hash = class_data;
+			hash->parent = NULL;
+			hash->classname = class_name;
+		} else {
+			// Huh?  We have a class name but no data for it.
+			// Throw away what we have and return a JSON_NULL.
+			jsonObjectFree( hash );
+			hash = jsonNewObjectType( JSON_NULL );
+		}
+
+	} else {
+		if( class_name )
+			free( class_name );
 	}
 
 	return hash;

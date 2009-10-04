@@ -290,26 +290,27 @@ int jsonParseChunk( jsonParserContext* ctx, const char* data, int datalen, int f
 */
 /*@{*/
 /**
-	@brief Parse a JSON string, with translation to classname hints.
+	@brief Parse a JSON string, with decoding of classname hints.
 	@param str Pointer to the JSON string to parse.
 	@return A pointer to the resulting JSON object, or NULL on error.
 
 	If any node in the jsonObject tree is of type JSON_HASH, with a tag of JSON_CLASS_KEY
 	and another tag of JSON_DATA_KEY, the parser will collapse a level.  The subobject
 	tagged with JSON_DATA_KEY will replace the JSON_HASH, and the string tagged as
-	JSON_CLASS_KEY will be stored as its classname.
+	JSON_CLASS_KEY will be stored as its classname.  If there is no tag of JSON_DATA_KEY,
+	the hash will be replaced by a jsonObject of type JSON_NULL.
 
 	The calling code is responsible for freeing the resulting jsonObject.
 */
 jsonObject* jsonParseString( const char* str );
 
 /**
-	@brief Parse a JSON string, with no translation to classname hints.
+	@brief Parse a JSON string, with no decoding of classname hints.
 	@param str Pointer to the JSON string to parse.
 	@return A pointer to the resulting JSON object, or NULL on error.
 
 	This function is similar to jsonParseString(), except that it does not give any special
-	treatment to a JSON_HASH with tags JSON_CLASS_KEY or JSON_DATA_KEY.
+	treatment to a JSON_HASH with the JSON_CLASS_KEY tag.
 
 	The calling code is responsible for freeing the resulting jsonObject.
 */
