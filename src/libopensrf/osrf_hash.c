@@ -300,11 +300,6 @@ void* osrfHashSet( osrfHash* hash, void* item, const char* key, ... ) {
 	return NULL;
 }
 
-/* Delete the entry for a specified key.  If the entry exists,
-   and there is no callback function to destroy the associated
-   item, return a pointer to the formerly associated item.
-   Otherwise return NULL.
-*/
 /**
 	@brief Remove the item for a specified key from an osrfHash.
 	@param hash Pointer to the osrfHash from which the item is to be removed.
@@ -367,6 +362,51 @@ void* osrfHashRemove( osrfHash* hash, const char* key, ... ) {
 	return item;
 }
 
+/**
+	@brief Extract the item for a specified key from an osrfHash.
+	@param hash Pointer to the osrfHash from which the item is to be extracted.
+	@param key A printf-style format string to be expanded into the key for the item.
+		Subsequent parameters, if any, will be formatted and inserted into the expanded key.
+	@return Pointer to the extracted item, if any (see discussion).
+	
+	osrfHashRemove removes a specified entry without destroying it, and returns a pointer
+	to it.  If either of its first two parameters is NULL, or if no entry is present for the specified key, it returns NULL.
+
+	This function is identical to osrfHashRemove() except that it does not destroy the
+	specified item.
+*/
+void* osrfHashExtract( osrfHash* hash, const char* key, ... ) {
+	if(!(hash && key )) return NULL;
+
+	VA_LIST_TO_STRING(key);
+
+	osrfHashNode* node = find_item( hash, VA_BUF, NULL );
+	if( !node ) return NULL;
+
+	hash->size--;
+
+	void* item = node->item;  // to be returned
+
+	// Mark the node as logically deleted
+	free(node->key);
+	node->key = NULL;
+	node->item = NULL;
+
+	// Make the node unreachable from the rest of the linked list.
+	// We leave the next and prev pointers in place so that an
+	// iterator parked here can find its way to an adjacent node.
+	if( node->prev )
+		node->prev->next = node->next;
+	else
+		hash->first_key = node->next;
+
+	if( node->next )
+		node->next->prev = node->prev;
+	else
+		hash->last_key = node->prev;
+
+	return item;
+}
 
 /**
 	@brief Fetch the item stored in an osrfHash for a given key.
