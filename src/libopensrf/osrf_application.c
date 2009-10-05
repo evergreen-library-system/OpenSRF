@@ -333,8 +333,8 @@ static int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int 
 		osrfLogDebug( OSRF_LOG_MARK,   
 			"Adding responses to stash for atomic method %s", ctx->method->name );
 
-		if( ctx->responses == NULL )												
-			ctx->responses = jsonParseString("[]");							
+		if( ctx->responses == NULL )
+			ctx->responses = jsonNewObjectType( JSON_ARRAY );
 
 		if ( data != NULL )
 			jsonObjectPush( ctx->responses, jsonObjectClone(data) );	

@@ -1021,7 +1021,7 @@ static int do_math( int count, int style ) {
 	osrfAppSession* session = osrfAppSessionClientInit( "opensrf.math" );
 	osrfAppSessionConnect(session);
 
-	jsonObject* params = jsonParseString("[]");
+	jsonObject* params = jsonNewObjectType( JSON_ARRAY );
 	jsonObjectPush(params,jsonNewObject("1"));
 	jsonObjectPush(params,jsonNewObject("2"));
 
