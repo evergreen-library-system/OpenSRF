@@ -21,6 +21,13 @@ static jsonObject* findMultiPath( const jsonObject* o,
 static jsonObject* findMultiPathRecurse( const jsonObject* o, const char* root );
 static jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClass );
 
+/**
+	@brief Append some spaces to a growing_buffer, for indentation.
+	@param buf Pointer to the growing_buffer.
+	@param depth Degree of indentation.
+
+	We append 2 spaces per degree of indentation.
+*/
 static void append_indentation( growing_buffer* buf, int depth ) {
 	size_t n = 2 * depth;
 	char indent[ n ];
@@ -28,6 +35,18 @@ static void append_indentation( growing_buffer* buf, int depth ) {
 	buffer_add_n( buf, indent, n );
 }
 
+/**
+	@brief Make a prettyprint copy of a JSON string.
+	@param string Pointer to the JSON string to be formatted.
+	@return Pointer to a newly allocated and reformatted JSON string.
+
+	Create a copy of the input JSON string, with newlines and
+	indentation for readability.
+
+	If the input pointer is NULL, return an empty string.
+
+	The calling code is responsible for freeing the formatted copy.
+*/
 char* jsonFormatString( const char* string ) {
 	if(!string) return strdup("");
 
@@ -81,7 +100,7 @@ jsonObject* jsonObjectDecodeClass( const jsonObject* obj ) {
 
 			/* do we have a payload */
 			if( (payloadObj = jsonObjectGetKeyConst( obj, JSON_DATA_KEY )) ) {
-				newObj = jsonObjectDecodeClass( payloadObj ); 
+				newObj = jsonObjectDecodeClass( payloadObj );
 				jsonObjectSetClass( newObj, jsonObjectGetString(classObj) );
 
 			} else { /* class is defined but there is no payload */
@@ -98,6 +117,8 @@ jsonObject* jsonObjectDecodeClass( const jsonObject* obj ) {
 				jsonObjectSetKey( newObj, itr->key, o );
 			}
 			jsonIteratorFree(itr);
+			if( obj->classname )
+				jsonObjectSetClass( newObj, obj->classname );
 		}
 
 	} else {
@@ -108,6 +129,8 @@ jsonObject* jsonObjectDecodeClass( const jsonObject* obj ) {
 				jsonObject* tmp = jsonObjectDecodeClass(jsonObjectGetIndex( obj, i ) );
 				jsonObjectSetIndex( newObj, i, tmp );
 			}
+			if( obj->classname )
+				jsonObjectSetClass( newObj, obj->classname );
 
 		} else { /* not an aggregate type */
 			newObj = jsonObjectClone(obj);
