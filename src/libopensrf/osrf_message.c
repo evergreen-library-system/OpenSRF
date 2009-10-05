@@ -49,13 +49,23 @@ void osrf_message_set_method( osrfMessage* msg, const char* method_name ) {
 }
 
 
+/**
+	@brief Wrap a copy of a jsonObject in a JSON_ARRAY and store it in an osrfMessage.
+	@param msg Pointer to the osrfMessage.
+	@param o Pointer to the jsonObject of which a copy is to be stored.
+
+	Make a copy of the input jsonObject, with all classnames encoded with
+	JSON_CLASS_KEY and JSON_DATA_KEY.  Append it to a JSON_ARRAY stored at
+	msg->_params.
+
+	If there is nothing at msg->_params, create a new JSON_ARRAY
+	for it and add the new object as the first element.
+*/
 void osrf_message_add_object_param( osrfMessage* msg, const jsonObject* o ) {
 	if(!msg|| !o) return;
 	if(!msg->_params)
-		msg->_params = jsonParseString("[]");
-	char* j = jsonObjectToJSON(o);
-	jsonObjectPush(msg->_params, jsonParseString(j));
-	free(j);
+		msg->_params = jsonNewObjectType( JSON_ARRAY );
+	jsonObjectPush(msg->_params, jsonObjectDecodeClass( o ));
 }
 
 void osrf_message_set_params( osrfMessage* msg, const jsonObject* o ) {
@@ -78,7 +88,7 @@ void osrf_message_set_params( osrfMessage* msg, const jsonObject* o ) {
 /* only works if parse_json_params is false */
 void osrf_message_add_param( osrfMessage* msg, const char* param_string ) {
 	if(msg == NULL || param_string == NULL) return;
-	if(!msg->_params) msg->_params = jsonParseString("[]");
+	if(!msg->_params) msg->_params = jsonNewObjectType( JSON_ARRAY );
 	jsonObjectPush(msg->_params, jsonParseString(param_string));
 }
 
@@ -100,7 +110,7 @@ void osrf_message_set_status_info( osrfMessage* msg,
 void osrf_message_set_result_content( osrfMessage* msg, const char* json_string ) {
 	if( msg == NULL || json_string == NULL) return;
 	msg->result_string =	strdup(json_string);
-	if(json_string) msg->_result_content = jsonParseString(json_string);
+	msg->_result_content = jsonParseString(json_string);
 }
 
 
@@ -178,8 +188,6 @@ jsonObject* osrfMessageToJSON( const osrfMessage* msg ) {
 	char sc[64];
 	osrf_clearbuf(sc, sizeof(sc));
 
-	char* str;
-
 	INT_TO_STRING(msg->thread_trace);
 	jsonObjectSetKey(json, "threadTrace", jsonNewObject(INTSTR));
 
@@ -216,9 +224,7 @@ jsonObject* osrfMessageToJSON( const osrfMessage* msg ) {
 			payload = jsonNewObject(NULL);
 			jsonObjectSetClass(payload, "osrfMethod");
 			jsonObjectSetKey(payload, "method", jsonNewObject(msg->method_name));
-			str = jsonObjectToJSON(msg->_params);
-			jsonObjectSetKey(payload, "params", jsonParseString(str));
-			free(str);
+			jsonObjectSetKey( payload, "params", jsonObjectDecodeClass( msg->_params ) );
 			jsonObjectSetKey(json, "payload", payload);
 
 			break;
@@ -230,9 +236,7 @@ jsonObject* osrfMessageToJSON( const osrfMessage* msg ) {
 			jsonObjectSetKey(payload, "status", jsonNewObject(msg->status_text));
 			snprintf(sc, sizeof(sc), "%d", msg->status_code);
 			jsonObjectSetKey(payload, "statusCode", jsonNewObject(sc));
-			str = jsonObjectToJSON(msg->_result_content);
-			jsonObjectSetKey(payload, "content", jsonParseString(str));
-			free(str);
+			jsonObjectSetKey(payload, "content", jsonObjectDecodeClass( msg->_result_content ));
 			jsonObjectSetKey(json, "payload", payload);
 			break;
 	}
@@ -335,11 +339,9 @@ int osrf_message_deserialize(const char* string, osrfMessage* msgs[], int count)
 
 				tmp0 = jsonObjectGetKeyConst(tmp,"params");
 				if(tmp0) {
-					char* s = jsonObjectToJSON(tmp0);
-					new_msg->_params = jsonParseString(s);
+					new_msg->_params = jsonObjectDecodeClass( tmp0 );
 					if(new_msg->_params && new_msg->_params->type == JSON_NULL) 
 						new_msg->_params->type = JSON_ARRAY;
-					free(s);
 				}
 
 				tmp0 = jsonObjectGetKeyConst(tmp,"status");
@@ -358,9 +360,7 @@ int osrf_message_deserialize(const char* string, osrfMessage* msgs[], int count)
 
 				tmp0 = jsonObjectGetKeyConst(tmp,"content");
 				if(tmp0) {
-					char* s = jsonObjectToJSON(tmp0);
-					new_msg->_result_content = jsonParseString(s);
-					free(s);
+					new_msg->_result_content = jsonObjectDecodeClass( tmp0 );
 				}
 
 			}
