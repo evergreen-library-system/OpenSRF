@@ -728,8 +728,8 @@ char* md5sum( const char* text, ... ) {
 	MD5_stop (&ctx, digest);
 
 	char buf[16];
-	char final[256];
-	osrf_clearbuf(final, sizeof(final));
+	char final[ 1 + 2 * sizeof( digest ) ];
+	final[0] = '\0';
 
 	for ( i=0 ; i<16 ; i++ ) {
 		snprintf(buf, sizeof(buf), "%02x", digest[i]);
