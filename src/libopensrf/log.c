@@ -1,3 +1,8 @@
+/**
+	@file log.c
+	@brief Routines for logging messages.
+*/
+
 #include <opensrf/log.h>
 
 #define OSRF_NO_LOG_TYPE -1
@@ -21,6 +26,14 @@ static void _osrfLogToFile( const char* label, long pid, const char* filename, i
 							const char* xid, const char* msg );
 static void _osrfLogSetXid( const char* xid );
 
+/**
+	@brief Reset certain static variables to their initial values.
+
+	Of the various static variables, we here reset only three:
+	- application name (deleted)
+	- file name of log file (deleted)
+	- log type (reset to OSRF_LOG_TYPE_STDERR)
+*/
 void osrfLogCleanup( void ) {
 	free(_osrfLogAppname);
 	_osrfLogAppname = NULL;
@@ -77,6 +90,10 @@ void osrfLogInit( int type, const char* appname, int maxlevel ) {
 		openlog(_osrfLogAppname, 0, _osrfLogFacility );
 }
 
+/**
+	@brief Store a copy of a transaction id for future use.
+	@param xid Pointer to the transaction id to be stored.
+*/
 static void _osrfLogSetXid( const char* xid ) {
    if(xid) {
       if(_osrfLogXid) free(_osrfLogXid);
@@ -84,14 +101,38 @@ static void _osrfLogSetXid( const char* xid ) {
    }
 }
 
+/**
+	@brief Store an empty string as the transaction id.
+*/
 void osrfLogClearXid( void ) { _osrfLogSetXid(""); }
+
+/**
+	@brief Store a transaction id, unless running as a client process.
+	@param xid Pointer to the new transaction id
+*/
 void osrfLogSetXid(char* xid) {
    if(!_osrfLogIsClient) _osrfLogSetXid(xid);
 }
+
+/**
+	@brief Store a transaction id, unconditionally, for future use.
+	@param xid Pointer to the new transaction id
+*/
 void osrfLogForceXid(char* xid) {
    _osrfLogSetXid(xid);
 }
 
+/**
+	@brief For client processes only: create and store a unique transaction id.
+
+	The generated transaction id concatenates a prefix (which must have been generated
+	previously by osrfLogSetIsClient()) and a sequence number that is incremented on each
+	call.
+
+	Since the various pieces of the transaction id are of variable length, and not separated
+	by any non-numeric characters, the result is not guaranteed to be unique.  However
+	collisions should be rare.
+*/
 void osrfLogMkXid( void ) {
    if(_osrfLogIsClient) {
       static int _osrfLogXidInc = 0; /* increments with each new xid for uniqueness */
@@ -102,10 +143,22 @@ void osrfLogMkXid( void ) {
    }
 }
 
-char* osrfLogGetXid( void ) {
+/**
+	@brief Return a pointer to the currently stored transaction id, if any.
+	@return Pointer to the currently stored transaction id.
+
+	If no transaction id has been stored, return NULL.
+*/
+const char* osrfLogGetXid( void ) {
    return _osrfLogXid;
 }
 
+/**
+	@brief Note whether the current process is a client; if so, generate a transaction prefix.
+	@param is A boolean; true means the current process is a client, false means it isn't.
+
+	The generated prefix concatenates a timestamp (the return from time()) and a process id.
+*/
 void osrfLogSetIsClient(int is) {
    _osrfLogIsClient = is;
    if(!is) return;

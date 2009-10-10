@@ -1,6 +1,11 @@
 #ifndef OSRF_LOG_INCLUDED
 #define OSRF_LOG_INCLUDED
 
+/**
+	@file log.h
+	@brief Header for logging routines.
+*/
+
 #include <opensrf/utils.h>
 
 #include <syslog.h>
@@ -86,7 +91,7 @@ void osrfLogSetXid(char* xid);
 void osrfLogForceXid(char* xid);
 void osrfLogMkXid( void );
 void osrfLogSetIsClient(int is);
-char* osrfLogGetXid( void );
+const char* osrfLogGetXid( void );
 
 /* sets the activity flag */
 void osrfLogSetActivityEnabled( int enabled );
