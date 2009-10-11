@@ -5,19 +5,37 @@
 
 #include <opensrf/log.h>
 
+/** Pseudo-log type indicating that no previous log type was defined.
+	See also _prevLogType. */
 #define OSRF_NO_LOG_TYPE -1
 
+/** Stores a log type during temporary redirections to standard error. */
 static int _prevLogType             = OSRF_NO_LOG_TYPE;
+/** Defines the destination of log messages: standard error, a log file, or Syslog. */
 static int _osrfLogType				= OSRF_LOG_TYPE_STDERR;
+/** Defines the Syslog facility number used for log messages other than activity messages.
+	Defaults to LOG_LOCAL0. */
 static int _osrfLogFacility			= LOG_LOCAL0;
+/** Defines the Syslog facility number used for activity messages.  Defaults to LOG_LOCAL1. */
 static int _osrfLogActFacility		= LOG_LOCAL1;
+/** Name of the log file. */
 static char* _osrfLogFile			= NULL;
+/** Application name.  This string will preface every log message. */
 static char* _osrfLogAppname		= NULL;
+/** Maximum message level.  Messages of higher levels will be suppressed.
+	Default: OSRF_LOG_INFO. */
 static int _osrfLogLevel			= OSRF_LOG_INFO;
+/** Boolean.  If true, activity message are enabled.  Default: true. */
 static int _osrfLogActivityEnabled	= 1;
+/** Boolean.  If true, the current process is a client; otherwise it's a server.  Clients and
+	servers have different options with regard to transaction ids.  See osrfLogSetXid(),
+	osrfLogForceXid(), and osrfLogMkXid().  Default: false. */
 static int _osrfLogIsClient         = 0;
 
+/** An id identifying the current transaction.  If defined, it is included into every
+	log message. */
 static char* _osrfLogXid            = NULL; /* current xid */
+/** A prefix used to generate transaction ids.  It incorporates a timestamp and a process id. */
 static char* _osrfLogXidPfx         = NULL; /* xid prefix string */
 
 static void osrfLogSetType( int logtype );
@@ -27,7 +45,7 @@ static void _osrfLogToFile( const char* label, long pid, const char* filename, i
 static void _osrfLogSetXid( const char* xid );
 
 /**
-	@brief Reset certain static variables to their initial values.
+	@brief Reset certain local static variables to their initial values.
 
 	Of the various static variables, we here reset only three:
 	- application name (deleted)
@@ -62,10 +80,8 @@ void osrfLogCleanup( void ) {
 	The logging type may be set separately by calling osrfLogSetType().  See also
 	osrfLogToStderr() and osrfRestoreLogType().
 
-	The @a appname string prefaces every log message written to a log file or to standard
-	error.  It also identifies the application to the Syslog facility, if the application
-	uses Syslog.  The default application name, if not overridden by this function or by
-	osrfLogSetAppname(), is "osrf".
+	The @a appname string prefaces every log message.  The default application name, if
+	not overridden by this function or by osrfLogSetAppname(), is "osrf".
 
 	Here are the valid values for @a maxlevel, with the corresponding macros:
 
@@ -115,7 +131,7 @@ void osrfLogSetXid(char* xid) {
 }
 
 /**
-	@brief Store a transaction id, unconditionally, for future use.
+	@brief Store a transaction id for future use, whether running as a client or as a server.
 	@param xid Pointer to the new transaction id
 */
 void osrfLogForceXid(char* xid) {
@@ -202,6 +218,11 @@ static void osrfLogSetType( int logtype ) {
 	}
 }
 
+/**
+	@brief Switch the logging output to standard error (but remember where it @em was going).
+
+	See also osrfRestoreLogType().
+*/
 void osrfLogToStderr( void )
 {
 	if( OSRF_NO_LOG_TYPE == _prevLogType ) {
@@ -210,6 +231,13 @@ void osrfLogToStderr( void )
 	}
 }
 
+/**
+	@brief Switch the logging output to wherever it was going before calling osrfLogtoStderr().
+
+	By using osrfRestoreLogType together with osrfRestoreLogType(), an application can
+	temporarily redirect log messages to standard error, either for an interactive
+	session or for debugging, and later revert to the original log output.
+*/
 void osrfRestoreLogType( void )
 {
 	if( _prevLogType != OSRF_NO_LOG_TYPE ) {
@@ -218,16 +246,36 @@ void osrfRestoreLogType( void )
 	}
 }
 
+/**
+	@brief Store a file name for a log file.
+	@param logfile Pointer to the file name.
+
+	The new file name replaces whatever file name was previously in place, if any.
+
+	This function does not affect the logging type.  The choice of file name makes a
+	difference only when the logging type is OSRF_LOG_TYPE_FILE.
+*/
 void osrfLogSetFile( const char* logfile ) {
 	if(!logfile) return;
 	if(_osrfLogFile) free(_osrfLogFile);
 	_osrfLogFile = strdup(logfile);
 }
 
+/**
+	@brief Enable the issuance of activity log messages.
+
+	By default, activity messages are enabled.  See also osrfLogActivity().
+*/
 void osrfLogSetActivityEnabled( int enabled ) {
 	_osrfLogActivityEnabled = enabled;
 }
 
+/**
+	@brief Store an application name for future use.
+	@param appname Pointer to the application name to be stored.
+
+	The @a appname string prefaces every log message.  The default application name is "osrf".
+*/
 void osrfLogSetAppname( const char* appname ) {
 	if(!appname) return;
 	if(_osrfLogAppname) free(_osrfLogAppname);
@@ -240,24 +288,85 @@ void osrfLogSetAppname( const char* appname ) {
 	}
 }
 
+/**
+	@brief Store a facility number for future use.
+	@param facility The facility number to be stored.
+
+	A facility is a small integer passed to the Syslog system to characterize the source
+	of a message.  The value of this integer is typically derived from a configuration file.
+	If not otherwise specified, it defaults to LOG_LOCAL0.
+*/
 void osrfLogSetSyslogFacility( int facility ) {
 	_osrfLogFacility = facility;
 }
+
+/**
+	@brief Store a facility number for future use for activity messages.
+	@param facility The facility number to be stored.
+
+	A facility is a small integer passed to the Syslog system to characterize the source
+	of a message.  The value of this integer is typically derived from a configuration file.
+
+	The facility used for activity messages is separate and distinct from that used for
+	other log messages, and defaults to LOG_LOCAL1.
+ */
 void osrfLogSetSyslogActFacility( int facility ) {
 	_osrfLogActFacility = facility;
 }
 
-/** Sets the global log level.  Any log statements with a higher level
- * than "level" will not be logged */
+/**
+	@brief Set the maximum level of messages to be issued.
+	@param loglevel The maximum message level.
+
+	A log message will be issued only if its level is less than or equal to this maximum.
+	For example, if @a loglevel is set to OSRF_LOG_INFO, then the logging routines will
+	issue information messages, warning messages, and error messages, but not debugging
+	messages or internal messages.
+
+	The default message level is OSRF_LOG_INFO.
+*/
 void osrfLogSetLevel( int loglevel ) {
 	_osrfLogLevel = loglevel;
 }
 
-/** Gets the current global log level. **/
+/**
+	@brief Get the current log message level.
+	@return The current log message level.
+
+	See also osrfLogSetLevel().
+ */
 int osrfLogGetLevel( void ) {
 	return _osrfLogLevel;
 }
 
+/**
+	@name Message Logging Functions
+	
+	These five functions are the most widely used of the logging routines.  They all work
+	the same way, differing only in the levels of the messages they log, and in the tags
+	they use within those messages to indicate the message level.
+
+	The first two parameters define the location in the source code where the function is
+	called: the name of the source file and the line number.  In practice these are normally
+	provided through use of the OSRF_LOG_MARK macro.
+
+	The third parameter is a printf-style format string, which will be expanded to form the
+	message text.  Subsequent parameters, if any, will be formatted and inserted into the
+	expanded message text.
+
+	Depending on the current maximum message level, the message may or may not actually be
+	issued.  See also osrfLogSetLevel().
+*/
+/*@{*/
+
+/**
+	@brief Log an error message.
+	@param file The file name of the source code calling the function.
+	@param line The line number of the source code calling the function.
+	@param msg A printf-style format string that will be expanded to form the message text,
+
+	Tag: "ERR".
+*/
 void osrfLogError( const char* file, int line, const char* msg, ... ) {
 	if( !msg ) return;
 	if( _osrfLogLevel < OSRF_LOG_ERROR ) return;
@@ -265,6 +374,14 @@ void osrfLogError( const char* file, int line, const char* msg, ... ) {
 	_osrfLogDetail( OSRF_LOG_ERROR, file, line, VA_BUF );
 }
 
+/**
+	@brief Log a warning message.
+	@param file The file name of the source code calling the function.
+	@param line The line number of the source code calling the function.
+	@param msg A printf-style format string that will be expanded to form the message text,
+
+	Tag: "WARN".
+ */
 void osrfLogWarning( const char* file, int line, const char* msg, ... ) {
 	if( !msg ) return;
 	if( _osrfLogLevel < OSRF_LOG_WARNING ) return;
@@ -272,6 +389,14 @@ void osrfLogWarning( const char* file, int line, const char* msg, ... ) {
 	_osrfLogDetail( OSRF_LOG_WARNING, file, line, VA_BUF );
 }
 
+/**
+	@brief Log an informational message.
+	@param file The file name of the source code calling the function.
+	@param line The line number of the source code calling the function.
+	@param msg A printf-style format string that will be expanded to form the message text,
+
+	Tag: "INFO".
+ */
 void osrfLogInfo( const char* file, int line, const char* msg, ... ) {
 	if( !msg ) return;
 	if( _osrfLogLevel < OSRF_LOG_INFO ) return;
@@ -279,6 +404,14 @@ void osrfLogInfo( const char* file, int line, const char* msg, ... ) {
 	_osrfLogDetail( OSRF_LOG_INFO, file, line, VA_BUF );
 }
 
+/**
+	@brief Log a debug message.
+	@param file The file name of the source code calling the function.
+	@param line The line number of the source code calling the function.
+	@param msg A printf-style format string that will be expanded to form the message text,
+ 
+	Tag: "DEBG".
+ */
 void osrfLogDebug( const char* file, int line, const char* msg, ... ) {
 	if( !msg ) return;
 	if( _osrfLogLevel < OSRF_LOG_DEBUG ) return;
@@ -286,6 +419,14 @@ void osrfLogDebug( const char* file, int line, const char* msg, ... ) {
 	_osrfLogDetail( OSRF_LOG_DEBUG, file, line, VA_BUF );
 }
 
+/**
+	@brief Log an internal message.
+	@param file The file name of the source code calling the function.
+	@param line The line number of the source code calling the function.
+	@param msg A printf-style format string that will be expanded to form the message text,
+
+	Tag: "INT ".
+ */
 void osrfLogInternal( const char* file, int line, const char* msg, ... ) {
 	if( !msg ) return;
 	if( _osrfLogLevel < OSRF_LOG_INTERNAL ) return;
@@ -293,6 +434,23 @@ void osrfLogInternal( const char* file, int line, const char* msg, ... ) {
 	_osrfLogDetail( OSRF_LOG_INTERNAL, file, line, VA_BUF );
 }
 
+/*@}*/
+
+/**
+	@brief Issue activity log message.
+	@param file The file name of the source code calling the function.
+	@param line The line number of the source code calling the function.
+	@param msg A printf-style format string that will be expanded to form the message text,
+
+	Tag: "ACT".
+
+	Activity messages behave like informational messages, with the following differences:
+	- They are tagged "ACT" instead of "INFO";
+	- Though enabled by default, they may be disabled by a previous call to
+		osrfLogSetActivityEnabled();
+	- When Syslog is in use, they are assigned a separate facility number, which defaults
+		to LOG_LOCAL1 instead of LOG_LOCAL0.  See also osrfLogSetSyslogActFacility().
+*/
 void osrfLogActivity( const char* file, int line, const char* msg, ... ) {
 	if( !msg ) return;
 	if( _osrfLogLevel >= OSRF_LOG_INFO
@@ -326,6 +484,9 @@ void osrfLogActivity( const char* file, int line, const char* msg, ... ) {
 
 	Here we format the message and route it to the appropriate output destination, depending
 	on the current setting of _osrfLogType: Syslog, a log file, or standard error.
+
+	If the logging type has been set to OSRF_LOG_TYPE_FILE, but no file name has been
+	defined for the log file, the message is written to standard error.
 */
 static void _osrfLogDetail( int level, const char* filename, int line, char* msg ) {
 
@@ -443,6 +604,21 @@ static void _osrfLogToFile( const char* label, long pid, const char* filename, i
 
 }
 
+/**
+	@brief Translate a character string to a facility number for Syslog.
+	@param facility The string to be translated.
+	@return An integer in the range 0 through 7.
+
+	Take the sixth character (counting from 1).  If it's a digit in the range '0' through '7',
+	return the corresponding value: LOG_LOCAL0, LOG_LOCAL1, etc...  Otherwise -- or if the
+	string isn't long enough -- return LOG_LOCAL0 as a default.
+
+	Example: "LOCAL3" => LOG_LOCAL3.
+
+	(Syslog uses the LOG_LOCALx macros to designate different kinds of locally defined
+	facilities that may issue messages.  Depending on the configuration, Syslog mey handle
+	messages from different facilities differently.)
+*/
 int osrfLogFacilityToInt( const char* facility ) {
 	if(!facility) return LOG_LOCAL0;
 	if(strlen(facility) < 6) return LOG_LOCAL0;
