@@ -31,6 +31,7 @@ my $opt_config = "@sysconfdir@/opensrf_core.xml";
 my $opt_pid_dir = "@TMP@";
 my $opt_no_daemon = 0;
 my $opt_settings_pause = 0;
+my $opt_localhost = 0;
 my $opt_help = 0;
 my $verbose = 0;
 my $sclient;
@@ -44,10 +45,15 @@ GetOptions(
     'pid-dir=s' => \$opt_pid_dir,
     'no-daemon' => \$opt_no_daemon,
     'settings-startup-pause=i' => \$opt_settings_pause,
+    'localhost' => \$opt_localhost,
     'help' => \$opt_help,
     'verbose' => \$verbose,
 );
 
+if ($opt_localhost) {
+    $hostname = 'localhost';
+    $ENV{OSRF_HOSTNAME} = $hostname;
+}
 
 sub haltme {
     kill('INT', -$$); #kill all in process group
@@ -231,6 +237,10 @@ sub do_help {
         in batch mode (start_all).  The purpose is to give plenty of time for
         the settings server to be up and active before any non-Perl services
         attempt to connect.
+
+    --localhost
+        Force the hostname to be 'localhost', instead of the fully qualified
+        domain name for the machine.
         
     --help
         Print this help message
