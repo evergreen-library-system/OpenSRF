@@ -1,3 +1,8 @@
+/**
+	@file srfsh.c
+	@brief Command-line tool for OSRF
+*/
+
 #include <opensrf/transport_client.h>
 #include <opensrf/osrf_message.h>
 #include <opensrf/osrf_app_session.h>
@@ -15,6 +20,19 @@
 #include <stdio.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+
+/**
+	@brief A struct of convenience for parsing a command line
+*/
+typedef struct {
+	const char* itr;            /**< iterator for input buffer */
+	growing_buffer* buf;        /**< output buffer */
+} ArgParser;
+
+static void get_string_literal( ArgParser* parser );
+static void get_json_array( ArgParser* parser );
+static void get_json_object( ArgParser* parser );
+static void get_misc( ArgParser* parser );
 
 #define SRFSH_PORT 5222
 #define COMMAND_BUFSIZE 4096
@@ -41,21 +59,22 @@ static transport_client* client = NULL;
 static osrfMessage* last_result = NULL;
 
 /* functions */
-static int parse_request( char* request );
+static int process_request( const char* request );
+static void parse_args( const char* request, osrfStringArray* cmd_array );
 
 /* handles router requests */
-static int handle_router( char* words[] );
+static int handle_router( const osrfStringArray* cmd_array );
 
 /* utility method for print time data */
-static int handle_time( char* words[] ); 
+static int handle_time( const osrfStringArray* cmd_array ); 
 
 /* handles app level requests */
-static int handle_request( char* words[], int relay );
-static int handle_set( char* words[]);
-static int handle_print( char* words[]);
-static int send_request( char* server, 
-				  char* method, growing_buffer* buffer, int relay );
-static int parse_error( char* words[] );
+static int handle_request( const osrfStringArray* cmd_array, int relay );
+static int handle_set( const osrfStringArray* cmd_array );
+static int handle_print( const osrfStringArray* cmd_array );
+static int send_request( const char* server,
+				const char* method, growing_buffer* buffer, int relay );
+static int parse_error( const char* request );
 static int router_query_servers( const char* server );
 static int print_help( void );
 
@@ -66,12 +85,12 @@ static int print_help( void );
 
 static char* get_request( void );
 static int load_history( void );
-static int handle_math( char* words[] );
+static int handle_math( const osrfStringArray* cmd_array );
 static int do_math( int count, int style );
-static int handle_introspect(char* words[]);
-static int handle_login( char* words[]);
-static int handle_open( char* words[]);
-static int handle_close( char* words[]);
+static int handle_introspect( const osrfStringArray* cmd_array );
+static int handle_login( const osrfStringArray* cmd_array );
+static int handle_open( const osrfStringArray* cmd_array );
+static int handle_close( const osrfStringArray* cmd_array );
 static void close_all_sessions( void );
 
 static int recv_timeout = 120;
@@ -121,7 +140,7 @@ int main( int argc, char* argv[] ) {
 	load_history();
 
 	client = osrfSystemGetTransportClient();
-
+	
 	// Disable special treatment for tabs by readline
 	// (by default they invoke command completion, which
 	// is not useful for srfsh)
@@ -158,16 +177,13 @@ int main( int argc, char* argv[] ) {
 			newline_needed = 0;
 			break; 
 		}
-		
-		char* req_copy = strdup(cmd);
 
-		parse_request( req_copy ); 
+		process_request( cmd );
 		if( request && *cmd ) {
 			add_history(request);
 		}
 
 		free(request);
-		free(req_copy);
 
 		fflush(stderr);
 		fflush(stdout);
@@ -282,150 +298,125 @@ static int load_history( void ) {
 }
 
 
-static int parse_error( char* words[] ) {
-	if( ! words )
+static int parse_error( const char* request ) {
+	if( ! request )
 		return 0;
 
-	growing_buffer * gbuf = buffer_init( 64 );
-	buffer_add( gbuf, *words );
-	while( *++words ) {
-		buffer_add( gbuf, " " );
-		buffer_add( gbuf, *words );
-	}
-	fprintf( stderr, "???: %s\n", gbuf->buf );
-	buffer_free( gbuf );
-	
+	fprintf( stderr, "???: %s\n", request );
 	return 0;
 
 }
 
 
-static int parse_request( char* request ) {
+static int process_request( const char* request ) {
 
 	if( request == NULL )
 		return 0;
 
-	char* original_request = strdup( request );
-	char* words[COMMAND_BUFSIZE]; 
-	
 	int ret_val = 0;
-	int i = 0;
+	osrfStringArray* cmd_array = osrfNewStringArray( 32 );
 
-
-	char* req = request;
-	char* cur_tok = strtok( req, " \t" );
-
-	if( cur_tok == NULL )
-	{
-		free( original_request );
+	parse_args( request, cmd_array );
+	int wordcount = cmd_array->size;
+	if( 0 == wordcount ) {
+		printf( "No words found in command\n" );
+		osrfStringArrayFree( cmd_array );
 		return 0;
 	}
 
-	/* Load an array with pointers to    */
-	/* the tokens as defined by strtok() */
-	
-	while(cur_tok != NULL) {
-		if( i < COMMAND_BUFSIZE - 1 ) {
-			words[i++] = cur_tok;
-			cur_tok = strtok( NULL, " \t" );
-		} else {
-			fprintf( stderr, "Too many tokens in command\n" );
-			free( original_request );
-			return 1;
-		}
-	}
-
-	words[i] = NULL;
-	
 	/* pass off to the top level command */
-	if( !strcmp(words[0],"router") ) 
-		ret_val = handle_router( words );
+	const char* command = osrfStringArrayGetString( cmd_array, 0 );
+	if( !strcmp( command, "router" ) )
+		ret_val = handle_router( cmd_array );
 
-	else if( !strcmp(words[0],"time") ) 
-		ret_val = handle_time( words );
+	else if( !strcmp( command, "time" ) )
+		ret_val = handle_time( cmd_array );
 
-	else if (!strcmp(words[0],"request"))
-		ret_val = handle_request( words, 0 );
+	else if ( !strcmp( command, "request" ) )
+		ret_val = handle_request( cmd_array, 0 );
 
-	else if (!strcmp(words[0],"relay"))
-		ret_val = handle_request( words, 1 );
+	else if ( !strcmp( command, "relay" ) )
+		ret_val = handle_request( cmd_array, 1 );
 
-	else if (!strcmp(words[0],"help"))
+	else if ( !strcmp( command, "help" ) )
 		ret_val = print_help();
 
-	else if (!strcmp(words[0],"set"))
-		ret_val = handle_set(words);
+	else if ( !strcmp( command, "set" ) )
+		ret_val = handle_set( cmd_array );
 
-	else if (!strcmp(words[0],"print"))
-		ret_val = handle_print(words);
+	else if ( !strcmp( command, "print" ) )
+		ret_val = handle_print( cmd_array );
 
-	else if (!strcmp(words[0],"math_bench"))
-		ret_val = handle_math(words);
+	else if ( !strcmp( command, "math_bench" ) )
+		ret_val = handle_math( cmd_array );
 
-	else if (!strcmp(words[0],"introspect"))
-		ret_val = handle_introspect(words);
+	else if ( !strcmp( command, "introspect" ) )
+		ret_val = handle_introspect( cmd_array );
 
-	else if (!strcmp(words[0],"login"))
-		ret_val = handle_login(words);
+	else if ( !strcmp( command, "login" ) )
+		ret_val = handle_login( cmd_array );
 
-	else if (!strcmp(words[0],"open"))
-		ret_val = handle_open(words);
+	else if ( !strcmp( command, "open" ) )
+		ret_val = handle_open( cmd_array );
 
-	else if (!strcmp(words[0],"close"))
-		ret_val = handle_close(words);
+	else if ( !strcmp( command, "close" ) )
+		ret_val = handle_close( cmd_array );
 
-	else if (words[0][0] == '!') {
-		system( original_request + 1 );
+	else if ( request[0] == '!') {
+		system( request + 1 );
 		ret_val = 1;
 	}
-	
-	free( original_request );
-	
+
+	osrfStringArrayFree( cmd_array );
+
 	if(!ret_val)
-		return parse_error( words );
+		return parse_error( request );
 	else
 		return 1;
 }
 
 
-static int handle_introspect(char* words[]) {
+static int handle_introspect( const osrfStringArray* cmd_array ) {
 
-	if( ! words[1] )
+	const char* service = osrfStringArrayGetString( cmd_array, 1 );
+	if( ! service )
 		return 0;
 
-	fprintf(stderr, "--> %s\n", words[1]);
+	fprintf(stderr, "--> %s\n", service );
 
 	// Build a command in a suitably-sized
 	// buffer and then parse it
-	
+
 	size_t len;
-	if( words[2] ) {
+	const char* method = osrfStringArrayGetString( cmd_array, 2 );
+	if( method ) {
 		static const char text[] = "request %s opensrf.system.method %s";
-		len = sizeof( text ) + strlen( words[1] ) + strlen( words[2] );
+		len = sizeof( text ) + strlen( service ) + strlen( method );
 		char buf[len];
-		snprintf( buf, sizeof(buf), text, words[1], words[2] );
-		return parse_request( buf );
+		snprintf( buf, sizeof(buf), text, service, method );
+		return process_request( buf );
 
 	} else {
 		static const char text[] = "request %s opensrf.system.method.all";
-		len = sizeof( text ) + strlen( words[1] );
+		len = sizeof( text ) + strlen( service );
 		char buf[len];
-		snprintf( buf, sizeof(buf), text, words[1] );
-		return parse_request( buf );
+		snprintf( buf, sizeof(buf), text, service );
+		return process_request( buf );
 
 	}
 }
 
 
-static int handle_login( char* words[]) {
+static int handle_login( const osrfStringArray* cmd_array ) {
 
-	if( words[1] && words[2]) {
+	const char* username = osrfStringArrayGetString( cmd_array, 1 );
+	const char* password = osrfStringArrayGetString( cmd_array, 2 );
 
-		char* username		= words[1];
-		char* password		= words[2];
-		char* type			= words[3];
-		char* orgloc		= words[4];
-		char* workstation	= words[5];
+	if( username && password ) {
+
+		const char* type		= osrfStringArrayGetString( cmd_array, 3 );
+		const char* orgloc		= osrfStringArrayGetString( cmd_array, 4 );
+		const char* workstation	= osrfStringArrayGetString( cmd_array, 5 );
 		int orgloci = (orgloc) ? atoi(orgloc) : 0;
 		if(!type) type = "opac";
 
@@ -434,14 +425,13 @@ static int handle_login( char* words[]) {
 
 		char buf[len];
 		snprintf( buf, sizeof(buf), login_text, username );
-		parse_request(buf);
+		process_request(buf);
 
 		const char* hash;
 		if(last_result && last_result->_result_content) {
 			jsonObject* r = last_result->_result_content;
 			hash = jsonObjectGetString(r);
 		} else return 0;
-
 
 		char* pass_buf = md5sum(password);
 
@@ -464,7 +454,7 @@ static int handle_login( char* words[]) {
 		free(pass_buf);
 		free(mess_buf);
 
-		parse_request( argbuf->buf );
+		process_request( argbuf->buf );
 		buffer_free(argbuf);
 
 		if( login_session != NULL )
@@ -496,10 +486,18 @@ static int handle_login( char* words[]) {
 }
 
 /**
- * Open connections to one or more specified services
- */
-static int handle_open( char* words[]) {
-	if( NULL == words[ 1 ] ) {
+	@brief Open connections to one or more specified services.
+	@param cmd_array Pointer to a list of command line chunks.
+	@return 1 in all cases.
+
+	The first chunk of the command line is the "open" command.  Subsequent chunks, if any,
+	are server names.
+
+	Try to open all specified servers.  If no servers are specified, report what servers are
+	currently open.
+*/
+static int handle_open( const osrfStringArray* cmd_array ) {
+	if( NULL == osrfStringArrayGetString( cmd_array, 1 ) ) {
 		if( ! server_hash || osrfHashGetCount( server_hash ) == 0 ) {
 			printf( "No services are currently open\n" );
 			return 1;
@@ -519,8 +517,11 @@ static int handle_open( char* words[]) {
 		server_hash = osrfNewHash( 6 );
 
 	int i;
-	for( i = 1; words[ i ]; ++i ) {    // for each requested service
-		const char* server = words[ i ];
+	for( i = 1; ; ++i ) {    // for each requested service
+		const char* server = osrfStringArrayGetString( cmd_array, i );
+		if( ! server )
+			break;
+
 		if( osrfHashGet( server_hash, server ) ) {
 			printf( "Service %s is already open\n", server );
 			continue;
@@ -543,17 +544,24 @@ static int handle_open( char* words[]) {
 }
 
 /**
- * Close connections to one or more specified services
- */
-static int handle_close( char* words[]) {
-	if( NULL == words[ 1 ] ) {
+	@brief Close connections to one or more specified services.
+	@param cmd_array Pointer to a list of command line chunks.
+	@return 1 if any services were closed, or 0 if there were none to close.
+
+	The first chunk of the command line is the "close" command.  Subsequent chunks, if any,
+	are server names.
+*/
+static int handle_close( const osrfStringArray* cmd_array ) {
+	if( cmd_array->size < 2 ) {
 		fprintf( stderr, "No service specified for close\n" );
 		return 0;
 	}
 
 	int i;
-	for( i = 1; words[ i ]; ++i ) {
-		const char* server = words[ i ];
+	for( i = 1; ; ++i ) {
+		const char* server = osrfStringArrayGetString( cmd_array, i );
+		if( ! server )
+			break;
 
 		osrfAppSession* session = osrfHashRemove( server_hash, server );
 		if( ! session ) {
@@ -570,7 +578,7 @@ static int handle_close( char* words[]) {
 }
 
 /**
- * Close all currently open connections to services
+	@brief Close all currently open connections to services.
  */
 static void close_all_sessions( void ) {
 
@@ -585,25 +593,24 @@ static void close_all_sessions( void ) {
 	osrfHashIteratorFree( itr );
 }
 
-static int handle_set( char* words[]) {
+static int handle_set( const osrfStringArray* cmd_array ) {
 
-	char* variable;
-	if( (variable=words[1]) ) {
+	const char* variable = osrfStringArrayGetString( cmd_array, 1 );
+	if( variable ) {
 
-		char* val;
-		if( (val=words[2]) ) {
+		const char* val = osrfStringArrayGetString( cmd_array, 2 );
+		if( val ) {
 
 			if(!strcmp(variable,"pretty_print")) {
 				if(!strcmp(val,"true")) {
 					pretty_print = 1;
 					printf("pretty_print = true\n");
 					return 1;
-				} 
-				if(!strcmp(val,"false")) {
+				} else if(!strcmp(val,"false")) {
 					pretty_print = 0;
 					printf("pretty_print = false\n");
 					return 1;
-				} 
+				}
 			}
 
 			if(!strcmp(variable,"raw_print")) {
@@ -611,12 +618,11 @@ static int handle_set( char* words[]) {
 					raw_print = 1;
 					printf("raw_print = true\n");
 					return 1;
-				} 
-				if(!strcmp(val,"false")) {
+				} else if(!strcmp(val,"false")) {
 					raw_print = 0;
 					printf("raw_print = false\n");
 					return 1;
-				} 
+				}
 			}
 
 		}
@@ -626,10 +632,11 @@ static int handle_set( char* words[]) {
 }
 
 
-static int handle_print( char* words[]) {
+static int handle_print( const osrfStringArray* cmd_array ) {
 
-	char* variable;
-	if( (variable=words[1]) ) {
+	const char* variable = osrfStringArrayGetString( cmd_array, 1 );
+
+	if( variable ) {
 		if(!strcmp(variable,"pretty_print")) {
 			if(pretty_print) {
 				printf("pretty_print = true\n");
@@ -660,19 +667,25 @@ static int handle_print( char* words[]) {
 	return 0;
 }
 
-static int handle_router( char* words[] ) {
+static int handle_router( const osrfStringArray* cmd_array ) {
 
 	if(!client)
 		return 1;
 
 	int i;
 
-	if( words[1] ) { 
-		if( !strcmp(words[1],"query") ) {
-			
-			if( words[2] && !strcmp(words[2],"servers") ) {
-				for(i=3; i < COMMAND_BUFSIZE - 3 && words[i]; i++ ) {	
-					router_query_servers( words[i] );
+	const char* word_1 = osrfStringArrayGetString( cmd_array, 1 );
+	const char* word_2 = osrfStringArrayGetString( cmd_array, 2 );
+	if( word_1 ) {
+		if( !strcmp( word_1,"query") ) {
+
+			if( word_2 && !strcmp( word_2, "servers" ) ) {
+				for( i=3; i < COMMAND_BUFSIZE - 3; i++ ) {
+					const char* word = osrfStringArrayGetString( cmd_array, i );
+					if( word )
+						router_query_servers( word );
+					else
+						break;
 				}
 				return 1;
 			}
@@ -685,27 +698,40 @@ static int handle_router( char* words[] ) {
 
 
 
-static int handle_request( char* words[], int relay ) {
+static int handle_request( const osrfStringArray* cmd_array, int relay ) {
 
 	if(!client)
 		return 1;
 
-	if(words[1]) {
-		char* server = words[1];
-		char* method = words[2];
+	const char* word_1 = osrfStringArrayGetString( cmd_array, 1 );
+	const char* word_2 = osrfStringArrayGetString( cmd_array, 2 );
+
+	if( word_1 ) {
+		const char* server = word_1;
+		const char* method = word_2;
 		int i;
 		growing_buffer* buffer = NULL;
-		if(!relay) {
-			buffer = buffer_init(128);
-			buffer_add(buffer, "[");
-			for(i = 3; words[i] != NULL; i++ ) {
-				/* removes trailing semicolon if user accidentally enters it */
-				if( words[i][strlen(words[i])-1] == ';' )
-					words[i][strlen(words[i])-1] = '\0';
-				buffer_add( buffer, words[i] );
-				buffer_add(buffer, " ");
+		if( !relay ) {
+			int first = 1;   // boolean
+			buffer = buffer_init( 128 );
+			buffer_add( buffer, "[" );
+			for(i = 3; ; i++ ) {
+				const char* word = osrfStringArrayGetString( cmd_array, i );
+				if( !word )
+					break;
+
+				if( first )
+					first = 0;
+				else
+					buffer_add( buffer, ", " );
+
+				buffer_add( buffer, word );
+
+				/* remove trailing semicolon if user accidentally entered it */
+				if( word[ strlen( word ) - 1 ] == ';' )
+					buffer_chomp( buffer );
 			}
-			buffer_add(buffer, "]");
+			buffer_add_char( buffer, ']' );
 		}
 
 		int rc = send_request( server, method, buffer, relay );
@@ -716,15 +742,19 @@ static int handle_request( char* words[], int relay ) {
 	return 0;
 }
 
-int send_request( char* server, 
-		char* method, growing_buffer* buffer, int relay ) {
+int send_request( const char* server,
+		const char* method, growing_buffer* buffer, int relay ) {
 	if( server == NULL || method == NULL )
 		return 0;
 
 	jsonObject* params = NULL;
 	if( !relay ) {
-		if( buffer != NULL && buffer->n_used > 0 ) 
-			params = jsonParseString(buffer->buf);
+		if( buffer != NULL && buffer->n_used > 0 ) {
+			// Temporarily redirect parsing error messages to stderr
+			osrfLogToStderr();
+			params = jsonParse( OSRF_BUFFER_C_STR( buffer ) );
+			osrfRestoreLogType();
+		}
 	} else {
 		if(!last_result || ! last_result->_result_content) { 
 			printf("We're not going to call 'relay' with no result params\n");
@@ -890,17 +920,18 @@ int send_request( char* server,
 
 }
 
-static int handle_time( char* words[] ) {
-	if(!words[1]) {
+static int handle_time( const osrfStringArray* cmd_array ) {
+
+	const char* word_1 = osrfStringArrayGetString( cmd_array, 1 );
+	if( !word_1 ) {
 		printf("%f\n", get_timestamp_millis());
-    } else {
-        time_t epoch = (time_t) atoi(words[1]);
+	} else {
+		time_t epoch = (time_t) atoi( word_1 );
 		printf("%s", ctime(&epoch));
-    }
+	}
 	return 1;
 }
 
-		
 
 static int router_query_servers( const char* router_server ) {
 
@@ -1009,9 +1040,10 @@ static char* tabs(int count) {
 */
 
 
-static int handle_math( char* words[] ) {
-	if( words[1] )
-		return do_math( atoi(words[1]), 0 );
+static int handle_math( const osrfStringArray* cmd_array ) {
+	const char* word = osrfStringArrayGetString( cmd_array, 1 );
+	if( word )
+		return do_math( atoi( word ), 0 );
 	return 0;
 }
 
@@ -1099,3 +1131,208 @@ static int do_math( int count, int style ) {
 
 	return 1;
 }
+
+/**
+	@name Command line parser
+
+	This group of functions parses the command line into a series of chunks, and stores
+	the chunks in an osrfStringArray.
+
+	A chunk may consist of a JSON string, complete with square brackets, curly braces, and
+	embedded white space.  It wouldn't work simply to break up the line into  tokens
+	separated by white space.  Sometimes white space separates chunks, and sometimes it
+	occurs within a chunk.
+
+	When it sees a left square bracket or curly brace, the parser goes into JSON mode,
+	collecting characters up to the corresponding right square bracket or curly brace.
+	It also eliminates most kinds of unnecessary white space.
+
+	The JSON parsing is rudimentary.  It does not validate the syntax -- it merely looks
+	for the end of the JSON string.  Eventually the JSON string will be passed to a real
+	JSON parser, which will detect and report syntax errors.
+
+	When not in JSON mode, the parser collects tokens separated by white space.  It also
+	collects character strings in quotation marks, possibly including embedded white space.
+	Within a quoted string, an embedded quotation mark does not terminate the string if it
+	is escaped by a preceding backslash.
+*/
+
+/**
+	@brief Collect a string literal enclosed by quotation marks.
+	@param parser Pointer to an ArgParser
+
+	A quotation mark serves as a terminator unless it is escaped by a preceding backslash.
+	In the latter case, we collect both the backslash and the escaped quotation mark.
+*/
+static void get_string_literal( ArgParser* parser ) {
+	// Collect character until the first unescaped quotation mark, or EOL
+	do {
+		OSRF_BUFFER_ADD_CHAR( parser->buf, *parser->itr );
+
+		// Don't stop at a quotation mark if it's escaped
+		if( '\\' == *parser->itr && '\"' == *( parser->itr + 1 ) ) {
+				OSRF_BUFFER_ADD_CHAR( parser->buf, '\"' );
+				++parser->itr;
+		}
+
+		++parser->itr;
+	} while( *parser->itr && *parser->itr != '\"' );
+
+	OSRF_BUFFER_ADD_CHAR( parser->buf, '\"' );
+	++parser->itr;
+}
+
+/**
+	@brief Collect a JSON array (enclosed by square brackets).
+	@param parser Pointer to an ArgParser.
+
+	Collect characters until you find the closing square bracket.  Collect any intervening
+	JSON arrays, JSON objects, or string literals recursively.
+ */
+static void get_json_array( ArgParser* parser ) {
+
+	OSRF_BUFFER_ADD_CHAR( parser->buf, '[' );
+	++parser->itr;
+
+	// Collect characters through the closing square bracket
+	while( *parser->itr != ']' ) {
+
+		if( '\"' == *parser->itr ) {
+			get_string_literal( parser );
+		} else if( '[' == *parser->itr ) {
+			get_json_array( parser );
+		} else if( '{' == *parser->itr ) {
+			get_json_object( parser );
+		} else if( isspace( (unsigned char) *parser->itr ) ) {
+			++parser->itr;   // Ignore white space
+		} else if ( '\0' == *parser->itr ) {
+			return;   // Ignore failure to close the object
+		} else {
+			get_misc( parser );
+			// make sure that bare words don't run together
+			OSRF_BUFFER_ADD_CHAR( parser->buf, ' ' );
+		}
+	} // end while
+
+	OSRF_BUFFER_ADD_CHAR( parser->buf, ']' );
+	++parser->itr;
+}
+
+/**
+	@brief Collect a JSON object (enclosed by curly braces).
+	@param parser Pointer to an ArgParser.
+
+	Collect characters until you find the closing curly brace.  Collect any intervening
+	JSON arrays, JSON objects, or string literals recursively.
+ */
+static void get_json_object( ArgParser* parser ) {
+
+	OSRF_BUFFER_ADD_CHAR( parser->buf, '{' );
+	++parser->itr;
+
+	// Collect characters through the closing curly brace
+	while( *parser->itr != '}' ) {
+
+		if( '\"' == *parser->itr ) {
+			get_string_literal( parser );
+		} else if( '[' == *parser->itr ) {
+			get_json_array( parser );
+		} else if( '{' == *parser->itr ) {
+			get_json_object( parser );
+		} else if( isspace( (unsigned char) *parser->itr ) ) {
+			++parser->itr;   // Ignore white space
+		} else if ( '\0' == *parser->itr ) {
+			return;   // Ignore failure to close the object
+		} else {
+			get_misc( parser );
+			// make sure that bare words don't run together
+			OSRF_BUFFER_ADD_CHAR( parser->buf, ' ' );
+		}
+	} // end while
+
+	OSRF_BUFFER_ADD_CHAR( parser->buf, '}' );
+	++parser->itr;
+}
+
+/**
+	@brief Collect a token terminated by white space or a ']' or '}' character.
+	@param parser Pointer to an ArgParser
+
+	For valid JSON, the chunk collected here would be either a number or one of the
+	JSON key words "null", "true", or "false".  However at this stage we're not finicky.
+	We just collect whatever we see until we find a terminator.
+*/
+static void get_misc( ArgParser* parser ) {
+	// Collect characters until we see one that doesn't belong
+	while( 1 ) {
+		OSRF_BUFFER_ADD_CHAR( parser->buf, *parser->itr );
+		++parser->itr;
+		char c = *parser->itr;
+		if( '\0' == c || isspace( (unsigned char) c ) 
+			|| '{' == c || '}' == c || '[' == c || ']' == c || '\"' == c ) {
+			break;
+		}
+	}
+}
+
+/**
+	@brief Parse the command line.
+	@param request Pointer to the command line
+	@param cmd_array Pointer to an osrfStringArray to hold the output of the parser.
+
+	The parser operates by recursive descent.  We build each chunk of command line in a
+	growing_buffer belonging to an ArgParser, and then load the chunk into a slot in an
+	osrfStringArray supplied by the calling code.
+*/
+static void parse_args( const char* request, osrfStringArray* cmd_array )
+{
+	ArgParser parser;
+
+	// Initialize the ArgParser
+	parser.itr = request;
+	parser.buf = buffer_init( 128 );
+
+	int done = 0;               // boolean
+	while( !done ) {
+		OSRF_BUFFER_RESET( parser.buf );
+
+		// skip any white space
+		while( *parser.itr && isspace( (unsigned char) *parser.itr ) )
+			++parser.itr;
+
+		if( '\0' == *parser.itr )
+			done = 1;
+		else if( '{' == *parser.itr ) {
+			// Load a JSON object
+			get_json_object( &parser );
+		} else if( '[' == *parser.itr ) {
+			// Load a JSON array
+			get_json_array( &parser );
+		} else if( '\"' == *parser.itr ) {
+			// Load a string literal
+			get_string_literal( &parser );
+		} else {
+			// Anything else is delimited by white space
+			do {
+				OSRF_BUFFER_ADD_CHAR( parser.buf, *parser.itr );
+				++parser.itr;
+			} while( *parser.itr && ! isspace( (unsigned char) *parser.itr ) );
+		}
+
+		// Remove a trailing comma, if present
+		char lastc = OSRF_BUFFER_C_STR( parser.buf )[
+			strlen( OSRF_BUFFER_C_STR( parser.buf )  ) - 1 ];
+		if( ',' == lastc )
+			buffer_chomp( parser.buf );
+
+		// Add the chunk to the osrfStringArray
+		const char* s = OSRF_BUFFER_C_STR( parser.buf );
+		if( s && *s ) {
+			osrfStringArrayAdd( cmd_array, s );
+		}
+	}
+
+	buffer_free( parser.buf );
+}
+/*@}*/
+
