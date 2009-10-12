@@ -40,10 +40,14 @@ js_SCRIPTS = javascript/DojoSRF.js javascript/JSON_v0.js javascript/JSON_v1.js j
 endif
 
 if BUILDCORE
-MAYBE_CORE = libopensrf c-apps router srfsh jserver gateway perl
+MAYBE_CORE = libopensrf c-apps router srfsh gateway perl
 dist_bin_SCRIPTS = @top_srcdir@/bin/opensrf-perl.pl
 bin_SCRIPTS = @top_srcdir@/bin/osrf_config @top_srcdir@/bin/osrf_ctl.sh 
 dist_sysconf_DATA = @top_srcdir@/examples/opensrf.xml.example @top_srcdir@/examples/opensrf_core.xml.example @top_srcdir@/examples/srfsh.xml.example 
+endif
+
+if BUILDCHOPCHOP
+MAYBE_CHOPCHOP = jserver
 endif
 
 SUBDIRS = $(MAYBE_CORE) $(MAYBE_PY) $(MAYBE_JA)
