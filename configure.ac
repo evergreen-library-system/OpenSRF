@@ -152,13 +152,13 @@ AC_PROG_MAKE_SET
 # Set install path variables
 #------------------------------
 AC_ARG_WITH([tmp],
-[  --with-tmp=path                  location for the temporary dir for OpenSRF (default is /tmp)],
+[  --with-tmp=path                  location for the temporary directory for OpenSRF (default is /tmp)],
 [TMP=${withval}],
 [TMP=/tmp])
 AC_SUBST([TMP])
 
 AC_ARG_WITH([apxs],
-[  --with-apxs=path                 location of the apxs Apache configuration tool (default is /usr/bin/apxs2)],
+[  --with-apxs=path                 location of the apxs (Apache extension) tool (default is /usr/bin/apxs2)],
 [APXS2=${withval}],
 [APXS2=/usr/bin/apxs2])
 AC_SUBST([APXS2])
@@ -170,13 +170,13 @@ AC_ARG_WITH([apache],
 AC_SUBST([APACHE2_HEADERS])
 
 AC_ARG_WITH([apr],
-[  --with-apr=path                  location of the apr headers (default is /usr/include/apr-1.0/)],
+[  --with-apr=path                  location of the Apache Portable Runtime headers (default is /usr/include/apr-1.0/)],
 [APR_HEADERS=${withval}],
 [APR_HEADERS=/usr/include/apr-1.0])
 AC_SUBST([APR_HEADERS])
 
 AC_ARG_WITH([libxml],
-[  --with-libxml=path               location of the libxml headers (default is /usr/include/libxml2/))],
+[  --with-libxml=path               location of the libxml2 headers (default is /usr/include/libxml2/))],
 [LIBXML2_HEADERS=${withval}],
 [LIBXML2_HEADERS=/usr/include/libxml2/])
 AC_SUBST([LIBXML2_HEADERS])
@@ -245,10 +245,10 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	#-----------------------------
 
 	AC_CHECK_LIB([dl], [dlerror], [],AC_MSG_ERROR(***OpenSRF requires libdl))
-	AC_SEARCH_LIBS([mc_req_free], [memcache], [], AC_MSG_ERROR(***OpenSRF requires memcache development headers))
-	AC_CHECK_LIB([ncurses], [initscr], [], AC_MSG_ERROR(***OpenSRF requires ncurses development headers))
-	AC_CHECK_LIB([readline], [readline], [], AC_MSG_ERROR(***OpenSRF requires readline development headers))
-	AC_CHECK_LIB([xml2], [xmlAddID], [], AC_MSG_ERROR(***OpenSRF requires xml2 development headers))
+	AC_SEARCH_LIBS([mc_req_free], [memcache], [], AC_MSG_ERROR(***OpenSRF requires memcache headers))
+	AC_CHECK_LIB([ncurses], [initscr], [], AC_MSG_ERROR(***OpenSRF requires ncurses headers))
+	AC_CHECK_LIB([readline], [readline], [], AC_MSG_ERROR(***OpenSRF requires readline headers))
+	AC_CHECK_LIB([xml2], [xmlAddID], [], AC_MSG_ERROR(***OpenSRF requires libxml2 headers))
 
 
 
@@ -314,33 +314,29 @@ AC_MSG_RESULT([])
 AC_MSG_RESULT([--------------------- Configuration options:  -----------------------])
 
 if test "$OSRF_INSTALL_JAVA" = "true" ; then
-	AC_MSG_RESULT([OSRF install java?:              yes])
-	AC_MSG_RESULT([Java deps dir:                   $OSRF_JAVA_DEPSDIR])
+        AC_MSG_RESULT([OSRF install Java support?       yes])
+        AC_MSG_RESULT([Java support files               $OSRF_JAVA_DEPSDIR])
 else
-	AC_MSG_RESULT([OSRF install java?:              no])
+        AC_MSG_RESULT([OSRF install Java support?       no])
 fi
 
 if test "$OSRF_INSTALL_PYTHON" = "true" ; then
-        AC_MSG_RESULT([OSRF install python?:            yes])
+        AC_MSG_RESULT([OSRF install Python support?     yes])
 else
-        AC_MSG_RESULT([OSRF install python?:            no])
+        AC_MSG_RESULT([OSRF install Python support?     no])
 fi
 
 if test "$OSRF_INSTALL_CHOPCHOP" = "true" ; then
-        AC_MSG_RESULT([OSRF install chopchop?:          yes])
+        AC_MSG_RESULT([OSRF install chopchop?           yes])
 else
-        AC_MSG_RESULT([OSRF install chopchop?:          no])
+        AC_MSG_RESULT([OSRF install chopchop?           no])
 fi
 
-	AC_MSG_RESULT(Installation directory prefix:		${prefix})
-	AC_MSG_RESULT(Tmp dir location:				${TMP})
-	AC_MSG_RESULT(APXS2 location:				${APXS2})
-	AC_MSG_RESULT(Apache headers location:			${APACHE2_HEADERS})
-	AC_MSG_RESULT(APR headers location:			${APR_HEADERS})
-	AC_MSG_RESULT(libxml2 headers location:			${LIBXML2_HEADERS})
-
-
-
-
+        AC_MSG_RESULT(Installation directory prefix:   ${prefix})
+        AC_MSG_RESULT(Temporary directory:             ${TMP})
+        AC_MSG_RESULT(APXS2 location:                  ${APXS2})
+        AC_MSG_RESULT(Apache headers location:         ${APACHE2_HEADERS})
+        AC_MSG_RESULT(APR headers location:            ${APR_HEADERS})
+        AC_MSG_RESULT(libxml2 headers location:        ${LIBXML2_HEADERS})
 
 AC_MSG_RESULT([----------------------------------------------------------------------])
