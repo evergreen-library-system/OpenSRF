@@ -38,14 +38,7 @@ extern "C" {
 
 
 /* models a single socket connection */
-struct socket_node_struct {
-	int endpoint;		/* SERVER_SOCKET or CLIENT_SOCKET */
-	int addr_type;		/* INET or UNIX */
-	int sock_fd;
-	int parent_id;		/* if we're a new client for a server socket, 
-								this points to the server socket we spawned from */
-	struct socket_node_struct* next;
-};
+struct socket_node;
 typedef struct socket_node_struct socket_node;
 
 
@@ -84,7 +77,7 @@ int socket_open_tcp_client(socket_manager*, int port, const char* dest_addr);
 	returns 0 on success.  -1 on failure.  */
 int socket_open_unix_client(socket_manager*, const char* sock_path);
 
-int socket_open_udp_client( socket_manager* mgr, int port, const char* dest_addr);
+int socket_open_udp_client( socket_manager* mgr );
 
 /* sends the given data to the given socket. returns 0 on success, -1 otherwise */
 int socket_send(int sock_fd, const char* data);
