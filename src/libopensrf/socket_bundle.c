@@ -276,61 +276,77 @@ int socket_open_udp_server(
 	@param dest_addr Host name or IP address of the server to which we are connecting.
 	@return The socket fd if successful; otherwise -1.
 
-	Calls: gethostbyname(), socket(), connect().
+	Calls: getaddrinfo(), socket(), connect().
 */
 int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr) {
 
 	struct sockaddr_in remoteAddr;
-	struct hostent *hptr;
 	int sock_fd;
 
 	// ------------------------------------------------------------------
-	// Get the hostname
+	// Get the IP address of the hostname (for TCP only)
 	// ------------------------------------------------------------------
+	struct addrinfo hints = { 0, 0, 0, 0, 0, NULL, NULL, NULL };
+	hints.ai_socktype = SOCK_STREAM;
+	struct addrinfo* addr_info = NULL;
 	errno = 0;
-	if( (hptr = gethostbyname( dest_addr ) ) == NULL ) {
-		osrfLogWarning(  OSRF_LOG_MARK, "socket_open_tcp_client(): Unknown Host => %s: %s",
-						dest_addr, strerror( errno ) );
+	int rc = getaddrinfo( dest_addr, NULL, &hints, &addr_info );
+	if( rc || ! addr_info ) {
+		osrfLogWarning( OSRF_LOG_MARK, "socket_open_tcp_client(): No Such Host => %s: %s",
+			dest_addr, gai_strerror( rc ) );
 		return -1;
 	}
 
-   // ------------------------------------------------------------------
-   // Create the socket
-   // ------------------------------------------------------------------
-   errno = 0;
-   if( (sock_fd = socket( AF_INET, SOCK_STREAM, 0 )) < 0 ) {
-	   osrfLogWarning( OSRF_LOG_MARK,  "socket_open_tcp_client(): Cannot create TCP socket: %s",
+	// Look for an address supporting IPv4.  Someday we'll look for
+	// either IPv4 or IPv6, and branch according to what we find.
+	while( addr_info && addr_info->ai_family != PF_INET ) {
+		addr_info = addr_info->ai_next;
+	}
+
+	if( ! addr_info ) {
+		osrfLogWarning( OSRF_LOG_MARK,
+			"socket_open_tcp_client(): Host %s does not support IPV4", dest_addr );
+		return -1;	
+	}
+
+	// ------------------------------------------------------------------
+	// Create the socket
+	// ------------------------------------------------------------------
+	errno = 0;
+	if( (sock_fd = socket( AF_INET, SOCK_STREAM, 0 )) < 0 ) {
+		osrfLogWarning( OSRF_LOG_MARK, "socket_open_tcp_client(): Cannot create TCP socket: %s",
 			strerror( errno ) );
-      return -1;
-   }
+		return -1;
+	}
 
 	int i = 1;
-	//osrfLogDebug( OSRF_LOG_MARK, "Setting TCP_NODELAY");
 	setsockopt(sock_fd, IPPROTO_TCP, TCP_NODELAY, &i, sizeof(i));
 
-   // ------------------------------------------------------------------
-   // Construct server info struct
-   // ------------------------------------------------------------------
-   memset( &remoteAddr, 0, sizeof(remoteAddr));
-   remoteAddr.sin_family = AF_INET;
-   remoteAddr.sin_port = htons( port );
-   memcpy( (char*) &remoteAddr.sin_addr.s_addr,
-         hptr->h_addr_list[0], hptr->h_length );
+	// ------------------------------------------------------------------
+	// Construct server info struct
+	// ------------------------------------------------------------------
+	memset( &remoteAddr, 0, sizeof(remoteAddr));
+	remoteAddr.sin_family = AF_INET;
+	remoteAddr.sin_port = htons( port );
+	struct sockaddr_in* ai_addr_in = (struct sockaddr_in*) addr_info->ai_addr;
+	remoteAddr.sin_addr.s_addr = ai_addr_in->sin_addr.s_addr;
 
-   // ------------------------------------------------------------------
-   // Connect to server
-   // ------------------------------------------------------------------
-   errno = 0;
-   if( connect( sock_fd, (struct sockaddr*) &remoteAddr, sizeof( struct sockaddr_in ) ) < 0 ) {
-	   osrfLogWarning( OSRF_LOG_MARK, "socket_open_tcp_client(): Cannot connect to server %s: %s",
-		   dest_addr, strerror(errno) );
-	   close( sock_fd );
-	   return -1;
-   }
+	freeaddrinfo( addr_info );
+
+	// ------------------------------------------------------------------
+	// Connect to server
+	// ------------------------------------------------------------------
+	errno = 0;
+	if( connect( sock_fd, (struct sockaddr*) &remoteAddr, sizeof( struct sockaddr_in ) ) < 0 ) {
+		osrfLogWarning( OSRF_LOG_MARK, "socket_open_tcp_client(): Cannot connect to server %s: %s",
+			dest_addr, strerror(errno) );
+		close( sock_fd );
+		return -1;
+	}
 
 	_socket_add_node(mgr, CLIENT_SOCKET, INET, sock_fd, -1 );
 
-   return sock_fd;
+	return sock_fd;
 }
 
 
@@ -403,7 +419,14 @@ int socket_open_unix_client(socket_manager* mgr, const char* sock_path) {
 }
 
 
-/* returns the socket_node with the given sock_fd */
+/**
+	@brief Search a socket_manager's list for a socket node for a given file descriptor.
+	@param mgr Pointer to the socket manager.
+	@param sock_fd The file descriptor to be sought.
+	@return A pointer to the socket_node if found; otherwise NULL.
+
+	Traverse a linked list owned by the socket_manager.
+*/
 static socket_node* socket_find_node(socket_manager* mgr, int sock_fd) {
 	if(mgr == NULL) return NULL;
 	socket_node* node = mgr->socket;
@@ -416,6 +439,14 @@ static socket_node* socket_find_node(socket_manager* mgr, int sock_fd) {
 }
 
 /* removes the node with the given sock_fd from the list and frees it */
+/**
+	@brief Remove a socket node for a given fd from a socket_manager's list.
+	@param mgr Pointer to the socket_manager.
+	@param sock_fd The file descriptor whose socket_node is to be removed.
+
+	This function does @em not close the socket.  It just removes a node from the list, and
+	frees it.  It is the responsibility of the calling code to close the socket.
+*/
 static void socket_remove_node(socket_manager* mgr, int sock_fd) {
 
 	if(mgr == NULL) return;
@@ -448,6 +479,14 @@ static void socket_remove_node(socket_manager* mgr, int sock_fd) {
 }
 
 
+/**
+	@brief Write to the log: a list of socket_nodes in a socket_manager's list.
+	@param mgr Pointer to the socket_manager.
+
+	For testing and debugging.
+
+	The messages are issued as DEBG messages, and show each file descriptor and its parent.
+*/
 void _socket_print_list(socket_manager* mgr) {
 	if(mgr == NULL) return;
 	socket_node* node = mgr->socket;
