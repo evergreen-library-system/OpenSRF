@@ -1,3 +1,8 @@
+/**
+	@file socket_bundle.c
+	@brief Collection of socket-handling routines.
+*/
+
 #include <opensrf/socket_bundle.h>
 
 struct socket_node_struct {
@@ -99,7 +104,7 @@ static socket_node* _socket_add_node(socket_manager* mgr,
 	@param listen_ip The IP address to bind to; or, NULL for INADDR_ANY.
 	@return The socket fd if successful; otherwise -1.
 
-	Calls: socket(), bind(), and listen().
+	Calls: socket(), bind(), and listen().  Creates a SERVER_SOCKET.
 */
 int socket_open_tcp_server(socket_manager* mgr, int port, const char* listen_ip) {
 
@@ -161,8 +166,10 @@ int socket_open_tcp_server(socket_manager* mgr, int port, const char* listen_ip)
 	@param path Name of the socket within the file system.
 	@return The socket fd if successful; otherwise -1.
 
-	Calls: socket(), bind(), listen().
-*/
+	Calls: socket(), bind(), listen().  Creates a SERVER_SOCKET.
+
+	Applies socket option TCP_NODELAY in order to reduce latency.
+ */
 int socket_open_unix_server(socket_manager* mgr, const char* path) {
 	if(mgr == NULL || path == NULL) return -1;
 
@@ -229,7 +236,7 @@ int socket_open_unix_server(socket_manager* mgr, const char* path) {
 	@param listen_ip The IP address to bind to, or NULL for INADDR_ANY.
 	@return The socket fd if successful; otherwise -1.
 
-	Calls: socket(), bind().
+	Calls: socket(), bind().  Creates a SERVER_SOCKET.
 */
 int socket_open_udp_server( 
 		socket_manager* mgr, int port, const char* listen_ip ) {
@@ -276,8 +283,10 @@ int socket_open_udp_server(
 	@param dest_addr Host name or IP address of the server to which we are connecting.
 	@return The socket fd if successful; otherwise -1.
 
-	Calls: getaddrinfo(), socket(), connect().
-*/
+	Calls: getaddrinfo(), socket(), connect().  Creates a CLIENT_SOCKET.
+
+	Applies socket option TCP_NODELAY in order to reduce latency.
+ */
 int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr) {
 
 	struct sockaddr_in remoteAddr;
@@ -355,7 +364,7 @@ int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr)
 	@param mgr Pointer to the socket_manager that will own the socket.
 	@return The socket fd if successful; otherwise -1.
 
-	Calls: socket().
+	Calls: socket().  Creates a CLIENT_SOCKET.
 */
 int socket_open_udp_client( socket_manager* mgr ) {
 
@@ -380,7 +389,7 @@ int socket_open_udp_client( socket_manager* mgr ) {
 	@param sock_path Name of the socket within the file system.
 	@return The socket fd if successful; otherwise -1.
 
-	Calls: socket(), connect().
+	Calls: socket(), connect().  Creates a CLIENT_SOCKET.
 */
 int socket_open_unix_client(socket_manager* mgr, const char* sock_path) {
 
@@ -445,7 +454,7 @@ static socket_node* socket_find_node(socket_manager* mgr, int sock_fd) {
 	@param sock_fd The file descriptor whose socket_node is to be removed.
 
 	This function does @em not close the socket.  It just removes a node from the list, and
-	frees it.  It is the responsibility of the calling code to close the socket.
+	frees it.  The disposition of the socket is the responsibility of the calling code.
 */
 static void socket_remove_node(socket_manager* mgr, int sock_fd) {
 
@@ -499,12 +508,27 @@ void _socket_print_list(socket_manager* mgr) {
 	osrfLogDebug( OSRF_LOG_MARK, "]");
 }
 
-/* sends the given data to the given socket */
+/**
+	@brief Send a nul-terminated string over a socket.
+	@param sock_fd The file descriptor for the socket.
+	@param data Pointer to the string to be sent.
+	@return 0 if successful, -1 if not.
+
+	This function is a thin wrapper for _socket_send().
+*/
 int socket_send(int sock_fd, const char* data) {
 	return _socket_send( sock_fd, data, 0);
 }
 
-/* utility method */
+/**
+	@brief Send a nul-terminated string over a socket.
+	@param sock_fd The file descriptor for the socket.
+	@param data Pointer to the string to be sent.
+	@param flags A set of bitflags to be passed to send().
+	@return 0 if successful, -1 if not.
+
+	This function is the final common pathway for all outgoing socket traffic.
+*/
 static int _socket_send(int sock_fd, const char* data, int flags) {
 
 	signal(SIGPIPE, SIG_IGN); /* in case a unix socket was closed */
@@ -512,7 +536,7 @@ static int _socket_send(int sock_fd, const char* data, int flags) {
 	errno = 0;
 	size_t r = send( sock_fd, data, strlen(data), flags );
 	int local_errno = errno;
-	
+
 	if( r == -1 ) {
 		osrfLogWarning( OSRF_LOG_MARK, "_socket_send(): Error sending data with return %d", r );
 		osrfLogWarning( OSRF_LOG_MARK, "Last Sys Error: %s", strerror(local_errno));
@@ -532,18 +556,22 @@ static int _socket_send(int sock_fd, const char* data, int flags) {
 //}
 
 
-/*
- * Waits at most usecs microseconds for the send buffer of the given
- * socket to accept new data.  This does not guarantee that the 
- * socket will accept all the data we want to give it.
- */
+/**
+	@brief Wait for a socket to be ready to send, and then send a string over it.
+	@param sock_fd File descriptor of the socket.
+	@param data Pointer to a nul-terminated string to be sent.
+	@param usecs How long to wait, in microseconds, before timing out.
+	@return 0 if successful, -1 if not.
+
+	The socket may not accept all the data we want to give it.
+*/
 int socket_send_timeout( int sock_fd, const char* data, int usecs ) {
 
 	fd_set write_set;
 	FD_ZERO( &write_set );
 	FD_SET( sock_fd, &write_set );
 
-	int mil = 1000000;
+	const int mil = 1000000;
 	int secs = (int) usecs / mil;
 	usecs = usecs - (secs * mil);
 
@@ -565,6 +593,13 @@ int socket_send_timeout( int sock_fd, const char* data, int usecs ) {
 
 /* disconnects the node with the given sock_fd and removes
 	it from the socket set */
+/**
+	@brief Close a socket, and remove it from the socket_manager's list.
+	@param mgr Pointer to the socket_manager.
+	@param sock_fd File descriptor for the socket to be closed.
+
+	We close the socket before determining whether it belongs to the socket_manager in question.
+*/
 void socket_disconnect(socket_manager* mgr, int sock_fd) {
 	osrfLogInternal( OSRF_LOG_MARK, "Closing socket %d", sock_fd);
 	close( sock_fd );
@@ -572,15 +607,34 @@ void socket_disconnect(socket_manager* mgr, int sock_fd) {
 }
 
 
-/* we assume that if select() fails, the socket is no longer valid */
+/**
+	@brief Determine whether a socket is valid.
+	@param sock_fd File descriptor for the socket.
+	@return 1 if the socket is valid, or 0 if it isn't.
+
+	The test is based on a call to select().  If the socket is valid but is not ready to be
+	written to, we wait until it is ready, then return 1.
+
+	If the select() fails, it may be because it was interrupted by a signal.  In that case
+	we try again.  Otherwise we assume that the socket is no longer valid.  This can happen
+	if, for example, the other end of a connection has closed the connection.
+
+	The select() can also fail if it is unable to allocate enough memory for its own internal
+	use.  If that happens, we may erroneously report a valid socket as invalid, but we
+	probably wouldn't be able to use it anyway if we're that close to exhausting memory.
+*/
 int socket_connected(int sock_fd) {
 	fd_set read_set;
 	FD_ZERO( &read_set );
 	FD_SET( sock_fd, &read_set );
-	if( select( sock_fd + 1, &read_set, NULL, NULL, NULL) == -1 ) 
-		return 0;
-	return 1;
-
+	while( 1 ) {
+		if( select( sock_fd + 1, &read_set, NULL, NULL, NULL) == -1 )
+			return 0;
+		else if( EINTR == errno )
+			continue;
+		else
+			return 1;
+	}
 }
 
 /* this only waits on the server socket and does not handle the actual
@@ -601,7 +655,8 @@ int socket_wait(socket_manager* mgr, int timeout, int sock_fd) {
 
 		// If timeout is -1, we block indefinitely
 		if( (retval = select( sock_fd + 1, &read_set, NULL, NULL, NULL)) == -1 ) {
-			osrfLogDebug( OSRF_LOG_MARK, "Call to select() interrupted: Sys Error: %s", strerror(errno));
+			osrfLogDebug( OSRF_LOG_MARK, "Call to select() interrupted: Sys Error: %s",
+						  strerror(errno));
 			return -1;
 		}
 
@@ -756,7 +811,7 @@ static int _socket_route_data_id( socket_manager* mgr, int sock_id) {
 	return -1;
 }
 
-
+/* Creates a CLIENT_SOCKET. */
 static int _socket_handle_new_client(socket_manager* mgr, socket_node* node) {
 	if(mgr == NULL || node == NULL) return -1;
 
@@ -782,6 +837,25 @@ static int _socket_handle_new_client(socket_manager* mgr, socket_node* node) {
 }
 
 
+/**
+	@brief Receive data on a streaming socket.
+	@param mgr Pointer to the socket_manager that owns the socket_node.
+	@param node Pointer to the socket_node that owns the socket.
+	@return 0 if successful, or -1 upon failure.
+
+	Receive one or more buffers until no more bytes are available for receipt.  Add a
+	terminal nul to each buffer and pass it to a callback function previously defined by the
+	application to the socket_manager.
+
+	If the sender closes the connection, call another callback function, if one has been
+	defined.
+
+	Even when the function returns successfully, the received message may not be complete --
+	there may be more data that hasn't arrived yet.  It is the responsibility of the
+	calling code to recognize message boundaries.
+
+	Called only for a CLIENT_SOCKET.
+*/
 static int _socket_handle_client_data(socket_manager* mgr, socket_node* node) {
 	if(mgr == NULL || node == NULL) return -1;
 
@@ -789,26 +863,27 @@ static int _socket_handle_client_data(socket_manager* mgr, socket_node* node) {
 	int read_bytes;
 	int sock_fd = node->sock_fd;
 
-	osrf_clearbuf(buf, sizeof(buf));
 	set_fl(sock_fd, O_NONBLOCK);
 
-	osrfLogInternal( OSRF_LOG_MARK, "%ld : Received data at %f\n", (long) getpid(), get_timestamp_millis());
+	osrfLogInternal( OSRF_LOG_MARK, "%ld : Received data at %f\n", 
+			(long) getpid(), get_timestamp_millis());
 
 	while( (read_bytes = recv(sock_fd, buf, RBUFSIZE-1, 0) ) > 0 ) {
 		buf[read_bytes] = '\0';
-		osrfLogInternal( OSRF_LOG_MARK, "Socket %d Read %d bytes and data: %s", sock_fd, read_bytes, buf);
+		osrfLogInternal( OSRF_LOG_MARK, "Socket %d Read %d bytes and data: %s",
+				sock_fd, read_bytes, buf);
 		if(mgr->data_received)
 			mgr->data_received(mgr->blob, mgr, sock_fd, buf, node->parent_id);
-
-		osrf_clearbuf(buf, sizeof(buf));
 	}
-    int local_errno = errno; /* capture errno as set by recv() */
+	int local_errno = errno; /* capture errno as set by recv() */
 
 	if(socket_find_node(mgr, sock_fd)) {  /* someone may have closed this socket */
 		clr_fl(sock_fd, O_NONBLOCK); 
 		if(read_bytes < 0) { 
-			if(local_errno != EAGAIN) 
-				osrfLogWarning(OSRF_LOG_MARK,  " * Error reading socket with error %s", strerror(local_errno));
+			// EAGAIN would have meant that no more data was available
+			if(local_errno != EAGAIN)   // but if that's not the case...
+				osrfLogWarning( OSRF_LOG_MARK, " * Error reading socket with error %s",
+					strerror(local_errno) );
 		}
 
 	} else { return -1; } /* inform the caller that this node has been tampered with */
@@ -825,6 +900,10 @@ static int _socket_handle_client_data(socket_manager* mgr, socket_node* node) {
 }
 
 
+/**
+	@brief Destroy a socket_manager, and close all of its sockets.
+	@param mgr Pointer to the socket_manager to be destroyed.
+*/
 void socket_manager_free(socket_manager* mgr) {
 	if(mgr == NULL) return;
 	socket_node* tmp;
