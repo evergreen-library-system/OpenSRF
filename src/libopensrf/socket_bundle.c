@@ -23,7 +23,6 @@ static socket_node* socket_find_node(socket_manager* mgr, int sock_fd);
 static void socket_remove_node(socket_manager*, int sock_fd);
 static int _socket_send(int sock_fd, const char* data, int flags);
 static int _socket_route_data(socket_manager* mgr, int num_active, fd_set* read_set);
-static int _socket_route_data_id( socket_manager* mgr, int sock_id);
 static int _socket_handle_new_client(socket_manager* mgr, socket_node* node);
 static int _socket_handle_client_data(socket_manager* mgr, socket_node* node);
 
@@ -637,9 +636,26 @@ int socket_connected(int sock_fd) {
 	}
 }
 
-/* this only waits on the server socket and does not handle the actual
-	data coming in from the client..... XXX */
-int socket_wait(socket_manager* mgr, int timeout, int sock_fd) {
+/**
+	@brief Look for input on a given socket.  If you find some, react to it.
+	@param mgr Pointer to the socket_manager that presumably owns the socket.
+	@param timeout Timeout interval, in seconds (see notes).
+	@param sock_fd The file descriptor to look at.
+	@return 0 if successful, or -1 if a timeout or other error occurs.
+
+	If @a timeout is -1, wait indefinitely for input activity to appear.  If @a timeout is
+	zero, don't wait at all.  If @a timeout is positive, wait that number of seconds
+	before timing out.  If @a timeout has a negative value other than -1, the results are not
+	well defined, but we'll probably get an EINVAL error from select().
+
+	If we detect activity, branch on the type of socket:
+
+	- If it's a listener, accept a new connection, and add the new socket to the
+	socket_manager's list, without actually reading any data.
+	- Otherwise, read as much data as is available from the input socket, passing it a
+	buffer at a time to whatever callback function has been defined to the socket_manager.
+*/
+int socket_wait( socket_manager* mgr, int timeout, int sock_fd ) {
 
 	int retval = 0;
 	fd_set read_set;
@@ -651,25 +667,41 @@ int socket_wait(socket_manager* mgr, int timeout, int sock_fd) {
 	tv.tv_usec = 0;
 	errno = 0;
 
-	if( timeout < 0 ) {  
+	if( timeout < 0 ) {
 
 		// If timeout is -1, we block indefinitely
 		if( (retval = select( sock_fd + 1, &read_set, NULL, NULL, NULL)) == -1 ) {
 			osrfLogDebug( OSRF_LOG_MARK, "Call to select() interrupted: Sys Error: %s",
-						  strerror(errno));
+					strerror(errno));
 			return -1;
 		}
 
 	} else if( timeout > 0 ) { /* timeout of 0 means don't block */
 
 		if( (retval = select( sock_fd + 1, &read_set, NULL, NULL, &tv)) == -1 ) {
-			osrfLogDebug( OSRF_LOG_MARK, "Call to select() interrupted: Sys Error: %s", strerror(errno));
+			osrfLogDebug( OSRF_LOG_MARK, "Call to select() interrupted: Sys Error: %s",
+					strerror(errno));
 			return -1;
 		}
 	}
 
 	osrfLogInternal( OSRF_LOG_MARK, "%d active sockets after select()", retval);
-	return _socket_route_data_id(mgr, sock_fd);
+
+	socket_node* node = socket_find_node(mgr, sock_fd);
+	if( node ) {
+		if( node->endpoint == SERVER_SOCKET ) {
+			_socket_handle_new_client( mgr, node );  // accept new connection
+		} else {
+			int status = _socket_handle_client_data( mgr, node );   // read data
+			if( status == -1 ) {
+				socket_remove_node(mgr, sock_fd);
+				return -1;
+			}
+		}
+		return 0;
+	}
+	else
+		return -1;    // No such file descriptor for this socket_manager
 }
 
 
@@ -789,29 +821,14 @@ static int _socket_route_data(
 }
 
 
-/* routes data from a single known socket */
-static int _socket_route_data_id( socket_manager* mgr, int sock_id) {
-	socket_node* node = socket_find_node(mgr, sock_id);	
-	int status = 0;
+/**
+	@brief Accept a new socket from a listener, and add it to the socket_manager's list.
+	@param mgr Pointer to the socket_manager that will own the new socket.
+	@param node Pointer to the socket_node for the listener socket.
+	@return 0 if successful, or -1 if not.
 
-	if(node) {
-		if(node->endpoint == SERVER_SOCKET) 
-			_socket_handle_new_client(mgr, node);
-	
-		if(node->endpoint == CLIENT_SOCKET ) 
-			status = _socket_handle_client_data(mgr, node);
-
-		if(status == -1) {
-			socket_remove_node(mgr, sock_id);
-			return -1;
-		}
-		return 0;
-	} 
-
-	return -1;
-}
-
-/* Creates a CLIENT_SOCKET. */
+	Call: accept().  Creates a CLIENT_SOCKET (even though the socket resides on the server).
+*/
 static int _socket_handle_new_client(socket_manager* mgr, socket_node* node) {
 	if(mgr == NULL || node == NULL) return -1;
 
@@ -865,7 +882,7 @@ static int _socket_handle_client_data(socket_manager* mgr, socket_node* node) {
 
 	set_fl(sock_fd, O_NONBLOCK);
 
-	osrfLogInternal( OSRF_LOG_MARK, "%ld : Received data at %f\n", 
+	osrfLogInternal( OSRF_LOG_MARK, "%ld : Received data at %f\n",
 			(long) getpid(), get_timestamp_millis());
 
 	while( (read_bytes = recv(sock_fd, buf, RBUFSIZE-1, 0) ) > 0 ) {
@@ -878,8 +895,8 @@ static int _socket_handle_client_data(socket_manager* mgr, socket_node* node) {
 	int local_errno = errno; /* capture errno as set by recv() */
 
 	if(socket_find_node(mgr, sock_fd)) {  /* someone may have closed this socket */
-		clr_fl(sock_fd, O_NONBLOCK); 
-		if(read_bytes < 0) { 
+		clr_fl(sock_fd, O_NONBLOCK);
+		if(read_bytes < 0) {
 			// EAGAIN would have meant that no more data was available
 			if(local_errno != EAGAIN)   // but if that's not the case...
 				osrfLogWarning( OSRF_LOG_MARK, " * Error reading socket with error %s",
