@@ -1,11 +1,18 @@
 #include <opensrf/transport_session.h>
 
+/**
+	@file transport_session.c
+	@brief Routines to manage a connection to a Jabber server.
+
+	In all cases, a transport_session acts as a client with regard to Jabber.
+*/
+
 // ---------------------------------------------------------------------------------
 // Callback for handling the startElement event.  Much of the jabber logic occurs
 // in this and the characterHandler callbacks.
 // Here we check for the various top level jabber elements: body, iq, etc.
 // ---------------------------------------------------------------------------------
-static void startElementHandler( 
+static void startElementHandler(
 		void *session, const xmlChar *name, const xmlChar **atts);
 
 // ---------------------------------------------------------------------------------
@@ -75,15 +82,32 @@ static void grab_incoming(void* blob, socket_manager* mgr, int sockid, char* dat
 static int reset_session_buffers( transport_session* session );
 static char* get_xml_attr( const xmlChar** atts, const char* attr_name );
 
-// ---------------------------------------------------------------------------------
-// returns a built and allocated transport_session object.
-// This codes does no network activity, only memory initilization
-// ---------------------------------------------------------------------------------
-transport_session* init_transport(  const char* server, 
+/**
+	@brief Allocate and initialize a transport_session.
+	@param server Hostname or IP address where the Jabber server resides.
+	@param port Port used for connecting to Jabber (0 if using UNIX domain socket).
+	@param unix_path Name of Jabber's socket in file system (if using UNIX domain socket).
+	@param user_data An opaque pointer stored on behalf of the calling code.
+	@param component Boolean; true if we're a component.
+	@return Pointer to a newly allocated transport_session.
+
+	This function initializes memory but does not open any sockets or otherwise access
+	the network.
+
+	If @a port is greater than zero, we will use TCP to connect to Jabber, and ignore
+	@a unix_path.  Otherwise we will open a UNIX domain socket using @a unix_path.
+
+	The calling code is responsible for freeing the transport_session by calling
+	session_free().
+*/
+transport_session* init_transport( const char* server,
 	int port, const char* unix_path, void* user_data, int component ) {
 
+	if( ! server )
+		server = "";
+
 	/* create the session struct */
-	transport_session* session = 
+	transport_session* session =
 		(transport_session*) safe_malloc( sizeof(transport_session) );
 
 	session->user_data = user_data;
@@ -91,10 +115,10 @@ transport_session* init_transport(  const char* server,
 	session->component = component;
 
 	/* initialize the data buffers */
-	session->body_buffer			= buffer_init( JABBER_BODY_BUFSIZE );
+	session->body_buffer		= buffer_init( JABBER_BODY_BUFSIZE );
 	session->subject_buffer		= buffer_init( JABBER_SUBJECT_BUFSIZE );
 	session->thread_buffer		= buffer_init( JABBER_THREAD_BUFSIZE );
-	session->from_buffer			= buffer_init( JABBER_JID_BUFSIZE );
+	session->from_buffer		= buffer_init( JABBER_JID_BUFSIZE );
 	session->status_buffer		= buffer_init( JABBER_STATUS_BUFSIZE );
 	session->recipient_buffer	= buffer_init( JABBER_JID_BUFSIZE );
 	session->message_error_type = buffer_init( JABBER_JID_BUFSIZE );
@@ -103,7 +127,7 @@ transport_session* init_transport(  const char* server,
 	session->message_error_code = 0;
 
 	/* for OpenSRF extensions */
-	session->router_to_buffer		= buffer_init( JABBER_JID_BUFSIZE );
+	session->router_to_buffer	= buffer_init( JABBER_JID_BUFSIZE );
 	session->router_from_buffer	= buffer_init( JABBER_JID_BUFSIZE );
 	session->osrf_xid_buffer	= buffer_init( JABBER_JID_BUFSIZE );
 	session->router_class_buffer	= buffer_init( JABBER_JID_BUFSIZE );
@@ -128,17 +152,17 @@ transport_session* init_transport(  const char* server,
 	/* initialize the sax push parser */
 	session->parser_ctxt = xmlCreatePushParserCtxt(SAXHandler, session, "", 0, NULL);
 
-	/* initialize the transport_socket structure */
+	/* initialize the socket_manager structure */
 	session->sock_mgr = (socket_manager*) safe_malloc( sizeof(socket_manager) );
 
 	session->sock_mgr->data_received = &grab_incoming;
 	session->sock_mgr->on_socket_closed = NULL;
 	session->sock_mgr->socket = NULL;
 	session->sock_mgr->blob	= session;
-	
+
 	session->port = port;
 	session->server = strdup(server);
-	if(unix_path) 	
+	if(unix_path)
 		session->unix_path = strdup(unix_path);
 	else session->unix_path = NULL;
 
@@ -149,10 +173,18 @@ transport_session* init_transport(  const char* server,
 }
 
 
+/**
+	@brief Destroy a transport_session, and close its socket.
+	@param session Pointer to the transport_session to be destroyed.
+	@return 1 if successful, or 0 if not.
 
-/* XXX FREE THE BUFFERS */
+	The only error condition is a NULL pointer argument.
+*/
 int session_free( transport_session* session ) {
 	if( ! session ) { return 0; }
+
+	if( session->sock_id )
+		session_disconnect( session );
 
 	if(session->sock_mgr)
 		socket_manager_free(session->sock_mgr);
@@ -189,6 +221,22 @@ int session_free( transport_session* session ) {
 }
 
 
+/**
+	@brief Wait on the client socket connected to Jabber, and process any resulting input.
+	@param session Pointer to the transport_session.
+	@param timeout How seconds to wait before timing out (see notes).
+	@return 0 if successful, or -1 if a timeout or other error occurs, or if the server
+		closes the connection at the other end.
+
+	If @a timeout is -1, wait indefinitely for input activity to appear.  If @a timeout is
+	zero, don't wait at all.  If @a timeout is positive, wait that number of seconds
+	before timing out.  If @a timeout has a negative value other than -1, the results are not
+	well defined.
+
+	Read all available input from the socket and pass it through grab_incoming() (a previously
+	designated callback function).  There is no guarantee that we will get a complete message
+	from a single call.
+*/
 int session_wait( transport_session* session, int timeout ) {
 	if( ! session || ! session->sock_mgr ) {
 		return 0;
@@ -203,7 +251,13 @@ int session_wait( transport_session* session, int timeout ) {
 	return ret;
 }
 
-int session_send_msg( 
+/**
+	@brief Wrap a message in XML and send it to Jabber.
+	@param session Pointer to the transport_session.
+	@param msg Pointer to a transport_message enclosing the message.
+	@return 0 if successful, or -1 upon error.
+*/
+int session_send_msg(
 		transport_session* session, transport_message* msg ) {
 
 	if( ! session ) { return -1; }
@@ -219,39 +273,66 @@ int session_send_msg(
 }
 
 
-/* connects to server and connects to jabber */
-int session_connect( transport_session* session, 
-		const char* username, const char* password, 
+/**
+	@brief Connect to the Jabber server as a client and open a Jabber session.
+	@param session Pointer to a transport_session.
+	@param username Jabber user name.
+	@param password Jabber password.
+	@param resource name of Jabber resource.
+	@param connect_timeout Timeout interval, in seconds, for receiving data (see notes).
+	@param auth_type An enum: either AUTH_PLAIN or AUTH_DIGEST (see notes).
+	@return 1 if successful, or 0 upon error.
+
+	If @a connect_timeout is -1, wait indefinitely for input activity to appear.  If
+	@a connect_timeout is zero, don't wait at all.  If @a timeout is positive, wait that
+	number of seconds before timing out.  If @a connect_timeout has a negative value other
+	than -1, the results are not well defined.
+
+	If we connect as a Jabber component, we send the password as an SHA1 hash.  Otherwise
+	we look at the @a auth_type.  If it's AUTH_PLAIN, we send the password as plaintext; if
+	it's AUTH_DIGEST, we send it as a hash.
+
+	At this writing, we only use AUTH_DIGEST.
+*/
+int session_connect( transport_session* session,
+		const char* username, const char* password,
 		const char* resource, int connect_timeout, enum TRANSPORT_AUTH_TYPE auth_type ) {
 
 	int size1 = 0;
 	int size2 = 0;
 
-	if( ! session ) { 
-		osrfLogWarning(OSRF_LOG_MARK,  "session is null in connect" );
-		return 0; 
+	if( ! session ) {
+		osrfLogWarning(OSRF_LOG_MARK, "session is null in session_connect()" );
+		return 0;
 	}
 
+	if( session->sock_id != 0 ) {
+		osrfLogWarning(OSRF_LOG_MARK, "transport session is already open, on socket %d",
+			session->sock_id );
+		return 0;
+	}
 
-	char* server = session->server;
-
-	if( ! session->sock_id ) {
-
-		if(session->port > 0) {
-			if( (session->sock_id = socket_open_tcp_client(
-				session->sock_mgr, session->port, session->server)) <= 0 ) 
-			return 0;
-
-		} else if(session->unix_path != NULL) {
-			if( (session->sock_id = socket_open_unix_client(
-				session->sock_mgr, session->unix_path)) <= 0 ) 
+	// Open a client socket connecting to the Jabber server
+	if(session->port > 0) {   // use TCP
+		session->sock_id = socket_open_tcp_client( 
+				session->sock_mgr, session->port, session->server );
+		if( session->sock_id <= 0 ) {
+			session->sock_id = 0;
 			return 0;
 		}
-		else {
-			osrfLogWarning( OSRF_LOG_MARK, "Can't open session: no port or unix path" );
+	} else if(session->unix_path != NULL) {  // use UNIX domain
+		session->sock_id = socket_open_unix_client( session->sock_mgr, session->unix_path );
+		if( session->sock_id <= 0 ) {
+			session->sock_id = 0;
 			return 0;
 		}
 	}
+	else {
+		osrfLogWarning( OSRF_LOG_MARK, "Can't open session: no port or unix path" );
+		return 0;
+	}
+
+	const char* server = session->server;
 
 	if( session->component ) {
 
@@ -259,8 +340,8 @@ int session_connect( transport_session* session,
 		char our_hostname[HOST_NAME_MAX + 1] = "";
 		gethostname(our_hostname, sizeof(our_hostname) );
 		our_hostname[HOST_NAME_MAX] = '\0';
-		size1 = 150 + strlen( server );
-		char stanza1[ size1 ]; 
+		size1 = 150 + strlen( username ) + strlen( our_hostname );
+		char stanza1[ size1 ];
 		snprintf( stanza1, sizeof(stanza1),
 				"<stream:stream version='1.0' xmlns:stream='http://etherx.jabber.org/streams' "
 				"xmlns='jabber:component:accept' to='%s' from='%s' xml:lang='en'>",
@@ -271,15 +352,17 @@ int session_connect( transport_session* session,
 
 		if( socket_send( session->sock_id, stanza1 ) ) {
 			osrfLogWarning(OSRF_LOG_MARK, "error sending");
+			socket_disconnect( session->sock_mgr, session->sock_id );
+			session->sock_id = 0;
 			return 0;
 		}
-	
+
 		/* wait for reply */
 		socket_wait(session->sock_mgr, connect_timeout, session->sock_id);
-	
+
 		/* server acknowledges our existence, now see if we can login */
 		if( session->state_machine->connecting == CONNECTING_2 ) {
-	
+
 			int ss = session->session_id->n_used + strlen(password) + 5;
 			char hashstuff[ss];
 			snprintf( hashstuff, sizeof(hashstuff), "%s%s", session->session_id->buf, password );
@@ -288,9 +371,11 @@ int session_connect( transport_session* session,
 			size2 = 100 + strlen( hash );
 			char stanza2[ size2 ];
 			snprintf( stanza2, sizeof(stanza2), "<handshake>%s</handshake>", hash );
-	
+
 			if( socket_send( session->sock_id, stanza2 )  ) {
 				osrfLogWarning(OSRF_LOG_MARK, "error sending");
+				socket_disconnect( session->sock_mgr, session->sock_id );
+				session->sock_id = 0;
 				return 0;
 			}
 		}
@@ -299,17 +384,18 @@ int session_connect( transport_session* session,
 
 		/* the first Jabber connect stanza */
 		size1 = 100 + strlen( server );
-		char stanza1[ size1 ]; 
-		snprintf( stanza1, sizeof(stanza1), 
+		char stanza1[ size1 ];
+		snprintf( stanza1, sizeof(stanza1),
 				"<stream:stream to='%s' xmlns='jabber:client' "
 				"xmlns:stream='http://etherx.jabber.org/streams'>",
 			server );
-	
 
 		/* send the first stanze */
 		session->state_machine->connecting = CONNECTING_1;
 		if( socket_send( session->sock_id, stanza1 ) ) {
 			osrfLogWarning(OSRF_LOG_MARK, "error sending");
+			socket_disconnect( session->sock_mgr, session->sock_id );
+			session->sock_id = 0;
 			return 0;
 		}
 
@@ -320,17 +406,19 @@ int session_connect( transport_session* session,
 		if( auth_type == AUTH_PLAIN ) {
 
 			/* the second jabber connect stanza including login info*/
-			size2 = 150 + strlen( username ) + strlen(password) + strlen(resource);
+			size2 = 150 + strlen( username ) + strlen( password ) + strlen( resource );
 			char stanza2[ size2 ];
-			snprintf( stanza2, sizeof(stanza2), 
+			snprintf( stanza2, sizeof(stanza2),
 					"<iq id='123456789' type='set'><query xmlns='jabber:iq:auth'>"
 					"<username>%s</username><password>%s</password><resource>%s</resource></query></iq>",
 					username, password, resource );
-	
+
 			/* server acknowledges our existence, now see if we can login */
 			if( session->state_machine->connecting == CONNECTING_2 ) {
 				if( socket_send( session->sock_id, stanza2 )  ) {
 					osrfLogWarning(OSRF_LOG_MARK, "error sending");
+					socket_disconnect( session->sock_mgr, session->sock_id );
+					session->sock_id = 0;
 					return 0;
 				}
 			}
@@ -344,35 +432,45 @@ int session_connect( transport_session* session,
 			char* hash = shahash( hashstuff );
 
 			/* the second jabber connect stanza including login info*/
-			size2 = 150 + strlen( hash ) + strlen(password) + strlen(resource);
+			size2 = 150 + strlen( username ) + strlen( hash ) + strlen(resource);
 			char stanza2[ size2 ];
-			snprintf( stanza2, sizeof(stanza2), 
+			snprintf( stanza2, sizeof(stanza2),
 					"<iq id='123456789' type='set'><query xmlns='jabber:iq:auth'>"
 					"<username>%s</username><digest>%s</digest><resource>%s</resource></query></iq>",
 					username, hash, resource );
-	
+
 			/* server acknowledges our existence, now see if we can login */
 			if( session->state_machine->connecting == CONNECTING_2 ) {
 				if( socket_send( session->sock_id, stanza2 )  ) {
 					osrfLogWarning(OSRF_LOG_MARK, "error sending");
+					socket_disconnect( session->sock_mgr, session->sock_id );
+					session->sock_id = 0;
 					return 0;
 				}
 			}
 
+		} else {
+			osrfLogWarning(OSRF_LOG_MARK, "Invalid auth_type parameter: %d",
+					(int) auth_type );
+			socket_disconnect( session->sock_mgr, session->sock_id );
+			session->sock_id = 0;
+			return 0;
 		}
 
 	} // not component
 
 
-	/* wait for reply */
+	/* wait for reply to login request */
 	socket_wait( session->sock_mgr, connect_timeout, session->sock_id );
 
 	if( session->state_machine->connected ) {
 		/* yar! */
 		return 1;
+	} else {
+		socket_disconnect( session->sock_mgr, session->sock_id );
+		session->sock_id = 0;
+		return 0;
 	}
-
-	return 0;
 }
 
 // ---------------------------------------------------------------------------------
@@ -392,7 +490,7 @@ static void startElementHandler(
 	transport_session* ses = (transport_session*) session;
 	if( ! ses ) { return; }
 
-	
+
 	if( strcmp( (char*) name, "message" ) == 0 ) {
 		ses->state_machine->in_message = 1;
 		buffer_add( ses->from_buffer, get_xml_attr( atts, "from" ) );
@@ -415,12 +513,12 @@ static void startElementHandler(
 			ses->state_machine->in_message_body = 1;
 			return;
 		}
-	
+
 		if( strcmp( (char*) name, "subject" ) == 0 ) {
 			ses->state_machine->in_subject = 1;
 			return;
 		}
-	
+
 		if( strcmp( (char*) name, "thread" ) == 0 ) {
 			ses->state_machine->in_thread = 1;
 			return;
@@ -468,7 +566,7 @@ static void startElementHandler(
 		ses->state_machine->in_message_error = 1;
 		buffer_add( ses->message_error_type, get_xml_attr( atts, "type" ) );
 		ses->message_error_code = atoi( get_xml_attr( atts, "code" ) );
-		osrfLogInfo( OSRF_LOG_MARK,  "Received <error> message with type %s and code %s", 
+		osrfLogInfo( OSRF_LOG_MARK, "Received <error> message with type %s and code %s",
 			get_xml_attr( atts, "type"), get_xml_attr( atts, "code") );
 		return;
 	}
@@ -476,7 +574,7 @@ static void startElementHandler(
 	if( strcmp( (char*) name, "iq" ) == 0 ) {
 		ses->state_machine->in_iq = 1;
 
-		if( strcmp( get_xml_attr(atts, "type"), "result") == 0 
+		if( strcmp( get_xml_attr(atts, "type"), "result") == 0
 				&& ses->state_machine->connecting == CONNECTING_2 ) {
 			ses->state_machine->connected = 1;
 			ses->state_machine->connecting = 0;
@@ -525,18 +623,18 @@ static void endElementHandler( void *session, const xmlChar *name) {
 		if( ses->message_callback ) {
 
 			/* here it's ok to pass in the raw buffers because
-				message_init allocates new space for the chars 
+				message_init allocates new space for the chars
 				passed in */
-			transport_message* msg =  message_init( 
-				ses->body_buffer->buf, 
+			transport_message* msg =  message_init(
+				ses->body_buffer->buf,
 				ses->subject_buffer->buf,
-				ses->thread_buffer->buf, 
-				ses->recipient_buffer->buf, 
+				ses->thread_buffer->buf,
+				ses->recipient_buffer->buf,
 				ses->from_buffer->buf );
 
-			message_set_router_info( msg, 
-				ses->router_from_buffer->buf, 
-				ses->router_to_buffer->buf, 
+			message_set_router_info( msg,
+				ses->router_from_buffer->buf,
+				ses->router_to_buffer->buf,
 				ses->router_class_buffer->buf,
 				ses->router_command_buffer->buf,
 				ses->router_broadcast );
@@ -555,7 +653,7 @@ static void endElementHandler( void *session, const xmlChar *name) {
 		reset_session_buffers( session );
 		return;
 	}
-	
+
 	if( strcmp( (const char*) name, "body" ) == 0 ) {
 		ses->state_machine->in_message_body = 0;
 		return;
@@ -570,7 +668,7 @@ static void endElementHandler( void *session, const xmlChar *name) {
 		ses->state_machine->in_thread = 0;
 		return;
 	}
-	
+
 	if( strcmp( (const char*) name, "iq" ) == 0 ) {
 		ses->state_machine->in_iq = 0;
 		if( ses->message_error_code > 0 ) {
@@ -673,7 +771,7 @@ static void  parseWarningHandler( void *session, const char* msg, ... ) {
 	fprintf(stdout, "transport_session XML WARNING");
 	vfprintf(stdout, msg, args);
 	va_end(args);
-	fprintf(stderr, "XML WARNING: %s\n", msg ); 
+	fprintf(stderr, "XML WARNING: %s\n", msg );
 }
 
 static void  parseErrorHandler( void *session, const char* msg, ... ){
@@ -683,14 +781,21 @@ static void  parseErrorHandler( void *session, const char* msg, ... ){
 	fprintf(stdout, "transport_session XML ERROR");
 	vfprintf(stdout, msg, args);
 	va_end(args);
-	fprintf(stderr, "XML ERROR: %s\n", msg ); 
+	fprintf(stderr, "XML ERROR: %s\n", msg );
 
 }
 
+/**
+	@brief Disconnect from Jabber, and close the socket.
+	@param session Pointer to the transport_session to be disconnected.
+	@return 0 in all cases.
+*/
 int session_disconnect( transport_session* session ) {
-	if( session == NULL ) { return 0; }
-	socket_send(session->sock_id, "</stream:stream>");
-	socket_disconnect(session->sock_mgr, session->sock_id);
+	if( session && session->sock_id != 0 ) {
+		socket_send(session->sock_id, "</stream:stream>");
+		socket_disconnect(session->sock_mgr, session->sock_id);
+		session->sock_id = 0;
+	}
 	return 0;
 }
 
