@@ -85,7 +85,7 @@ int client_disconnect( transport_client* client ) {
 
 int client_connected( const transport_client* client ) {
 	if(client == NULL) return 0;
-	return client->session->state_machine->connected;
+	return session_connected( client->session );
 }
 
 int client_send_message( transport_client* client, transport_message* msg ) {

@@ -7,6 +7,34 @@
 	In all cases, a transport_session acts as a client with regard to Jabber.
 */
 
+#define CONNECTING_1 1 /* just starting the connection to Jabber */
+#define CONNECTING_2 2 /* First <stream> packet sent and <stream> packet received from server */
+
+/* Note. these are growing buffers, so all that's necessary is a sane starting point */
+#define JABBER_BODY_BUFSIZE    4096
+#define JABBER_SUBJECT_BUFSIZE   64
+#define JABBER_THREAD_BUFSIZE    64
+#define JABBER_JID_BUFSIZE       64
+#define JABBER_STATUS_BUFSIZE    16
+
+// ---------------------------------------------------------------------------------
+// Jabber state machine.  This is how we know where we are in the Jabber
+// conversation.
+// ---------------------------------------------------------------------------------
+struct jabber_state_machine_struct {
+	int connected;
+	int connecting;
+	int in_message;
+	int in_message_body;
+	int in_thread;
+	int in_subject;
+	int in_error;
+	int in_message_error;
+	int in_iq;
+	int in_presence;
+	int in_status;
+};
+
 // ---------------------------------------------------------------------------------
 // Callback for handling the startElement event.  Much of the jabber logic occurs
 // in this and the characterHandler callbacks.
@@ -79,8 +107,8 @@ static const xmlSAXHandlerPtr SAXHandler = &SAXHandlerStruct;
 #endif
 
 static void grab_incoming(void* blob, socket_manager* mgr, int sockid, char* data, int parent);
-static int reset_session_buffers( transport_session* session );
-static char* get_xml_attr( const xmlChar** atts, const char* attr_name );
+static void reset_session_buffers( transport_session* session );
+static const char* get_xml_attr( const xmlChar** atts, const char* attr_name );
 
 /**
 	@brief Allocate and initialize a transport_session.
@@ -220,6 +248,14 @@ int session_free( transport_session* session ) {
 	return 1;
 }
 
+/**
+	@brief Determine whether a transport_session is connected.
+	@param session Pointer to the transport_session to be tested.
+	@return 1 if connected, or 0 if not.
+*/
+int session_connected( transport_session* session ) {
+	return session ? session->state_machine->connected : 0;
+}
 
 /**
 	@brief Wait on the client socket connected to Jabber, and process any resulting input.
@@ -473,10 +509,18 @@ int session_connect( transport_session* session,
 	}
 }
 
-// ---------------------------------------------------------------------------------
-// TCP data callback.  Takes data from the socket handler and pushes it directly
-// into the push parser
-// ---------------------------------------------------------------------------------
+/**
+	@brief Callback function: push a buffer of XML into an XML parser.
+	@param blob Void pointer pointing to the transport_session.
+	@param mgr Pointer to the socket_manager (not used).
+	@param sockid Socket file descriptor (not used)
+	@param data Pointer to a buffer of received data, as a nul-terminated string.
+	@param parent Not applicable.
+
+	The socket_manager calls this function when it reads a buffer's worth of data from
+	the Jabber socket.  The XML parser calls other callback functions when it sees various
+	features of the XML.
+*/
 static void grab_incoming(void* blob, socket_manager* mgr, int sockid, char* data, int parent) {
 	transport_session* ses = (transport_session*) blob;
 	if( ! ses ) { return; }
@@ -484,6 +528,16 @@ static void grab_incoming(void* blob, socket_manager* mgr, int sockid, char* dat
 }
 
 
+/**
+	@brief Respond to the beginning of an XML element.
+	@param session Pointer to the transport_session, cast to a void pointer.
+	@param name Name of the XML element.
+	@param atts Pointer to a ragged array containing attributes and values.
+
+	The XML parser calls this when it sees the beginning of an XML element.  We note what
+	element it is by setting the corresponding switch in the state machine, and grab whatever
+	attributes we expect to find.
+*/
 static void startElementHandler(
 	void *session, const xmlChar *name, const xmlChar **atts) {
 
@@ -500,7 +554,7 @@ static void startElementHandler(
 		buffer_add( ses->router_to_buffer, get_xml_attr( atts, "router_to" ) );
 		buffer_add( ses->router_class_buffer, get_xml_attr( atts, "router_class" ) );
 		buffer_add( ses->router_command_buffer, get_xml_attr( atts, "router_command" ) );
-		char* broadcast = get_xml_attr( atts, "broadcast" );
+		const char* broadcast = get_xml_attr( atts, "broadcast" );
 		if( broadcast )
 			ses->router_broadcast = atoi( broadcast );
 
@@ -553,6 +607,7 @@ static void startElementHandler(
 			ses->state_machine->connecting = CONNECTING_2;
 			buffer_add( ses->session_id, get_xml_attr(atts, "id") );
 		}
+		return;
 	}
 
 	if( strcmp( (char*) name, "handshake" ) == 0 ) {
@@ -588,19 +643,23 @@ static void startElementHandler(
 	}
 }
 
-// ------------------------------------------------------------------
-// Returns the value of the given XML attribute
-// The xmlChar** construct is commonly returned from SAX event
-// handlers.  Pass that in with the name of the attribute you want
-// to retrieve.
-// ------------------------------------------------------------------
-static char* get_xml_attr( const xmlChar** atts, const char* attr_name ) {
+/**
+	@brief Return the value of a given XML attribute.
+	@param atts Pointer to a NULL terminated array of strings.
+	@param attr_name Name of the attribute you're looking for.
+	@return The value of the attribute if found, or NULL if not.
+
+	In the array to which @a atts points, the zeroth entry is an attribute name, and the 
+	one after that is its value.  Subsequent entries alternate between names and values.
+	The last entry is NULL to terminate the list.
+*/
+static const char* get_xml_attr( const xmlChar** atts, const char* attr_name ) {
 	int i;
 	if (atts != NULL) {
 		for(i = 0;(atts[i] != NULL);i++) {
-			if( strcmp( (char*) atts[i++], attr_name ) == 0 ) {
+			if( strcmp( (const char*) atts[i++], attr_name ) == 0 ) {
 				if( atts[i] != NULL ) {
-					return (char*) atts[i];
+					return (const char*) atts[i];
 				}
 			}
 		}
@@ -609,28 +668,31 @@ static char* get_xml_attr( const xmlChar** atts, const char* attr_name ) {
 }
 
 
-// ------------------------------------------------------------------
-// See which tags are ending
-// ------------------------------------------------------------------
+/**
+	@brief React to the closing of an XML tag.
+	@param session Pointer to a transport_session, cast to a void pointer.
+	@param name Pointer to the name of the tag that is closing.
+
+	See what kind of tag is closing, and respond accordingly.
+*/
 static void endElementHandler( void *session, const xmlChar *name) {
 	transport_session* ses = (transport_session*) session;
 	if( ! ses ) { return; }
 
-	if( strcmp( (char*) name, "message" ) == 0 ) {
+	// Bypass a level of indirection, since we'll examine the machine repeatedly:
+	jabber_machine* machine = ses->state_machine;
 
+	if( machine->in_message && strcmp( (char*) name, "message" ) == 0 ) {
 
 		/* pass off the message info the callback */
 		if( ses->message_callback ) {
 
-			/* here it's ok to pass in the raw buffers because
-				message_init allocates new space for the chars
-				passed in */
 			transport_message* msg =  message_init(
-				ses->body_buffer->buf,
-				ses->subject_buffer->buf,
-				ses->thread_buffer->buf,
-				ses->recipient_buffer->buf,
-				ses->from_buffer->buf );
+				OSRF_BUFFER_C_STR( ses->body_buffer ),
+				OSRF_BUFFER_C_STR( ses->subject_buffer ),
+				OSRF_BUFFER_C_STR( ses->thread_buffer ),
+				OSRF_BUFFER_C_STR( ses->recipient_buffer ),
+				OSRF_BUFFER_C_STR( ses->from_buffer ) );
 
 			message_set_router_info( msg,
 				ses->router_from_buffer->buf,
@@ -639,7 +701,7 @@ static void endElementHandler( void *session, const xmlChar *name) {
 				ses->router_command_buffer->buf,
 				ses->router_broadcast );
 
-         message_set_osrf_xid( msg, ses->osrf_xid_buffer->buf );
+			message_set_osrf_xid( msg, ses->osrf_xid_buffer->buf );
 
 			if( ses->message_error_type->n_used > 0 ) {
 				set_msg_error( msg, ses->message_error_type->buf, ses->message_error_code );
@@ -649,28 +711,28 @@ static void endElementHandler( void *session, const xmlChar *name) {
 			ses->message_callback( ses->user_data, msg );
 		}
 
-		ses->state_machine->in_message = 0;
+		machine->in_message = 0;
 		reset_session_buffers( session );
 		return;
 	}
 
-	if( strcmp( (const char*) name, "body" ) == 0 ) {
-		ses->state_machine->in_message_body = 0;
+	if( machine->in_message_body && strcmp( (const char*) name, "body" ) == 0 ) {
+		machine->in_message_body = 0;
 		return;
 	}
 
-	if( strcmp( (const char*) name, "subject" ) == 0 ) {
-		ses->state_machine->in_subject = 0;
+	if( machine->in_subject && strcmp( (const char*) name, "subject" ) == 0 ) {
+		machine->in_subject = 0;
 		return;
 	}
 
-	if( strcmp( (const char*) name, "thread" ) == 0 ) {
-		ses->state_machine->in_thread = 0;
+	if( machine->in_thread && strcmp( (const char*) name, "thread" ) == 0 ) {
+		machine->in_thread = 0;
 		return;
 	}
 
-	if( strcmp( (const char*) name, "iq" ) == 0 ) {
-		ses->state_machine->in_iq = 0;
+	if( machine->in_iq && strcmp( (const char*) name, "iq" ) == 0 ) {
+		machine->in_iq = 0;
 		if( ses->message_error_code > 0 ) {
 			osrfLogWarning( OSRF_LOG_MARK,  "Error in IQ packet: code %d",  ses->message_error_code );
 			osrfLogWarning( OSRF_LOG_MARK,  "Error 401 means not authorized" );
@@ -679,8 +741,8 @@ static void endElementHandler( void *session, const xmlChar *name) {
 		return;
 	}
 
-	if( strcmp( (const char*) name, "presence" ) == 0 ) {
-		ses->state_machine->in_presence = 0;
+	if( machine->in_presence && strcmp( (const char*) name, "presence" ) == 0 ) {
+		machine->in_presence = 0;
 		/*
 		if( ses->presence_callback ) {
 			// call the callback with the status, etc.
@@ -690,43 +752,56 @@ static void endElementHandler( void *session, const xmlChar *name) {
 		return;
 	}
 
-	if( strcmp( (const char*) name, "status" ) == 0 ) {
-		ses->state_machine->in_status = 0;
+	if( machine->in_status && strcmp( (const char*) name, "status" ) == 0 ) {
+		machine->in_status = 0;
 		return;
 	}
 
-	if( strcmp( (const char*) name, "error" ) == 0 ) {
-		ses->state_machine->in_message_error = 0;
+	if( machine->in_message_error && strcmp( (const char*) name, "error" ) == 0 ) {
+		machine->in_message_error = 0;
 		return;
 	}
 
-	if( strcmp( (const char*) name, "error:error" ) == 0 ) {
-		ses->state_machine->in_error = 0;
+	if( machine->in_error && strcmp( (const char*) name, "stream:error" ) == 0 ) {
+		machine->in_error = 0;
 		return;
 	}
 }
 
-static int reset_session_buffers( transport_session* ses ) {
-	buffer_reset( ses->body_buffer );
-	buffer_reset( ses->subject_buffer );
-	buffer_reset( ses->thread_buffer );
-	buffer_reset( ses->from_buffer );
-	buffer_reset( ses->recipient_buffer );
-	buffer_reset( ses->router_from_buffer );
-	buffer_reset( ses->osrf_xid_buffer );
-	buffer_reset( ses->router_to_buffer );
-	buffer_reset( ses->router_class_buffer );
-	buffer_reset( ses->router_command_buffer );
-	buffer_reset( ses->message_error_type );
-	buffer_reset( ses->session_id );
-
-	return 1;
+/**
+	@brief Clear all the buffers of a transport_session.
+	@param ses Pointer to the transport_session whose buffers are to be cleared.
+*/
+static void reset_session_buffers( transport_session* ses ) {
+	OSRF_BUFFER_RESET( ses->body_buffer );
+	OSRF_BUFFER_RESET( ses->subject_buffer );
+	OSRF_BUFFER_RESET( ses->thread_buffer );
+	OSRF_BUFFER_RESET( ses->from_buffer );
+	OSRF_BUFFER_RESET( ses->recipient_buffer );
+	OSRF_BUFFER_RESET( ses->router_from_buffer );
+	OSRF_BUFFER_RESET( ses->osrf_xid_buffer );
+	OSRF_BUFFER_RESET( ses->router_to_buffer );
+	OSRF_BUFFER_RESET( ses->router_class_buffer );
+	OSRF_BUFFER_RESET( ses->router_command_buffer );
+	OSRF_BUFFER_RESET( ses->message_error_type );
+	OSRF_BUFFER_RESET( ses->session_id );
+	OSRF_BUFFER_RESET( ses->status_buffer );
 }
 
 // ------------------------------------------------------------------
 // takes data out of the body of the message and pushes it into
 // the appropriate buffer
 // ------------------------------------------------------------------
+/**
+	@brief Copy XML text (outside of tags) into the appropriate buffer.
+	@param session Pointer to the transport_session.
+	@param ch Pointer to the text to be copied.
+	@param len How many characters to be copied.
+
+	The XML parser calls this as a callback when it finds text outside of a tag,  We check
+	the state machine to figure out what kind of text it is, and then append it to the
+	corresponding buffer.
+*/
 static void characterHandler(
 		void *session, const xmlChar *ch, int len) {
 
@@ -735,28 +810,30 @@ static void characterHandler(
 	transport_session* ses = (transport_session*) session;
 	if( ! ses ) { return; }
 
-	/* set the various message parts */
-	if( ses->state_machine->in_message ) {
+	jabber_machine* machine = ses->state_machine;
 
-		if( ses->state_machine->in_message_body ) {
+	/* set the various message parts */
+	if( machine->in_message ) {
+
+		if( machine->in_message_body ) {
 			buffer_add_n( ses->body_buffer, p, len );
 		}
 
-		if( ses->state_machine->in_subject ) {
+		if( machine->in_subject ) {
 			buffer_add_n( ses->subject_buffer, p, len );
 		}
 
-		if( ses->state_machine->in_thread ) {
+		if( machine->in_thread ) {
 			buffer_add_n( ses->thread_buffer, p, len );
 		}
 	}
 
 	/* set the presence status */
-	if( ses->state_machine->in_presence && ses->state_machine->in_status ) {
+	if( machine->in_presence && ses->state_machine->in_status ) {
 		buffer_add_n( ses->status_buffer, p, len );
 	}
 
-	if( ses->state_machine->in_error ) {
+	if( machine->in_error ) {
 		/* for now... */
 		osrfLogWarning( OSRF_LOG_MARK,  "ERROR XML fragment: %s\n", ch );
 	}

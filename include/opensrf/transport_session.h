@@ -1,10 +1,13 @@
-// ---------------------------------------------------------------------------------
-// Manages the Jabber session.  Data is taken from the TCP object and pushed into
-// a SAX push parser as it arrives.  When key Jabber documetn elements are met, 
-// logic ensues.
-// ---------------------------------------------------------------------------------
 #ifndef TRANSPORT_SESSION_H
 #define TRANSPORT_SESSION_H
+
+/**
+	@file transport_session.h
+	@brief Header for routines to manage a connection to a Jabber server.
+
+	Manages the Jabber session.  Reads data from a socket and pushes it into a SAX
+	parser as it arrives.  When key Jabber document elements are met, logic ensues.
+*/
 
 #include <opensrf/transport_message.h>
 
@@ -27,37 +30,10 @@
 extern "C" {
 #endif
 
-#define CONNECTING_1 1 /* just starting the connection to Jabber */
-#define CONNECTING_2 2 /* First <stream> packet sent and <stream> packet received from server */
-
-/* Note. these are growing buffers, so all that's necessary is a sane starting point */
-#define JABBER_BODY_BUFSIZE		4096
-#define JABBER_SUBJECT_BUFSIZE	64	
-#define JABBER_THREAD_BUFSIZE		64	
-#define JABBER_JID_BUFSIZE			64	
-#define JABBER_STATUS_BUFSIZE		16 
-
-// ---------------------------------------------------------------------------------
-// Jabber state machine.  This is how we know where we are in the Jabber
-// conversation.
-// ---------------------------------------------------------------------------------
-struct jabber_state_machine_struct {
-	int connected;
-	int connecting;
-	int in_message;
-	int in_message_body;
-	int in_thread;
-	int in_subject;
-	int in_error;
-	int in_message_error;
-	int in_iq;
-	int in_presence;
-	int in_status;
-};
-typedef struct jabber_state_machine_struct jabber_machine;
-
-
 enum TRANSPORT_AUTH_TYPE { AUTH_PLAIN, AUTH_DIGEST };
+
+struct jabber_state_machine_struct;
+typedef struct jabber_state_machine_struct jabber_machine;
 
 // ---------------------------------------------------------------------------------
 // Transport session.  This maintains all the various parts of a session
@@ -91,7 +67,7 @@ struct transport_session_struct {
 	growing_buffer* osrf_xid_buffer;
 	int router_broadcast;
 
-	/* this can be anything.  It will show up in the 
+	/* this can be anything.  It will show up in the
 		callbacks for your convenience. Otherwise, it's
 		left untouched.  */
 	void* user_data;
@@ -109,20 +85,9 @@ struct transport_session_struct {
 };
 typedef struct transport_session_struct transport_session;
 
-
-// ------------------------------------------------------------------
-// Allocates and initializes the necessary transport session
-// data structures.
-// If port > 0, then this session uses  TCP connection.  Otherwise,
-// if unix_path != NULL, it uses a UNIX domain socket.
-// ------------------------------------------------------------------
-transport_session* init_transport( const char* server, int port, 
+transport_session* init_transport( const char* server, int port,
 	const char* unix_path, void* user_data, int component );
 
-// ------------------------------------------------------------------
-// Waits  at most 'timeout' seconds  for data to arrive from the 
-// TCP handler. A timeout of -1 means to wait indefinitely.
-// ------------------------------------------------------------------
 int session_wait( transport_session* session, int timeout );
 
 // ---------------------------------------------------------------------------------
@@ -130,23 +95,13 @@ int session_wait( transport_session* session, int timeout );
 // ---------------------------------------------------------------------------------
 int session_send_msg( transport_session* session, transport_message* msg );
 
-// ---------------------------------------------------------------------------------
-// Returns 1 if this session is connected to the jabber server. 0 otherwise
-// ---------------------------------------------------------------------------------
-int session_connected( transport_session* );
+int session_connected( transport_session* session );
 
-// ------------------------------------------------------------------
-// Deallocates session memory
-// ------------------------------------------------------------------
 int session_free( transport_session* session );
 
-// ------------------------------------------------------------------
-// Connects to the Jabber server.  Waits at most connect_timeout
-// seconds before failing
-// ------------------------------------------------------------------
-int session_connect( transport_session* session, 
-		const char* username, const char* password, 
-		const char* resource, int connect_timeout, 
+int session_connect( transport_session* session,
+		const char* username, const char* password,
+		const char* resource, int connect_timeout,
 		enum TRANSPORT_AUTH_TYPE auth_type );
 
 int session_disconnect( transport_session* session );
