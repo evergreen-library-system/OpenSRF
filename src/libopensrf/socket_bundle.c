@@ -5,16 +5,24 @@
 
 #include <opensrf/socket_bundle.h>
 
+/**
+	@brief Represents a socket owned by a socket_manager.
+
+	A socket_manager owns a linked list of socket_nodes representing the collection of
+	sockets that it manages.  It may contain a single socket for passing data, or it may
+	contain a listener socket together with any associated sockets (created by accept())
+	for communicating with a client.
+*/
 struct socket_node_struct {
-	int endpoint;		/* SERVER_SOCKET or CLIENT_SOCKET */
-	int addr_type;		/* INET or UNIX */
-	int sock_fd;
-	int parent_id;		/* if we're a new client for a server socket, 
-	this points to the server socket we spawned from */
-	struct socket_node_struct* next;
+	int endpoint;       /**< Role of socket: SERVER_SOCKET or CLIENT_SOCKET. */
+	int addr_type;      /**< INET or UNIX. */
+	int sock_fd;        /**< File descriptor for socket. */
+	int parent_id;      /**< If we're a new client for a server socket,
+	                        this is the listener socket we spawned from. */
+	struct socket_node_struct* next;  /**< Linkage pointer for linked list. */
 };
 
-/* buffer used to read from the sockets */
+/** @brief Size of buffer used to read from the sockets */
 #define RBUFSIZE 1024
 
 static socket_node* _socket_add_node(socket_manager* mgr,
@@ -22,7 +30,6 @@ static socket_node* _socket_add_node(socket_manager* mgr,
 static socket_node* socket_find_node(socket_manager* mgr, int sock_fd);
 static void socket_remove_node(socket_manager*, int sock_fd);
 static int _socket_send(int sock_fd, const char* data, int flags);
-static int _socket_route_data(socket_manager* mgr, int num_active, fd_set* read_set);
 static int _socket_handle_new_client(socket_manager* mgr, socket_node* node);
 static int _socket_handle_client_data(socket_manager* mgr, socket_node* node);
 
@@ -35,7 +42,7 @@ int count = 0;
 void printme(void* blob, socket_manager* mgr, 
 		int sock_fd, char* data, int parent_id) {
 
-	fprintf(stderr, "Got data from socket %d with parent %d => %s", 
+	fprintf(stderr, "Got data from socket %d with parent %d => %s",
 			sock_fd, parent_id, data );
 
 	socket_send(sock_fd, data);
@@ -101,7 +108,7 @@ static socket_node* _socket_add_node(socket_manager* mgr,
 	@param mgr Pointer to the socket manager that will own the socket.
 	@param port The port number to bind to.
 	@param listen_ip The IP address to bind to; or, NULL for INADDR_ANY.
-	@return The socket fd if successful; otherwise -1.
+	@return The socket's file descriptor if successful; otherwise -1.
 
 	Calls: socket(), bind(), and listen().  Creates a SERVER_SOCKET.
 */
@@ -163,12 +170,12 @@ int socket_open_tcp_server(socket_manager* mgr, int port, const char* listen_ip)
 	@brief Create a UNIX domain listener socket and add it to the socket_manager's list.
 	@param mgr Pointer to the socket_manager that will own the socket.
 	@param path Name of the socket within the file system.
-	@return The socket fd if successful; otherwise -1.
+	@return The socket's file descriptor if successful; otherwise -1.
 
 	Calls: socket(), bind(), listen().  Creates a SERVER_SOCKET.
 
-	Applies socket option TCP_NODELAY in order to reduce latency.
- */
+	Apply socket option TCP_NODELAY in order to reduce latency.
+*/
 int socket_open_unix_server(socket_manager* mgr, const char* path) {
 	if(mgr == NULL || path == NULL) return -1;
 
@@ -233,7 +240,7 @@ int socket_open_unix_server(socket_manager* mgr, const char* path) {
 	@param mgr Pointer to the socket_manager that will own the socket.
 	@param port The port number to bind to.
 	@param listen_ip The IP address to bind to, or NULL for INADDR_ANY.
-	@return The socket fd if successful; otherwise -1.
+	@return The socket's file descriptor if successful; otherwise -1.
 
 	Calls: socket(), bind().  Creates a SERVER_SOCKET.
 */
@@ -280,12 +287,12 @@ int socket_open_udp_server(
 	@param mgr Pointer to the socket_manager that will own the socket.
 	@param port What port number to connect to.
 	@param dest_addr Host name or IP address of the server to which we are connecting.
-	@return The socket fd if successful; otherwise -1.
+	@return The socket's file descriptor if successful; otherwise -1.
 
 	Calls: getaddrinfo(), socket(), connect().  Creates a CLIENT_SOCKET.
 
 	Applies socket option TCP_NODELAY in order to reduce latency.
- */
+*/
 int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr) {
 
 	struct sockaddr_in remoteAddr;
@@ -361,7 +368,7 @@ int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr)
 /**
 	@brief Create a client UDP socket and add it to a socket_manager's list.
 	@param mgr Pointer to the socket_manager that will own the socket.
-	@return The socket fd if successful; otherwise -1.
+	@return The socket's file descriptor if successful; otherwise -1.
 
 	Calls: socket().  Creates a CLIENT_SOCKET.
 */
@@ -386,7 +393,7 @@ int socket_open_udp_client( socket_manager* mgr ) {
 	@brief Create a UNIX domain client socket, connect with it, add it to the socket_manager's list
 	@param mgr Pointer to the socket_manager that will own the socket.
 	@param sock_path Name of the socket within the file system.
-	@return The socket fd if successful; otherwise -1.
+	@return The socket's file descriptor if successful; otherwise -1.
 
 	Calls: socket(), connect().  Creates a CLIENT_SOCKET.
 */
@@ -641,7 +648,8 @@ int socket_connected(int sock_fd) {
 	@param mgr Pointer to the socket_manager that presumably owns the socket.
 	@param timeout Timeout interval, in seconds (see notes).
 	@param sock_fd The file descriptor to look at.
-	@return 0 if successful, or -1 if a timeout or other error occurs.
+	@return 0 if successful, or -1 if a timeout or other error occurs, or if the sender
+		closes the connection.
 
 	If @a timeout is -1, wait indefinitely for input activity to appear.  If @a timeout is
 	zero, don't wait at all.  If @a timeout is positive, wait that number of seconds
@@ -705,6 +713,24 @@ int socket_wait( socket_manager* mgr, int timeout, int sock_fd ) {
 }
 
 
+/**
+	@brief Wait for input on all of a socket_manager's sockets; react to any input found.
+	@param mgr Pointer to the socket_manager.
+	@param timeout How many seconds to wait before timing out (see notes).
+	@return 0 if successful, or -1 if a timeout or other error occurs.
+
+	If @a timeout is -1, wait indefinitely for input activity to appear.  If @a timeout is
+	zero, don't wait at all.  If @a timeout is positive, wait that number of seconds
+	before timing out.  If @a timeout has a negative value other than -1, the results are not
+	well defined, but we'll probably get an EINVAL error from select().
+
+	For each active socket found:
+
+	- If it's a listener, accept a new connection, and add the new socket to the
+	socket_manager's list, without actually reading any data.
+	- Otherwise, read as much data as is available from the input socket, passing it a
+	buffer at a time to whatever callback function has been defined to the socket_manager.
+ */
 int socket_wait_all(socket_manager* mgr, int timeout) {
 
 	if(mgr == NULL) {
@@ -712,7 +738,7 @@ int socket_wait_all(socket_manager* mgr, int timeout) {
 		return -1;
 	}
 
-	int retval = 0;
+	int num_active = 0;
 	fd_set read_set;
 	FD_ZERO( &read_set );
 
@@ -734,92 +760,52 @@ int socket_wait_all(socket_manager* mgr, int timeout) {
 	if( timeout < 0 ) {  
 
 		// If timeout is -1, there is no timeout passed to the call to select
-		if( (retval = select( max_fd, &read_set, NULL, NULL, NULL)) == -1 ) {
+		if( (num_active = select( max_fd, &read_set, NULL, NULL, NULL)) == -1 ) {
 			osrfLogWarning( OSRF_LOG_MARK, "select() call aborted: %s", strerror(errno));
 			return -1;
 		}
 
 	} else if( timeout != 0 ) { /* timeout of 0 means don't block */
 
-		if( (retval = select( max_fd, &read_set, NULL, NULL, &tv)) == -1 ) {
+		if( (num_active = select( max_fd, &read_set, NULL, NULL, &tv)) == -1 ) {
 			osrfLogWarning( OSRF_LOG_MARK, "select() call aborted: %s", strerror(errno));
 			return -1;
 		}
 	}
 
-	osrfLogDebug( OSRF_LOG_MARK, "%d active sockets after select()", retval);
-	return _socket_route_data(mgr, retval, &read_set);
-}
-
-/* iterates over the sockets in the set and handles active sockets.
-	new sockets connecting to server sockets cause the creation
-	of a new socket node.
-	Any new data read is is passed off to the data_received callback
-	as it arrives */
-/* determines if we're receiving a new client or data
-	on an existing client */
-static int _socket_route_data(
-	socket_manager* mgr, int num_active, fd_set* read_set) {
-
-	if(!(mgr && read_set)) return -1;
-
-	int last_failed_id = -1;
-
-
-	/* come back here if someone yanks a socket_node from beneath us */
-	while(1) {
-
-		socket_node* node = mgr->socket;
-		int handled = 0;
-		int status = 0;
-		
-		while(node && (handled < num_active)) {
+	osrfLogDebug( OSRF_LOG_MARK, "%d active sockets after select()", num_active);
 	
-			int sock_fd = node->sock_fd;
-			
-			if(last_failed_id != -1) {
-				/* in case it was not removed by our overlords */
-				osrfLogInternal( OSRF_LOG_MARK, "Attempting to remove last_failed_id of %d", last_failed_id);
-				socket_remove_node( mgr, last_failed_id );
-				last_failed_id = -1;
-				status = -1;
-				break;
-			}
-	
-			/* does this socket have data? */
-			if( FD_ISSET( sock_fd, read_set ) ) {
-	
-				osrfLogInternal( OSRF_LOG_MARK, "Socket %d active", sock_fd);
-				handled++;
-				FD_CLR(sock_fd, read_set);
-	
-				if(node->endpoint == SERVER_SOCKET) 
-					_socket_handle_new_client(mgr, node);
-	
-				else
-					status = _socket_handle_client_data(mgr, node);
-	
-				/* someone may have yanked a socket_node out from under 
-					us...start over with the first socket */
-				if(status == -1)  {
-					last_failed_id = sock_fd;
-					osrfLogInternal( OSRF_LOG_MARK, "Backtracking back to start of loop because "
-							"of -1 return code from _socket_handle_client_data()");
+	node = mgr->socket;
+	int handled = 0;
+
+	while(node && (handled < num_active)) {
+
+		socket_node* next_node = node->next;
+		int sock_fd = node->sock_fd;
+
+		/* does this socket have data? */
+		if( FD_ISSET( sock_fd, &read_set ) ) {
+
+			osrfLogInternal( OSRF_LOG_MARK, "Socket %d active", sock_fd);
+			handled++;
+			FD_CLR(sock_fd, &read_set);
+
+			if(node->endpoint == SERVER_SOCKET) 
+				_socket_handle_new_client(mgr, node);
+
+			else {
+				if( _socket_handle_client_data(mgr, node) == -1 ) {
+					/* someone may have yanked a socket_node out from under us */
+					socket_remove_node( mgr, sock_fd );
 				}
 			}
+		}
 
-			if(status == -1) break;
-			node = node->next;
-
-		} // is_set
-
-		if(status == 0) break;
-		if(status == -1) status = 0;
-	} 
+		node = next_node;
+	} // is_set
 
 	return 0;
 }
-
 
 /**
 	@brief Accept a new socket from a listener, and add it to the socket_manager's list.
@@ -932,4 +918,3 @@ void socket_manager_free(socket_manager* mgr) {
 	free(mgr);
 
 }
-
