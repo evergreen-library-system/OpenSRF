@@ -5,19 +5,25 @@
 
 #include <opensrf/socket_bundle.h>
 
+#define LISTENER_SOCKET   1
+#define DATA_SOCKET       2
+
+#define INET 10
+#define UNIX 11
+
 /**
 	@brief Represents a socket owned by a socket_manager.
 
 	A socket_manager owns a linked list of socket_nodes representing the collection of
 	sockets that it manages.  It may contain a single socket for passing data, or it may
-	contain a listener socket together with any associated sockets (created by accept())
-	for communicating with a client.
+	contain a listener socket (conceivably more than one) together with any associated
+	sockets created by accept() for communicating with a client.
 */
 struct socket_node_struct {
-	int endpoint;       /**< Role of socket: SERVER_SOCKET or CLIENT_SOCKET. */
+	int endpoint;       /**< Role of socket: LISTENER_SOCKET or DATA_SOCKET. */
 	int addr_type;      /**< INET or UNIX. */
 	int sock_fd;        /**< File descriptor for socket. */
-	int parent_id;      /**< If we're a new client for a server socket,
+	int parent_id;      /**< For a socket created by accept() for a listener socket,
 	                        this is the listener socket we spawned from. */
 	struct socket_node_struct* next;  /**< Linkage pointer for linked list. */
 };
@@ -34,12 +40,12 @@ static int _socket_handle_new_client(socket_manager* mgr, socket_node* node);
 static int _socket_handle_client_data(socket_manager* mgr, socket_node* node);
 
 
-/* -------------------------------------------------------------------- 
-	Test Code 
+/* --------------------------------------------------------------------
+	Test Code
 	-------------------------------------------------------------------- */
 /*
 int count = 0;
-void printme(void* blob, socket_manager* mgr, 
+void printme(void* blob, socket_manager* mgr,
 		int sock_fd, char* data, int parent_id) {
 
 	fprintf(stderr, "Got data from socket %d with parent %d => %s",
@@ -75,7 +81,7 @@ int main(int argc, char* argv[]) {
 /**
 	@brief Create a new socket_node and add it to a socket_manager's list.
 	@param mgr Pointer to the socket_manager.
-	@param endpoint SERVER_SOCKET or CLIENT_SOCKET, denoting how the socket is to be used.
+	@param endpoint LISTENER_SOCKET or DATA_SOCKET, denoting how the socket is to be used.
 	@param addr_type address type: INET or UNIX.
 	@param sock_fd sock_fd for the new socket_node.
 	@param parent_id parent_id for the new node.
@@ -83,7 +89,7 @@ int main(int argc, char* argv[]) {
 
 	If @a parent_id is negative, the new socket_node receives a parent_id of 0.
 */
-static socket_node* _socket_add_node(socket_manager* mgr, 
+static socket_node* _socket_add_node(socket_manager* mgr,
 		int endpoint, int addr_type, int sock_fd, int parent_id ) {
 
 	if(mgr == NULL) return NULL;
@@ -110,12 +116,12 @@ static socket_node* _socket_add_node(socket_manager* mgr,
 	@param listen_ip The IP address to bind to; or, NULL for INADDR_ANY.
 	@return The socket's file descriptor if successful; otherwise -1.
 
-	Calls: socket(), bind(), and listen().  Creates a SERVER_SOCKET.
+	Calls: socket(), bind(), and listen().  Creates a LISTENER_SOCKET.
 */
 int socket_open_tcp_server(socket_manager* mgr, int port, const char* listen_ip) {
 
 	if( mgr == NULL ) {
-		osrfLogWarning( OSRF_LOG_MARK, "socket_open_tcp_server(): NULL mgr"); 
+		osrfLogWarning( OSRF_LOG_MARK, "socket_open_tcp_server(): NULL mgr");
 		return -1;
 	}
 
@@ -162,7 +168,7 @@ int socket_open_tcp_server(socket_manager* mgr, int port, const char* listen_ip)
 		return -1;
 	}
 
-	_socket_add_node(mgr, SERVER_SOCKET, INET, sock_fd, 0);
+	_socket_add_node(mgr, LISTENER_SOCKET, INET, sock_fd, 0);
 	return sock_fd;
 }
 
@@ -172,7 +178,7 @@ int socket_open_tcp_server(socket_manager* mgr, int port, const char* listen_ip)
 	@param path Name of the socket within the file system.
 	@return The socket's file descriptor if successful; otherwise -1.
 
-	Calls: socket(), bind(), listen().  Creates a SERVER_SOCKET.
+	Calls: socket(), bind(), listen().  Creates a LISTENER_SOCKET.
 
 	Apply socket option TCP_NODELAY in order to reduce latency.
 */
@@ -202,9 +208,9 @@ int socket_open_unix_server(socket_manager* mgr, const char* path) {
 	strcpy(server_addr.sun_path, path);
 
 	errno = 0;
-	if( bind(sock_fd, (struct sockaddr*) &server_addr, 
+	if( bind(sock_fd, (struct sockaddr*) &server_addr,
 				sizeof(struct sockaddr_un)) < 0) {
-		osrfLogWarning( OSRF_LOG_MARK, 
+		osrfLogWarning( OSRF_LOG_MARK,
 			"socket_open_unix_server(): cannot bind to unix port %s: %s",
 			path, strerror( errno ) );
 		close( sock_fd );
@@ -220,17 +226,17 @@ int socket_open_unix_server(socket_manager* mgr, const char* path) {
 	}
 
 	osrfLogDebug( OSRF_LOG_MARK, "unix socket successfully opened");
-	
+
 	int i = 1;
 
 	/* causing problems with router for some reason ... */
 	//osrfLogDebug( OSRF_LOG_MARK, "Setting SO_REUSEADDR");
 	//setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(i));
-	
+
 	//osrfLogDebug( OSRF_LOG_MARK, "Setting TCP_NODELAY");
 	setsockopt(sock_fd, IPPROTO_TCP, TCP_NODELAY, &i, sizeof(i));
 
-	_socket_add_node(mgr, SERVER_SOCKET, UNIX, sock_fd, 0);
+	_socket_add_node(mgr, LISTENER_SOCKET, UNIX, sock_fd, 0);
 	return sock_fd;
 }
 
@@ -242,9 +248,9 @@ int socket_open_unix_server(socket_manager* mgr, const char* path) {
 	@param listen_ip The IP address to bind to, or NULL for INADDR_ANY.
 	@return The socket's file descriptor if successful; otherwise -1.
 
-	Calls: socket(), bind().  Creates a SERVER_SOCKET.
+	Calls: socket(), bind().  Creates a DATA_SOCKET.
 */
-int socket_open_udp_server( 
+int socket_open_udp_server(
 		socket_manager* mgr, int port, const char* listen_ip ) {
 
 	int sockfd;
@@ -277,7 +283,7 @@ int socket_open_udp_server(
 		return -1;
 	}
 
-	_socket_add_node(mgr, SERVER_SOCKET, INET, sockfd, 0);
+	_socket_add_node(mgr, DATA_SOCKET, INET, sockfd, 0);
 	return sockfd;
 }
 
@@ -289,7 +295,7 @@ int socket_open_udp_server(
 	@param dest_addr Host name or IP address of the server to which we are connecting.
 	@return The socket's file descriptor if successful; otherwise -1.
 
-	Calls: getaddrinfo(), socket(), connect().  Creates a CLIENT_SOCKET.
+	Calls: getaddrinfo(), socket(), connect().  Creates a DATA_SOCKET.
 
 	Applies socket option TCP_NODELAY in order to reduce latency.
 */
@@ -321,7 +327,7 @@ int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr)
 	if( ! addr_info ) {
 		osrfLogWarning( OSRF_LOG_MARK,
 			"socket_open_tcp_client(): Host %s does not support IPV4", dest_addr );
-		return -1;	
+		return -1;
 	}
 
 	// ------------------------------------------------------------------
@@ -359,7 +365,7 @@ int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr)
 		return -1;
 	}
 
-	_socket_add_node(mgr, CLIENT_SOCKET, INET, sock_fd, -1 );
+	_socket_add_node(mgr, DATA_SOCKET, INET, sock_fd, -1 );
 
 	return sock_fd;
 }
@@ -370,7 +376,7 @@ int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr)
 	@param mgr Pointer to the socket_manager that will own the socket.
 	@return The socket's file descriptor if successful; otherwise -1.
 
-	Calls: socket().  Creates a CLIENT_SOCKET.
+	Calls: socket().  Creates a DATA_SOCKET.
 */
 int socket_open_udp_client( socket_manager* mgr ) {
 
@@ -383,7 +389,7 @@ int socket_open_udp_client( socket_manager* mgr ) {
 		return -1;
 	}
 
-	_socket_add_node(mgr, CLIENT_SOCKET, INET, sockfd, -1 );
+	_socket_add_node(mgr, DATA_SOCKET, INET, sockfd, -1 );
 
 	return sockfd;
 }
@@ -395,7 +401,7 @@ int socket_open_udp_client( socket_manager* mgr ) {
 	@param sock_path Name of the socket within the file system.
 	@return The socket's file descriptor if successful; otherwise -1.
 
-	Calls: socket(), connect().  Creates a CLIENT_SOCKET.
+	Calls: socket(), connect().  Creates a DATA_SOCKET.
 */
 int socket_open_unix_client(socket_manager* mgr, const char* sock_path) {
 
@@ -428,7 +434,7 @@ int socket_open_unix_client(socket_manager* mgr, const char* sock_path) {
 		return -1;
 	}
 
-	_socket_add_node(mgr, CLIENT_SOCKET, UNIX, sock_fd, -1 );
+	_socket_add_node(mgr, DATA_SOCKET, UNIX, sock_fd, -1 );
 
 	return sock_fd;
 }
@@ -507,7 +513,7 @@ void _socket_print_list(socket_manager* mgr) {
 	socket_node* node = mgr->socket;
 	osrfLogDebug( OSRF_LOG_MARK, "socket_node list: [");
 	while(node) {
-		osrfLogDebug( OSRF_LOG_MARK, "sock_fd: %d | parent_id: %d", 
+		osrfLogDebug( OSRF_LOG_MARK, "sock_fd: %d | parent_id: %d",
 				node->sock_fd, node->parent_id);
 		node = node->next;
 	}
@@ -553,8 +559,8 @@ static int _socket_send(int sock_fd, const char* data, int flags) {
 }
 
 
-/* sends the given data to the given socket. 
- * sets the send flag MSG_DONTWAIT which will allow the 
+/* sends the given data to the given socket.
+ * sets the send flag MSG_DONTWAIT which will allow the
  * process to continue even if the socket buffer is full
  * returns 0 on success, -1 otherwise */
 //int socket_send_nowait( int sock_fd, const char* data) {
@@ -697,12 +703,13 @@ int socket_wait( socket_manager* mgr, int timeout, int sock_fd ) {
 
 	socket_node* node = socket_find_node(mgr, sock_fd);
 	if( node ) {
-		if( node->endpoint == SERVER_SOCKET ) {
+		if( node->endpoint == LISTENER_SOCKET ) {
 			_socket_handle_new_client( mgr, node );  // accept new connection
 		} else {
 			int status = _socket_handle_client_data( mgr, node );   // read data
 			if( status == -1 ) {
-				socket_remove_node(mgr, sock_fd);
+				close( sock_fd );
+				socket_remove_node( mgr, sock_fd );
 				return -1;
 			}
 		}
@@ -730,7 +737,7 @@ int socket_wait( socket_manager* mgr, int timeout, int sock_fd ) {
 	socket_manager's list, without actually reading any data.
 	- Otherwise, read as much data as is available from the input socket, passing it a
 	buffer at a time to whatever callback function has been defined to the socket_manager.
- */
+*/
 int socket_wait_all(socket_manager* mgr, int timeout) {
 
 	if(mgr == NULL) {
@@ -757,7 +764,7 @@ int socket_wait_all(socket_manager* mgr, int timeout) {
 	tv.tv_usec = 0;
 	errno = 0;
 
-	if( timeout < 0 ) {  
+	if( timeout < 0 ) {
 
 		// If timeout is -1, there is no timeout passed to the call to select
 		if( (num_active = select( max_fd, &read_set, NULL, NULL, NULL)) == -1 ) {
@@ -774,7 +781,7 @@ int socket_wait_all(socket_manager* mgr, int timeout) {
 	}
 
 	osrfLogDebug( OSRF_LOG_MARK, "%d active sockets after select()", num_active);
-	
+
 	node = mgr->socket;
 	int handled = 0;
 
@@ -790,12 +797,13 @@ int socket_wait_all(socket_manager* mgr, int timeout) {
 			handled++;
 			FD_CLR(sock_fd, &read_set);
 
-			if(node->endpoint == SERVER_SOCKET) 
+			if(node->endpoint == LISTENER_SOCKET)
 				_socket_handle_new_client(mgr, node);
 
 			else {
 				if( _socket_handle_client_data(mgr, node) == -1 ) {
 					/* someone may have yanked a socket_node out from under us */
+					close( sock_fd );
 					socket_remove_node( mgr, sock_fd );
 				}
 			}
@@ -813,7 +821,7 @@ int socket_wait_all(socket_manager* mgr, int timeout) {
 	@param node Pointer to the socket_node for the listener socket.
 	@return 0 if successful, or -1 if not.
 
-	Call: accept().  Creates a CLIENT_SOCKET (even though the socket resides on the server).
+	Call: accept().  Creates a DATA_SOCKET (even though the socket resides on the server).
 */
 static int _socket_handle_new_client(socket_manager* mgr, socket_node* node) {
 	if(mgr == NULL || node == NULL) return -1;
@@ -828,11 +836,11 @@ static int _socket_handle_new_client(socket_manager* mgr, socket_node* node) {
 	}
 
 	if(node->addr_type == INET) {
-		_socket_add_node(mgr, CLIENT_SOCKET, INET, new_sock_fd, node->sock_fd);
+		_socket_add_node(mgr, DATA_SOCKET, INET, new_sock_fd, node->sock_fd);
 		osrfLogDebug( OSRF_LOG_MARK, "Adding new INET client for %d", node->sock_fd);
 
 	} else if(node->addr_type == UNIX) {
-		_socket_add_node(mgr, CLIENT_SOCKET, UNIX, new_sock_fd, node->sock_fd);
+		_socket_add_node(mgr, DATA_SOCKET, UNIX, new_sock_fd, node->sock_fd);
 		osrfLogDebug( OSRF_LOG_MARK, "Adding new UNIX client for %d", node->sock_fd);
 	}
 
@@ -857,7 +865,7 @@ static int _socket_handle_new_client(socket_manager* mgr, socket_node* node) {
 	there may be more data that hasn't arrived yet.  It is the responsibility of the
 	calling code to recognize message boundaries.
 
-	Called only for a CLIENT_SOCKET.
+	Called only for a DATA_SOCKET.
 */
 static int _socket_handle_client_data(socket_manager* mgr, socket_node* node) {
 	if(mgr == NULL || node == NULL) return -1;
