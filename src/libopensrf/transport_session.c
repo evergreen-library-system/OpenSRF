@@ -334,9 +334,7 @@ int session_connect( transport_session* session,
 		const char* username, const char* password,
 		const char* resource, int connect_timeout, enum TRANSPORT_AUTH_TYPE auth_type ) {
 
-	int size1 = 0;
-	int size2 = 0;
-
+	// Sanity checks
 	if( ! session ) {
 		osrfLogWarning(OSRF_LOG_MARK, "session is null in session_connect()" );
 		return 0;
@@ -369,7 +367,27 @@ int session_connect( transport_session* session,
 	}
 
 	const char* server = session->server;
+	int size1 = 0;
+	int size2 = 0;
 
+	/*
+	We establish the session in two stages.
+
+	First we establish an XMPP stream with the Jabber server by sending an opening tag of
+	stream:stream.  This is not a complete XML document.  We don't send the corresponding
+	closing tag until we close the session.
+
+	If the Jabber server responds by sending an opening stream:stream tag of its own, we can
+	proceed to the second stage by sending a second stanza to log in.  This stanza is an XML
+	element with the tag <handshake> (if we're a Jabber component) or <iq> (if we're not),
+	enclosing the username, password, and resource.
+
+	If all goes well, the Jabber server responds with a <handshake> or <iq> stanza of its own,
+	and we're logged in.
+
+	If authentication fails, the Jabber server returns a <stream:error> (if we used a <handshake>
+	or an <iq> of type "error" (if we used an <iq>).
+	*/
 	if( session->component ) {
 
 		/* the first Jabber connect stanza */
@@ -399,9 +417,9 @@ int session_connect( transport_session* session,
 		/* server acknowledges our existence, now see if we can login */
 		if( session->state_machine->connecting == CONNECTING_2 ) {
 
-			int ss = session->session_id->n_used + strlen(password) + 5;
+			int ss = buffer_length( session->session_id ) + strlen( password ) + 5;
 			char hashstuff[ss];
-			snprintf( hashstuff, sizeof(hashstuff), "%s%s", session->session_id->buf, password );
+			snprintf( hashstuff, sizeof(hashstuff), "%s%s", OSRF_BUFFER_C_STR( session->session_id ), password );
 
 			char* hash = shahash( hashstuff );
 			size2 = 100 + strlen( hash );
@@ -461,13 +479,13 @@ int session_connect( transport_session* session,
 
 		} else if( auth_type == AUTH_DIGEST ) {
 
-			int ss = session->session_id->n_used + strlen(password) + 5;
+			int ss = buffer_length( session->session_id ) + strlen( password ) + 5;
 			char hashstuff[ss];
-			snprintf( hashstuff, sizeof(hashstuff), "%s%s", session->session_id->buf, password );
+			snprintf( hashstuff, sizeof(hashstuff), "%s%s", OSRF_BUFFER_C_STR( session->session_id ), password );
 
 			char* hash = shahash( hashstuff );
 
-			/* the second jabber connect stanza including login info*/
+			/* the second jabber connect stanza including login info */
 			size2 = 150 + strlen( username ) + strlen( hash ) + strlen(resource);
 			char stanza2[ size2 ];
 			snprintf( stanza2, sizeof(stanza2),
@@ -621,22 +639,24 @@ static void startElementHandler(
 		ses->state_machine->in_message_error = 1;
 		buffer_add( ses->message_error_type, get_xml_attr( atts, "type" ) );
 		ses->message_error_code = atoi( get_xml_attr( atts, "code" ) );
-		osrfLogInfo( OSRF_LOG_MARK, "Received <error> message with type %s and code %s",
-			get_xml_attr( atts, "type"), get_xml_attr( atts, "code") );
+		osrfLogInfo( OSRF_LOG_MARK, "Received <error> message with type %s and code %d",
+			OSRF_BUFFER_C_STR( ses->message_error_type ), ses->message_error_code );
 		return;
 	}
 
 	if( strcmp( (char*) name, "iq" ) == 0 ) {
 		ses->state_machine->in_iq = 1;
 
-		if( strcmp( get_xml_attr(atts, "type"), "result") == 0
+		const char* type = get_xml_attr(atts, "type");
+
+		if( strcmp( type, "result") == 0
 				&& ses->state_machine->connecting == CONNECTING_2 ) {
 			ses->state_machine->connected = 1;
 			ses->state_machine->connecting = 0;
 			return;
 		}
 
-		if( strcmp( get_xml_attr(atts, "type"), "error") == 0 ) {
+		if( strcmp( type, "error") == 0 ) {
 			osrfLogWarning( OSRF_LOG_MARK,  "Error connecting to jabber" );
 			return;
 		}
@@ -840,7 +860,14 @@ static void characterHandler(
 
 }
 
-/* XXX change to warning handlers */
+/**
+	@brief Report a warning from the XML parser.
+	@param session Pointer to a transport_session, cast to a void pointer (not used).
+	@param msg Pointer to a printf-style format string.  Subsequent messages, if any, are
+		formatted and inserted into the expanded string.
+
+	The XML parser calls this function when it wants to warn about something in the XML.
+*/
 static void  parseWarningHandler( void *session, const char* msg, ... ) {
 
 	va_list args;
@@ -851,6 +878,14 @@ static void  parseWarningHandler( void *session, const char* msg, ... ) {
 	fprintf(stderr, "XML WARNING: %s\n", msg );
 }
 
+/**
+	@brief Report an error from the XML parser.
+	@param session Pointer to a transport_session, cast to a void pointer (not used).
+	@param msg Pointer to a printf-style format string.  Subsequent messages, if any, are
+		formatted and inserted into the expanded string.
+
+	The XML parser calls this function when it finds an error in the XML.
+*/
 static void  parseErrorHandler( void *session, const char* msg, ... ){
 
 	va_list args;
@@ -859,7 +894,6 @@ static void  parseErrorHandler( void *session, const char* msg, ... ){
 	vfprintf(stdout, msg, args);
 	va_end(args);
 	fprintf(stderr, "XML ERROR: %s\n", msg );
-
 }
 
 /**
