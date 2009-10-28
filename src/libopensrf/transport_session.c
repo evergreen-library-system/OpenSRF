@@ -7,15 +7,16 @@
 	In all cases, a transport_session acts as a client with regard to Jabber.
 */
 
-#define CONNECTING_1 1 /* just starting the connection to Jabber */
-#define CONNECTING_2 2 /* First <stream> packet sent and <stream> packet received from server */
+#define CONNECTING_1 1   /**< just starting the connection to Jabber */
+#define CONNECTING_2 2   /**< XML stream opened but not yet logged in */
+
 
 /* Note. these are growing buffers, so all that's necessary is a sane starting point */
-#define JABBER_BODY_BUFSIZE    4096
-#define JABBER_SUBJECT_BUFSIZE   64
-#define JABBER_THREAD_BUFSIZE    64
-#define JABBER_JID_BUFSIZE       64
-#define JABBER_STATUS_BUFSIZE    16
+#define JABBER_BODY_BUFSIZE    4096  /**< buffer size for message body */
+#define JABBER_SUBJECT_BUFSIZE   64  /**< buffer size for message subject */
+#define JABBER_THREAD_BUFSIZE    64  /**< buffer size for message thread */
+#define JABBER_JID_BUFSIZE       64  /**< buffer size for various ids */
+#define JABBER_STATUS_BUFSIZE    16  /**< buffer size for status code */
 
 // ---------------------------------------------------------------------------------
 // Jabber state machine.  This is how we know where we are in the Jabber
@@ -269,9 +270,12 @@ int session_connected( transport_session* session ) {
 	before timing out.  If @a timeout has a negative value other than -1, the results are not
 	well defined.
 
-	Read all available input from the socket and pass it through grab_incoming() (a previously
-	designated callback function).  There is no guarantee that we will get a complete message
-	from a single call.
+	Read all available input from the socket and pass it through grab_incoming() (a
+	callback function previously installed in the socket_manager).
+
+	There is no guarantee that we will get a complete message from a single call.  As a
+	result, the calling code should call this function in a loop until it gets a complete
+	message, or until an error occurs.
 */
 int session_wait( transport_session* session, int timeout ) {
 	if( ! session || ! session->sock_mgr ) {
@@ -419,7 +423,8 @@ int session_connect( transport_session* session,
 
 			int ss = buffer_length( session->session_id ) + strlen( password ) + 5;
 			char hashstuff[ss];
-			snprintf( hashstuff, sizeof(hashstuff), "%s%s", OSRF_BUFFER_C_STR( session->session_id ), password );
+			snprintf( hashstuff, sizeof(hashstuff), "%s%s",
+					OSRF_BUFFER_C_STR( session->session_id ), password );
 
 			char* hash = shahash( hashstuff );
 			size2 = 100 + strlen( hash );
@@ -754,8 +759,11 @@ static void endElementHandler( void *session, const xmlChar *name) {
 	if( machine->in_iq && strcmp( (const char*) name, "iq" ) == 0 ) {
 		machine->in_iq = 0;
 		if( ses->message_error_code > 0 ) {
-			osrfLogWarning( OSRF_LOG_MARK,  "Error in IQ packet: code %d",  ses->message_error_code );
-			osrfLogWarning( OSRF_LOG_MARK,  "Error 401 means not authorized" );
+			if( 401 == ses->message_error_code )
+				osrfLogWarning( OSRF_LOG_MARK, "Error 401 in IQ packet: not authorized" );
+			else
+				osrfLogWarning( OSRF_LOG_MARK, "Error in IQ packet: code %d",
+						ses->message_error_code );
 		}
 		reset_session_buffers( session );
 		return;
@@ -861,7 +869,7 @@ static void characterHandler(
 }
 
 /**
-	@brief Report a warning from the XML parser.
+	@brief Log a warning from the XML parser.
 	@param session Pointer to a transport_session, cast to a void pointer (not used).
 	@param msg Pointer to a printf-style format string.  Subsequent messages, if any, are
 		formatted and inserted into the expanded string.
@@ -869,17 +877,12 @@ static void characterHandler(
 	The XML parser calls this function when it wants to warn about something in the XML.
 */
 static void  parseWarningHandler( void *session, const char* msg, ... ) {
-
-	va_list args;
-	va_start(args, msg);
-	fprintf(stdout, "transport_session XML WARNING");
-	vfprintf(stdout, msg, args);
-	va_end(args);
-	fprintf(stderr, "XML WARNING: %s\n", msg );
+	VA_LIST_TO_STRING(msg);
+	osrfLogWarning( OSRF_LOG_MARK, VA_BUF );
 }
 
 /**
-	@brief Report an error from the XML parser.
+	@brief Log an error from the XML parser.
 	@param session Pointer to a transport_session, cast to a void pointer (not used).
 	@param msg Pointer to a printf-style format string.  Subsequent messages, if any, are
 		formatted and inserted into the expanded string.
@@ -887,13 +890,8 @@ static void  parseWarningHandler( void *session, const char* msg, ... ) {
 	The XML parser calls this function when it finds an error in the XML.
 */
 static void  parseErrorHandler( void *session, const char* msg, ... ){
-
-	va_list args;
-	va_start(args, msg);
-	fprintf(stdout, "transport_session XML ERROR");
-	vfprintf(stdout, msg, args);
-	va_end(args);
-	fprintf(stderr, "XML ERROR: %s\n", msg );
+	VA_LIST_TO_STRING(msg);
+	osrfLogError( OSRF_LOG_MARK, VA_BUF );
 }
 
 /**

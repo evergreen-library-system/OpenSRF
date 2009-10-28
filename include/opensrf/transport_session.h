@@ -5,8 +5,10 @@
 	@file transport_session.h
 	@brief Header for routines to manage a connection to a Jabber server.
 
-	Manages the Jabber session.  Reads data from a socket and pushes it into a SAX
-	parser as it arrives.  When key Jabber document elements are met, logic ensues.
+	Manages a Jabber session.  Reads messages from a socket and pushes them into a SAX parser
+	as they arrive, responding to various Jabber document elements as they appear.  When it
+	sees the end of a complete message, it sends a representation of that message to the
+	calling code via a callback function.
 */
 
 #include <opensrf/transport_message.h>
@@ -30,56 +32,54 @@
 extern "C" {
 #endif
 
+/** Note whether the login information should be sent as plaintext or as a hash digest. */
 enum TRANSPORT_AUTH_TYPE { AUTH_PLAIN, AUTH_DIGEST };
 
 struct jabber_state_machine_struct;
 typedef struct jabber_state_machine_struct jabber_machine;
 
-// ---------------------------------------------------------------------------------
-// Transport session.  This maintains all the various parts of a session
-// ---------------------------------------------------------------------------------
+/**
+	@brief Collection of things for managing a Jabber session.
+*/
 struct transport_session_struct {
 
 	/* our socket connection */
-	socket_manager* sock_mgr;
+	socket_manager* sock_mgr;             /**< Manages the socket to the Jabber server. */
 
 	/* our Jabber state machine */
-	jabber_machine* state_machine;
+	jabber_machine* state_machine;        /**< Keeps track of where we are in the XML. */
 	/* our SAX push parser context */
-	xmlParserCtxtPtr parser_ctxt;
+	xmlParserCtxtPtr parser_ctxt;         /**< Used by the XML parser. */
 
 	/* our text buffers for holding text data */
-	growing_buffer* body_buffer;
-	growing_buffer* subject_buffer;
-	growing_buffer* thread_buffer;
-	growing_buffer* from_buffer;
-	growing_buffer* recipient_buffer;
-	growing_buffer* status_buffer;
-	growing_buffer* message_error_type;
-	growing_buffer* session_id;
-	int message_error_code;
+	growing_buffer* body_buffer;          /**< Text of &lt;body&gt; of message stanza. */
+	growing_buffer* subject_buffer;       /**< Text of &lt;subject&gt; of message stanza. */
+	growing_buffer* thread_buffer;        /**< Text of &lt;thread&gt; of message stanza. */
+	growing_buffer* from_buffer;          /**< "from" attribute of &lt;message&gt;. */
+	growing_buffer* recipient_buffer;     /**< "to" attribute of &lt;message&gt;. */
+	growing_buffer* status_buffer;        /**< Text of &lt;status&gt; of message stanza. */
+	growing_buffer* message_error_type;   /**< "type" attribute of &lt;error&gt;. */
+	growing_buffer* session_id;           /**< "id" attribute of stream header. */
+	int message_error_code;               /**< "code" attribute of &lt;error&gt;. */
 
-	/* for OILS extenstions */
-	growing_buffer* router_to_buffer;
-	growing_buffer* router_from_buffer;
-	growing_buffer* router_class_buffer;
-	growing_buffer* router_command_buffer;
-	growing_buffer* osrf_xid_buffer;
-	int router_broadcast;
+	/* for OILS extensions */
+	growing_buffer* router_to_buffer;     /**< "router_to" attribute of &lt;message&gt;. */
+	growing_buffer* router_from_buffer;   /**< "router_from" attribute of &lt;message&gt;. */
+	growing_buffer* router_class_buffer;  /**< "router_class" attribute of &lt;message&gt;. */
+	growing_buffer* router_command_buffer; /**< "router_command" attribute of &lt;message&gt;. */
+	growing_buffer* osrf_xid_buffer;      /**< "osrf_xid" attribute of &lt;message&gt;. */
+	int router_broadcast;                 /**< "broadcast" attribute of &lt;message&gt;. */
 
-	/* this can be anything.  It will show up in the
-		callbacks for your convenience. Otherwise, it's
-		left untouched.  */
-	void* user_data;
+	void* user_data;                      /**< Opaque pointer from calling code. */
 
-	char* server;
-	char* unix_path;
-	int	port;
-	int sock_id;
+	char* server;                         /**< address of Jabber server. */
+	char* unix_path;                      /**< Unix pathname (if any) of socket to Jabber server */
+	int	port;                             /**< Port number of Jabber server. */
+	int sock_id;                          /**< File descriptor of socket to Jabber. */
 
-	int component; /* true if we're a component */
+	int component;                        /**< Boolean; true if we're a Jabber component. */
 
-	/* the Jabber message callback */
+	/** Callback from calling code, for when a complete message stanza is received. */
 	void (*message_callback) ( void* user_data, transport_message* msg );
 	//void (iq_callback) ( void* user_data, transport_iq_message* iq );
 };
@@ -90,9 +90,6 @@ transport_session* init_transport( const char* server, int port,
 
 int session_wait( transport_session* session, int timeout );
 
-// ---------------------------------------------------------------------------------
-// Sends the given Jabber message
-// ---------------------------------------------------------------------------------
 int session_send_msg( transport_session* session, transport_message* msg );
 
 int session_connected( transport_session* session );
