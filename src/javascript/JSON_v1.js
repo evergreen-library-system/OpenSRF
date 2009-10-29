@@ -9,6 +9,8 @@ function JSON2js(text) {
 	return decodeJS(JSON2jsRaw(text));
 }
 
+JSON2js.fallbackObjectifier = null;
+
 function JSON2jsRaw(text) {
 	var obj;
 	eval('obj = ' + text);
@@ -43,7 +45,14 @@ function decodeJS(arg) {
 	if(	arg && typeof arg == 'object' &&
 			arg.constructor == Object &&
 			arg[JSON_CLASS_KEY] ) {
-		eval('arg = new ' + arg[JSON_CLASS_KEY] + '(arg[JSON_DATA_KEY])');	
+
+        try {
+            arg = eval('new ' + arg[JSON_CLASS_KEY] + '(arg[JSON_DATA_KEY])');	
+        } catch(E) {
+            if (JSON2js.fallbackObjectifier)
+                arg = JSON2js.fallbackObjectifier(arg, JSON_CLASS_KEY, JSON_DATA_KEY );
+        }
+
 	}
 
     if(arg._encodehash) {
