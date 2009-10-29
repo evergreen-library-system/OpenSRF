@@ -1,30 +1,52 @@
 #include <opensrf/transport_message.h>
 
-// ---------------------------------------------------------------------------------
-// Allocates and initializes a new transport_message
-// ---------------------------------------------------------------------------------
+/**
+	@file transport_message.c
+	@brief Collection of routines for managing transport_messages.
+
+	These routines are largely concerned with the conversion of XML to transport_messages,
+	and vice versa.
+*/
+
+/**
+	@brief Allocate and initialize a new transport_message to be send via Jabber.
+	@param body Content of the message.
+	@param subject Subject of the message.
+	@param thread Thread of the message.
+	@param recipient The address of the recipient.
+	@param sender The address of the sender.
+	@return A pointer to a newly-allocated transport_message.
+
+	This function doesn't populate everything.  Typically there are subsequent calls to
+	some combination of message_set_router_info(), message_set_osrf_xid(), and
+	set_msg_error() to populate various additional bits and pieces.  Before sending the
+	message anywhere, we call message_prepare_xml() to translate the message into XML,
+	specifically a message stanza for a Jabber XML stream.
+
+	The calling code is responsible for freeing the transport_message by calling message_free().
+*/
 transport_message* message_init( const char* body, const char* subject,
 		const char* thread, const char* recipient, const char* sender ) {
 
 	transport_message* msg = safe_malloc( sizeof(transport_message) );
 
-	if( body				== NULL ) { body		= ""; }
-	if( thread				== NULL ) { thread		= ""; }
-	if( subject				== NULL ) { subject		= ""; }
-	if( sender				== NULL ) { sender		= ""; }
-	if( recipient			== NULL ) { recipient	= ""; }
+	if( body        == NULL ) { body       = ""; }
+	if( thread      == NULL ) { thread     = ""; }
+	if( subject     == NULL ) { subject    = ""; }
+	if( sender      == NULL ) { sender     = ""; }
+	if( recipient   == NULL ) { recipient  = ""; }
 
-	msg->body				= strdup(body);
-	msg->thread				= strdup(thread);
-	msg->subject			= strdup(subject);
-	msg->recipient			= strdup(recipient);
-	msg->sender				= strdup(sender);
+	msg->body       = strdup(body);
+	msg->thread     = strdup(thread);
+	msg->subject    = strdup(subject);
+	msg->recipient  = strdup(recipient);
+	msg->sender     = strdup(sender);
 
-	if(	msg->body		== NULL || msg->thread				== NULL	||
-			msg->subject	== NULL || msg->recipient			== NULL	||
-			msg->sender		== NULL ) {
+	if( msg->body        == NULL || msg->thread    == NULL  ||
+			msg->subject == NULL || msg->recipient == NULL  ||
+			msg->sender  == NULL ) {
 
-		osrfLogError(OSRF_LOG_MARK,  "message_init(): Out of Memory" );
+		osrfLogError(OSRF_LOG_MARK, "message_init(): Out of Memory" );
 		free( msg->body );
 		free( msg->thread );
 		free( msg->subject );
@@ -50,6 +72,19 @@ transport_message* message_init( const char* body, const char* subject,
 }
 
 
+/**
+	@brief Translate an XML string into a transport_message.
+	@param msg_xml Pointer to a &lt;message&gt; element as passed by Jabber.
+	@return Pointer to a newly created transport_message.
+
+	Do @em not populate the following members:
+	- router_command
+	- is_error
+	- error_type
+	- error_code.
+
+	The calling code is responsible for freeing the transport_message by calling message_free().
+*/
 transport_message* new_message_from_xml( const char* msg_xml ) {
 
 	if( msg_xml == NULL || *msg_xml == '\0' )
@@ -74,69 +109,80 @@ transport_message* new_message_from_xml( const char* msg_xml ) {
 	new_msg->msg_xml        = NULL;
 	new_msg->next           = NULL;
 
+	/* Parse the XML document and grab the root */
 	xmlKeepBlanksDefault(0);
 	xmlDocPtr msg_doc = xmlReadDoc( BAD_CAST msg_xml, NULL, NULL, 0 );
 	xmlNodePtr root = xmlDocGetRootElement(msg_doc);
 
-	xmlChar* sender	= xmlGetProp(root, BAD_CAST "from");
-	xmlChar* recipient	= xmlGetProp(root, BAD_CAST "to");
-	xmlChar* subject		= xmlGetProp(root, BAD_CAST "subject");
-	xmlChar* thread		= xmlGetProp( root, BAD_CAST "thread" );
-	xmlChar* router_from	= xmlGetProp( root, BAD_CAST "router_from" );
-	xmlChar* router_to	= xmlGetProp( root, BAD_CAST "router_to" );
-	xmlChar* router_class= xmlGetProp( root, BAD_CAST "router_class" );
-	xmlChar* broadcast	= xmlGetProp( root, BAD_CAST "broadcast" );
-	xmlChar* osrf_xid    = xmlGetProp( root, BAD_CAST "osrf_xid" );
+	/* Get various attributes of the root, */
+	/* and use them to populate the corresponding members */
+	xmlChar* sender         = xmlGetProp( root, BAD_CAST "from");
+	xmlChar* recipient      = xmlGetProp( root, BAD_CAST "to");
+	xmlChar* subject        = xmlGetProp( root, BAD_CAST "subject");
+	xmlChar* thread         = xmlGetProp( root, BAD_CAST "thread" );
+	xmlChar* router_from    = xmlGetProp( root, BAD_CAST "router_from" );
+	xmlChar* router_to      = xmlGetProp( root, BAD_CAST "router_to" );
+	xmlChar* router_class   = xmlGetProp( root, BAD_CAST "router_class" );
+	xmlChar* broadcast      = xmlGetProp( root, BAD_CAST "broadcast" );
+	xmlChar* osrf_xid       = xmlGetProp( root, BAD_CAST "osrf_xid" );
 
-   if( osrf_xid ) {
-      message_set_osrf_xid( new_msg, (char*) osrf_xid);
-      xmlFree(osrf_xid);
-   }
+	if( osrf_xid ) {
+		message_set_osrf_xid( new_msg, (char*) osrf_xid);
+		xmlFree(osrf_xid);
+	}
 
 	if( router_from ) {
-		new_msg->sender		= strdup((const char*)router_from);
+		new_msg->sender     = strdup((const char*)router_from);
 	} else {
 		if( sender ) {
-			new_msg->sender		= strdup((const char*)sender);
+			new_msg->sender = strdup((const char*)sender);
 			xmlFree(sender);
 		}
 	}
 
 	if( recipient ) {
-		new_msg->recipient	= strdup((const char*)recipient);
+		new_msg->recipient  = strdup((const char*)recipient);
 		xmlFree(recipient);
 	}
+
 	if(subject){
-		new_msg->subject		= strdup((const char*)subject);
+		new_msg->subject    = strdup((const char*)subject);
 		xmlFree(subject);
 	}
+
 	if(thread) {
-		new_msg->thread		= strdup((const char*)thread);
+		new_msg->thread     = strdup((const char*)thread);
 		xmlFree(thread);
 	}
+
 	if(router_from) {
-		new_msg->router_from	= strdup((const char*)router_from);
+		new_msg->router_from = strdup((const char*)router_from);
 		xmlFree(router_from);
 	}
+
 	if(router_to) {
-		new_msg->router_to	= strdup((const char*)router_to);
+		new_msg->router_to  = strdup((const char*)router_to);
 		xmlFree(router_to);
 	}
+
 	if(router_class) {
 		new_msg->router_class = strdup((const char*)router_class);
 		xmlFree(router_class);
 	}
+
 	if(broadcast) {
 		if(strcmp((const char*) broadcast,"0") )
-			new_msg->broadcast	= 1;
+			new_msg->broadcast = 1;
 		xmlFree(broadcast);
 	}
 
+	/* Within the message element, find the child nodes for "thread", "subject", and */
+	/* "body".  Extract their textual content into the corresponding members. */
 	xmlNodePtr search_node = root->children;
 	while( search_node != NULL ) {
 
 		if( ! strcmp( (const char*) search_node->name, "thread" ) ) {
-			if( search_node->children && search_node->children->content ) 
+			if( search_node->children && search_node->children->content )
 				new_msg->thread = strdup( (const char*) search_node->children->content );
 		}
 
@@ -153,13 +199,14 @@ transport_message* new_message_from_xml( const char* msg_xml ) {
 		search_node = search_node->next;
 	}
 
-	if( new_msg->thread == NULL ) 
+	if( new_msg->thread == NULL )
 		new_msg->thread = strdup("");
 	if( new_msg->subject == NULL )
 		new_msg->subject = strdup("");
 	if( new_msg->body == NULL )
 		new_msg->body = strdup("");
 
+	/* Convert the XML document back into a string, and store it. */
 	new_msg->msg_xml = xmlDocToString(msg_doc, 0);
 	xmlFreeDoc(msg_doc);
 	xmlCleanupParser();
@@ -167,6 +214,15 @@ transport_message* new_message_from_xml( const char* msg_xml ) {
 	return new_msg;
 }
 
+/**
+	@brief Populate the osrf_xid (an OSRF extension) of a transport_message.
+	@param msg Pointer to the transport_message.
+	@param osrf_xid Value of the "osrf_xid" attribute of a message stanza.
+
+	If @a osrf_xid is NULL, populate with an empty string.
+
+	See also message_set_router_info().
+*/
 void message_set_osrf_xid( transport_message* msg, const char* osrf_xid ) {
 	if( msg ) {
 		if( msg->osrf_xid ) free( msg->osrf_xid );
@@ -174,6 +230,20 @@ void message_set_osrf_xid( transport_message* msg, const char* osrf_xid ) {
 	}
 }
 
+/**
+	@brief Populate some OSRF extensions to XMPP in a transport_message.
+	@param msg Pointer to the transport_message to be populated.
+	@param router_from Value of "router_from" attribute in message stanza
+	@param router_to Value of "router_to" attribute in message stanza
+	@param router_class Value of "router_class" attribute in message stanza
+	@param router_command Value of "router_command" attribute in message stanza
+	@param broadcast_enabled Value of "broadcast" attribute in message stanza
+
+	If any of the pointer pararmeters is NULL (other than @a msg), populate the
+	corresponding member with an empty string.
+
+	See also osrf_set_xid().
+*/
 void message_set_router_info( transport_message* msg, const char* router_from,
 		const char* router_to, const char* router_class, const char* router_command,
 		int broadcast_enabled ) {
@@ -194,19 +264,21 @@ void message_set_router_info( transport_message* msg, const char* router_from,
 		msg->broadcast = broadcast_enabled;
 
 		if( msg->router_from == NULL || msg->router_to == NULL ||
-				msg->router_class == NULL || msg->router_command == NULL ) 
+				msg->router_class == NULL || msg->router_command == NULL )
 			osrfLogError(OSRF_LOG_MARK,  "message_set_router_info(): Out of Memory" );
 	}
 }
 
 
-// ---------------------------------------------------------------------------------
-//
-// ---------------------------------------------------------------------------------
+/**
+	@brief Free a transport_message and all the memory it owns.
+	@param msg Pointer to the transport_message to be destroyed.
+	@return 1 if successful, or 0 upon error.  The only error condition is if @a msg is NULL.
+*/
 int message_free( transport_message* msg ){
 	if( msg == NULL ) { return 0; }
 
-	free(msg->body); 
+	free(msg->body);
 	free(msg->thread);
 	free(msg->subject);
 	free(msg->recipient);
@@ -223,21 +295,32 @@ int message_free( transport_message* msg ){
 }
 
 
-// ---------------------------------------------------------------------------------
-// Encodes the message as XML for traversal; stores in msg_xml member
-// ---------------------------------------------------------------------------------
+/**
+	@brief Build a &lt;message&gt; element and store it as a string in the msg_xml member.
+	@param msg Pointer to a transport_message.
+	@return 1 if successful, or 0 if not.  The only error condition is if @a msg is NULL.
+
+	If msg_xml is already populated, keep it, and return immediately.
+
+	The contents of the &lt;message&gt; element come from various members of the
+	transport_message.  Store the resulting string as the msg_xml member.
+
+	To build the XML we first build a DOM structure, and then export it to a string.  That
+	way we can let the XML library worry about replacing certain characters with
+	character entity references -- not a trivial task when UTF-8 characters may be present.
+*/
 int message_prepare_xml( transport_message* msg ) {
 
 	if( !msg ) return 0;
 	if( msg->msg_xml ) return 1;   /* already done */
-	
-	xmlNodePtr	message_node;
-	xmlNodePtr	body_node;
-	xmlNodePtr	thread_node;
-	xmlNodePtr	subject_node;
-	xmlNodePtr	error_node;
-	
-	xmlDocPtr	doc;
+
+	xmlNodePtr  message_node;
+	xmlNodePtr  body_node;
+	xmlNodePtr  thread_node;
+	xmlNodePtr  subject_node;
+	xmlNodePtr  error_node;
+
+	xmlDocPtr   doc;
 
 	xmlKeepBlanksDefault(0);
 
@@ -267,50 +350,60 @@ int message_prepare_xml( transport_message* msg ) {
 		xmlNewProp( message_node, BAD_CAST "broadcast", BAD_CAST "1" );
 
 	/* Now add nodes where appropriate */
-	char* body				= msg->body;
-	char* subject			= msg->subject;
-	char* thread			= msg->thread; 
+	char* body      = msg->body;
+	char* subject   = msg->subject;
+	char* thread    = msg->thread;
 
 	if( thread && *thread ) {
 		thread_node = xmlNewChild(message_node, NULL, (xmlChar*) "thread", NULL );
 		xmlNodePtr txt = xmlNewText((xmlChar*) thread);
 		xmlAddChild(thread_node, txt);
-		xmlAddChild(message_node, thread_node); 
+		xmlAddChild(message_node, thread_node);
 	}
 
 	if( subject && *subject ) {
 		subject_node = xmlNewChild(message_node, NULL, (xmlChar*) "subject", NULL );
 		xmlNodePtr txt = xmlNewText((xmlChar*) subject);
 		xmlAddChild(subject_node, txt);
-		xmlAddChild( message_node, subject_node ); 
+		xmlAddChild( message_node, subject_node );
 	}
 
 	if( body && *body ) {
 		body_node = xmlNewChild(message_node, NULL, (xmlChar*) "body", NULL);
 		xmlNodePtr txt = xmlNewText((xmlChar*) body);
 		xmlAddChild(body_node, txt);
-		xmlAddChild( message_node, body_node ); 
+		xmlAddChild( message_node, body_node );
 	}
 
+	// Export the xmlDoc to a string
 	xmlBufferPtr xmlbuf = xmlBufferCreate();
 	xmlNodeDump( xmlbuf, doc, xmlDocGetRootElement(doc), 0, 0);
 	msg->msg_xml = strdup((const char*) (xmlBufferContent(xmlbuf)));
-	
+
 	xmlBufferFree(xmlbuf);
-	xmlFreeDoc( doc );		 
+	xmlFreeDoc( doc );
 	xmlCleanupParser();
-	
+
 	return 1;
 }
 
 
+/**
+	@brief Extract the username from a Jabber ID.
+	@param jid Pointer to the Jabber ID.
+	@param buf Pointer to a receiving buffer supplied by the caller.
+	@param size Maximum number of characters to copy, not including the terminal nul.
 
+	A jabber ID is of the form "username@domain/resource", where the resource is optional.
+	Here we copy the username portion into the supplied buffer, plus a terminal nul.  If there
+	is no "@" character, leave the buffer as an empty string.
+*/
 void jid_get_username( const char* jid, char buf[], int size ) {
 
 	if( jid == NULL || buf == NULL || size <= 0 ) { return; }
 
 	buf[ 0 ] = '\0';
-	
+
 	/* find the @ and return whatever is in front of it */
 	int len = strlen( jid );
 	int i;
@@ -325,16 +418,24 @@ void jid_get_username( const char* jid, char buf[], int size ) {
 }
 
 
+/**
+	@brief Extract the resource from a Jabber ID.
+	@param jid Pointer to the Jabber ID.
+	@param buf Pointer to a receiving buffer supplied by the caller.
+	@param size Maximum number of characters to copy, not including the terminal nul.
+
+	A jabber ID is of the form "username@domain/resource", where the resource is optional.
+	Here we copy the resource portion, if present into the supplied buffer, plus a terminal nul.
+	If there is no resource, leave the buffer as an empty string.
+*/
 void jid_get_resource( const char* jid, char buf[], int size)  {
 	if( jid == NULL || buf == NULL || size <= 0 ) { return; }
 
 	// Find the last slash, if any
-	
 	const char* start = strrchr( jid, '/' );
 	if( start ) {
 
 		// Copy the text beyond the slash, up to a maximum size
-
 		size_t len = strlen( ++start );
 		if( len > size ) len = size;
 		memcpy( buf, start, len );
@@ -344,13 +445,23 @@ void jid_get_resource( const char* jid, char buf[], int size)  {
 		buf[ 0 ] = '\0';
 }
 
+/**
+	@brief Extract the domain from a Jabber ID.
+	@param jid Pointer to the Jabber ID.
+	@param buf Pointer to a receiving buffer supplied by the caller.
+	@param size Maximum number of characters to copy, not including the terminal nul.
+
+	A jabber ID is of the form "username@domain/resource", where the resource is optional.
+	Here we copy the domain portion into the supplied buffer, plus a terminal nul.  If the
+	Jabber ID is ill-formed, the results may be ill-formed or empty.
+*/
 void jid_get_domain( const char* jid, char buf[], int size ) {
 
 	if(jid == NULL) return;
 
 	int len = strlen(jid);
 	int i;
-	int index1 = 0; 
+	int index1 = 0;
 	int index2 = 0;
 
 	for( i = 0; i!= len; i++ ) {
@@ -364,18 +475,27 @@ void jid_get_domain( const char* jid, char buf[], int size ) {
 		int dlen = index2 - index1;
 		if(dlen > size) dlen = size;
 		memcpy( buf, jid + index1, dlen );
-		buf[dlen] = '\0'; // memcpy doesn't provide the nul
+		buf[dlen] = '\0';
 	}
 	else
 		buf[ 0 ] = '\0';
 }
 
+/**
+	@brief Turn a transport_message into an error message.
+	@param msg Pointer to the transport_message.
+	@param type Pointer to a short string denoting the type of error.
+	@param err_code The error code.
+
+	The @a type and @a err_code parameters correspond to the "type" and "code" attributes of
+	a Jabber error element.
+*/
 void set_msg_error( transport_message* msg, const char* type, int err_code ) {
 
 	if( !msg ) return;
-	
+
 	if( type != NULL && *type ) {
-		msg->error_type = safe_malloc( strlen(type)+1); 
+		msg->error_type = safe_malloc( strlen(type)+1);
 		strcpy( msg->error_type, type );
 		msg->error_code = err_code;
 	}
