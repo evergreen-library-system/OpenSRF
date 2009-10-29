@@ -33,7 +33,7 @@ case "$?" in
         echo Please make sure your system has the GNU autoconf and automake
         echo toolchains installed.
         echo "--------------------------------------------------------------"
-        exit
+        exit 1
         ;;
 esac
 
