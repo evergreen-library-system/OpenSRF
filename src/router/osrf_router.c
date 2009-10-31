@@ -9,7 +9,7 @@
 	@brief Maintains a set of server nodes belonging to the same class.
 */
 struct _osrfRouterClassStruct {
-	osrfRouter* router;         /**< The osrfRouter that owns this osrfRouterClass */
+	osrfRouter* router;         /**< The osrfRouter that owns this osrfRouterClass. */
 	osrfHashIterator* itr;      /**< Iterator for set of osrfRouterNodes. */
 	/**
 		@brief Hash store of server nodes.
@@ -552,7 +552,7 @@ static void osrfRouterClassFree( char* classname, void* c ) {
 	osrfRouterNode* node;
 
 	while( (node = osrfHashIteratorNext(rclass->itr)) )
-		osrfRouterClassRemoveNode( rclass->router, classname, node->remoteId );
+		osrfHashRemove( rclass->nodes, node->remoteId );
 
 	osrfHashIteratorFree(rclass->itr);
 	osrfHashFree(rclass->nodes);

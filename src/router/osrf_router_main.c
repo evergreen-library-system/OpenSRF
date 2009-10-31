@@ -29,25 +29,18 @@
 static osrfRouter* router = NULL;
 
 /**
-	@brief Respond to signal by exiting immediately.
+	@brief Respond to signal by cleaning up and exiting immediately.
 	@param signo The signal number.
 */
 void routerSignalHandler( int signo ) {
 	osrfLogWarning( OSRF_LOG_MARK, "Received signal [%d], cleaning up...", signo );
 
-    /* for now, just forcibly exit.  This is not a friendly way to clean up, but
-     * there is a bug in osrfRouterFree() (in particular with cleaning up sockets),
-     * that can cause the router process to stick around.  If we do this, we
-     * are guaranteed to exit.
-     */
-    _exit(0);
-
 	osrfConfigCleanup();
 	osrfRouterFree(router);
+	osrfLogWarning( OSRF_LOG_MARK, "Cleanup successful.  Re-raising signal" );
 	router = NULL;
 
-	// Exit by re-raising the signal so that the parent
-	// process can detect it
+	// Re-raise the signal so that the parent process can detect it.
 	
 	signal( signo, SIG_DFL );
 	raise( signo );
