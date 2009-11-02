@@ -5,6 +5,25 @@
 	@brief Implementation of osrfRouter.
 */
 
+/* a router maintains a list of server classes */
+struct osrfRouterStruct {
+
+	osrfHash* classes;    /**< our list of server classes */
+	char* domain;         /**< Domain name of Jabber server. */
+	char* name;           /**< Router's username for the Jabber logon. */
+	char* resource;       /**< Router's resource name for the Jabber logon. */
+	char* password;       /**< Router's password for the Jabber logon. */
+	int port;             /**< Jabber's port number. */
+	sig_atomic_t stop;    /**< To be set by signal handler to interrupt main loop */
+
+	/** Array of client domains that we allow to send requests through us. */
+	osrfStringArray* trustedClients;
+	/** Array of server domains that we allow to register, etc. with us. */
+	osrfStringArray* trustedServers;
+
+	transport_client* connection;
+};
+
 /**
 	@brief Maintains a set of server nodes belonging to the same class.
 */
@@ -61,10 +80,8 @@ static int osrfRouterHandleAppResponse( osrfRouter* router,
 static int osrfRouterHandleMethodNFound( osrfRouter* router, transport_message* msg,
 		osrfMessage* omsg );
 
-#define ROUTER_SOCKFD connection->session->sock_id
 #define ROUTER_REGISTER "register"
 #define ROUTER_UNREGISTER "unregister"
-
 
 #define ROUTER_REQUEST_CLASS_LIST "opensrf.router.info.class.list"
 #define ROUTER_REQUEST_STATS_NODE_FULL "opensrf.router.info.stats.class.node.all"
@@ -91,8 +108,8 @@ void router_stop( osrfRouter* router )
 	@param resource Router's resource name for the Jabber logon.
 	@param password Router's password for the Jabber logon.
 	@param port Jabber's port number.
-	@param trustedClients The array of client domains that we allow to send requests through us.
-	@param trustedServers The array of server domains that we allow to register, etc. with us.
+	@param trustedClients Array of client domains that we allow to send requests through us.
+	@param trustedServers Array of server domains that we allow to register, etc. with us.
 	@return Pointer to the newly allocated osrfRouter.
 
 	Don't connect to Jabber yet.  We'll do that later, upon a call to osrfRouterConnect().
@@ -145,12 +162,24 @@ int osrfRouterConnect( osrfRouter* router ) {
 	return 0;
 }
 
+/**
+	@brief Enter endless loop to receive and respond to input.
+	@param router Pointer to the osrfRouter that's looping.
+	@return 
+
+	On each iteration: wait for incoming messages to arrive on any of our sockets -- i.e.
+	either the top level socket belong to the router or any of the lower level sockets
+	belonging to the classes.  React to the incoming activity as needed.
+
+	We don't exit the loop until we receive a signal to stop.
+*/
 void osrfRouterRun( osrfRouter* router ) {
 	if(!(router && router->classes)) return;
 
-	int routerfd = router->ROUTER_SOCKFD;
+	int routerfd = client_sock_fd( router->connection );
 	int selectret = 0;
 
+	// Loop until a signal handler sets router->stop
 	while( ! router->stop ) {
 
 		fd_set set;
@@ -194,7 +223,7 @@ void osrfRouterRun( osrfRouter* router ) {
 
 					osrfLogDebug( OSRF_LOG_MARK, "Checking %s for activity...", classname );
 
-					int sockfd = class->ROUTER_SOCKFD;
+					int sockfd = client_sock_fd( class->connection );
 					if(FD_ISSET( sockfd, &set )) {
 						osrfLogDebug( OSRF_LOG_MARK, "Socket is active: %d", sockfd );
 						numhandled++;
@@ -654,7 +683,7 @@ static int _osrfRouterFillFDSet( osrfRouter* router, fd_set* set ) {
 	if(!(router && router->classes && set)) return -1;
 
 	FD_ZERO(set);
-	int maxfd = router->ROUTER_SOCKFD;
+	int maxfd = client_sock_fd( router->connection );
 	FD_SET(maxfd, set);
 
 	int sockid;
@@ -666,7 +695,7 @@ static int _osrfRouterFillFDSet( osrfRouter* router, fd_set* set ) {
 		const char* classname = osrfHashIteratorKey(itr);
 
 		if( classname && (class = osrfRouterFindClass( router, classname )) ) {
-			sockid = class->ROUTER_SOCKFD;
+			sockid = client_sock_fd( class->connection );
 
 			if( osrfUtilsCheckFileDescriptor( sockid ) ) {
 

@@ -20,24 +20,8 @@
 extern "C" {
 #endif
 
-/* a router maintains a list of server classes */
-struct _osrfRouterStruct {
-
-	osrfHash* classes;    /**< our list of server classes */
-	char* domain;         /**< Domain name of Jabber server. */
-	char* name;           /**< Router's username for the Jabber logon. */
-	char* resource;       /**< Router's resource name for the Jabber logon. */
-	char* password;       /**< Router's password for the Jabber logon. */
-	int port;             /**< Jabber's port number. */
-	sig_atomic_t stop;    /**< To be set by signal handler to interrupt main loop */
-
-	osrfStringArray* trustedClients;
-	osrfStringArray* trustedServers;
-
-	transport_client* connection;
-};
-
-typedef struct _osrfRouterStruct osrfRouter;
+struct osrfRouterStruct;
+typedef struct osrfRouterStruct osrfRouter;
 
 /**
   Allocates a new router.  
@@ -54,9 +38,6 @@ osrfRouter* osrfNewRouter( const char* domain, const char* name, const char* res
 	const char* password, int port, osrfStringArray* trustedClients,
 	osrfStringArray* trustedServers );
 
-/**
-  Connects the given router to the network
-  */
 int osrfRouterConnect( osrfRouter* router );
 
 /**
@@ -72,16 +53,6 @@ void router_stop( osrfRouter* router );
   Frees a router
   */
 void osrfRouterFree( osrfRouter* router );
-
-/**
-  Handles connects, disconnects, etc.
-  */
-//int osrfRouterHandeStatusMessage( osrfRouter* router, transport_message* msg );
-
-/**
-  Handles REQUEST messages 
-  */
-//int osrfRouterHandleRequestMessage( osrfRouter* router, transport_message* msg );
 
 #ifdef __cplusplus
 }
