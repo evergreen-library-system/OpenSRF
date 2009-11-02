@@ -73,6 +73,18 @@ static int osrfRouterHandleMethodNFound( osrfRouter* router, transport_message* 
 #define ROUTER_REQUEST_STATS_CLASS_SUMMARY "opensrf.router.info.stats.class.summary"
 
 /**
+	@brief Stop the otherwise infinite main loop of the router.
+	@param router Pointer to the osrfRouter to be stopped.
+
+	To be called by a signal handler.
+*/
+void router_stop( osrfRouter* router )
+{
+	if( router )
+		router->stop = 1;
+}
+
+/**
 	@brief Allocate and initialize a new osrfRouter.
 	@param domain Domain name of Jabber server
 	@param name Router's username for the Jabber logon.
@@ -101,6 +113,7 @@ osrfRouter* osrfNewRouter(
 	router->password       = strdup(password);
 	router->resource       = strdup(resource);
 	router->port           = port;
+	router->stop           = 0;
 
 	router->trustedClients = trustedClients;
 	router->trustedServers = trustedServers;
@@ -138,15 +151,25 @@ void osrfRouterRun( osrfRouter* router ) {
 	int routerfd = router->ROUTER_SOCKFD;
 	int selectret = 0;
 
-	while(1) {
+	while( ! router->stop ) {
 
 		fd_set set;
 		int maxfd = _osrfRouterFillFDSet( router, &set );
 		int numhandled = 0;
 
 		if( (selectret = select(maxfd + 1, &set, NULL, NULL, NULL)) < 0 ) {
-			osrfLogWarning( OSRF_LOG_MARK, "Top level select call failed with errno %d", errno);
-			continue;
+			if( EINTR == errno ) {
+				if( router->stop ) {
+					osrfLogWarning( OSRF_LOG_MARK, "Top level select call interrupted by signal" );
+					break;
+				}
+				else
+					continue;    // Irrelevant signal; ignore it
+			} else {
+				osrfLogWarning( OSRF_LOG_MARK,
+						"Top level select call failed with errno %d", errno);
+				continue;
+			}
 		}
 
 		/* see if there is a top level router message */
@@ -156,7 +179,6 @@ void osrfRouterRun( osrfRouter* router ) {
 			numhandled++;
 			osrfRouterHandleIncoming( router );
 		}
-
 
 		/* now check each of the connected classes and see if they have data to route */
 		while( numhandled < selectret ) {

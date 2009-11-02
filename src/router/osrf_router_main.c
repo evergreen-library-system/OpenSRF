@@ -28,26 +28,23 @@
 */
 static osrfRouter* router = NULL;
 
-/**
-	@brief Respond to signal by cleaning up and exiting immediately.
-	@param signo The signal number.
-*/
-void routerSignalHandler( int signo ) {
-	osrfLogWarning( OSRF_LOG_MARK, "Received signal [%d], cleaning up...", signo );
-
-	osrfConfigCleanup();
-	osrfRouterFree(router);
-	osrfLogWarning( OSRF_LOG_MARK, "Cleanup successful.  Re-raising signal" );
-	router = NULL;
-
-	// Re-raise the signal so that the parent process can detect it.
-	
-	signal( signo, SIG_DFL );
-	raise( signo );
-}
+static sig_atomic_t stop_signal = 0;
 
 static void setupRouter(jsonObject* configChunk);
 
+/**
+	@brief Respond to signal by setting a switch that will interrupt the main loop.
+	@param signo The signal number.
+
+	Signal handler.  We not only interrupt the main loop but also remember the signal
+	number so that we can report it later and re-raise it.
+*/
+void routerSignalHandler( int signo ) {
+	
+	signal( signo, routerSignalHandler );
+	router_stop( router );
+	stop_signal = signo;
+}
 
 /**
 	@brief The top-level function of the router program.
@@ -98,12 +95,12 @@ int main( int argc, char* argv[] ) {
         jsonObject* configChunk = jsonObjectGetIndex(configInfo, i);
 		if( ! jsonObjectGetKey( configChunk, "transport" ) )
 		{
-			// In searching the configuration file for a given context, we may have found a spurious
-			// hit on an unrelated part of the configuration file that happened to use the same XML
-			// tag.  In fact this happens routinely in practice.
+			// In searching the configuration file for a given context, we may have found a
+			// spurious hit on an unrelated part of the configuration file that happened to use
+			// the same XML tag.  In fact this happens routinely in practice.
 			
-			// If we don't see a member for "transport" then this is presumably such a spurious hit,
-			// so we silently ignore it.
+			// If we don't see a member for "transport" then this is presumably such a spurious
+			// hit, so we silently ignore it.
 			
 			// It is also possible that it's the right part of the configuration file but it has a
 			// typo or other such error, making it look spurious.  In that case, well, too bad.
@@ -114,6 +111,13 @@ int main( int argc, char* argv[] ) {
 			break;  /* We're a child; don't spawn any more children here */
 		}
     }
+
+	if( stop_signal ) {
+		// Interrupted by a signal?  Re raise so the parent can see it.
+		osrfLogWarning( OSRF_LOG_MARK, "Interrupted by signal %d; re-raising",
+				(int) stop_signal );
+		raise( stop_signal );
+	}
 
 	return EXIT_SUCCESS;
 }
@@ -224,6 +228,8 @@ static void setupRouter(jsonObject* configChunk) {
 
 	osrfRouterFree(router);
 	router = NULL;
+	
+	osrfLogInfo( OSRF_LOG_MARK, "Router freed" );
 
 	return;
 }

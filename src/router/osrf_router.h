@@ -23,12 +23,13 @@ extern "C" {
 /* a router maintains a list of server classes */
 struct _osrfRouterStruct {
 
-	osrfHash* classes;	/* our list of server classes */
-	char* domain;			/* our login domain */
-	char* name;
-	char* resource;
-	char* password;
-	int port;
+	osrfHash* classes;    /**< our list of server classes */
+	char* domain;         /**< Domain name of Jabber server. */
+	char* name;           /**< Router's username for the Jabber logon. */
+	char* resource;       /**< Router's resource name for the Jabber logon. */
+	char* password;       /**< Router's password for the Jabber logon. */
+	int port;             /**< Jabber's port number. */
+	sig_atomic_t stop;    /**< To be set by signal handler to interrupt main loop */
 
 	osrfStringArray* trustedClients;
 	osrfStringArray* trustedServers;
@@ -65,6 +66,7 @@ int osrfRouterConnect( osrfRouter* router );
   */
 void osrfRouterRun( osrfRouter* router );
 
+void router_stop( osrfRouter* router );
 
 /**
   Frees a router
