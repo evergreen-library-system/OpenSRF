@@ -58,14 +58,15 @@ int main( int argc, char** argv ) {
 
 /**
 	@brief Allocate and initialize a transport_client.
-	@param server Hostname or IP address where the Jabber server resides.
+	@param server Domain name where the Jabber server resides.
 	@param port Port used for connecting to Jabber (0 if using UNIX domain socket).
 	@param unix_path Name of Jabber's socket in file system (if using UNIX domain socket).
 	@param component Boolean; true if we're a Jabber component.
 	@return A pointer to a newly created transport_client.
 
-	Create a transport_client with a transport_session and an empty message queue (but don't open a connection yet).
-	Install a callback function in the transport_session to enqueue incoming messages.
+	Create a transport_client with a transport_session and an empty message queue (but don't
+	open a connection yet).  Install a callback function in the transport_session to enqueue
+	incoming messages.
 
 	The calling code is responsible for freeing the transport_client by calling client_free().
 */
@@ -318,3 +319,10 @@ int client_free( transport_client* client ){
 	return 1;
 }
 
+int client_sock_fd( transport_client* client )
+{
+	if( !client )
+		return 0;
+	else
+		return client->session->sock_id;
+}
