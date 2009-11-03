@@ -195,9 +195,9 @@ void osrfRouterRun( osrfRouter* router ) {
 				else
 					continue;    // Irrelevant signal; ignore it
 			} else {
-				osrfLogWarning( OSRF_LOG_MARK,
-						"Top level select call failed with errno %d", errno);
-				continue;
+				osrfLogWarning( OSRF_LOG_MARK, "Top level select call failed with errno %d: %s",
+						errno, strerror( errno ) );
+				break;
 			}
 		}
 
