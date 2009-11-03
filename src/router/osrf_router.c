@@ -3,12 +3,28 @@
 /**
 	@file osrf_router.c
 	@brief Implementation of osrfRouter.
+
+	The router opens multiple Jabber sessions for the same username and domain, one for
+	each server class.  The Jabber IDs for these sessions are distinguished by the use of
+	the class names as Jabber resource names.
+
+	For each server class there may be multiple server nodes.
 */
 
 /* a router maintains a list of server classes */
+
+/**
+	@brief Collection of server classes, with connection parameters for Jabber.
+ */
 struct osrfRouterStruct {
 
-	osrfHash* classes;    /**< our list of server classes */
+	/** 
+		@brief Hash store of server classes.
+	
+		For each entry, the key is the class name, and the corresponding datum is an
+		osrfRouterClass.
+	*/
+	osrfHash* classes;
 	char* domain;         /**< Domain name of Jabber server. */
 	char* name;           /**< Router's username for the Jabber logon. */
 	char* resource;       /**< Router's resource name for the Jabber logon. */
@@ -37,6 +53,7 @@ struct _osrfRouterClassStruct {
 		We install a callback for freeing the entries.
 	*/
 	osrfHash* nodes;
+	/** The transport_client used for communicating with this server. */
 	transport_client* connection;
 };
 typedef struct _osrfRouterClassStruct osrfRouterClass;
@@ -52,11 +69,11 @@ struct _osrfRouterNodeStruct {
 typedef struct _osrfRouterNodeStruct osrfRouterNode;
 
 static osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* classname );
-static int osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId );
-static int osrfRouterHandleMessage( osrfRouter* router, transport_message* msg );
+static void osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId );
+static void osrfRouterHandleCommand( osrfRouter* router, transport_message* msg );
 static int osrfRouterClassHandleMessage( osrfRouter* router,
 		osrfRouterClass* rclass, transport_message* msg );
-static int osrfRouterRemoveClass( osrfRouter* router, const char* classname );
+static void osrfRouterRemoveClass( osrfRouter* router, const char* classname );
 static int osrfRouterClassRemoveNode( osrfRouter* router, const char* classname,
 		const char* remoteId );
 static void osrfRouterClassFree( char* classname, void* rclass );
@@ -70,7 +87,7 @@ static int osrfRouterClassHandleIncoming( osrfRouter* router,
 		const char* classname,  osrfRouterClass* class );
 static transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
 		const char* classname, osrfRouterClass* rclass, transport_message* msg );
-static int osrfRouterHandleAppRequest( osrfRouter* router, transport_message* msg );
+static void osrfRouterHandleAppRequest( osrfRouter* router, transport_message* msg );
 static int osrfRouterRespondConnect( osrfRouter* router, transport_message* msg,
 		osrfMessage* omsg );
 static int osrfRouterProcessAppRequest( osrfRouter* router, transport_message* msg,
@@ -171,7 +188,7 @@ int osrfRouterConnect( osrfRouter* router ) {
 	either the top level socket belong to the router or any of the lower level sockets
 	belonging to the classes.  React to the incoming activity as needed.
 
-	We don't exit the loop until we receive a signal to stop.
+	We don't exit the loop until we receive a signal to stop, or until we encounter an error.
 */
 void osrfRouterRun( osrfRouter* router ) {
 	if(!(router && router->classes)) return;
@@ -239,29 +256,41 @@ void osrfRouterRun( osrfRouter* router ) {
 
 
 /**
-	@brief Handle incoming requests to the router and make sure the sender is allowed.
+	@brief Handle incoming requests to the router.
 	@param router Pointer to the osrfRouter.
+
+	Read all available input messages from the top-level transport_client.  For each one:
+	if the domain of the sender's Jabber id is on the list of approved domains, pass the
+	message to osrfRouterHandleCommand() (if there's a message) or osrfRouterHandleAppRequest()
+	(if there isn't).  If the domain is @em not on the approved list, log a warning and
+	discard the message.
 */
 static void osrfRouterHandleIncoming( osrfRouter* router ) {
 	if(!router) return;
 
 	transport_message* msg = NULL;
 
-	while( (msg = client_recv( router->connection, 0 )) ) {
+	while( (msg = client_recv( router->connection, 0 )) ) {  // for each message
 
 		if( msg->sender ) {
 
 			osrfLogDebug(OSRF_LOG_MARK,
 				"osrfRouterHandleIncoming(): investigating message from %s", msg->sender);
 
-			/* if the sender is not a trusted server, drop the message */
+			/* if the sender is not on a trusted domain, drop the message */
 			int len = strlen(msg->sender) + 1;
 			char domain[len];
-			memset(domain, 0, sizeof(domain));
 			jid_get_domain( msg->sender, domain, len - 1 );
 
-			if(osrfStringArrayContains( router->trustedServers, domain))
-				osrfRouterHandleMessage( router, msg );
+			if(osrfStringArrayContains( router->trustedServers, domain)) {
+
+				// If there's a command, obey it.  Otherwise, treat
+				// the message as an app session level request.
+				if( msg->router_command && *msg->router_command )
+					osrfRouterHandleCommand( router, msg );
+				else
+					osrfRouterHandleAppRequest( router, msg );
+			}
 			else
 				osrfLogWarning( OSRF_LOG_MARK, 
 						"Received message from un-trusted server domain %s", msg->sender);
@@ -330,58 +359,49 @@ static int osrfRouterClassHandleIncoming( osrfRouter* router, const char* classn
 }
 
 /**
-	@brief Handle a top level router message.
+	@brief Handle a top level router command.
 	@param router Pointer to the osrfRouter.
 	@param msg Pointer to the transport_message to be handled.
-	@return 0 on success.
+
+	Currently supported commands:
+	- "register" -- Add a server class and/or a server node to our lists.
+	- "unregister" -- Remove a server class (and any associated nodes) from our list.
 */
-static int osrfRouterHandleMessage( osrfRouter* router, transport_message* msg ) {
-	if(!(router && msg)) return -1;
+static void osrfRouterHandleCommand( osrfRouter* router, transport_message* msg ) {
+	if(!(router && msg && msg->router_class)) return;
 
-	if( !msg->router_command || !strcmp(msg->router_command,""))
-		/* assume it's an app session level request */
-		return osrfRouterHandleAppRequest( router, msg );
-
-	if(!msg->router_class) return -1;
-
-	osrfRouterClass* class = NULL;
-	if(!strcmp(msg->router_command, ROUTER_REGISTER)) {
-		class = osrfRouterFindClass( router, msg->router_class );
+	if( !strcmp( msg->router_command, ROUTER_REGISTER ) ) {
 
 		osrfLogInfo( OSRF_LOG_MARK, "Registering class %s", msg->router_class );
 
-		if(!class) class = osrfRouterAddClass( router, msg->router_class );
+		// Add the server class to the list, if it isn't already there
+		osrfRouterClass* class = osrfRouterFindClass( router, msg->router_class );
+		if(!class)
+			class = osrfRouterAddClass( router, msg->router_class );
 
-		if(class) {
-
-			if( osrfRouterClassFindNode( class, msg->sender ) )
-				return 0;
-			else
-				osrfRouterClassAddNode( class, msg->sender );
-
-		}
+		// Add the node to the osrfRouterClass's list, if it isn't already there
+		if(class && ! osrfRouterClassFindNode( class, msg->sender ) )
+			osrfRouterClassAddNode( class, msg->sender );
 
 	} else if( !strcmp( msg->router_command, ROUTER_UNREGISTER ) ) {
 
-		if( msg->router_class && strcmp( msg->router_class, "") ) {
+		if( msg->router_class && *msg->router_class ) {
 			osrfLogInfo( OSRF_LOG_MARK, "Unregistering router class %s", msg->router_class );
 			osrfRouterClassRemoveNode( router, msg->router_class, msg->sender );
 		}
 	}
-
-	return 0;
 }
 
 
-
 /**
-	@brief Adds a new router class handler to the router's list of handlers.
-	@param router The current router instance.
+	@brief Adds an osrfRouterClass to a router, and open a connection for it.
+	@param router Pointer to the osrfRouter.
 	@param classname The name of the class this node handles.
-	@return 0 on success, -1 on connection error.
+	@return A pointer to the new osrfRouterClass, or NULL upon error.
 
-	Also connects the class handler to the network at "routername@domain/classname".
- */
+	Open a Jabber session to be used for this server class.  The Jabber ID incorporates the
+	class name as the resource name.
+*/
 static osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* classname ) {
 	if(!(router && router->classes && classname)) return NULL;
 
@@ -395,12 +415,12 @@ static osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* clas
 
 	if(!client_connect( class->connection, router->name,
 			router->password, classname, 10, AUTH_DIGEST ) ) {
-				// We cast away the constness of classname.  Though ugly, this
-				// cast is benign because osrfRouterClassFree doesn't actually
-				// write through the pointer.  We can't readily change its
-				// signature because it is used for a function pointer, and
-				// we would have to change other signatures the same way.
-				osrfRouterClassFree( (char *) classname, class );
+		// Cast away the constness of classname.  Though ugly, this
+		// cast is benign because osrfRouterClassFree doesn't actually
+		// write through the pointer.  We can't readily change its
+		// signature because it is used for a function pointer, and
+		// we would have to change other signatures the same way.
+		osrfRouterClassFree( (char *) classname, class );
 		return NULL;
 	}
 
@@ -410,13 +430,12 @@ static osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* clas
 
 
 /**
-	@brief Add a new server node to the given class.
-	@param rclass The Router class to add the node to.
-	@param remoteId The remote login of this node.
-	@return 0 on success, -1 on generic error.
+	@brief Add a new server node to an osrfRouterClass.
+	@param rclass Pointer to the osrfRouterClass to add the node to.
+	@param remoteId The remote login of the osrfRouterNode.
 */
-static int osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId ) {
-	if(!(rclass && rclass->nodes && remoteId)) return -1;
+static void osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId ) {
+	if(!(rclass && rclass->nodes && remoteId)) return;
 
 	osrfLogInfo( OSRF_LOG_MARK, "Adding router node for remote id %s", remoteId );
 
@@ -426,7 +445,6 @@ static int osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId
 	node->remoteId = strdup(remoteId);
 
 	osrfHashSet( rclass->nodes, node, remoteId );
-	return 0;
 }
 
 /* copy off the lastMessage, remove the offending node, send error if it's tht last node
@@ -539,19 +557,18 @@ static int osrfRouterClassHandleMessage(
 
 
 /**
-	@brief Remove a given class from the router, freeing as it goes
+	@brief Remove a given osrfRouterClass from an osrfRouter
 	@param router Pointer to the osrfRouter.
 	@param classname The name of the class to be removed.
-	@return 0 if successful, or -1 upon error.
 
-	The only error conditions are when one of the parameters is NULL, or when the
-	class name is an empty string.
+	A callback function, installed in the osrfHash, frees the osrfRouterClass and any
+	associated nodes.
 */
-static int osrfRouterRemoveClass( osrfRouter* router, const char* classname ) {
-	if(!(router && router->classes && classname)) return -1;
-	osrfLogInfo( OSRF_LOG_MARK, "Removing router class %s", classname );
-	osrfHashRemove( router->classes, classname );
-	return 0;
+static void osrfRouterRemoveClass( osrfRouter* router, const char* classname ) {
+	if( router && router->classes && classname ) {
+		osrfLogInfo( OSRF_LOG_MARK, "Removing router class %s", classname );
+		osrfHashRemove( router->classes, classname );
+	}
 }
 
 
@@ -719,7 +736,7 @@ static int _osrfRouterFillFDSet( osrfRouter* router, fd_set* set ) {
 	handles messages that don't have a 'router_command' set.  They are assumed to
 	be app request messages
 */
-static int osrfRouterHandleAppRequest( osrfRouter* router, transport_message* msg ) {
+static void osrfRouterHandleAppRequest( osrfRouter* router, transport_message* msg ) {
 
 	int T = 32;
 	osrfMessage* arr[T];
@@ -749,7 +766,7 @@ static int osrfRouterHandleAppRequest( osrfRouter* router, transport_message* ms
 		osrfMessageFree( omsg );
 	}
 
-	return 0;
+	return;
 }
 
 static int osrfRouterRespondConnect( osrfRouter* router, transport_message* msg,
