@@ -495,7 +495,9 @@ void set_msg_error( transport_message* msg, const char* type, int err_code ) {
 	if( !msg ) return;
 
 	if( type != NULL && *type ) {
-		msg->error_type = safe_malloc( strlen(type)+1);
+		if( msg->error_type )
+			free( msg->error_type );
+		msg->error_type = safe_malloc( strlen(type)+1 );
 		strcpy( msg->error_type, type );
 		msg->error_code = err_code;
 	}
