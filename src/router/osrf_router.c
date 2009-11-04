@@ -25,6 +25,7 @@ struct osrfRouterStruct {
 		osrfRouterClass.
 	*/
 	osrfHash* classes;
+	osrfHashIterator* class_itr;  /**< For traversing the list of classes */
 	char* domain;         /**< Domain name of Jabber server. */
 	char* name;           /**< Router's username for the Jabber logon. */
 	char* resource;       /**< Router's resource name for the Jabber logon. */
@@ -155,6 +156,7 @@ osrfRouter* osrfNewRouter(
 
 	router->classes = osrfNewHash();
 	osrfHashSetCallback(router->classes, &osrfRouterClassFree);
+	router->class_itr = osrfNewHashIterator( router->classes );
 
 	// Prepare to connect to Jabber, as a non-component, over TCP (not UNIX domain).
 	router->connection = client_init( domain, port, NULL, 0 );
@@ -230,13 +232,14 @@ void osrfRouterRun( osrfRouter* router ) {
 		while( numhandled < selectret ) {
 
 			osrfRouterClass* class;
-			osrfHashIterator* itr = osrfNewHashIterator(router->classes);
+			osrfHashIterator* itr = router->class_itr;  // remove a layer of indirection
+			osrfHashIteratorReset( itr );
 
 			while( (class = osrfHashIteratorNext(itr)) ) {
 
 				const char* classname = osrfHashIteratorKey(itr);
 
-				if( classname && (class = osrfRouterFindClass( router, classname )) ) {
+				if( classname ) {
 
 					osrfLogDebug( OSRF_LOG_MARK, "Checking %s for activity...", classname );
 
@@ -247,11 +250,9 @@ void osrfRouterRun( osrfRouter* router ) {
 						osrfRouterClassHandleIncoming( router, classname, class );
 					}
 				}
-			}
-
-			osrfHashIteratorFree(itr);
-		}
-	}
+			} // end while
+		} // end while
+	} // end while
 }
 
 
@@ -647,6 +648,7 @@ static void osrfRouterNodeFree( char* remoteId, void* n ) {
 void osrfRouterFree( osrfRouter* router ) {
 	if(!router) return;
 
+	osrfHashIteratorFree( router->class_itr);
 	osrfHashFree(router->classes);
 	free(router->domain);
 	free(router->name);
