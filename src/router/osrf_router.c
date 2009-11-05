@@ -203,7 +203,6 @@ void osrfRouterRun( osrfRouter* router ) {
 
 		fd_set set;
 		int maxfd = _osrfRouterFillFDSet( router, &set );
-		int numhandled = 0;
 
 		// Wait indefinitely for an incoming message
 		if( (selectret = select(maxfd + 1, &set, NULL, NULL, NULL)) < 0 ) {
@@ -224,33 +223,28 @@ void osrfRouterRun( osrfRouter* router ) {
 		/* see if there is a top level router message */
 		if( FD_ISSET(routerfd, &set) ) {
 			osrfLogDebug( OSRF_LOG_MARK, "Top router socket is active: %d", routerfd );
-			numhandled++;
 			osrfRouterHandleIncoming( router );
 		}
 
-		/* now check each of the connected classes and see if they have data to route */
-		while( numhandled < selectret ) {
+		/* Check each of the connected classes and see if they have data to route */
+		osrfRouterClass* class;
+		osrfHashIterator* itr = router->class_itr;  // remove a layer of indirection
+		osrfHashIteratorReset( itr );
 
-			osrfRouterClass* class;
-			osrfHashIterator* itr = router->class_itr;  // remove a layer of indirection
-			osrfHashIteratorReset( itr );
+		while( (class = osrfHashIteratorNext(itr)) ) {   // for each class
 
-			while( (class = osrfHashIteratorNext(itr)) ) {
+			const char* classname = osrfHashIteratorKey(itr);
 
-				const char* classname = osrfHashIteratorKey(itr);
+			if( classname ) {
 
-				if( classname ) {
+				osrfLogDebug( OSRF_LOG_MARK, "Checking %s for activity...", classname );
 
-					osrfLogDebug( OSRF_LOG_MARK, "Checking %s for activity...", classname );
-
-					int sockfd = client_sock_fd( class->connection );
-					if(FD_ISSET( sockfd, &set )) {
-						osrfLogDebug( OSRF_LOG_MARK, "Socket is active: %d", sockfd );
-						numhandled++;
-						osrfRouterClassHandleIncoming( router, classname, class );
-					}
+				int sockfd = client_sock_fd( class->connection );
+				if(FD_ISSET( sockfd, &set )) {
+					osrfLogDebug( OSRF_LOG_MARK, "Socket is active: %d", sockfd );
+					osrfRouterClassHandleIncoming( router, classname, class );
 				}
-			} // end while
+			}
 		} // end while
 	} // end while
 }
@@ -344,7 +338,7 @@ static void osrfRouterClassHandleIncoming( osrfRouter* router, const char* class
 						/* we have no one to send the requested message to */
 						message_free( msg );
 						osrfLogClearXid();
-						return;
+						continue;
 					}
 					osrfRouterClassHandleMessage( router, class, bouncedMessage );
 					message_free( bouncedMessage );
@@ -506,6 +500,8 @@ static transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
 			message_free( error );
 		}
 
+		/* remove the dead node */
+		osrfRouterClassRemoveNode( router, classname, msg->sender);
 		return NULL;
 
 	} else {
