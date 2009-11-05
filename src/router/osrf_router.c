@@ -72,7 +72,7 @@ typedef struct _osrfRouterNodeStruct osrfRouterNode;
 static osrfRouterClass* osrfRouterAddClass( osrfRouter* router, const char* classname );
 static void osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteId );
 static void osrfRouterHandleCommand( osrfRouter* router, transport_message* msg );
-static int osrfRouterClassHandleMessage( osrfRouter* router,
+static void osrfRouterClassHandleMessage( osrfRouter* router,
 		osrfRouterClass* rclass, transport_message* msg );
 static void osrfRouterRemoveClass( osrfRouter* router, const char* classname );
 static int osrfRouterClassRemoveNode( osrfRouter* router, const char* classname,
@@ -84,7 +84,7 @@ static osrfRouterNode* osrfRouterClassFindNode( osrfRouterClass* rclass,
 		const char* remoteId );
 static int _osrfRouterFillFDSet( osrfRouter* router, fd_set* set );
 static void osrfRouterHandleIncoming( osrfRouter* router );
-static int osrfRouterClassHandleIncoming( osrfRouter* router,
+static void osrfRouterClassHandleIncoming( osrfRouter* router,
 		const char* classname,  osrfRouterClass* class );
 static transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
 		const char* classname, osrfRouterClass* rclass, transport_message* msg );
@@ -205,6 +205,7 @@ void osrfRouterRun( osrfRouter* router ) {
 		int maxfd = _osrfRouterFillFDSet( router, &set );
 		int numhandled = 0;
 
+		// Wait indefinitely for an incoming message
 		if( (selectret = select(maxfd + 1, &set, NULL, NULL, NULL)) < 0 ) {
 			if( EINTR == errno ) {
 				if( router->stop ) {
@@ -221,7 +222,6 @@ void osrfRouterRun( osrfRouter* router ) {
 		}
 
 		/* see if there is a top level router message */
-
 		if( FD_ISSET(routerfd, &set) ) {
 			osrfLogDebug( OSRF_LOG_MARK, "Top router socket is active: %d", routerfd );
 			numhandled++;
@@ -278,7 +278,7 @@ static void osrfRouterHandleIncoming( osrfRouter* router ) {
 			osrfLogDebug(OSRF_LOG_MARK,
 				"osrfRouterHandleIncoming(): investigating message from %s", msg->sender);
 
-			/* if the sender is not on a trusted domain, drop the message */
+			/* if the server is not on a trusted domain, drop the message */
 			int len = strlen(msg->sender) + 1;
 			char domain[len];
 			jid_get_domain( msg->sender, domain, len - 1 );
@@ -302,22 +302,25 @@ static void osrfRouterHandleIncoming( osrfRouter* router ) {
 }
 
 /**
-	@brief Handle incoming requests to a router class.
+	@brief Handle all available incoming messages for a router class.
 	@param router Pointer to the osrfRouter.
 	@param classname Class name.
-	@param class Pointer to an osrfRouterClass.
+	@param class Pointer to the osrfRouterClass.
 
-	Make sure sender is a trusted client.
+	For each message: if the sender is on a trusted domain, process the message.
 */
-static int osrfRouterClassHandleIncoming( osrfRouter* router, const char* classname,
+static void osrfRouterClassHandleIncoming( osrfRouter* router, const char* classname,
 		osrfRouterClass* class ) {
-	if(!(router && class)) return -1;
+	if(!(router && class)) return;
 
 	transport_message* msg;
 	osrfLogDebug( OSRF_LOG_MARK, "osrfRouterClassHandleIncoming()");
 
+	// For each incoming message for this class:
 	while( (msg = client_recv( class->connection, 0 )) ) {
 
+		// Save the transaction id so that we can incorporate it
+		// into any relevant messages
 		osrfLogSetXid(msg->osrf_xid);
 
 		if( msg->sender ) {
@@ -328,23 +331,25 @@ static int osrfRouterClassHandleIncoming( osrfRouter* router, const char* classn
 			/* if the client is not from a trusted domain, drop the message */
 			int len = strlen(msg->sender) + 1;
 			char domain[len];
-			memset(domain, 0, sizeof(domain));
 			jid_get_domain( msg->sender, domain, len - 1 );
 
-			if(osrfStringArrayContains( router->trustedClients, domain)) {
+			if(osrfStringArrayContains( router->trustedClients, domain )) {
 
-				transport_message* bouncedMessage = NULL;
 				if( msg->is_error )  {
 
+					transport_message* bouncedMessage = osrfRouterClassHandleBounce(
+							router, classname, class, msg );
 					/* handle bounced message */
-					if( !(bouncedMessage = osrfRouterClassHandleBounce( router, classname,
-							class, msg )) )
-						return -1; /* we have no one to send the requested message to */
-
-					message_free( msg );
-					msg = bouncedMessage;
-				}
-				osrfRouterClassHandleMessage( router, class, msg );
+					if( !bouncedMessage ) {
+						/* we have no one to send the requested message to */
+						message_free( msg );
+						osrfLogClearXid();
+						return;
+					}
+					osrfRouterClassHandleMessage( router, class, bouncedMessage );
+					message_free( bouncedMessage );
+				} else
+					osrfRouterClassHandleMessage( router, class, msg );
 
 			} else {
 				osrfLogWarning( OSRF_LOG_MARK, 
@@ -352,11 +357,9 @@ static int osrfRouterClassHandleIncoming( osrfRouter* router, const char* classn
 			}
 		}
 
-		osrfLogClearXid();
 		message_free( msg );
+		osrfLogClearXid();  // We're done with this transaction id
 	}
-
-	return 0;
 }
 
 /**
@@ -366,7 +369,8 @@ static int osrfRouterClassHandleIncoming( osrfRouter* router, const char* classn
 
 	Currently supported commands:
 	- "register" -- Add a server class and/or a server node to our lists.
-	- "unregister" -- Remove a server class (and any associated nodes) from our list.
+	- "unregister" -- Remove a node from a class, and the class as well if no nodes are
+	left for it.
 */
 static void osrfRouterHandleCommand( osrfRouter* router, transport_message* msg ) {
 	if(!(router && msg && msg->router_class)) return;
@@ -448,7 +452,7 @@ static void osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteI
 	osrfHashSet( rclass->nodes, node, remoteId );
 }
 
-/* copy off the lastMessage, remove the offending node, send error if it's tht last node
+/* copy off the lastMessage, remove the offending node, send error if it's the last node
 	? return NULL if it's the last node ?
 */
 
@@ -457,6 +461,20 @@ static void osrfRouterClassAddNode( osrfRouterClass* rclass, const char* remoteI
 	as a newly inconing message.  Removes the dead node and If there are no more
 	nodes to send the new message to, returns NULL.
 */
+/**
+	@brief Handle an input message representing a Jabber error stanza.
+	@param router Pointer to the current osrfRouter.
+	@param classname Name of the class to which the error stanza was sent.
+	@param rclass Pointer to the osrfRouterClass to which the error stanza was sent.
+	@param msg Pointer to the transport_message representing the error stanza.
+	@return Pointer to a newly allocated transport_message; or NULL (see remarks).
+
+	The presumption is that the relevant node is dead.  If another node is available for
+	the same class, then remove the dead one, create a clone of the message to be sent
+	elsewhere, and return a pointer to it.  If there is no other node for the same class,
+	send a cancel message back to Jabber, and return NULL.  If we can't even do that because
+	the entire class is dead, log a message to that effect and return NULL.
+*/
 static transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
 		const char* classname, osrfRouterClass* rclass, transport_message* msg ) {
 
@@ -464,9 +482,13 @@ static transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
 
 	osrfLogInfo( OSRF_LOG_MARK, "Received network layer error message from %s", msg->sender );
 	osrfRouterNode* node = osrfRouterClassFindNode( rclass, msg->sender );
-	transport_message* lastSent = NULL;
+	if( ! node ) {
+		osrfLogInfo( OSRF_LOG_MARK,
+			"network error occurred after we removed the class.. ignoring");
+		return NULL;
+	}
 
-	if( node && osrfHashGetCount(rclass->nodes) == 1 ) { /* the last node is dead */
+	if( osrfHashGetCount(rclass->nodes) == 1 ) { /* the last node is dead */
 
 		if( node->lastMessage ) {
 			osrfLogWarning( OSRF_LOG_MARK,
@@ -488,24 +510,22 @@ static transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
 
 	} else {
 
-		if( node ) {
-			if( node->lastMessage ) {
-				osrfLogDebug( OSRF_LOG_MARK, "Cloning lastMessage so next node can send it");
-				lastSent = message_init( node->lastMessage->body,
-					node->lastMessage->subject, node->lastMessage->thread, "", node->lastMessage->router_from );
-				message_set_router_info( lastSent, node->lastMessage->router_from, NULL, NULL, NULL, 0 );
+		transport_message* lastSent = NULL;
+
+		if( node->lastMessage ) {
+			osrfLogDebug( OSRF_LOG_MARK, "Cloning lastMessage so next node can send it");
+			lastSent = message_init( node->lastMessage->body,
+				node->lastMessage->subject, node->lastMessage->thread, "",
+				node->lastMessage->router_from );
+			message_set_router_info( lastSent, node->lastMessage->router_from,
+				NULL, NULL, NULL, 0 );
 			message_set_osrf_xid( lastSent, node->lastMessage->osrf_xid );
-			}
-		} else {
-
-			osrfLogInfo(OSRF_LOG_MARK, "network error occurred after we removed the class.. ignoring");
-			return NULL;
 		}
-	}
 
-	/* remove the dead node */
-	osrfRouterClassRemoveNode( router, classname, msg->sender);
-	return lastSent;
+		/* remove the dead node */
+		osrfRouterClassRemoveNode( router, classname, msg->sender);
+		return lastSent;
+	}
 }
 
 
@@ -517,9 +537,9 @@ static transport_message* osrfRouterClassHandleBounce( osrfRouter* router,
 	and propogate them on to the new message being sent
 	@return 0 on success
 */
-static int osrfRouterClassHandleMessage(
+static void osrfRouterClassHandleMessage(
 		osrfRouter* router, osrfRouterClass* rclass, transport_message* msg ) {
-	if(!(router && rclass && msg)) return -1;
+	if(!(router && rclass && msg)) return;
 
 	osrfLogDebug( OSRF_LOG_MARK, "osrfRouterClassHandleMessage()");
 
@@ -552,8 +572,6 @@ static int osrfRouterClassHandleMessage(
 		}
 
 	}
-
-	return 0;
 }
 
 
@@ -708,7 +726,8 @@ static int _osrfRouterFillFDSet( osrfRouter* router, fd_set* set ) {
 	int sockid;
 
 	osrfRouterClass* class = NULL;
-	osrfHashIterator* itr = osrfNewHashIterator(router->classes);
+	osrfHashIterator* itr = router->class_itr;
+	osrfHashIteratorReset( itr );
 
 	while( (class = osrfHashIteratorNext(itr)) ) {
 		const char* classname = osrfHashIteratorKey(itr);
@@ -730,7 +749,6 @@ static int _osrfRouterFillFDSet( osrfRouter* router, fd_set* set ) {
 		}
 	}
 
-	osrfHashIteratorFree(itr);
 	return maxfd;
 }
 
