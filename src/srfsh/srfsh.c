@@ -1306,8 +1306,9 @@ static void parse_args( const char* request, osrfStringArray* cmd_array )
 	while( !done ) {
 		OSRF_BUFFER_RESET( parser.buf );
 
-		// skip any white space
-		while( *parser.itr && isspace( (unsigned char) *parser.itr ) )
+		// skip any white space or commas
+		while( *parser.itr
+			   && ( isspace( (unsigned char) *parser.itr ) || ',' == *parser.itr ) )
 			++parser.itr;
 
 		if( '\0' == *parser.itr )
