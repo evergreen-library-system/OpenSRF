@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2005  Georgia Public Library Service 
+Copyright (C) 2005  Georgia Public Library Service
 Bill Erickson <highfalutin@gmail.com>
 Mike Rylander <mrylander@gmail.com>
 
@@ -16,9 +16,9 @@ GNU General Public License for more details.
 
 /**
 	@file utils.h
-	
+
 	@brief Prototypes for various low-level utility functions, and related macros.
-	
+
 	Many of these facilities concern the growing_buffer structure,
 	a sort of poor man's string class that allocates more space for
 	itself as needed.
@@ -72,7 +72,7 @@ extern "C" {
 	 This macro is used to help ferret out code that inappropriately assumes that a newly
 	 allocated buffer is filled with binary zeros.  No code should rely on it to do
 	 anything in particular.  Someday it may turn into a no-op.
- */
+*/
 #define osrf_clearbuf( s, n ) \
 	do { \
 		char * clearbuf_temp_s = (s); \
@@ -149,8 +149,8 @@ extern "C" {
 #define OSRF_BUFFER_RESET(gb) \
 	do {\
 		growing_buffer* _gb = gb;\
-    	memset(_gb->buf, 0, _gb->size);\
-    	_gb->n_used = 0;\
+		memset(_gb->buf, 0, _gb->size);\
+		_gb->n_used = 0;\
 	}while(0)
 
 /**
@@ -191,7 +191,7 @@ extern "C" {
 	@param l A long
 
 	The long is formatted into a local buffer whose address is given by the pointer
-	LONG_TO_STRING.  This buffer is NOT allocated dynamically, so don't try to free it.
+	LONGSTR.  This buffer is NOT allocated dynamically, so don't try to free it.
 */
 #define LONG_TO_STRING(l) \
 	unsigned int __len = snprintf(NULL, 0, "%ld", l) + 2;\
@@ -205,8 +205,8 @@ extern "C" {
 	@param l A double
 
 	The double is formatted into a local buffer whose address is given by the pointer
-	LONG_TO_STRING.  This buffer is NOT allocated dynamically, so don't try to free it.
- */
+	DOUBLESTR.  This buffer is NOT allocated dynamically, so don't try to free it.
+*/
 #define DOUBLE_TO_STRING(l) \
 	unsigned int __len = snprintf(NULL, 0, "%f", l) + 2; \
 	char __b[__len]; \
@@ -219,8 +219,8 @@ extern "C" {
 	@param l A long double
 
 	The long double is formatted into a local buffer whose address is given by the pointer
-	LONG_TO_STRING.  This buffer is NOT allocated dynamically, so don't try to free it.
- */
+	LONGDOUBLESTR.  This buffer is NOT allocated dynamically, so don't try to free it.
+*/
 #define LONG_DOUBLE_TO_STRING(l) \
 	unsigned int __len = snprintf(NULL, 0, "%Lf", l) + 2; \
 	char __b[__len]; \
@@ -234,8 +234,8 @@ extern "C" {
 	@param l An int
 
 	The int is formatted into a local buffer whose address is given by the pointer
-	LONG_TO_STRING.  This buffer is NOT allocated dynamically, so don't try to free it.
- */
+	INTSTR.  This buffer is NOT allocated dynamically, so don't try to free it.
+*/
 #define INT_TO_STRING(l) \
 	unsigned int __len = snprintf(NULL, 0, "%d", l) + 2; \
 	char __b[__len]; \
@@ -264,22 +264,19 @@ extern "C" {
 	*/
 
 
-	
-
-
 /**
 	@brief The maximum buffer size for a growing_buffer
 */
-#define BUFFER_MAX_SIZE 10485760 
+#define BUFFER_MAX_SIZE 10485760
 
-/* these are evil and should be condemned 
+/* these are evil and should be condemned
 	! Only use these if you are done with argv[].
 	call init_proc_title() first, then call
-	set_proc_title. 
+	set_proc_title.
 	the title is only allowed to be as big as the
 	initial process name of the process (full size of argv[]).
 	truncation may occur.
- */
+*/
 int init_proc_title( int argc, char* argv[] );
 int set_proc_title( const char* format, ... );
 
@@ -320,9 +317,6 @@ typedef struct growing_buffer_struct growing_buffer;
 
 growing_buffer* buffer_init( int initial_num_bytes);
 
-// XXX This isn't defined in utils.c!! removing for now...
-//int buffer_addchar(growing_buffer* gb, char c);
-
 int buffer_add(growing_buffer* gb, const char* c);
 int buffer_add_n(growing_buffer* gb, const char* data, size_t n);
 int buffer_fadd(growing_buffer* gb, const char* format, ... );
@@ -333,33 +327,32 @@ int buffer_free( growing_buffer* gb );
 int buffer_add_char(growing_buffer* gb, char c);
 char buffer_chomp(growing_buffer* gb); // removes the last character from the buffer
 
-/* returns the size needed to fill in the vsnprintf buffer.  
-	* ! this calls va_end on the va_list argument*
-	*/
+/*
+	returns the size needed to fill in the vsnprintf buffer.
+	this calls va_end on the va_list argument*
+*/
 long va_list_size(const char* format, va_list);
 
-/* turns a va list into a string, caller must free the 
+/* turns a va list into a string, caller must free the
 	allocated char */
 char* va_list_to_string(const char* format, ...);
 
 
 /* string escape utility method.  escapes unicode embedded characters.
-	escapes the usual \n, \t, etc. 
+	escapes the usual \n, \t, etc.
 	for example, if you provide a string like so:
 
 	hello,
 		you
 
 	you would get back:
-	hello,\n\tyou
- 
- */
+	\thello,\n\t\tyou
+*/
 char* uescape( const char* string, int size, int full_escape );
 
 /* utility methods */
 int set_fl( int fd, int flags );
 int clr_fl( int fd, int flags );
-
 
 
 // Utility method
@@ -370,18 +363,18 @@ double get_timestamp_millis( void );
 int stringisnum(const char* s);
 
 
-/* 
-  Calculates the md5 of the text provided.
-  The returned string must be freed by the caller.
-  */
+/*
+	Calculates the md5 of the text provided.
+	The returned string must be freed by the caller.
+*/
 char* md5sum( const char* text, ... );
 
 
 /*
-  Checks the validity of the file descriptor
-  returns -1 if the file descriptor is invalid
-  returns 0 if the descriptor is OK
-  */
+	Checks the validity of the file descriptor
+	returns -1 if the file descriptor is invalid
+	returns 0 if the descriptor is OK
+*/
 int osrfUtilsCheckFileDescriptor( int fd );
 
 #ifdef __cplusplus
