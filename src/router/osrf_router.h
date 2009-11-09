@@ -1,21 +1,32 @@
 #ifndef OSRF_ROUTER_H
 #define OSRF_ROUTER_H
 
-#include <sys/select.h>
-#include <signal.h>
-#include <stdio.h>
+/**
+	@file 
+	@brief Collection of routines for an OSRF router.
 
-#include "opensrf/utils.h"
-#include "opensrf/log.h"
-#include "opensrf/osrf_list.h"
-#include "opensrf/osrf_hash.h"
+	The router receives messages from clients and passes each one to a listener for the
+	targeted service.  Where there are multiple listeners for the same service, the router
+	picks one on a round-robin basis.  If a message bounces because the listener has died,
+	the router sends it to another listener for the same service, if one is available.
 
-#include "opensrf/string_array.h"
-#include "opensrf/transport_client.h"
-#include "opensrf/transport_message.h"
+	The server's response to the client, if any, bypasses the router.  If the server needs to
+	set up a stateful session with a client, it does so directly (well, via Jabber).  Only the
+	initial message from the client passes through the router.
 
-#include "opensrf/osrf_message.h"
+	Thus the router serves two main functions:
+	- It spreads the load across multiple listeners for the same service.
+	- It reroutes bounced messages to alternative listeners.
 
+	It also responds to requests for information about the number of messages routed to
+	different services and listeners.
+*/
+
+/*
+	Prerequisite:
+
+		string_array.h
+*/
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,35 +34,16 @@ extern "C" {
 struct osrfRouterStruct;
 typedef struct osrfRouterStruct osrfRouter;
 
-/**
-  Allocates a new router.  
-  @param domain The jabber domain to connect to
-  @param name The login name for the router
-  @param resource The login resource for the router
-  @param password The login password for the new router
-  @param port The port to connect to the jabber server on
-  @param trustedClients The array of client domains that we allow to send requests through us
-  @param trustedServers The array of server domains that we allow to register, etc. with ust.
-  @return The allocated router or NULL on memory error
-  */
-osrfRouter* osrfNewRouter( const char* domain, const char* name, const char* resource, 
+osrfRouter* osrfNewRouter( const char* domain, const char* name, const char* resource,
 	const char* password, int port, osrfStringArray* trustedClients,
 	osrfStringArray* trustedServers );
 
 int osrfRouterConnect( osrfRouter* router );
 
-/**
-  Waits for incoming data to route
-  If this function returns, then the router's connection to the jabber server
-  has failed.
-  */
 void osrfRouterRun( osrfRouter* router );
 
 void router_stop( osrfRouter* router );
 
-/**
-  Frees a router
-  */
 void osrfRouterFree( osrfRouter* router );
 
 #ifdef __cplusplus
