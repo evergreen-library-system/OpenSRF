@@ -703,12 +703,10 @@ static int handle_request( const osrfStringArray* cmd_array, int relay ) {
 	if(!client)
 		return 1;
 
-	const char* word_1 = osrfStringArrayGetString( cmd_array, 1 );
-	const char* word_2 = osrfStringArrayGetString( cmd_array, 2 );
+	const char* server = osrfStringArrayGetString( cmd_array, 1 );
+	const char* method = osrfStringArrayGetString( cmd_array, 2 );
 
-	if( word_1 ) {
-		const char* server = word_1;
-		const char* method = word_2;
+	if( server ) {
 		int i;
 		growing_buffer* buffer = NULL;
 		if( !relay ) {
@@ -823,17 +821,18 @@ int send_request( const char* server,
 	
 				if( pretty_print ) {
 					char* j = jsonObjectToJSON(omsg->_result_content);
-					//content = json_printer(j); 
-					content = jsonFormatString(j);
-					free(j);
+					if( j ) {
+						content = jsonFormatString(j);
+						free(j);
+					} else
+						content = strdup( "(null)" );
 				} else {
-					const char * temp_content = jsonObjectGetString(omsg->_result_content);
-					if( ! temp_content )
-						temp_content = "[null]";
-					content = strdup( temp_content );
+					content = jsonObjectToJSON(omsg->_result_content);
+					if( ! content )
+						content = strdup( "(null)" );
 				}
-				
-				printf( "\nReceived Data: %s\n", content ); 
+
+				printf( "\nReceived Data: %s\n", content );
 				free(content);
 	
 			} else {
@@ -860,24 +859,24 @@ int send_request( const char* server,
 	
 				if( pretty_print && omsg->_result_content ) {
 					char* j = jsonObjectToJSON(omsg->_result_content);
-					//content = json_printer(j); 
-					content = jsonFormatString(j);
-					free(j);
+					if( j ) {
+						content = jsonFormatString(j);
+						free(j);
+					} else
+						content = strdup( "(null)" );
 				} else {
-					const char * temp_content = jsonObjectGetString(omsg->_result_content);
-					if( temp_content )
-						content = strdup( temp_content );
-					else
-						content = NULL;
+					content = jsonObjectToJSON(omsg->_result_content);
+					if( ! content )
+						content = strdup( "(null)" );
 				}
 
-				buffer_add( resp_buffer, "\nReceived Data: " ); 
+				buffer_add( resp_buffer, "\nReceived Data: " );
 				buffer_add( resp_buffer, content );
-				buffer_add( resp_buffer, "\n" );
+				buffer_add_char( resp_buffer, '\n' );
 				free(content);
-	
+
 			} else {
-	
+
 				buffer_add( resp_buffer, "\nReceived Exception:\nName: " );
 				buffer_add( resp_buffer, omsg->status_name );
 				buffer_add( resp_buffer, "\nStatus: " );
@@ -906,7 +905,7 @@ int send_request( const char* server,
 	fprintf(less, "Request Time in seconds: %.6f\n", end - start );
 	fputs("------------------------------------\n", less);
 
-	pclose(less); 
+	pclose(less);
 
 	osrf_app_session_request_finish( session, req_id );
 
@@ -1026,8 +1025,8 @@ static int print_help( void ) {
 			"       - To view the session id later, enter: print login\n"
 			"---------------------------------------------------------------------------------\n"
 			"\n"
-			"Note: long output is piped through 'less' when the 'raw_print' variable is true.\n"
-			"To search in 'less', type: /<search>\n"
+			"Note: long output is piped through 'less' unless the 'raw_print' variable\n"
+			"is true.  To search in 'less', type: /<search>\n"
 			"---------------------------------------------------------------------------------\n"
 			"\n",
 			stdout );
