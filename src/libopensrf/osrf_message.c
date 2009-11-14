@@ -6,6 +6,7 @@
 */
 
 static jsonObject* osrfMessageToJSON( const osrfMessage* msg );
+static osrfMessage* deserialize_one_message( const jsonObject* message );
 
 static char default_locale[17] = "en-US\0\0\0\0\0\0\0\0\0\0\0\0";
 static char* current_locale = NULL;
@@ -284,9 +285,9 @@ void osrfMessageFree( osrfMessage* msg ) {
 	@param count Maximum number of messages to serialize.
 	@return Pointer to the JSON string.
 
-	Traverse the array, adding each osrfMessage in turn to a JSON_ARRAY.  Stop when you have added the
-	maximum number of messages, or when you encounter a NULL pointer in the array.  Then translate the
-	JSON_ARRAY into a JSON string.
+	Traverse the array, adding each osrfMessage in turn to a JSON_ARRAY.  Stop when you have added
+	the maximum number of messages, or when you encounter a NULL pointer in the array.  Then
+	translate the JSON_ARRAY into a JSON string.
 
 	The calling code is responsible for freeing the returned string.
 */
@@ -350,15 +351,16 @@ char* osrf_message_serialize(const osrfMessage* msg) {
 
 	The data for "payload" is also a JSON_HASH, whose structure depends on the message type:
 
-	For a STATUS message, the payload's classname is msg->status_name.  The keys are "status" (carrying
-	msg->status_text) and "statusCode" (carrying the status code as a string).
+	For a STATUS message, the payload's classname is msg->status_name.  The keys are "status"
+	(carrying msg->status_text) and "statusCode" (carrying the status code as a string).
 
-	For a REQUEST message, the payload's classname is "osrfMethod".  The keys are "method" (carrying
-	msg->method_name) and "params" (carrying a jsonObject to pass any parameters to the method call).
+	For a REQUEST message, the payload's classname is "osrfMethod".  The keys are "method"
+	(carrying msg->method_name) and "params" (carrying a jsonObject to pass any parameters
+	to the method call).
 
-	For a RESULT message, the payload's classname is "osrfResult".  The keys are "status" (carrying
-	msg->status_text), "statusCode" (carrying the status code as a string), and "content" (carrying a jsonObject 
-	to return any results from the method call).
+	For a RESULT message, the payload's classname is "osrfResult".  The keys are "status"
+	(carrying msg->status_text), "statusCode" (carrying the status code as a string), and
+	"content" (carrying a jsonObject to return any results from the method call).
 
 	The calling code is responsible for freeing the returned jsonObject.
 */
@@ -457,137 +459,140 @@ int osrf_message_deserialize(const char* string, osrfMessage* msgs[], int count)
 	int x;
 	for( x = 0; x < json->size && x < count; x++ ) {
 
-		const jsonObject* message = jsonObjectGetIndex(json, x);
+		const jsonObject* message = jsonObjectGetIndex( json, x );
 
-		if(message && message->type != JSON_NULL &&
-			message->classname && !strcmp(message->classname, "osrfMessage")) {
-
-			osrfMessage* new_msg = safe_malloc(sizeof(osrfMessage));
-			new_msg->m_type = 0;
-			new_msg->thread_trace = 0;
-			new_msg->protocol = 0;
-			new_msg->status_name = NULL;
-			new_msg->status_text = NULL;
-			new_msg->status_code = 0;
-			new_msg->is_exception = 0;
-			new_msg->_result_content = NULL;
-			new_msg->result_string = NULL;
-			new_msg->method_name = NULL;
-			new_msg->_params = NULL;
-			new_msg->next = NULL;
-			new_msg->sender_locale = NULL;
-			new_msg->sender_tz_offset = 0;
-
-			// Get the message type.  If not specified, default to CONNECT.
-			const jsonObject* tmp = jsonObjectGetKeyConst(message, "type");
-
-			const char* t;
-			if( ( t = jsonObjectGetString(tmp)) ) {
-
-				if(!strcmp(t, "CONNECT"))           new_msg->m_type = CONNECT;
-				else if(!strcmp(t, "DISCONNECT"))   new_msg->m_type = DISCONNECT;
-				else if(!strcmp(t, "STATUS"))       new_msg->m_type = STATUS;
-				else if(!strcmp(t, "REQUEST"))      new_msg->m_type = REQUEST;
-				else if(!strcmp(t, "RESULT"))       new_msg->m_type = RESULT;
-			}
-
-			// Get the thread trace, defaulting to zero.
-			tmp = jsonObjectGetKeyConst(message, "threadTrace");
-			if(tmp) {
-				const char* tt = jsonObjectGetString(tmp);
-				if(tt) {
-					new_msg->thread_trace = atoi(tt);
-				}
-			}
-
-			// Get the sender's locale, or leave it NULL if not specified.
-			if (current_locale)
-				free( current_locale );
-
-			tmp = jsonObjectGetKeyConst(message, "locale");
-
-			if(tmp && (new_msg->sender_locale = jsonObjectToSimpleString(tmp))) {
-				current_locale = strdup( new_msg->sender_locale );
-			} else {
-				current_locale = NULL;
-			}
-
-			// Get the protocol, defaulting to zero.
-			tmp = jsonObjectGetKeyConst(message, "protocol");
-
-			if(tmp) {
-				const char* proto = jsonObjectGetString(tmp);
-				if(proto) {
-					new_msg->protocol = atoi(proto);
-				}
-			}
-
-			tmp = jsonObjectGetKeyConst(message, "payload");
-			if(tmp) {
-				// Get method name and parameters for a REQUEST
-				const jsonObject* tmp0 = jsonObjectGetKeyConst(tmp,"method");
-				const char* tmp_str = jsonObjectGetString(tmp0);
-				if(tmp_str)
-					new_msg->method_name = strdup(tmp_str);
-
-				tmp0 = jsonObjectGetKeyConst(tmp,"params");
-				if(tmp0) {
-					// Note that we use jsonObjectDecodeClass() instead of
-					// jsonObjectClone().  The classnames are already decoded,
-					// but jsonObjectDecodeClass removes the decoded classnames.
-					new_msg->_params = jsonObjectDecodeClass( tmp0 );
-					if(new_msg->_params && new_msg->_params->type == JSON_NULL)
-						new_msg->_params->type = JSON_ARRAY;
-				}
-
-				// Get status fields for a RESULT or STATUS
-				if(tmp->classname)
-					new_msg->status_name = strdup(tmp->classname);
-
-				tmp0 = jsonObjectGetKeyConst(tmp,"status");
-				tmp_str = jsonObjectGetString(tmp0);
-				if(tmp_str)
-					new_msg->status_text = strdup(tmp_str);
-
-				tmp0 = jsonObjectGetKeyConst(tmp,"statusCode");
-				if(tmp0) {
-					tmp_str = jsonObjectGetString(tmp0);
-					if(tmp_str)
-						new_msg->status_code = atoi(tmp_str);
-					if(tmp0->type == JSON_NUMBER)
-						new_msg->status_code = (int) jsonObjectGetNumber(tmp0);
-				}
-
-				// Get the content for a RESULT
-				tmp0 = jsonObjectGetKeyConst(tmp,"content");
-				if(tmp0) {
-					// Note that we use jsonObjectDecodeClass() instead of
-					// jsonObjectClone().  The classnames are already decoded,
-					// but jsonObjectDecodeClass removes the decoded classnames.
-					new_msg->_result_content = jsonObjectDecodeClass( tmp0 );
-				}
-
-			}
-			msgs[numparsed++] = new_msg;
+		if( message && message->type != JSON_NULL &&
+			message->classname && !strcmp(message->classname, "osrfMessage" )) {
+			msgs[numparsed++] = deserialize_one_message( message );
 		}
 	}
 
-	jsonObjectFree(json);
+	jsonObjectFree( json );
 	return numparsed;
 }
 
+
+/**
+	@brief Translate a jsonObject into a single osrfMessage.
+	@param obj Pointer to the jsonObject to be translated.
+	@return Pointer to a newly created osrfMessage.
+
+	It is assumed that @a obj is non-NULL and points to a valid representation of a message.
+	For a description of the expected structure of this representations, see osrfMessageToJSON().
+
+	The calling code is responsible for freeing the osrfMessage by calling osrfMessageFree().
+*/
+static osrfMessage* deserialize_one_message( const jsonObject* obj ) {
+
+	// Get the message type.  If it isn't present, default to CONNECT.
+	const jsonObject* tmp = jsonObjectGetKeyConst( obj, "type" );
+
+	enum M_TYPE type;
+	const char* t = jsonObjectGetString( tmp );
+	if( t ) {
+
+		if(      !strcmp( t, "CONNECT"    ))   type = CONNECT;
+		else if( !strcmp( t, "DISCONNECT" ))   type = DISCONNECT;
+		else if( !strcmp( t, "STATUS"     ))   type = STATUS;
+		else if( !strcmp( t, "REQUEST"    ))   type = REQUEST;
+		else if( !strcmp( t, "RESULT"     ))   type = RESULT;
+	}
+
+	// Get the thread trace, defaulting to zero.
+	int trace = 0;
+	tmp = jsonObjectGetKeyConst( obj, "threadTrace" );
+	if( tmp ) {
+		const char* tt = jsonObjectGetString( tmp );
+		if( tt ) {
+			trace = atoi( tt );
+		}
+	}
+
+	// Get the protocol, defaulting to zero.
+	int protocol = 0;
+	tmp = jsonObjectGetKeyConst( obj, "protocol" );
+	if(tmp) {
+		const char* proto = jsonObjectGetString(tmp);
+		if( proto ) {
+			protocol = atoi( proto );
+		}
+	}
+
+	// Now that we have the essentials, create an osrfMessage
+	osrfMessage* msg = osrf_message_init( type, trace, protocol );
+
+	// Get the sender's locale, or leave it NULL if not specified.
+	if ( current_locale )
+		free( current_locale );
+
+	tmp = jsonObjectGetKeyConst( obj, "locale" );
+	if(tmp && ( msg->sender_locale = jsonObjectToSimpleString(tmp))) {
+		current_locale = strdup( msg->sender_locale );
+	} else {
+		current_locale = NULL;
+	}
+
+	tmp = jsonObjectGetKeyConst( obj, "payload" );
+	if(tmp) {
+		// Get method name and parameters for a REQUEST
+		const jsonObject* tmp0 = jsonObjectGetKeyConst(tmp,"method");
+		const char* tmp_str = jsonObjectGetString(tmp0);
+		if(tmp_str)
+			msg->method_name = strdup(tmp_str);
+
+		tmp0 = jsonObjectGetKeyConst(tmp,"params");
+		if(tmp0) {
+			// Note that we use jsonObjectDecodeClass() instead of
+			// jsonObjectClone().  The classnames are already decoded,
+			// but jsonObjectDecodeClass removes the decoded classnames.
+			msg->_params = jsonObjectDecodeClass( tmp0 );
+			if(msg->_params && msg->_params->type == JSON_NULL)
+				msg->_params->type = JSON_ARRAY;
+		}
+
+		// Get status fields for a RESULT or STATUS
+		if(tmp->classname)
+			msg->status_name = strdup(tmp->classname);
+
+		tmp0 = jsonObjectGetKeyConst(tmp,"status");
+		tmp_str = jsonObjectGetString(tmp0);
+		if(tmp_str)
+			msg->status_text = strdup(tmp_str);
+
+		tmp0 = jsonObjectGetKeyConst(tmp,"statusCode");
+		if(tmp0) {
+			tmp_str = jsonObjectGetString(tmp0);
+			if(tmp_str)
+				msg->status_code = atoi(tmp_str);
+			if(tmp0->type == JSON_NUMBER)
+				msg->status_code = (int) jsonObjectGetNumber(tmp0);
+		}
+
+		// Get the content for a RESULT
+		tmp0 = jsonObjectGetKeyConst(tmp,"content");
+		if(tmp0) {
+			// Note that we use jsonObjectDecodeClass() instead of
+			// jsonObjectClone().  The classnames are already decoded,
+			// but jsonObjectDecodeClass removes the decoded classnames.
+			msg->_result_content = jsonObjectDecodeClass( tmp0 );
+		}
+
+	}
+
+	return msg;
+}
 
 
 /**
 	@brief Return a pointer to the result content of an osrfMessage.
 	@param msg Pointer to the osrfMessage whose result content is to be returned.
-	@return Pointer to the result content (or NULL if there is no such content, or if @a msg is NULL).
+	@return Pointer to the result content (or NULL if there is no such content, or if @a msg is
+	NULL).
 
-	The returned pointer points into the innards of the osrfMessage.  The calling code should @em not call
-	jsonObjectFree() on it, because the osrfMessage still owns it.
+	The returned pointer points into the innards of the osrfMessage.  The calling code should
+	@em not call jsonObjectFree() on it, because the osrfMessage still owns it.
 */
 jsonObject* osrfMessageGetResult( osrfMessage* msg ) {
 	if(msg) return msg->_result_content;
 	return NULL;
 }
-
