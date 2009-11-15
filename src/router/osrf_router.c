@@ -46,6 +46,8 @@ struct osrfRouterStruct {
 	osrfStringArray* trustedClients;
 	/** Array of server domains that we allow to register, etc. with us. */
 	osrfStringArray* trustedServers;
+	/** List of osrfMessages to be returned from osrfMessageDeserialize() */
+	osrfList* message_list;
 
 	transport_client* connection;
 };
@@ -167,6 +169,7 @@ osrfRouter* osrfNewRouter(
 	router->classes = osrfNewHash();
 	osrfHashSetCallback(router->classes, &osrfRouterClassFree);
 	router->class_itr = osrfNewHashIterator( router->classes );
+	router->message_list = NULL;   // We'll allocate one later
 
 	// Prepare to connect to Jabber, as a non-component, over TCP (not UNIX domain).
 	router->connection = client_init( domain, port, NULL, 0 );
@@ -684,6 +687,7 @@ void osrfRouterFree( osrfRouter* router ) {
 
 	osrfStringArrayFree( router->trustedClients );
 	osrfStringArrayFree( router->trustedServers );
+	osrfListFree( router->message_list );
 
 	client_free( router->connection );
 	free(router);
@@ -772,22 +776,15 @@ static int _osrfRouterFillFDSet( osrfRouter* router, fd_set* set ) {
 */
 static void osrfRouterHandleAppRequest( osrfRouter* router, const transport_message* msg ) {
 
-	int T = 32;
-	osrfMessage* arr[T];
-	
-	// Initialize pointer array to all NULLs
-	int i;
-	for( i = 0; i < T; ++i )
-		arr[ i ] = NULL;
-
-	// Translate the JSON into an array of pointers to osrfMessage
-	int num_msgs = osrf_message_deserialize( msg->body, arr, T );
+	// Translate the JSON into a list of osrfMessages
+	router->message_list = osrfMessageDeserialize( msg->body, router->message_list );
 	osrfMessage* omsg = NULL;
 
 	// Process each osrfMessage
-	for( i = 0; i < num_msgs; i++ ) {
+	int i;
+	for( i = 0; i < router->message_list->size; ++i ) {
 
-		omsg = arr[i];
+		omsg = osrfListGetIndex( router->message_list, i );
 		if( omsg ) {
 
 			switch( omsg->m_type ) {
