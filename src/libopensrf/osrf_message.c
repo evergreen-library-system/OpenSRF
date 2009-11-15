@@ -1,9 +1,17 @@
-#include <opensrf/osrf_message.h>
 
 /**
 	@file osrf_message.c
 	@brief Implementation of osrfMessage.
 */
+
+/* libxml stuff for the config reader */
+#include <libxml/xmlmemory.h>
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
+#include <libxml/tree.h>
+
+#include <opensrf/osrf_message.h>
 
 static jsonObject* osrfMessageToJSON( const osrfMessage* msg );
 static osrfMessage* deserialize_one_message( const jsonObject* message );
@@ -555,7 +563,7 @@ static osrfMessage* deserialize_one_message( const jsonObject* obj ) {
 	// Get the message type.  If it isn't present, default to CONNECT.
 	const jsonObject* tmp = jsonObjectGetKeyConst( obj, "type" );
 
-	enum M_TYPE type;
+	enum M_TYPE type = CONNECT;
 	const char* t = jsonObjectGetString( tmp );
 	if( t ) {
 

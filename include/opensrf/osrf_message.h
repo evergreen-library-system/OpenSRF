@@ -11,14 +11,6 @@
 #include <opensrf/log.h>
 #include <opensrf/osrf_json.h>
 
-
-/* libxml stuff for the config reader */
-#include <libxml/xmlmemory.h>
-#include <libxml/parser.h>
-#include <libxml/xpath.h>
-#include <libxml/xpathInternals.h>
-#include <libxml/tree.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
