@@ -428,6 +428,74 @@ static jsonObject* osrfMessageToJSON( const osrfMessage* msg ) {
 	return json;
 }
 
+/**
+	@brief Translate a JSON array into an osrfList of osrfMessages.
+	@param string The JSON string to be translated.
+	@param msgs Pointer to an osrfList (may be NULL)
+	@return Pointer to an osrfList containing pointers to osrfMessages.
+
+	The JSON string is expected to be a JSON array, with each element encoding an osrfMessage.
+
+	Translate each element of the JSON array into an osrfMessage, and store a pointer to the
+	osrfMessage in an osrfList.
+
+	If the @a list parameter is NULL, create a new osrfList (with osrfMessageFree() as the
+	callback function for freeing items), populate it, and return a pointer to it.  Otherwise
+	clear the osrfList provided and reuse it.
+
+	When calling osrfMessageDeserialize repeatedly, a reasonable strategy is to pass a NULL
+	for the @a list parameter on the first call, and pass the value returned from the first
+	call on subsequent calls.
+
+	The calling code is responsible for eventually freeing the returned osrfList by calling
+	osrfListFree().
+ */
+osrfList* osrfMessageDeserialize( const char* string, osrfList* list ) {
+
+	if( list )
+		osrfListClear( list );
+
+	if( ! string  || ! *string ) {
+		if( ! list ) {
+			list = osrfNewList( 1 );
+			list->freeItem = (void(*)(void*)) osrfMessageFree;
+		}
+		return list;                   // No string?  Return empty list.
+	}
+	
+	// Parse the JSON
+	jsonObject* json = jsonParseString(string);
+	if(!json) {
+		osrfLogWarning( OSRF_LOG_MARK,
+				"osrfMessageDeserialize() unable to parse data: \n%s\n", string);
+		if( ! list ) {
+			list = osrfNewList( 1 );
+			list->freeItem = (void(*)(void*)) osrfMessageFree;
+		}
+		return list;                   // Bad JSON?  Return empty list.
+	}
+
+	const unsigned int count = (int) json->size;
+	if( ! list ) {
+		// Create a right-sized osrfList
+		list = osrfNewList( count );
+		list->freeItem = (void(*)(void*)) osrfMessageFree;
+	}
+
+	// Traverse the JSON_ARRAY, turning each element into an osrfMessage
+	int i;
+	for( i = 0; i < count; ++i ) {
+
+		const jsonObject* message = jsonObjectGetIndex( json, i );
+		if( message && message->type != JSON_NULL &&
+				  message->classname && !strcmp(message->classname, "osrfMessage" )) {
+			osrfListPush( list, deserialize_one_message( message ) );
+		}
+	}
+
+	jsonObjectFree( json );
+	return list;
+}
 
 /**
 	@brief Translate a JSON array into an array of osrfMessages.

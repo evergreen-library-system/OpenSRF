@@ -108,6 +108,8 @@ char* osrf_message_to_xml( osrfMessage* );
 
 char* osrf_message_serialize(const osrfMessage*);
 
+osrfList* osrfMessageDeserialize( const char* string, osrfList* list );
+
 int osrf_message_deserialize(const char* json, osrfMessage* msgs[], int count);
 
 void osrf_message_set_params( osrfMessage* msg, const jsonObject* o );
