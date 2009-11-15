@@ -1,5 +1,5 @@
 /**
-	@file osrf_list.c	
+	@file osrf_list.c
 	@brief Implementation of osrfList, sort of like a vector class.
 */
 
@@ -32,8 +32,8 @@ osrfList* osrfNewListSize( unsigned int size ) {
 	OSRF_MALLOC(list, sizeof(osrfList));
 	list->size = 0;
 	list->freeItem = NULL;
-    if( size <= 0 ) size = 16;
-	list->arrsize	= size;
+	if( size <= 0 ) size = 16;
+	list->arrsize = size;
 	OSRF_MALLOC( list->arrlist, list->arrsize * sizeof(void*) );
 
 	// Nullify all pointers in the array
@@ -78,7 +78,7 @@ int osrfListPush( osrfList* list, void* item ) {
 int osrfListPushFirst( osrfList* list, void* item ) {
 	if(!(list && item)) return -1;
 	int i;
-	for( i = 0; i < list->size; i++ ) 
+	for( i = 0; i < list->size; i++ )
 		if(!list->arrlist[i]) break;
 	osrfListSet( list, item, i );
 	return list->size;
@@ -107,7 +107,7 @@ void* osrfListSet( osrfList* list, void* item, unsigned int position ) {
 
 	int newsize = list->arrsize;
 
-	while( position >= newsize ) 
+	while( position >= newsize )
 		newsize += OSRF_LIST_INC_SIZE;
 
 	if( newsize > list->arrsize ) { /* expand the list if necessary */
@@ -115,7 +115,7 @@ void* osrfListSet( osrfList* list, void* item, unsigned int position ) {
 		OSRF_MALLOC(newarr, newsize * sizeof(void*));
 
 		// Copy the old pointers, and nullify the new ones
-		
+
 		int i;
 		for( i = 0; i < list->arrsize; i++ )
 			newarr[i] = list->arrlist[i];
@@ -161,13 +161,33 @@ void osrfListFree( osrfList* list ) {
 	if( list->freeItem ) {
 		int i; void* val;
 		for( i = 0; i < list->size; i++ ) {
-			if( (val = list->arrlist[i]) ) 
+			if( (val = list->arrlist[i]) )
 				list->freeItem(val);
 		}
 	}
 
 	free(list->arrlist);
 	free(list);
+}
+
+/**
+	@brief Make an osrfList empty.
+	@param list Pointer to the osrfList to be cleared.
+
+	Delete every item in the list.  If a callback function is defined for freeing the items,
+	call it for every item.
+*/
+void osrfListClear( osrfList* list ) {
+	if(!list) return;
+
+	unsigned int i;
+	for( i = 0; i < list->size; ++i ) {
+		if( list->freeItem && list->arrlist[ i ] )
+			list->freeItem( list->arrlist[ i ] );
+		list->arrlist[ i ] = NULL;
+	}
+
+	list->size = 0;
 }
 
 /**
@@ -236,7 +256,7 @@ int osrfListFind( const osrfList* list, void* addr ) {
 	if(!(list && addr)) return -1;
 	int index;
 	for( index = 0; index < list->size; index++ ) {
-		if( list->arrlist[index] == addr ) 
+		if( list->arrlist[index] == addr )
 			return index;
 	}
 	return -1;
@@ -361,7 +381,7 @@ void osrfListIteratorReset( osrfListIterator* itr ) {
 /**
 	@brief Install a default item-freeing callback function (the ANSI standard free() function).
 	@param list A pointer to the osrfList where the callback function will be installed.
- */
+*/
 void osrfListSetDefaultFree( osrfList* list ) {
 	if(!list) return;
 	list->freeItem = free;
