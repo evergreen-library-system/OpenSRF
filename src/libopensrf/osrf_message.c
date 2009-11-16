@@ -40,10 +40,8 @@ osrfMessage* osrf_message_init( enum M_TYPE type, int thread_trace, int protocol
 	msg->is_exception           = 0;
 	msg->_params                = NULL;
 	msg->_result_content        = NULL;
-	msg->result_string          = NULL;
 	msg->method_name            = NULL;
 	msg->sender_locale          = NULL;
-	msg->sender_tz_offset       = 0;
 
 	return msg;
 }
@@ -235,20 +233,17 @@ void osrf_message_set_status_info( osrfMessage* msg,
 
 
 /**
-	@brief Populate the result_string and _result_content members of an osrfMessage.
+	@brief Populate the _result_content membersof an osrfMessage.
 	@param msg Pointer to the osrfMessage to be populated.
-	@param json_string A JSON string encoding a result set.
+	@param json_string A JSON string encoding a result.
 
-	Used for a RESULT message to return the results of a request, such as a database lookup.
+	Used for a RESULT message to return the results of a remote procedure call.
 */
 void osrf_message_set_result_content( osrfMessage* msg, const char* json_string ) {
 	if( msg == NULL || json_string == NULL) return;
-	if( msg->result_string )
-		free( msg->result_string );
 	if( msg->_result_content )
 		jsonObjectFree( msg->_result_content );
 
-	msg->result_string   = strdup(json_string);
 	msg->_result_content = jsonParseString(json_string);
 }
 
@@ -269,9 +264,6 @@ void osrfMessageFree( osrfMessage* msg ) {
 
 	if( msg->_result_content != NULL )
 		jsonObjectFree( msg->_result_content );
-
-	if( msg->result_string != NULL )
-		free( msg->result_string);
 
 	if( msg->method_name != NULL )
 		free(msg->method_name);

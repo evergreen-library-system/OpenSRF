@@ -81,10 +81,6 @@ struct osrf_message_struct {
 	/** Used for RESULT messages: contains the data returned by a remote procedure. */
 	jsonObject* _result_content;
 
-	/** Unparsed JSON string containing the data returned by a remote procedure.
-	Unused and useless. */
-	char* result_string;
-
 	/** For a REQUEST message: name of the remote procedure to call. */
 	char* method_name;
 
@@ -96,10 +92,6 @@ struct osrf_message_struct {
 
 	/** Magical LOCALE hint. */
 	char* sender_locale;
-
-	/** Timezone offset from GMT of sender, in seconds.  Not used. */
-	int sender_tz_offset;
-
 };
 typedef struct osrf_message_struct osrfMessage;
 
