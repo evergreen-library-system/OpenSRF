@@ -1,4 +1,3 @@
-
 /**
 	@file osrf_message.c
 	@brief Implementation of osrfMessage.
@@ -439,7 +438,7 @@ static jsonObject* osrfMessageToJSON( const osrfMessage* msg ) {
 /**
 	@brief Translate a JSON array into an osrfList of osrfMessages.
 	@param string The JSON string to be translated.
-	@param msgs Pointer to an osrfList (may be NULL)
+	@param list Pointer to an osrfList of osrfMessages (may be NULL)
 	@return Pointer to an osrfList containing pointers to osrfMessages.
 
 	The JSON string is expected to be a JSON array, with each element encoding an osrfMessage.

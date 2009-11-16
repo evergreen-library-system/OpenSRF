@@ -4,6 +4,21 @@
 /**
 	@file osrf_message.h
 	@brief Header for osrfMessage
+
+	An osrfMessage is the in-memory representation of a message between applications.
+
+	For transmission, one or more messages are encoded in a JSON array and wrapped in a
+	transport_message, which (together with its JSON cargo) is translated into XML as
+	a Jabber message.
+
+	There are five kinds of messages:
+	- CONNECT -- request to establish a stateful session.
+	- DISCONNECT -- ends a stateful session.
+	- REQUEST -- a remote procedure call.
+	- RESULT -- data returned by a remote procedure call.
+	- STATUS -- reports the success or failure of a requested operation.
+
+	Different kinds of messages use different combinations of the members of an osrfMessage.
 */
 
 #include <opensrf/string_array.h>
@@ -17,65 +32,72 @@ extern "C" {
 
 #define OSRF_XML_NAMESPACE "http://open-ils.org/xml/namespaces/oils_v1"
 
-#define OSRF_STATUS_CONTINUE						100
+#define OSRF_STATUS_CONTINUE             100
 
-#define OSRF_STATUS_OK								200
-#define OSRF_STATUS_ACCEPTED						202
-#define OSRF_STATUS_COMPLETE						205
+#define OSRF_STATUS_OK                   200
+#define OSRF_STATUS_ACCEPTED             202
+#define OSRF_STATUS_COMPLETE             205
 
-#define OSRF_STATUS_REDIRECTED					307
+#define OSRF_STATUS_REDIRECTED           307
 
-#define OSRF_STATUS_BADREQUEST					400
-#define OSRF_STATUS_UNAUTHORIZED					401
-#define OSRF_STATUS_FORBIDDEN						403
-#define OSRF_STATUS_NOTFOUND						404
-#define OSRF_STATUS_NOTALLOWED					405
-#define OSRF_STATUS_TIMEOUT						408
-#define OSRF_STATUS_EXPFAILED						417
+#define OSRF_STATUS_BADREQUEST           400
+#define OSRF_STATUS_UNAUTHORIZED         401
+#define OSRF_STATUS_FORBIDDEN            403
+#define OSRF_STATUS_NOTFOUND             404
+#define OSRF_STATUS_NOTALLOWED           405
+#define OSRF_STATUS_TIMEOUT              408
+#define OSRF_STATUS_EXPFAILED            417
 
-#define OSRF_STATUS_INTERNALSERVERERROR		500
-#define OSRF_STATUS_NOTIMPLEMENTED				501
-#define OSRF_STATUS_VERSIONNOTSUPPORTED		505
+#define OSRF_STATUS_INTERNALSERVERERROR  500
+#define OSRF_STATUS_NOTIMPLEMENTED       501
+#define OSRF_STATUS_VERSIONNOTSUPPORTED  505
 
 
 enum M_TYPE { CONNECT, REQUEST, RESULT, STATUS, DISCONNECT };
 
-#define OSRF_MAX_PARAMS								128;
-
 struct osrf_message_struct {
 
+	/** One of the four message types: CONNECT, REQUEST, RESULT, STATUS, or DISCONNECT. */
 	enum M_TYPE m_type;
+	
+	/** Used to keep track of which responses go with which requests. */
 	int thread_trace;
+	
+	/** Currently serves no discernible purpose, but may be useful someday. */
 	int protocol;
 
-	/* if we're a STATUS message */
+	/** Used for STATUS or RESULT messages. */
 	char* status_name;
 
-	/* if we're a STATUS or RESULT */
+	/** Used for STATUS or RESULT messages. */
 	char* status_text;
+
+	/** Used for STATUS or RESULT messages. */
 	int status_code;
 
+	/** Boolean: true for some kinds of error conditions. */
 	int is_exception;
 
-	/* if we're a RESULT */
+	/** Used for RESULT messages: contains the data returned by a remote procedure. */
 	jsonObject* _result_content;
 
-	/* unparsed json string */
+	/** Unparsed JSON string containing the data returned by a remote procedure.
+	Unused and useless. */
 	char* result_string;
 
-	/* if we're a REQUEST */
+	/** For a REQUEST message: name of the remote procedure to call. */
 	char* method_name;
 
+	/** For a REQUEST message: parameters to pass to the remote procedure call. */
 	jsonObject* _params;
 
-	/* in case anyone wants to make a list of us.  
-		we won't touch this variable */
+	/** Pointer for linked lists.  Used only by calling code. */
 	struct osrf_message_struct* next;
 
-	/* magical LOCALE hint */
+	/** Magical LOCALE hint. */
 	char* sender_locale;
 
-	/* timezone offset from GMT of sender, in seconds */
+	/** Timezone offset from GMT of sender, in seconds.  Not used. */
 	int sender_tz_offset;
 
 };
