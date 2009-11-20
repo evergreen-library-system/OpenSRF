@@ -3,7 +3,7 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (etch/lenny), Ubuntu (gutsy/hardy/intrepid), and Gentoo.
+# Currently supports Debian (etch/lenny), Ubuntu (gutsy/hardy/intrepid/karmic), and Gentoo.
 # Working towards support of CentOS 5 / RHEL 5.
 # Installs Perl prereqs, libjs with Perl wrapper
 #
@@ -17,6 +17,8 @@
 # 	make -f Makefile.install ubuntu-hardy
 # 	- or -
 # 	make -f Makefile.install ubuntu-intrepid
+# 	- or -
+# 	make -f Makefile.install ubuntu-karmic
 # 	- or -
 # 	make -f Makefile.install centos
 # 	- or -
@@ -202,6 +204,10 @@ EXTRA_DEBS = \
 	libjson-xs-perl \
 	libnet-server-perl
 
+EXTRA_DEBS_UBUNTU_KARMIC = \
+	libxml-libxml-perl \
+	libxml-libxslt-perl
+
 # generic CPAN modules:
 #   * DateTime::Format::ISO8601 is packaged by both Debian Lenny and Ubuntu Intrepid
 #   * JSON::XS is packaged by both Debian Lenny and Ubuntu Intrepid
@@ -241,12 +247,14 @@ gentoo: install_gentoos install_gentoo_rc install_gentoo_perl install
 
 rhel: centos
 
-ubuntu-gutsy: generic_ubuntu hardy 
-ubuntu-hardy: generic_ubuntu hardy
-ubuntu-intrepid: generic_ubuntu intrepid
+ubuntu-gutsy: generic_ubuntu install_cpan_xml hardy 
+ubuntu-hardy: generic_ubuntu install_cpan_xml hardy
+ubuntu-intrepid: generic_ubuntu install_cpan_xml intrepid
+ubuntu-karmic: generic_ubuntu karmic
 hardy: install_cpan
 intrepid: install_extra_debs
-generic_ubuntu: generic_debian
+karmic: install_extra_debs install_extra_debs_karmic
+generic_ubuntu: install_debs install_cpan_force debian_sys_config
 
 # - COMMON TARGETS ---------------------------------------------------------
 
@@ -314,6 +322,10 @@ install_debs:
 # Install the debian-specific dependencies for more modern distros
 install_extra_debs:
 	$(APT_TOOL) install $(EXTRA_DEBS)
+
+# Install even more packaged dependencies on modern distros
+install_extra_debs_karmic:
+	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_KARMIC)
 
 # ------------------------------------------------------------------
 # - GENTOO ---------------------------------------------------------
