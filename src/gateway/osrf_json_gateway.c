@@ -112,7 +112,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		ap_log_rerror( APLOG_MARK, APLOG_DEBUG, 0, r, "Using legacy JSON");
 
 	} else {
-		parseJSONFunc = jsonParseString;
+		parseJSONFunc = jsonParse;
 		jsonToStringFunc = jsonObjectToJSON;
 	}
 

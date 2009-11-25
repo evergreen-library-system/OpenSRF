@@ -33,7 +33,7 @@ int main( void ) {
 
 	for( i = 10000000; i; --i )
 	{
-//		pObj = jsonParseString( sample_json );
+//		pObj = jsonParse( sample_json );
 		pObj = jsonNewObject( NULL );
 		jsonObject * p1 = jsonNewObject( NULL );
 		jsonObject * p2 = jsonNewObject( NULL );

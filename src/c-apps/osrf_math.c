@@ -76,7 +76,7 @@ int osrfMathRun( osrfMethodContext* ctx ) {
 					ctx->method->name, a, b );
 
 			/* construct a new params object to send to dbmath */
-			jsonObject* newParams = jsonParseStringFmt( "[ %s, %s ]", a, b );
+			jsonObject* newParams = jsonParseFmt( "[ %s, %s ]", a, b );
 			free(a); free(b);
 
 			/* connect to db math */

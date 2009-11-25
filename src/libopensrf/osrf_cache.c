@@ -56,7 +56,7 @@ jsonObject* osrfCacheGetObject( const char* key, ... ) {
 		const char* data = (const char*) mc_aget( _osrfCache, VA_BUF, strlen(VA_BUF) );
 		if( data ) {
 			osrfLogInternal( OSRF_LOG_MARK, "osrfCacheGetObject(): Returning object (key=%s): %s", VA_BUF, data);
-			obj = jsonParseString( data );
+			obj = jsonParse( data );
 			return obj;
 		}
 		osrfLogDebug(OSRF_LOG_MARK, "No cache data exists with key %s", VA_BUF);

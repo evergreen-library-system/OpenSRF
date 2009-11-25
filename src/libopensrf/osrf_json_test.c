@@ -44,7 +44,7 @@ static void speedTest() {
 
         jsonString = jsonObjectToJSON(hash);
         printf("%s\n\n", jsonString);
-        dupe = jsonParseString(jsonString);
+        dupe = jsonParse(jsonString);
 
         jsonObjectFree(dupe);
         free(jsonString);

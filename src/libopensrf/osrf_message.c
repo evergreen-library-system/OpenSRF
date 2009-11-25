@@ -196,7 +196,7 @@ void osrf_message_set_params( osrfMessage* msg, const jsonObject* o ) {
 void osrf_message_add_param( osrfMessage* msg, const char* param_string ) {
 	if(msg == NULL || param_string == NULL) return;
 	if(!msg->_params) msg->_params = jsonNewObjectType( JSON_ARRAY );
-	jsonObjectPush(msg->_params, jsonParseString(param_string));
+	jsonObjectPush(msg->_params, jsonParse(param_string));
 }
 
 
@@ -244,7 +244,7 @@ void osrf_message_set_result_content( osrfMessage* msg, const char* json_string 
 	if( msg->_result_content )
 		jsonObjectFree( msg->_result_content );
 
-	msg->_result_content = jsonParseString(json_string);
+	msg->_result_content = jsonParse(json_string);
 }
 
 
@@ -463,7 +463,7 @@ osrfList* osrfMessageDeserialize( const char* string, osrfList* list ) {
 	}
 	
 	// Parse the JSON
-	jsonObject* json = jsonParseString(string);
+	jsonObject* json = jsonParse(string);
 	if(!json) {
 		osrfLogWarning( OSRF_LOG_MARK,
 				"osrfMessageDeserialize() unable to parse data: \n%s\n", string);
@@ -514,7 +514,7 @@ int osrf_message_deserialize(const char* string, osrfMessage* msgs[], int count)
 	int numparsed = 0;
 
 	// Parse the JSON
-	jsonObject* json = jsonParseString(string);
+	jsonObject* json = jsonParse(string);
 
 	if(!json) {
 		osrfLogWarning( OSRF_LOG_MARK,
