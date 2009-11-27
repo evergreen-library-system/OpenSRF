@@ -24,11 +24,20 @@ AC_INIT([OpenSRF],[trunk],[open-ils-dev@list.georgialibraries.org])
 AM_INIT_AUTOMAKE([OpenSRF], [trunk])
 AC_REVISION($Revision: 0.1 $)
 AC_CONFIG_SRCDIR([configure.ac])
-AC_PREFIX_DEFAULT([/opensrf/])
+AC_PREFIX_DEFAULT([/opensrf])
 AC_CONFIG_MACRO_DIR([m4])
 
+# Enable $prefix to resolve to a reasonable value in substitutions in
+# scripts if no explict value was passed in to configure
+if test "$prefix" = "NONE"; then
+   prefix=$ac_default_prefix
+fi
+
+# Perl and Python scripts don't want ${prefix} if no value was specified
+eval "eval CONF_DIR=$sysconfdir"
+AC_SUBST([CONF_DIR])
+
 AC_SUBST(prefix)
-AC_SUBST(sysconfdir)
 AC_SUBST(bindir)
 
 
