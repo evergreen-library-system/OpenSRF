@@ -1,5 +1,6 @@
 # Copyright (C) 2008 Equinox Software, Inc.
 # Kevin Beswick <kevinbeswick00@gmail.com>
+# Copyright (C) 2009 Dan Scott <dscott@laurentian.ca>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -29,7 +30,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # Enable $prefix to resolve to a reasonable value in substitutions in
 # scripts if no explict value was passed in to configure
-if test "$prefix" = "NONE"; then
+if test "$prefix" == "NONE"; then
    prefix=$ac_default_prefix
 fi
 

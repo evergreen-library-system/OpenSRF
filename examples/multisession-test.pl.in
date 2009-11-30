@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-use lib '@libdir@/perl5/';
 use OpenSRF::System;
 use OpenILS::Application::AppUtils;
 use OpenILS::Event;
