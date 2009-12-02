@@ -127,6 +127,7 @@ sub do_start {
         launch_listener($service);
         $0 = "OpenSRF controller [$service]";
         while(my $pid = waitpid(-1, 0)) {
+            last if $pid == -1;
             $logger->debug("Cleaning up Perl $service process $pid");
         }
     }
