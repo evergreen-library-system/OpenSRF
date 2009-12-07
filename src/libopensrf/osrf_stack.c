@@ -13,14 +13,35 @@ static void _do_server( osrfAppSession*, osrfMessage* );
 /* tell osrfAppSession where the stack entry is */
 int (*osrf_stack_entry_point) (transport_client*, int, int*)  = &osrf_stack_process;
 
+/**
+	@brief Read and process available transport_messages for a transport_client.
+	@param client Pointer to the transport_client whose socket is to be read.
+	@param timeout How many seconds to wait for the first message.
+	@param msg_received A pointer through which to report whether a message was received.
+	@return 0 upon success (even if a timeout occurred) or -1 upon failure.
+
+	Read and process all available transport_messages from the socket of the specified
+	transport_client.  Pass each one through osrf_stack_transport().
+
+	The timeout applies only to the first message.  Any subsequent messages must be
+	available immediately.  Don't wait for them, even if the timeout has not expired.  In
+	theory, a sufficiently large backlog of input messages could keep you working past the
+	nominal expiration of the timeout.
+
+	The @a msg_received parameter points to an int owned by the calling code and used as
+	a boolean.  Set it to true if you receive at least one transport_message, or to false
+	if you don't.  A timeout is not treated as an error; it just means you must set that
+	boolean to false.
+*/
 static int osrf_stack_process( transport_client* client, int timeout, int* msg_received ) {
 	if( !client ) return -1;
 	transport_message* msg = NULL;
 	if(msg_received) *msg_received = 0;
 
+	// Loop through the available input messages
 	while( (msg = client_recv( client, timeout )) ) {
 		if(msg_received) *msg_received = 1;
-		osrfLogDebug( OSRF_LOG_MARK,  "Received message from transport code from %s", msg->sender );
+		osrfLogDebug( OSRF_LOG_MARK, "Received message from transport code from %s", msg->sender );
 		osrf_stack_transport_handler( msg, NULL );
 		timeout = 0;
 	}
@@ -35,43 +56,61 @@ static int osrf_stack_process( transport_client* client, int timeout, int* msg_r
 	return 0;
 }
 
-
-
 // -----------------------------------------------------------------------------
 // Entry point into the stack
 // -----------------------------------------------------------------------------
+/**
+	@brief Unpack a transport into one or more osrfMessages, and process each one.
+	@param msg The transport message to be unpacked and processed.
+	@param my_service Application name (optional).
+	@return Pointer to an osrfAppSession -- either a pre-existing one or a new one.
+
+	Look for an existing osrfAppSession with which the message is associated.  Such a session
+	may already exist if, for example, you're a client waiting for a response from some other
+	application, or if you're a server that has opened a stateful session with a client.
+
+	If you can't find an existing session for the current message, and the @a my_service
+	parameter has provided an application name, then you're presumably a server receiving
+	something from a new client.  Create an application server session to own the new message.
+
+	Barring various errors and malformations, extract one or more osrfMessages from the
+	transport_message.  Pass each one to the appropriate routine for processing, depending
+	on whether you're acting as a client or as a server.
+*/
 osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 		const char* my_service ) {
 
 	if(!msg) return NULL;
 
-   osrfLogSetXid(msg->osrf_xid);
+	osrfLogSetXid(msg->osrf_xid);
 
 	osrfLogDebug( OSRF_LOG_MARK,  "Transport handler received new message \nfrom %s "
 			"to %s with body \n\n%s\n", msg->sender, msg->recipient, msg->body );
 
 	if( msg->is_error && ! msg->thread ) {
-		osrfLogWarning( OSRF_LOG_MARK, "!! Received jabber layer error for %s ... exiting\n", msg->sender );
+		osrfLogWarning( OSRF_LOG_MARK,
+				"!! Received jabber layer error for %s ... exiting\n", msg->sender );
 		message_free( msg );
 		return NULL;
 	}
 
 	if(! msg->thread  && ! msg->is_error ) {
-		osrfLogWarning( OSRF_LOG_MARK, "Received a non-error message with no thread trace... dropping");
+		osrfLogWarning( OSRF_LOG_MARK,
+				"Received a non-error message with no thread trace... dropping");
 		message_free( msg );
 		return NULL;
 	}
 
 	osrfAppSession* session = osrf_app_session_find_session( msg->thread );
 
-	if( !session && my_service ) 
+	if( !session && my_service )
 		session = osrf_app_server_session_init( msg->thread, my_service, msg->sender);
 
 	if( !session ) {
 		message_free( msg );
 		return NULL;
 	}
-	
+
 	if(!msg->is_error)
 		osrfLogDebug( OSRF_LOG_MARK, "Session [%s] found or built", session->session_id );
 
@@ -88,14 +127,14 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 	int i;
 	for( i = 0; i < num_msgs; i++ ) {
 
-		/* if we've received a jabber layer error message (probably talking to 
+		/* if we've received a jabber layer error message (probably talking to
 			someone who no longer exists) and we're not talking to the original
 			remote id for this server, consider it a redirect and pass it up */
 		if(msg->is_error) {
-			osrfLogWarning( OSRF_LOG_MARK,  " !!! Received Jabber layer error message" ); 
+			osrfLogWarning( OSRF_LOG_MARK,  " !!! Received Jabber layer error message" );
 
-			if(strcmp(session->remote_id,session->orig_remote_id)) {
-				osrfLogWarning( OSRF_LOG_MARK,  "Treating jabber error as redirect for tt [%d] "
+			if( strcmp( session->remote_id, session->orig_remote_id ) ) {
+				osrfLogWarning( OSRF_LOG_MARK, "Treating jabber error as redirect for tt [%d] "
 					"and session [%s]", arr[i]->thread_trace, session->session_id );
 
 				arr[i]->m_type = STATUS;
@@ -103,13 +142,14 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 
 			} else {
 				osrfLogWarning( OSRF_LOG_MARK, " * Jabber Error is for top level remote "
-                    " id [%s], no one to send my message to!  Cutting request short...", session->remote_id );
-                session->transport_error = 1;
-                break;
+					" id [%s], no one to send my message to!  Cutting request short...",
+					session->remote_id );
+				session->transport_error = 1;
+				break;
 			}
 		}
 
-		if( session->type ==  OSRF_SESSION_CLIENT )
+		if( session->type == OSRF_SESSION_CLIENT )
 			_do_client( session, arr[i] );
 		else
 			_do_server( session, arr[i] );
@@ -124,9 +164,10 @@ osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
 	return session;
 }
 
-/** If we return a message, that message should be passed up the stack,
-  * if we return NULL, we're finished for now...
-  */
+/**
+	If we return a message, that message should be passed up the stack,
+	if we return NULL, we're finished for now...
+*/
 static void _do_client( osrfAppSession* session, osrfMessage* msg ) {
 	if(session == NULL || msg == NULL)
 		return;
@@ -134,13 +175,14 @@ static void _do_client( osrfAppSession* session, osrfMessage* msg ) {
 	osrfMessage* further_msg = NULL;
 
 	if( msg->m_type == STATUS ) {
-		
+
 		switch( msg->status_code ) {
 
 			case OSRF_STATUS_OK:
 				osrfLogDebug( OSRF_LOG_MARK, "We connected successfully");
 				session->state = OSRF_SESSION_CONNECTED;
-				osrfLogDebug( OSRF_LOG_MARK,  "State: %x => %s => %d", session, session->session_id, session->state );
+				osrfLogDebug( OSRF_LOG_MARK,  "State: %x => %s => %d", session,
+						session->session_id, session->state );
 				break;
 
 			case OSRF_STATUS_COMPLETE:
@@ -157,7 +199,7 @@ static void _do_client( osrfAppSession* session, osrfMessage* msg ) {
 				osrf_app_session_request_resend( session, msg->thread_trace );
 				break;
 
-			case OSRF_STATUS_EXPFAILED: 
+			case OSRF_STATUS_EXPFAILED:
 				osrf_app_session_reset_remote( session );
 				session->state = OSRF_SESSION_DISCONNECTED;
 				break;
@@ -173,8 +215,8 @@ static void _do_client( osrfAppSession* session, osrfMessage* msg ) {
 				further_msg = osrf_message_init( RESULT, msg->thread_trace, msg->protocol );
 				osrf_message_set_status_info( further_msg,
 						msg->status_name, msg->status_text, msg->status_code );
-				osrfLogWarning( OSRF_LOG_MARK, "The stack doesn't know what to do with " 
-						"the provided message code: %d, name %s. Passing UP.", 
+				osrfLogWarning( OSRF_LOG_MARK, "The stack doesn't know what to do with "
+						"the provided message code: %d, name %s. Passing UP.",
 						msg->status_code, msg->status_name );
 				further_msg->is_exception = 1;
 				osrf_app_session_set_complete( session, msg->thread_trace );
@@ -198,9 +240,10 @@ static void _do_client( osrfAppSession* session, osrfMessage* msg ) {
 }
 
 
-/** If we return a message, that message should be passed up the stack, 
-  * if we return NULL, we're finished for now...
-  */
+/**
+	If we return a message, that message should be passed up the stack,
+	if we return NULL, we're finished for now...
+*/
 static void _do_server( osrfAppSession* session, osrfMessage* msg ) {
 
 	if(session == NULL || msg == NULL) return;
@@ -208,7 +251,7 @@ static void _do_server( osrfAppSession* session, osrfMessage* msg ) {
 	osrfLogDebug( OSRF_LOG_MARK, "Server received message of type %d", msg->m_type );
 
 	osrfMessage* further_msg = NULL;
-	
+
 	switch( msg->m_type ) {
 
 		case STATUS:
@@ -234,7 +277,8 @@ static void _do_server( osrfAppSession* session, osrfMessage* msg ) {
 			break;
 
 		default:
-			osrfLogWarning( OSRF_LOG_MARK, "Server cannot handle message of type %d", msg->m_type );
+			osrfLogWarning( OSRF_LOG_MARK,
+					"Server cannot handle message of type %d", msg->m_type );
 			session->state = OSRF_SESSION_DISCONNECTED;
 			break;
 	}
@@ -262,13 +306,13 @@ static void osrf_stack_application_handler( osrfAppSession* session, osrfMessage
 	}
 	else if(msg->m_type == REQUEST) {
 		char* method = msg->method_name;
-		char* app	= session->remote_service;
+		char* app    = session->remote_service;
 		jsonObject* params = msg->_params;
 
 		osrfAppRunMethod( app, method,  session, msg->thread_trace, params );
 		osrfMessageFree(msg);
 	}
-	
+
 	return;
 }
 
