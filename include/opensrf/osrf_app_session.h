@@ -33,9 +33,13 @@ enum OSRF_SESSION_TYPE {
 	OSRF_SESSION_CLIENT
 };
 
-/* entry point for data into the stack.  Gets set in osrf_stack.c */
-int (*osrf_stack_entry_point) (transport_client* client, int timeout, int* recvd );
+/**
+	@brief Representation of a session with another application.
 
+	An osrfAppSession is a list of lists.  It includes a list of osrfAppRequests
+	representing outstanding requests.  Each osrfAppRequest includes a list of
+	responses.
+*/
 struct osrf_app_session_struct {
 
 	/** Our messag passing object */
@@ -48,7 +52,8 @@ struct osrf_app_session_struct {
 	/** The current remote id of the remote service we're talking to */
 	char* remote_id;
 
-	/** Whom we're talking to if we're a client; what app we're serving if we're a server */
+	/** Whom we're talking to if we're a client;
+		what app we're serving if we're a server */
 	char* remote_service;
 
 	/** The current request thread_trace */
@@ -56,7 +61,7 @@ struct osrf_app_session_struct {
 	/** Our ID */
 	char* session_id;
 
-	/** Boolean; true if this session does not require connect messages */
+	/* true if this session does not require connect messages */
 	int stateless;
 
 	/** The connect state */
@@ -73,7 +78,7 @@ struct osrf_app_session_struct {
 
 	void (*userDataFree) (void*);
 
-	int transport_error;
+    int transport_error;
 };
 typedef struct osrf_app_session_struct osrfAppSession;
 
@@ -99,7 +104,8 @@ char* osrf_app_session_set_locale( osrfAppSession*, const char* );
 osrfAppSession* osrf_app_session_find_session( const char* session_id );
 
 /** Builds a new app_request object with the given payload andn returns
-	the id of the request.  This id is then used to perform work on the requeset.
+	the id of the request.  This id is then used to perform work on the
+	requeset.
 */
 int osrfAppSessionMakeRequest(
 		osrfAppSession* session, const jsonObject* params,
@@ -140,7 +146,7 @@ int osrfAppSessionConnect( osrfAppSession* );
 /** Sends a disconnect message to the remote service.  No response is expected */
 int osrf_app_session_disconnect( osrfAppSession* );
 
-/**  Waits up to 'timeout' seconds for some data to arrive.
+/** Waits up to 'timeout' seconds for some data to arrive.
 	Any data that arrives will be processed according to its
 	payload and message type.  This method will return after
 	any data has arrived.
@@ -163,7 +169,7 @@ int osrfAppRequestRespondComplete(
 int osrfAppSessionStatus( osrfAppSession* ses, int type,
 		const char* name, int reqId, const char* message );
 
-void osrfAppSessionCleanup();
+void osrfAppSessionCleanup( void );
 
 #ifdef __cplusplus
 }

@@ -5,42 +5,56 @@
 
 #include <time.h>
 #include "opensrf/osrf_app_session.h"
+#include "opensrf/osrf_stack.h"
 
 struct osrf_app_request_struct {
-	/** Our controlling session. */
+	/** The controlling session. */
 	struct osrf_app_session_struct* session;
 
-	/** Our "id". */
+	/** Request id.  It is the same as the thread_trace of the REQUEST message
+		for which it was created.
+	*/
 	int request_id;
 	/** True if we have received a 'request complete' message from our request. */
 	int complete;
-	/** Our original request payload. */
+	/** The original REQUEST message payload. */
 	osrfMessage* payload;
-	/** List of responses to our request. */
+	/** Linked list of responses to the request. */
 	osrfMessage* result;
 
-	/** Boolean; if true, then a call that is waiting on a response, will reset the
+	/** Boolean; if true, then a call that is waiting on a response will reset the
 	timeout and set this variable back to false. */
 	int reset_timeout;
 };
 typedef struct osrf_app_request_struct osrfAppRequest;
 
-/** Send the given message */
+/* Send the given message */
 static int _osrf_app_session_send( osrfAppSession*, osrfMessage* msg );
 
 static int osrfAppSessionMakeLocaleRequest(
 		osrfAppSession* session, const jsonObject* params, const char* method_name,
 		int protocol, osrfStringArray* param_strings, char* locale );
 
-/* the global app_session cache */
+/** @brief The global session cache.
+
+	Key: session_id.  Data: osrfAppSession.
+*/
 static osrfHash* osrfAppSessionCache = NULL;
 
-// --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
 // Request API
 // --------------------------------------------------------------------------
 
-/** Allocates and initializes a new app_request object */
+/**
+	@brief Create a new osrfAppRequest.
+	@param session Pointer to the osrfAppSession that will own the new osrfAppRequest.
+	@param msg Pointer to the osrfMessage representing the request.
+	@return Pointer to the new osrfAppRequest.
+
+	The calling code is responsible for freeing the osrfAppRequest by calling
+	_osrf_app_request_free().  In practice this normally happens via a callback installed
+	in an osrfList.
+*/
 static osrfAppRequest* _osrf_app_request_init(
 		osrfAppSession* session, osrfMessage* msg ) {
 
@@ -55,42 +69,53 @@ static osrfAppRequest* _osrf_app_request_init(
 	req->reset_timeout  = 0;
 
 	return req;
-
 }
 
 
-void osrfAppSessionCleanup() {
-	osrfHashFree(osrfAppSessionCache);
-	osrfAppSessionCache = NULL;
-}
+/**
+	@brief Free an osrfAppRequest and everything it owns.
+	@param req Pointer to an osrfAppRequest, cast to a void pointer.
 
-/** Frees memory used by an app_request object */
+	This function is installed as a callback in the osrfList request_queue, a member
+	of osrfAppSession.
+*/
 static void _osrf_app_request_free( void * req ){
-	if( req == NULL ) return;
-	osrfAppRequest* r = (osrfAppRequest*) req;
-	if( r->payload ) osrfMessageFree( r->payload );
+	if( req ) {
+		osrfAppRequest* r = (osrfAppRequest*) req;
+		if( r->payload )
+			osrfMessageFree( r->payload );
 
-	/* Free the messages in the result queue */
+		/* Free the messages in the result queue */
+		osrfMessage* next_msg;
+		while( r->result ) {
+			next_msg = r->result->next;
+			osrfMessageFree( r->result );
+			r->result = next_msg;
+		}
 
-	osrfMessage* next_msg;
-	while( r->result ) {
-		next_msg = r->result->next;
-		osrfMessageFree( r->result );
-		r->result = next_msg;
+		free( r );
 	}
-
-	free( r );
 }
 
-/** Pushes the given message onto the list of 'responses' to this request */
+/**
+	@brief Append a new message to the list of responses to a request.
+	@param req Pointer to the osrfAppRequest for the original REQUEST message.
+	@param result Pointer to an osrfMessage received in response to the request.
+
+	We maintain a linked list of response messages, and traverse it to find the end.
+*/
 static void _osrf_app_request_push_queue( osrfAppRequest* req, osrfMessage* result ){
-	if(req == NULL || result == NULL) return;
-	osrfLogDebug( OSRF_LOG_MARK,  "App Session pushing request [%d] onto request queue", result->thread_trace );
+	if(req == NULL || result == NULL)
+		return;
+
+	osrfLogDebug( OSRF_LOG_MARK, "App Session pushing request [%d] onto request queue",
+			result->thread_trace );
 	if(req->result == NULL) {
-		req->result = result;
+		req->result = result;   // Add the first node
 
 	} else {
 
+		// Find the last node in the list, and append the new node to it
 		osrfMessage* ptr = req->result;
 		osrfMessage* ptr2 = req->result->next;
 		while( ptr2 ) {
@@ -101,37 +126,61 @@ static void _osrf_app_request_push_queue( osrfAppRequest* req, osrfMessage* resu
 	}
 }
 
-/** Removes this app_request from our session request set */
+/**
+	@brief Remove an osrfAppRequest (identified by request_id) from an osrfAppSession.
+	@param session Pointer to the osrfAppSession that owns the osrfAppRequest.
+	@param req_id request_id of the osrfAppRequest to be removed.
+
+	The osrfAppRequest itself is freed by a callback installed in the osrfList where it resides.
+*/
 void osrf_app_session_request_finish(
 		osrfAppSession* session, int req_id ){
 
-	if(session == NULL) return;
-	osrfAppRequest* req = OSRF_LIST_GET_INDEX( session->request_queue, req_id );
-	if(req == NULL) return;
-	osrfListRemove( req->session->request_queue, req->request_id );
+	if( session ) {
+		osrfAppRequest* req = OSRF_LIST_GET_INDEX( session->request_queue, req_id );
+		if(req)
+			osrfListRemove( req->session->request_queue, req->request_id );
+	}
 }
 
 
+/**
+	@brief Set the timeout for a request to one second.
+	@param session Pointer to the relevant osrfAppSession.
+	@param req_id Request ID of the request whose timeout is to be reset.
+
+	The request to be reset is identified by the combination of session and request id.
+*/
 void osrf_app_session_request_reset_timeout( osrfAppSession* session, int req_id ) {
-	if(session == NULL) return;
+	if(session == NULL)
+		return;
 	osrfLogDebug( OSRF_LOG_MARK, "Resetting request timeout %d", req_id );
 	osrfAppRequest* req = OSRF_LIST_GET_INDEX( session->request_queue, req_id );
-	if(req == NULL) return;
-	req->reset_timeout = 1;
+	if( req )
+		req->reset_timeout = 1;
 }
 
 /**
-	Checks the receive queue for messages.  If any are found, the first
+	Checke the receive queue for messages.  If any are found, the first
 	is popped off and returned.  Otherwise, this method will wait at most timeout
 	seconds for a message to appear in the receive queue.  Once it arrives it is returned.
 	If no messages arrive in the timeout provided, null is returned.
+*/
+/**
+	@brief Return the next response message for a given request, subject to a timeout.
+	@param req Pointer to the osrfAppRequest representing the request.
+	@param timeout Maxmimum time to wait, in seconds.
+
+	@return 
+
+	If the input queue for this request is not empty, dequeue the next message and return it.
 */
 static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 
 	if(req == NULL) return NULL;
 
 	if( req->result != NULL ) {
-		/* pop off the first message in the list */
+		/* Dequeue the next message in the list */
 		osrfMessage* tmp_msg = req->result;
 		req->result = req->result->next;
 		return tmp_msg;
@@ -142,7 +191,8 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 
 	while( remaining >= 0 ) {
 		/* tell the session to wait for stuff */
-		osrfLogDebug( OSRF_LOG_MARK,  "In app_request receive with remaining time [%d]", (int) remaining );
+		osrfLogDebug( OSRF_LOG_MARK,  "In app_request receive with remaining time [%d]",
+				(int) remaining );
 
 		osrf_app_session_queue_wait( req->session, 0, NULL );
 		if(req->session->transport_error) {
@@ -152,7 +202,7 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 
 		if( req->result != NULL ) { /* if we received anything */
 			/* pop off the first message in the list */
-			osrfLogDebug( OSRF_LOG_MARK,  "app_request_recv received a message, returning it");
+			osrfLogDebug( OSRF_LOG_MARK, "app_request_recv received a message, returning it" );
 			osrfMessage* ret_msg = req->result;
 			req->result = ret_msg->next;
 			if (ret_msg->sender_locale)
@@ -212,8 +262,6 @@ static int _osrf_app_request_resend( osrfAppRequest* req ) {
 }
 
 
-
-// --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
 // Session API
 // --------------------------------------------------------------------------
@@ -238,19 +286,35 @@ char* osrf_app_session_set_locale( osrfAppSession* session, const char* locale )
 	return session->session_locale;
 }
 
-/** returns a session from the global session hash */
+/**
+	@brief Find the osrfAppSession for a given session id.
+	@param session_id The session id to look for.
+	@return Pointer to the corresponding osrfAppSession if found, or NULL if not.
+
+	Search the global session cache for the specified session id.
+*/
 osrfAppSession* osrf_app_session_find_session( const char* session_id ) {
-	if(session_id) return osrfHashGet(osrfAppSessionCache, session_id);
+	if(session_id)
+		return osrfHashGet( osrfAppSessionCache, session_id );
 	return NULL;
 }
 
 
-/** adds a session to the global session cache */
+/**
+	@brief Add a session to the global session cache, keyed by session id.
+	@param session Pointer to the osrfAppSession to be added.
+
+	If a cache doesn't exist yet, create one.  It's an osrfHash using session ids for the
+	key and osrfAppSessions for the data.
+*/
 static void _osrf_app_session_push_session( osrfAppSession* session ) {
-	if(!session) return;
-	if( osrfAppSessionCache == NULL ) osrfAppSessionCache = osrfNewHash();
-	if( osrfHashGet( osrfAppSessionCache, session->session_id ) ) return;
-	osrfHashSet( osrfAppSessionCache, session, session->session_id );
+	if( session ) {
+		if( osrfAppSessionCache == NULL )
+			osrfAppSessionCache = osrfNewHash();
+		if( osrfHashGet( osrfAppSessionCache, session->session_id ) )
+			return;   // A session with this id is already in the cache.  Shouldn't happen.
+		osrfHashSet( osrfAppSessionCache, session, session->session_id );
+	}
 }
 
 /** Allocates and initializes a new app_session */
@@ -334,7 +398,6 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 	session->thread_trace = 0;
 	session->state = OSRF_SESSION_DISCONNECTED;
 	session->type = OSRF_SESSION_CLIENT;
-	//session->next = NULL;
 
 	session->userData = NULL;
 	session->userDataFree = NULL;
@@ -394,6 +457,30 @@ osrfAppSession* osrf_app_server_session_init(
 
 }
 
+/**
+	@brief Create a REQUEST message, send it, and save it for future reference.
+	@param session Pointer to the current session, which has the addressing information.
+	@param params One way of specifying the parameters for the method.
+	@param method_name The name of the method to be called.
+	@param protocol Protocol.
+	@param param_strings Another way of specifying the parameters for the method.
+	@return The request ID of the resulting REQUEST message, or -1 upon error.
+
+	If @a params is non-NULL, use it to specify the parameters to the method.  Otherwise
+	use @a param_strings.
+
+	If @a params points to a JSON_ARRAY, then pass each element of the array as a separate
+	parameter.  If @a params points to any other kind of jsonObject, pass it as a single
+	parameter.
+
+	If @a params is NULL, and @a param_strings is not NULL, then each pointer in the
+	osrfStringArray must point to a JSON string encoding a parameter.  Pass them.
+
+	At this writing, all calls to this function use @a params to pass parameters, rather than
+	@a param_strings.
+
+	This function is a thin wrapper for osrfAppSessionMakeLocaleRequest().
+*/
 int osrfAppSessionMakeRequest(
 		osrfAppSession* session, const jsonObject* params,
 		const char* method_name, int protocol, osrfStringArray* param_strings ) {
@@ -402,6 +489,21 @@ int osrfAppSessionMakeRequest(
 			method_name, protocol, param_strings, NULL );
 }
 
+/**
+	@brief Create a REQUEST message, send it, and save it for future reference.
+	@param session Pointer to the current session, which has the addressing information.
+	@param params One way of specifying the parameters for the method.
+	@param method_name The name of the method to be called.
+	@param protocol Protocol.
+	@param param_strings Another way of specifying the parameters for the method.
+	@param locale Pointer to a locale string.
+	@return The request ID of the resulting REQUEST message, or -1 upon error.
+
+	See the discussion of osrfAppSessionMakeRequest(), which at this writing is the only
+	place that calls this function.
+
+	At this writing, the @a param_strings and @a locale parameters are always NULL.
+*/
 static int osrfAppSessionMakeLocaleRequest(
 		osrfAppSession* session, const jsonObject* params, const char* method_name,
 		int protocol, osrfStringArray* param_strings, char* locale ) {
@@ -435,7 +537,8 @@ static int osrfAppSessionMakeLocaleRequest(
 
 	osrfAppRequest* req = _osrf_app_request_init( session, req_msg );
 	if(_osrf_app_session_send( session, req_msg ) ) {
-		osrfLogWarning( OSRF_LOG_MARK,  "Error sending request message [%d]", session->thread_trace );
+		osrfLogWarning( OSRF_LOG_MARK,  "Error sending request message [%d]",
+				session->thread_trace );
 		_osrf_app_request_free(req);
 		return -1;
 	}
@@ -657,8 +760,8 @@ static int _osrf_app_session_send( osrfAppSession* session, osrfMessage* msg ){
 */
 int osrf_app_session_queue_wait( osrfAppSession* session, int timeout, int* recvd ){
 	if(session == NULL) return 0;
-	osrfLogDebug(OSRF_LOG_MARK,  "AppSession in queue_wait with timeout %d", timeout );
-	return osrf_stack_entry_point(session->transport_handle, timeout, recvd);
+	osrfLogDebug(OSRF_LOG_MARK, "AppSession in queue_wait with timeout %d", timeout );
+	return osrf_stack_process(session->transport_handle, timeout, recvd);
 }
 
 /** Disconnects (if client) and removes the given session from the global session cache
@@ -729,7 +832,8 @@ int osrfAppRequestRespondComplete(
 		osrfAppSession* ses, int requestId, const jsonObject* data ) {
 
 	osrfMessage* status = osrf_message_init( STATUS, requestId, 1);
-	osrf_message_set_status_info( status, "osrfConnectStatus", "Request Complete", OSRF_STATUS_COMPLETE );
+	osrf_message_set_status_info( status, "osrfConnectStatus", "Request Complete",
+			OSRF_STATUS_COMPLETE );
 
 	if (data) {
 		osrfMessage* payload = osrf_message_init( RESULT, requestId, 1 );
@@ -768,6 +872,18 @@ int osrfAppSessionStatus( osrfAppSession* ses, int type,
 	return -1;
 }
 
+/**
+	@brief Free the global session cache.
+	
+	Note that the osrfHash that implements the global session cache does @em not have a
+	callback function installed for freeing its cargo.  As a result, any outstanding
+	osrfAppSessions are leaked, along with all the osrfAppRequests and osrfMessages they
+	own.
+*/
+void osrfAppSessionCleanup( void ) {
+	osrfHashFree(osrfAppSessionCache);
+	osrfAppSessionCache = NULL;
+}
 
 
 

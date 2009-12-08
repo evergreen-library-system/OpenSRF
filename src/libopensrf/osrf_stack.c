@@ -5,13 +5,9 @@
 #define OSRF_MAX_MSGS_PER_PACKET 256
 // -----------------------------------------------------------------------------
 
-static int  osrf_stack_process( transport_client* client, int timeout, int* msg_received );
 static void osrf_stack_application_handler( osrfAppSession* session, osrfMessage* msg );
 static void _do_client( osrfAppSession*, osrfMessage* );
 static void _do_server( osrfAppSession*, osrfMessage* );
-
-/* tell osrfAppSession where the stack entry is */
-int (*osrf_stack_entry_point) (transport_client*, int, int*)  = &osrf_stack_process;
 
 /**
 	@brief Read and process available transport_messages for a transport_client.
@@ -33,7 +29,7 @@ int (*osrf_stack_entry_point) (transport_client*, int, int*)  = &osrf_stack_proc
 	if you don't.  A timeout is not treated as an error; it just means you must set that
 	boolean to false.
 */
-static int osrf_stack_process( transport_client* client, int timeout, int* msg_received ) {
+int osrf_stack_process( transport_client* client, int timeout, int* msg_received ) {
 	if( !client ) return -1;
 	transport_message* msg = NULL;
 	if(msg_received) *msg_received = 0;
@@ -77,7 +73,7 @@ static int osrf_stack_process( transport_client* client, int timeout, int* msg_r
 	transport_message.  Pass each one to the appropriate routine for processing, depending
 	on whether you're acting as a client or as a server.
 */
-osrfAppSession* osrf_stack_transport_handler( transport_message* msg,
+struct osrf_app_session_struct* osrf_stack_transport_handler( transport_message* msg,
 		const char* my_service ) {
 
 	if(!msg) return NULL;

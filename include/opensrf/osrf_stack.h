@@ -9,8 +9,12 @@
 extern "C" {
 #endif
 
-osrfAppSession*  osrf_stack_transport_handler( transport_message* msg,
+struct osrf_app_session_struct;
+
+struct osrf_app_session_struct*  osrf_stack_transport_handler( transport_message* msg,
 		const char* my_service );
+
+int osrf_stack_process( transport_client* client, int timeout, int* msg_received );
 
 #ifdef __cplusplus
 }
