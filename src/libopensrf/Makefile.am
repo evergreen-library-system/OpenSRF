@@ -14,7 +14,7 @@
 
 AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing -DOSRF_JSON_ENABLE_XML_UTILS
 AM_LDFLAGS = $(DEF_LDFLAGS) -R $(libdir)
-LDADD = -lxml2 -ldl -lmemcache -lopensrf
+LDADD = -lxml2 -ldl -lopensrf
 
 DISTCLEANFILES = Makefile.in Makefile
 
@@ -109,8 +109,9 @@ lib_LTLIBRARIES = libopensrf.la
 libosrf_json_la_SOURCES = $(JSON_TARGS) $(JSON_DEP) $(JSON_TARGS_HEADS) $(JSON_DEP_HEADS)
 libosrf_json_la_CFLAGS = $(AM_CFLAGS)
 
-libopensrf_la_CFLAGS = $(AM_CFLAGS)
+libopensrf_la_CFLAGS = $(AM_CFLAGS) $(memcached_CFLAGS)
 libopensrf_la_DEPENDENCIES = libosrf_json.la
+libopensrf_la_LIBADD = $(memcached_LIBS)
 
 libopensrf_la_SOURCES = $(TARGS) $(TARGS_HEADS) $(JSON_TARGS) $(JSON_TARGS_HEADS)
 

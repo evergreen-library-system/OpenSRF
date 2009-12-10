@@ -255,12 +255,13 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	#-----------------------------
 
 	AC_CHECK_LIB([dl], [dlerror], [],AC_MSG_ERROR(***OpenSRF requires libdl))
-	AC_SEARCH_LIBS([mc_req_free], [memcache], [], AC_MSG_ERROR(***OpenSRF requires memcache headers))
 	AC_CHECK_LIB([ncurses], [initscr], [], AC_MSG_ERROR(***OpenSRF requires ncurses headers))
 	AC_CHECK_LIB([readline], [readline], [], AC_MSG_ERROR(***OpenSRF requires readline headers))
 	AC_CHECK_LIB([xml2], [xmlAddID], [], AC_MSG_ERROR(***OpenSRF requires libxml2 headers))
-
-
+	# Check for libmemcached and set flags accordingly
+	PKG_CHECK_MODULES(memcached, libmemcached >= 0.8.0)
+	AC_SUBST(memcached_CFLAGS)
+	AC_SUBST(memcached_LIBS)
 
 	#-----------------------------
 	# Checks for header files.

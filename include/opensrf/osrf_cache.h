@@ -17,7 +17,7 @@ GNU General Public License for more details.
 #define OSRF_CACHE_H
 
 #include <opensrf/osrf_json.h>
-#include <memcache.h>
+#include <libmemcached/memcached.h>
 #include <opensrf/log.h>
 
 #ifdef __cplusplus
