@@ -79,6 +79,37 @@ const char* osrfStringArrayGetString( const osrfStringArray* arr, int index ) {
 }
 
 /**
+	@brief Render an osrfStringArray empty.
+	@param arr Pointer to the osrfStringArray to be emptied.
+*/
+void osrfStringArrayClear( osrfStringArray* arr ) {
+	if( arr ) {
+		osrfListClear( &arr->list );
+		arr->size = 0;
+	}
+}
+
+/**
+	@brief Exchange the contents of two osrfStringArrays.
+	@param one Pointer to the first osrfStringArray.
+	@param two Pointer to the second osrfStringArray.
+
+	After the swap, the first osrfStringArray contains what had been the contents of the
+	second, and vice versa.  The swap also works if both parameters point to the same
+	osrfStringArray; i.e. there is no net change.
+
+	If either parameter is NULL, nothing happens.
+*/
+void osrfStringArraySwap( osrfStringArray* one, osrfStringArray* two ) {
+	if( one && two ) {
+		osrfListSwap( &one->list, &two->list );
+		int temp = one->size;
+		one->size = two->size;
+		two->size = temp;
+	}
+}
+
+/**
 	@brief Free an osrfStringArray, and all the strings inside it.
 	@param arr Pointer to the osrfStringArray to be freed.
 */

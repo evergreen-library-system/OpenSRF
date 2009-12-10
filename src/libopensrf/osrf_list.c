@@ -191,6 +191,25 @@ void osrfListClear( osrfList* list ) {
 }
 
 /**
+	@brief Exchange the contents of two osrfLists.
+	@param one Pointer to the first osrfList.
+	@param two Pointer to the second osrfList.
+
+	After the call, the first list contains what had been the contents of the second,
+	and vice versa.  This swap also works if the two parameters point to the same
+	list; i.e. there is no net effect.
+
+	If either parameter is NULL, nothing happens.
+*/
+void osrfListSwap( osrfList* one, osrfList* two ) {
+	if( one && two ) {
+		osrfList temp = *one;
+		*one = *two;
+		*two = temp;
+	}
+}
+
+/**
 	@brief Remove the pointer from a specified position.
 	@param list A pointer to the osrfList.
 	@param position A zero-based index identifying the pointer to be removed.

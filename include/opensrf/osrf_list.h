@@ -90,6 +90,8 @@ void osrfListFree( osrfList* list );
 
 void osrfListClear( osrfList* list );
 
+void osrfListSwap( osrfList* one, osrfList* two );
+
 void* osrfListRemove( osrfList* list, unsigned int position );
 
 void* osrfListExtract( osrfList* list, unsigned int position );
