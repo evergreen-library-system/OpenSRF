@@ -280,11 +280,9 @@ install_ejabberd:
 
 # Install libmemcached from the official project source
 install_libmemcached:
-	@echo "TODO: work out how to build or grab libmemcached packages for CentOS/RHEL"
 	if [ ! -d $(LIBMEMCACHED).tar.gz ]; then wget $(LIBMEMCACHED_HOST)/$(LIBMEMCACHED).tar.gz; fi;
 	tar xzf $(LIBMEMCACHED).tar.gz
 	cd $(LIBMEMCACHED) && ./configure && make && make install
-	
 
 # Install a newer version of libxslt
 install_libxslt:    
