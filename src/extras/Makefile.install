@@ -51,6 +51,10 @@ EJABBERD_PKG=ejabberd-2.0.2_2-linux-x86-installer.bin
 EJABBERD_PKG_x64=ejabberd-2.0.2_2-linux-x86_64-installer.bin
 EJABBERD_HOST=http://www.process-one.net/downloads/ejabberd
 
+# libmemcached is only packaged on newer distros
+LIBMEMCACHED=libmemcached-0.35
+LIBMEMCACHED_HOST=http://download.tangent.org
+
 # XML::LibXSLT fails due to old libxslt
 XSLT=libxslt-1.1.22
 XSLT_HOST=ftp://ftp.gnome.org/pub/GNOME/sources/libxslt/1.1
@@ -81,7 +85,6 @@ DEBS =  \
 	libgcrypt11-dev \
 	libgdbm-dev \
 	liblog-log4perl-perl\
-	libmemcached-dev\
 	libmodule-build-perl\
 	libnet-jabber-perl\
 	libperl-dev\
@@ -202,6 +205,7 @@ EXTRA_DEBS = \
 	libnet-server-perl
 
 EXTRA_DEBS_UBUNTU_KARMIC = \
+	libmemcached-dev\
 	libxml-libxml-perl \
 	libxml-libxslt-perl
 
@@ -234,8 +238,8 @@ all:
 
 centos: install_centos_rpms install_ejabberd install_libmemcached install_libxml2 install_libxslt install_centos_perl create_ld_local
 
-debian-etch: generic_debian etch
-debian-lenny: generic_debian lenny
+debian-etch: generic_debian etch install_libmemcached
+debian-lenny: generic_debian lenny install_libmemcached
 etch: install_cpan
 lenny: install_extra_debs
 generic_debian: install_debs install_cpan_force install_cpan_xml debian_sys_config
@@ -248,8 +252,8 @@ ubuntu-gutsy: generic_ubuntu install_cpan_xml hardy
 ubuntu-hardy: generic_ubuntu install_cpan_xml hardy
 ubuntu-intrepid: generic_ubuntu install_cpan_xml intrepid
 ubuntu-karmic: generic_ubuntu karmic
-hardy: install_cpan
-intrepid: install_extra_debs
+hardy: install_cpan install_libmemcached 
+intrepid: install_extra_debs install_libmemcached 
 karmic: install_extra_debs install_extra_debs_karmic
 generic_ubuntu: install_debs install_cpan_force debian_sys_config
 
@@ -277,6 +281,10 @@ install_ejabberd:
 # Install libmemcached from the official project source
 install_libmemcached:
 	@echo "TODO: work out how to build or grab libmemcached packages for CentOS/RHEL"
+	if [ ! -d $(LIBMEMCACHED).tar.gz ]; then wget $(LIBMEMCACHED_HOST)/$(LIBMEMCACHED).tar.gz; fi;
+	tar xzf $(LIBMEMCACHED).tar.gz
+	cd $(LIBMEMCACHED) && ./configure && make && make install
+	
 
 # Install a newer version of libxslt
 install_libxslt:    
