@@ -103,13 +103,21 @@ char* osrf_app_session_set_locale( osrfAppSession*, const char* );
 /** returns a session from the global session hash */
 osrfAppSession* osrf_app_session_find_session( const char* session_id );
 
-/** Builds a new app_request object with the given payload andn returns
+/** Builds a new app_request object with the given payload and returns
 	the id of the request.  This id is then used to perform work on the
-	requeset.
+	request.  DEPRECATED; use osrfAppSessionSendRequest() instead.
 */
 int osrfAppSessionMakeRequest(
 		osrfAppSession* session, const jsonObject* params,
 		const char* method_name, int protocol, osrfStringArray* param_strings);
+
+/** Builds a new app_request object with the given payload and returns
+	the id of the request.  This id is then used to perform work on the
+	request.
+ */
+int osrfAppSessionSendRequest(
+		 osrfAppSession* session, const jsonObject* params,
+		 const char* method_name, int protocol );
 
 /** Sets the given request to complete state */
 void osrf_app_session_set_complete( osrfAppSession* session, int request_id );

@@ -161,7 +161,7 @@ void osrf_app_session_request_reset_timeout( osrfAppSession* session, int req_id
 }
 
 /**
-	Checke the receive queue for messages.  If any are found, the first
+	Checks the receive queue for messages.  If any are found, the first
 	is popped off and returned.  Otherwise, this method will wait at most timeout
 	seconds for a message to appear in the receive queue.  Once it arrives it is returned.
 	If no messages arrive in the timeout provided, null is returned.
@@ -466,6 +466,9 @@ osrfAppSession* osrf_app_server_session_init(
 	@param param_strings Another way of specifying the parameters for the method.
 	@return The request ID of the resulting REQUEST message, or -1 upon error.
 
+	DEPRECATED.  Use osrfAppSessionSendRequest() instead.  It is identical except that it
+	doesn't use the param_strings argument, which is redundant, confusing, and unused.
+
 	If @a params is non-NULL, use it to specify the parameters to the method.  Otherwise
 	use @a param_strings.
 
@@ -495,12 +498,34 @@ int osrfAppSessionMakeRequest(
 	@param params One way of specifying the parameters for the method.
 	@param method_name The name of the method to be called.
 	@param protocol Protocol.
+	@return The request ID of the resulting REQUEST message, or -1 upon error.
+
+	If @a params points to a JSON_ARRAY, then pass each element of the array as a separate
+	parameter.  If @a params points to any other kind of jsonObject, pass it as a single
+	parameter.
+
+	This function is a thin wrapper for osrfAppSessionMakeLocaleRequest().
+*/
+int osrfAppSessionSendRequest( osrfAppSession* session, const jsonObject* params,
+		const char* method_name, int protocol ) {
+
+	return osrfAppSessionMakeLocaleRequest( session, params,
+		 method_name, protocol, NULL, NULL );
+}
+
+/**
+	@brief Create a REQUEST message, send it, and save it for future reference.
+	@param session Pointer to the current session, which has the addressing information.
+	@param params One way of specifying the parameters for the method.
+	@param method_name The name of the method to be called.
+	@param protocol Protocol.
 	@param param_strings Another way of specifying the parameters for the method.
 	@param locale Pointer to a locale string.
 	@return The request ID of the resulting REQUEST message, or -1 upon error.
 
-	See the discussion of osrfAppSessionMakeRequest(), which at this writing is the only
-	place that calls this function.
+	See the discussion of osrfAppSessionSendRequest(), which at this writing is the only
+	place that calls this function, except for the similar but deprecated function
+	osrfAppSessionMakeRequest().
 
 	At this writing, the @a param_strings and @a locale parameters are always NULL.
 */

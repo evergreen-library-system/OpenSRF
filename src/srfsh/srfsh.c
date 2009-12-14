@@ -789,7 +789,7 @@ int send_request( const char* server,
 
 	double start = get_timestamp_millis();
 
-	int req_id = osrfAppSessionMakeRequest( session, params, method, 1, NULL );
+	int req_id = osrfAppSessionSendRequest( session, params, method, 1 );
 	jsonObjectFree(params);
 
 	osrfMessage* omsg = osrfAppSessionRequestRecv( session, req_id, recv_timeout );
@@ -1092,7 +1092,7 @@ static int do_math( int count, int style ) {
 			++running;
 
 			double start = get_timestamp_millis();
-			int req_id = osrfAppSessionMakeRequest( session, params, methods[j], 1, NULL );
+			int req_id = osrfAppSessionSendRequest( session, params, methods[j], 1 );
 			osrfMessage* omsg = osrfAppSessionRequestRecv( session, req_id, 5 );
 			double end = get_timestamp_millis();
 
