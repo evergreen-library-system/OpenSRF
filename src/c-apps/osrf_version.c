@@ -64,7 +64,7 @@ int osrfVersion( osrfMethodContext* ctx ) {
 			jsonObjectPush( tmpArray, jsonObjectClone(jsonObjectGetIndex(ctx->params, i)));
 
 		osrfAppSession* ses = osrfAppSessionClientInit(service);
-		int reqid = osrfAppSessionMakeRequest( ses, tmpArray, methd, 1, NULL );
+		int reqid = osrfAppSessionSendRequest( ses, tmpArray, methd, 1 );
 		osrfMessage* omsg = osrfAppSessionRequestRecv( ses, reqid, 60 );
 		jsonObjectFree(tmpArray);
 

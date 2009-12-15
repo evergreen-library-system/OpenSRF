@@ -108,8 +108,8 @@ int osrf_settings_retrieve(const char* hostname) {
 		osrfAppSession* session = osrfAppSessionClientInit("opensrf.settings");
 		jsonObject* params = jsonNewObject(NULL);
 		jsonObjectPush(params, jsonNewObject(hostname));
-		int req_id = osrfAppSessionMakeRequest( 
-			session, params, "opensrf.settings.host_config.get", 1, NULL );
+		int req_id = osrfAppSessionSendRequest( 
+			session, params, "opensrf.settings.host_config.get", 1 );
 		osrfMessage* omsg = osrfAppSessionRequestRecv( session, req_id, 60 );
 		jsonObjectFree(params);
 
