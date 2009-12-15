@@ -248,7 +248,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 			while( (str = osrfStringArrayGetString(mparams, i++)) ) 
 				jsonObjectPush(arr, parseJSONFunc(str));
 
-			req_id = osrfAppSessionMakeRequest( session, arr, method, api_level, NULL );
+			req_id = osrfAppSessionSendRequest( session, arr, method, api_level );
 			jsonObjectFree(arr);
 		} else {
 
@@ -264,7 +264,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 					jsonObjectPush(jsonParams, jsonXMLToJSONObject(str));
 				}
 
-				req_id = osrfAppSessionMakeRequest( session, jsonParams, method, api_level, NULL );
+				req_id = osrfAppSessionSendRequest( session, jsonParams, method, api_level );
 				jsonObjectFree(jsonParams);
 			}
 		}
