@@ -488,6 +488,8 @@ int osrfAppSessionMakeRequest(
 		osrfAppSession* session, const jsonObject* params,
 		const char* method_name, int protocol, osrfStringArray* param_strings ) {
 
+	osrfLogWarning( OSRF_LOG_MARK, "Function osrfAppSessionMakeRequest() is deprecasted; "
+			"call osrfAppSessionSendRequest() instead" );
 	return osrfAppSessionMakeLocaleRequest( session, params,
 			method_name, protocol, param_strings, NULL );
 }
