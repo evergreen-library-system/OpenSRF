@@ -16,6 +16,9 @@
 */
 
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
 #include "opensrf/utils.h"
 #include "opensrf/log.h"
 #include "opensrf/osrf_list.h"
@@ -25,7 +28,7 @@
 
 static osrfRouter* router = NULL;
 
-static sig_atomic_t stop_signal = 0;
+static volatile sig_atomic_t stop_signal = 0;
 
 static void setupRouter(jsonObject* configChunk);
 
@@ -86,6 +89,8 @@ int main( int argc, char* argv[] ) {
 
 	/* Spawn child process(es) */
 
+	int rc = EXIT_SUCCESS;
+	int parent = 1;    // boolean
 	int i;
 	for(i = 0; i < configInfo->size; i++) {
 		jsonObject* configChunk = jsonObjectGetIndex(configInfo, i);
@@ -104,18 +109,59 @@ int main( int argc, char* argv[] ) {
 		}
 		if(fork() == 0) { /* create a new child to run this router instance */
 			setupRouter(configChunk);
+			parent = 0;
 			break;  /* We're a child; don't spawn any more children here */
 		}
 	}
 
+	if( parent ) {
+		// Wait for all child processes to terminate.
+		// If any ended abnormally, report it.
+		while( 1 ) {  // Loop until all children terminate
+			int status;
+			errno = 0;
+			pid_t child_pid = wait( &status );
+			if( -1 == child_pid ) {
+				// ECHILD means no children are left.  Anything else we ignore.
+				if( ECHILD == errno )
+					break;
+			} else if( WIFEXITED( status ) ) {
+				// Relatively normal exit, i.e. via calling exit()
+				// or _exit(), or by returning from main()
+				int child_rc = WEXITSTATUS( status );
+				if( child_rc ) {
+					osrfLogWarning( OSRF_LOG_MARK,
+						"Child router process %ld exited with return status %d",
+						(long) child_pid, child_rc );
+					rc = EXIT_FAILURE;
+				} else {
+					;    // Terminated successfully; silently ignore
+				}
+			} else if( WIFSIGNALED( status ) ) {
+				// Killed by a signal
+				int signo = WTERMSIG( status );
+				const char* extra = "";
+#ifdef WCOREDUMP
+				if( WCOREDUMP( status ) )
+					extra = "with core dump ";
+#endif
+				osrfLogWarning( OSRF_LOG_MARK, "Child router process %ld killed %sby signal %d",
+					(long) child_pid, extra, signo );
+
+				rc = EXIT_FAILURE;
+			}
+		}
+	}
+
 	if( stop_signal ) {
-		// Interrupted by a signal?  Re raise so the parent can see it.
+		// Interrupted by a signal?  Re-raise so the parent can see it.
 		osrfLogWarning( OSRF_LOG_MARK, "Interrupted by signal %d; re-raising",
 				(int) stop_signal );
+		signal( stop_signal, SIG_DFL );
 		raise( stop_signal );
 	}
 
-	return EXIT_SUCCESS;
+	return rc;
 }
 
 /**
@@ -144,7 +190,7 @@ static void setupRouter(jsonObject* configChunk) {
 
 	if(!log_file)
 	{
-		fprintf(stderr, "Log file name not specified for router\n");
+		osrfLogError( OSRF_LOG_MARK, "Log file name not specified for router" );
 		return;
 	}
 
@@ -196,7 +242,6 @@ static void setupRouter(jsonObject* configChunk) {
 		osrfStringArrayAdd(tclients, clientDomain);
 	}
 
-
 	if( tclients->size == 0 || tservers->size == 0 ) {
 		osrfLogError( OSRF_LOG_MARK,
 				"We need trusted servers and trusted client to run the router...");
@@ -213,7 +258,8 @@ static void setupRouter(jsonObject* configChunk) {
 	signal(SIGTERM,routerSignalHandler);
 
 	if( (osrfRouterConnect(router)) != 0 ) {
-		fprintf(stderr, "Unable to connect router to jabber server %s... exiting\n", server );
+		osrfLogError( OSRF_LOG_MARK, "Unable to connect router to jabber server %s... exiting",
+			server );
 		osrfRouterFree(router);
 		return;
 	}

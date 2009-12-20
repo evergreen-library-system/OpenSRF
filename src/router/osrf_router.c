@@ -40,7 +40,7 @@ struct osrfRouterStruct {
 	char* resource;       /**< Router's resource name for the Jabber logon. */
 	char* password;       /**< Router's password for the Jabber logon. */
 	int port;             /**< Jabber's port number. */
-	sig_atomic_t stop;    /**< To be set by signal handler to interrupt main loop. */
+	volatile sig_atomic_t stop; /**< To be set by signal handler to interrupt main loop. */
 
 	/** Array of client domains that we allow to send requests through us. */
 	osrfStringArray* trustedClients;
