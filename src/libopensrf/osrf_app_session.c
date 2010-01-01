@@ -81,7 +81,7 @@ static osrfAppRequest* _osrf_app_request_init(
 
 /**
 	@brief Free an osrfAppRequest and everything it owns.
-	@param req Pointer to an osrfAppRequest, cast to a void pointer.
+	@param req Pointer to an osrfAppRequest.
 */
 static void _osrf_app_request_free( osrfAppRequest * req ) {
 	if( req ) {
@@ -238,9 +238,11 @@ void osrf_app_session_request_reset_timeout( osrfAppSession* session, int req_id
 	@param req Pointer to the osrfAppRequest representing the request.
 	@param timeout Maxmimum time to wait, in seconds.
 
-	@return 
+	@return Pointer to the next osrfMessage for this request, if one is available, or if it
+	becomes available before the end of the timeout; otherwise NULL;
 
-	If the input queue for this request is not empty, dequeue the next message and return it.
+	If there is already a request available in the input queue, dequeuand return it
+	immediately.
 */
 static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 
@@ -318,22 +320,16 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 	return NULL;
 }
 
-/** Resend this requests original request message */
-static int _osrf_app_request_resend( osrfAppRequest* req ) {
-	if(req == NULL) return 0;
-	if(!req->complete) {
-		osrfLogDebug( OSRF_LOG_MARK,  "Resending request [%d]", req->request_id );
-		return _osrf_app_session_send( req->session, req->payload );
-	}
-	return 1;
-}
-
-
 // --------------------------------------------------------------------------
 // Session API
 // --------------------------------------------------------------------------
 
-/** Install a locale for the session */
+/**
+	@brief Install a copy of a locale string in a specified session.
+	@param session Pointer to the osrfAppSession in which the locale is to be installed.
+	@param locale The locale string to be copied and installed.
+	@return A pointer to the installed copy of the locale string.
+*/
 char* osrf_app_session_set_locale( osrfAppSession* session, const char* locale ) {
 	if (!session || !locale)
 		return NULL;
@@ -384,8 +380,23 @@ static void _osrf_app_session_push_session( osrfAppSession* session ) {
 	}
 }
 
-/** Allocates and initializes a new app_session */
+/**
+	@brief Create an osrfAppSession for a client.
+	@param remote_service Name of the service to which to connect
+	@return Pointer to the new osrfAppSession if successful, or NULL upon error.
 
+	Allocate memory for an osrfAppSession, and initialize it as follows:
+
+	- For talking with Jabber, grab an existing transport_client that must have been
+	already set up by a prior call to osrfSystemBootstrapClientResc().
+	- Build a Jabber ID for addressing the service.
+	- Build a session ID based on a fine-grained timestamp and a process ID.  This ID is
+	expected to be unique across the system, but uniqueness is not strictly guaranteed.
+	- Initialize various other bits and scraps.
+	- Add the session to the global session cache.
+
+	Do @em not connect to the service at this point.
+*/
 osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 
 	if (!remote_service) {
@@ -395,6 +406,7 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 
 	osrfAppSession* session = safe_malloc(sizeof(osrfAppSession));
 
+	// Grab an existing transport_client for talking with Jabber
 	session->transport_handle = osrfSystemGetTransportClient();
 	if( session->transport_handle == NULL ) {
 		osrfLogWarning( OSRF_LOG_MARK, "No transport client for service 'client'");
@@ -402,10 +414,11 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 		return NULL;
 	}
 
+	// Get a list of domain names from the config settings;
+	// ignore all but the first one in the list.
 	osrfStringArray* arr = osrfNewStringArray(8);
 	osrfConfigGetValueList(NULL, arr, "/domain");
 	const char* domain = osrfStringArrayGetString(arr, 0);
-
 	if (!domain) {
 		osrfLogWarning( OSRF_LOG_MARK, "No domains specified in the OpenSRF config file");
 		free( session );
@@ -413,6 +426,7 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 		return NULL;
 	}
 
+	// Get a router name from the config settings.
 	char* router_name = osrfConfigGetValue(NULL, "/router_name");
 	if (!router_name) {
 		osrfLogWarning( OSRF_LOG_MARK, "No router name specified in the OpenSRF config file");
@@ -424,12 +438,13 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 	char target_buf[512];
 	target_buf[ 0 ] = '\0';
 
+	// Using the router name, domain, and service name,
+	// build a Jabber ID for addressing the service.
 	int len = snprintf( target_buf, sizeof(target_buf), "%s@%s/%s",
 			router_name ? router_name : "(null)",
 			domain ? domain : "(null)",
 			remote_service ? remote_service : "(null)" );
 	osrfStringArrayFree(arr);
-	//free(domain);
 	free(router_name);
 
 	if( len >= sizeof( target_buf ) ) {
@@ -469,7 +484,6 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 
 	// Initialize the hash table
 	int i;
-
 	for( i = 0; i < OSRF_REQUEST_HASH_SIZE; ++i )
 		session->request_hash[ i ] = NULL;
 
@@ -477,17 +491,44 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 	return session;
 }
 
+/**
+	@brief Find or create an osrfAppSession for a server.
+	@param session_id The session ID.  In practice this comes from the thread member of
+	the transport message from the client.
+	@param our_app The name of the service being provided.
+	@param remote_id Jabber ID of the client.
+	@return Pointer to the newly created osrfAppSession if successful, or NULL upon failure.
+
+	First, look in the global session cache for session with the specified session ID.  IF
+	you find one, return it immediately, ignoring the values of the @a our_app and @a
+	remote_id parameters.  Otherwise:
+
+	- Allocate memory for an osrfAppSession.
+	- For talking with Jabber, grab an existing transport_client that must have been
+	already set up by a prior call to osrfSystemBootstrapClientResc().
+	- Install a copy of the @a our_app string as remote_service.
+	- Install copies of the @a remote_id string as remote_id and orig_remote_id.
+	- Initialize various other bits and scraps.
+	- Add the session to the global session cache.
+
+	Do @em not respond to the client at this point.
+*/
 osrfAppSession* osrf_app_server_session_init(
 		const char* session_id, const char* our_app, const char* remote_id ) {
 
 	osrfLogDebug( OSRF_LOG_MARK, "Initing server session with session id %s, service %s,"
 			" and remote_id %s", session_id, our_app, remote_id );
 
+	// If such a session already exists, return it without further ado.
+	// In practice this should never happen, and should probably be treated as an
+	// error if it ever does.
 	osrfAppSession* session = osrf_app_session_find_session( session_id );
-	if(session) return session;
+	if(session)
+		return session;
 
 	session = safe_malloc(sizeof(osrfAppSession));
 
+	// Grab an existing transport_client for talking with Jabber
 	session->transport_handle = osrfSystemGetTransportClient();
 	if( session->transport_handle == NULL ) {
 		osrfLogWarning( OSRF_LOG_MARK, "No transport client for service '%s'", our_app );
@@ -495,6 +536,9 @@ osrfAppSession* osrf_app_server_session_init(
 		return NULL;
 	}
 
+	// Decide from a config setting whether the session is stateless or not.  However
+	// this determination is pointless because it will immediately be overruled according
+	// to the compile-time macro ASSUME_STATELESS.
 	int stateless = 0;
 	char* statel = osrf_settings_host_value("/apps/%s/stateless", our_app );
 	if(statel) stateless = atoi(statel);
@@ -522,7 +566,6 @@ osrfAppSession* osrf_app_server_session_init(
 
 	// Initialize the hash table
 	int i;
-
 	for( i = 0; i < OSRF_REQUEST_HASH_SIZE; ++i )
 		session->request_hash[ i ] = NULL;
 
@@ -781,11 +824,22 @@ int osrf_app_session_disconnect( osrfAppSession* session){
 	return 1;
 }
 
+/** Resend a request message, as specified by session and request id. */
 int osrf_app_session_request_resend( osrfAppSession* session, int req_id ) {
 	osrfAppRequest* req = find_app_request( session, req_id );
-	return _osrf_app_request_resend( req );
-}
 
+	int rc;
+	if(req == NULL) {
+		rc = 0;
+	} else if(!req->complete) {
+		osrfLogDebug( OSRF_LOG_MARK,  "Resending request [%d]", req->request_id );
+		rc = _osrf_app_session_send( req->session, req->payload );
+	} else {
+		rc = 1;
+	}
+
+	return rc;
+}
 
 static int osrfAppSessionSendBatch( osrfAppSession* session, osrfMessage* msgs[], int size ) {
 
@@ -864,8 +918,15 @@ int osrf_app_session_queue_wait( osrfAppSession* session, int timeout, int* recv
 	return osrf_stack_process(session->transport_handle, timeout, recvd);
 }
 
-/** Disconnects (if client) and removes the given session from the global session cache
-	! This frees all attached app_requests !
+/**
+	@brief Shut down and destroy an osrfAppSession.
+	@param session Pointer to the osrfAppSession to be destroyed.
+
+	If this is a client session, send a DISCONNECT message.
+
+	Remove the session from the global session cache.
+
+	Free all associated resources, including any pending osrfAppRequests.
 */
 void osrfAppSessionFree( osrfAppSession* session ){
 	if(session == NULL) return;
@@ -901,7 +962,12 @@ void osrfAppSessionFree( osrfAppSession* session ){
 	// Free the request hash
 	int i;
 	for( i = 0; i < OSRF_REQUEST_HASH_SIZE; ++i ) {
-		_osrf_app_request_free( session->request_hash[ i ] );
+		osrfAppRequest* app = session->request_hash[ i ];
+		while( app ) {
+			osrfAppRequest* next = app->next;
+			_osrf_app_request_free( app );
+			app = next;
+		}
 	}
 	free(session);
 }

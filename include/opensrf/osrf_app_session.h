@@ -47,7 +47,7 @@ typedef struct osrf_app_request_struct osrfAppRequest;
 */
 struct osrf_app_session_struct {
 
-	/** Our messag passing object */
+	/** Our message passing object */
 	transport_client* transport_handle;
 
 	/** The original remote id of the remote service we're talking to */
@@ -64,7 +64,8 @@ struct osrf_app_session_struct {
 	/** Our ID */
 	char* session_id;
 
-	/** true if this session does not require connect messages */
+	/** Boolean; true if this session does not require connect messages.
+	    Assigned a value depending on the compile-time macro ASSUME_STATELESS. */
 	int stateless;
 
 	/** The connect state */
@@ -73,12 +74,13 @@ struct osrf_app_session_struct {
 	/** SERVER or CLIENT */
 	enum OSRF_SESSION_TYPE type;
 
-	/** the current locale for this session **/
+	/** the current locale for this session. **/
 	char* session_locale;
 
-	/** let the user use the session to store their own session data */
+	/** let the user use the session to store their own session data. */
 	void* userData;
 
+	/** Callback function for freeing user's session data. */
 	void (*userDataFree) (void*);
 
     int transport_error;
