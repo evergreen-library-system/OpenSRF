@@ -33,6 +33,11 @@ enum OSRF_SESSION_TYPE {
 	OSRF_SESSION_CLIENT
 };
 
+struct osrf_app_request_struct;
+typedef struct osrf_app_request_struct osrfAppRequest;
+
+#define OSRF_REQUEST_HASH_SIZE 64
+
 /**
 	@brief Representation of a session with another application.
 
@@ -44,8 +49,6 @@ struct osrf_app_session_struct {
 
 	/** Our messag passing object */
 	transport_client* transport_handle;
-	/** Cache of active app_request objects */
-	osrfList* request_queue;
 
 	/** The original remote id of the remote service we're talking to */
 	char* orig_remote_id;
@@ -61,7 +64,7 @@ struct osrf_app_session_struct {
 	/** Our ID */
 	char* session_id;
 
-	/* true if this session does not require connect messages */
+	/** true if this session does not require connect messages */
 	int stateless;
 
 	/** The connect state */
@@ -73,12 +76,15 @@ struct osrf_app_session_struct {
 	/** the current locale for this session **/
 	char* session_locale;
 
-	/* let the user use the session to store their own session data */
+	/** let the user use the session to store their own session data */
 	void* userData;
 
 	void (*userDataFree) (void*);
 
     int transport_error;
+
+	/** Hash table of pending requests. */
+	osrfAppRequest* request_hash[ OSRF_REQUEST_HASH_SIZE ];
 };
 typedef struct osrf_app_session_struct osrfAppSession;
 
@@ -114,7 +120,7 @@ int osrfAppSessionMakeRequest(
 /** Builds a new app_request object with the given payload and returns
 	the id of the request.  This id is then used to perform work on the
 	request.
- */
+*/
 int osrfAppSessionSendRequest(
 		 osrfAppSession* session, const jsonObject* params,
 		 const char* method_name, int protocol );
