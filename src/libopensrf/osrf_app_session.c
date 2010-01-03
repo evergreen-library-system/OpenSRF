@@ -105,7 +105,8 @@ static void _osrf_app_request_free( osrfAppRequest * req ) {
 	@param req Pointer to the osrfAppRequest for the original REQUEST message.
 	@param result Pointer to an osrfMessage received in response to the request.
 
-	We maintain a linked list of response messages, and traverse it to find the end.
+	For each osrfAppRequest we maintain a linked list of response messages, and traverse
+	it to find the end.
 */
 static void _osrf_app_request_push_queue( osrfAppRequest* req, osrfMessage* result ){
 	if(req == NULL || result == NULL)
@@ -212,9 +213,12 @@ static void add_app_request( osrfAppSession* session, osrfAppRequest* req ) {
 }
 
 /**
-	@brief Set the timeout for a request to one second.
+	@brief Request a reset of the timeout period for a request.
 	@param session Pointer to the relevant osrfAppSession.
 	@param req_id Request ID of the request whose timeout is to be reset.
+
+	This happens when a client receives a STATUS message with a status code
+	OSRF_STATUS_CONTINUE; in effect the server is asking for more time.
 
 	The request to be reset is identified by the combination of session and request id.
 */
@@ -228,21 +232,20 @@ void osrf_app_session_request_reset_timeout( osrfAppSession* session, int req_id
 }
 
 /**
-	Checks the receive queue for messages.  If any are found, the first
-	is popped off and returned.  Otherwise, this method will wait at most timeout
-	seconds for a message to appear in the receive queue.  Once it arrives it is returned.
-	If no messages arrive in the timeout provided, null is returned.
-*/
-/**
-	@brief Return the next response message for a given request, subject to a timeout.
+	@brief Fetch the next response message to a given previous request, subject to a timeout.
 	@param req Pointer to the osrfAppRequest representing the request.
 	@param timeout Maxmimum time to wait, in seconds.
 
 	@return Pointer to the next osrfMessage for this request, if one is available, or if it
 	becomes available before the end of the timeout; otherwise NULL;
 
-	If there is already a request available in the input queue, dequeuand return it
-	immediately.
+	If there is already a message available in the input queue for this request, dequeue and
+	return it 	immediately.  Otherwise wait up to timeout seconds until you either get an
+	input message for the specified request, run out of time, or encounter an error.
+
+	You may also receive other messages for other requests, and other sessions.  These other
+	messages will be wholly or partially processed behind the scenes while you wait for the
+	one you want.
 */
 static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 
@@ -258,19 +261,25 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 	time_t start = time(NULL);
 	time_t remaining = (time_t) timeout;
 
+	// Wait repeatedly for input messages until you either receive one for the request
+	// you're interested in, run out of time, or encounter an error.
+	// Wait repeatedly because you may also receive messages for other requests, or for
+	// other sessions, and process them behind the scenes. These are not the messages
+	// you're looking for.
 	while( remaining >= 0 ) {
 		/* tell the session to wait for stuff */
 		osrfLogDebug( OSRF_LOG_MARK,  "In app_request receive with remaining time [%d]",
 				(int) remaining );
 
+		
 		osrf_app_session_queue_wait( req->session, 0, NULL );
 		if(req->session->transport_error) {
 			osrfLogError(OSRF_LOG_MARK, "Transport error in recv()");
 			return NULL;
 		}
 
-		if( req->result != NULL ) { /* if we received anything */
-			/* pop off the first message in the list */
+		if( req->result != NULL ) { /* if we received any results for this request */
+			/* dequeue the first message in the list */
 			osrfLogDebug( OSRF_LOG_MARK, "app_request_recv received a message, returning it" );
 			osrfMessage* ret_msg = req->result;
 			req->result = ret_msg->next;
@@ -290,8 +299,8 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 			return NULL;
 		}
 
-		if( req->result != NULL ) { /* if we received anything */
-			/* pop off the first message in the list */
+		if( req->result != NULL ) { /* if we received any results for this request */
+			/* dequeue the first message in the list */
 			osrfLogDebug( OSRF_LOG_MARK,  "app_request_recv received a message, returning it");
 			osrfMessage* ret_msg = req->result;
 			req->result = ret_msg->next;
@@ -300,10 +309,16 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 
 			return ret_msg;
 		}
+
 		if( req->complete )
 			return NULL;
 
+		// Determine how much time is left
 		if(req->reset_timeout) {
+			// We got a reprieve.  This happens when a client receives a STATUS message
+			// with a status code OSRF_STATUS_CONTINUE.  We restart the timer from the
+			// beginning -- but only once.  We reset reset_timeout to zero. so that a
+			// second attempted reprieve will allow, at most, only one more second.
 			remaining = (time_t) timeout;
 			req->reset_timeout = 0;
 			osrfLogDebug( OSRF_LOG_MARK, "Received a timeout reset");
@@ -312,6 +327,7 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 		}
 	}
 
+	// Timeout exhausted; no messages for the request in question
 	char* paramString = jsonObjectToJSON(req->payload->_params);
 	osrfLogInfo( OSRF_LOG_MARK, "Returning NULL from app_request_recv after timeout: %s %s",
 		req->payload->method_name, paramString);
@@ -387,11 +403,11 @@ static void _osrf_app_session_push_session( osrfAppSession* session ) {
 
 	Allocate memory for an osrfAppSession, and initialize it as follows:
 
-	- For talking with Jabber, grab an existing transport_client that must have been
+	- For talking with Jabber, grab an existing transport_client.  It must have been
 	already set up by a prior call to osrfSystemBootstrapClientResc().
 	- Build a Jabber ID for addressing the service.
 	- Build a session ID based on a fine-grained timestamp and a process ID.  This ID is
-	expected to be unique across the system, but uniqueness is not strictly guaranteed.
+	intended to be unique across the system, but uniqueness is not strictly guaranteed.
 	- Initialize various other bits and scraps.
 	- Add the session to the global session cache.
 
@@ -499,12 +515,12 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 	@param remote_id Jabber ID of the client.
 	@return Pointer to the newly created osrfAppSession if successful, or NULL upon failure.
 
-	First, look in the global session cache for session with the specified session ID.  IF
-	you find one, return it immediately, ignoring the values of the @a our_app and @a
+	First, look in the global session cache for a session with the specified session ID.
+	If you find one, return it immediately, ignoring the values of the @a our_app and @a
 	remote_id parameters.  Otherwise:
 
 	- Allocate memory for an osrfAppSession.
-	- For talking with Jabber, grab an existing transport_client that must have been
+	- For talking with Jabber, grab an existing transport_client.  It should have been
 	already set up by a prior call to osrfSystemBootstrapClientResc().
 	- Install a copy of the @a our_app string as remote_service.
 	- Install copies of the @a remote_id string as remote_id and orig_remote_id.
@@ -692,25 +708,41 @@ static int osrfAppSessionMakeLocaleRequest(
 	return req->request_id;
 }
 
+/**
+	@brief Mark an osrfAppRequest (identified by session and ID) as complete.
+	@param session Pointer to the osrfAppSession that owns the request.
+	@param request_id Request ID of the osrfAppRequest.
+*/
 void osrf_app_session_set_complete( osrfAppSession* session, int request_id ) {
 	if(session == NULL)
 		return;
 
 	osrfAppRequest* req = find_app_request( session, request_id );
-	if(req) req->complete = 1;
+	if(req)
+		req->complete = 1;
 }
 
+/**
+	@brief Determine whether a osrfAppRequest, identified by session and ID, is complete.
+	@param session Pointer to the osrfAppSession that owns the request.
+	@param request_id Request ID of the osrfAppRequest.
+	@return Non-zero if the request is complete; zero if it isn't, or if it can't be found.
+*/
 int osrf_app_session_request_complete( const osrfAppSession* session, int request_id ) {
 	if(session == NULL)
 		return 0;
+
 	osrfAppRequest* req = find_app_request( session, request_id );
 	if(req)
 		return req->complete;
+
 	return 0;
 }
 
-
-/** Resets the remote connection id to that of the original*/
+/**
+	@brief Reset the remote ID of a session to its original remote ID.
+	@param session Pointer to the osrfAppSession to be reset.
+*/
 void osrf_app_session_reset_remote( osrfAppSession* session ){
 	if( session==NULL )
 		return;
@@ -721,8 +753,13 @@ void osrf_app_session_reset_remote( osrfAppSession* session ){
 	osrf_app_session_set_remote( session, session->orig_remote_id );
 }
 
+/**
+	@brief Set a session's remote ID to a specified value.
+	@param session Pointer to the osrfAppSession whose remote ID is to be set.
+	@param remote_id Pointer to the new remote id.
+*/
 void osrf_app_session_set_remote( osrfAppSession* session, const char* remote_id ) {
-	if(session == NULL)
+	if( session == NULL || remote_id == NULL )
 		return;
 
 	if( session->remote_id ) {
@@ -738,21 +775,31 @@ void osrf_app_session_set_remote( osrfAppSession* session, const char* remote_id
 }
 
 /**
-	pushes the given message into the result list of the app_request
-	with the given request_id
+	@brief Append an osrfMessage to the list of responses to an osrfAppRequest.
+	@param session Pointer to the osrfAppSession that owns the request.
+	@param msg Pointer to the osrfMessage to be added.
+
+	The thread_trace member of the osrfMessage is the request_id of the osrfAppRequest.
+	Find the corresponding request in the session and append the osrfMessage to its list.
 */
-int osrf_app_session_push_queue(
-		osrfAppSession* session, osrfMessage* msg ){
-	if(session == NULL || msg == NULL) return 0;
-
-	osrfAppRequest* req = find_app_request( session, msg->thread_trace );
-	if(req == NULL) return 0;
-	_osrf_app_request_push_queue( req, msg );
-
-	return 0;
+void osrf_app_session_push_queue( osrfAppSession* session, osrfMessage* msg ) {
+	if( session && msg ) {
+		osrfAppRequest* req = find_app_request( session, msg->thread_trace );
+		if( req )
+			_osrf_app_request_push_queue( req, msg );
+	}
 }
 
-/** Attempts to connect to the remote service */
+/**
+	@brief Connect to the remote service.
+	@param session Pointer to the osrfAppSession for the service.
+	@return 1 if successful, or 0 if not.
+
+	If already connected, exit immediately, reporting success.  Otherwise, build a CONNECT
+	message and send it to the service.  Wait for up to five seconds for an acknowledgement.
+
+	The timeout value is currently hard-coded.  Perhaps it should be configurable.
+*/
 int osrfAppSessionConnect( osrfAppSession* session ) {
 
 	if(session == NULL)
@@ -778,6 +825,8 @@ int osrfAppSessionConnect( osrfAppSession* session ) {
 	time_t start = time(NULL);
 	time_t remaining = (time_t) timeout;
 
+	// Wait for the acknowledgement.  We look for it repeatedly because, under the covers,
+	// we may receive and process messages other than the one we're looking for.
 	while( session->state != OSRF_SESSION_CONNECTED && remaining >= 0 ) {
 		osrf_app_session_queue_wait( session, remaining, NULL );
 		if(session->transport_error) {
@@ -796,9 +845,15 @@ int osrfAppSessionConnect( osrfAppSession* session ) {
 	return 1;
 }
 
+/**
+	@brief Disconnect from the remote service.  No response is expected.
+	@param session Pointer to the osrfAppSession to be disconnected.
+	@return 1 in all cases.
 
-
-/** Disconnects from the remote service */
+	If we're already disconnected, return immediately without doing anything.  Likewise if
+	we have a stateless session and we're in the process of connecting.  Otherwise, send a
+	DISCONNECT message to the service.
+*/
 int osrf_app_session_disconnect( osrfAppSession* session){
 	if(session == NULL)
 		return 1;
@@ -824,7 +879,16 @@ int osrf_app_session_disconnect( osrfAppSession* session){
 	return 1;
 }
 
-/** Resend a request message, as specified by session and request id. */
+/**
+	@brief Resend a request message, as specified by session and request id.
+	@param session Pointer to the osrfAppSession.
+	@param req_id Request ID for the request to be resent.
+	@return Zero if successful, or if the specified request cannot be found; 1 if the
+	request is already complete, or if the attempt to resend the message fails.
+
+	The choice of return codes may seem seem capricious, but at this writing nothing
+	pays any attention to the return code anyway.
+*/
 int osrf_app_session_request_resend( osrfAppSession* session, int req_id ) {
 	osrfAppRequest* req = find_app_request( session, req_id );
 
@@ -832,7 +896,7 @@ int osrf_app_session_request_resend( osrfAppSession* session, int req_id ) {
 	if(req == NULL) {
 		rc = 0;
 	} else if(!req->complete) {
-		osrfLogDebug( OSRF_LOG_MARK,  "Resending request [%d]", req->request_id );
+		osrfLogDebug( OSRF_LOG_MARK, "Resending request [%d]", req->request_id );
 		rc = _osrf_app_session_send( req->session, req->payload );
 	} else {
 		rc = 1;
@@ -841,15 +905,26 @@ int osrf_app_session_request_resend( osrfAppSession* session, int req_id ) {
 	return rc;
 }
 
+/**
+	@brief Send one or more osrfMessages to the remote service or client.
+	@param session Pointer to the osrfAppSession responsible for sending the message(s).
+	@param msgs Pointer to an array of pointers to osrfMessages.
+	@param size How many messages to send.
+	@return 0 upon success, or -1 upon failure.
+*/
 static int osrfAppSessionSendBatch( osrfAppSession* session, osrfMessage* msgs[], int size ) {
 
-	if( !(session && msgs && size > 0) ) return 0;
+	if( !(session && msgs && size > 0) ) return -1;
 	int retval = 0;
 
 	osrfMessage* msg = msgs[0];
 
 	if(msg) {
 
+		// First grab and process any input messages, for any app session.  This gives us
+		// a chance to see any CONNECT or DISCONNECT messages that may have arrived.  We
+		// may also see some unrelated messages, but we have to process those sooner or
+		// later anyway, so we might as well do it now.
 		osrf_app_session_queue_wait( session, 0, NULL );
 
 		if(session->state != OSRF_SESSION_CONNECTED)  {
@@ -866,12 +941,13 @@ static int osrfAppSessionSendBatch( osrfAppSession* session, osrfMessage* msgs[]
 					(session->state != OSRF_SESSION_CONNECTED) ) {
 
 					if(!osrfAppSessionConnect( session ))
-						return 0;
+						return -1;
 				}
 			}
 		}
 	}
 
+	// Bundle all the osrfMessages into a single transport_message, then send it.
 	char* string = osrfMessageSerializeBatch(msgs, size);
 
 	if( string ) {
@@ -881,8 +957,8 @@ static int osrfAppSessionSendBatch( osrfAppSession* session, osrfMessage* msgs[]
 		message_set_osrf_xid( t_msg, osrfLogGetXid() );
 
 		retval = client_send_message( session->transport_handle, t_msg );
-
-		if( retval ) osrfLogError(OSRF_LOG_MARK, "client_send_message failed");
+		if( retval )
+			osrfLogError(OSRF_LOG_MARK, "client_send_message failed");
 
 		osrfLogInfo(OSRF_LOG_MARK, "[%s] sent %d bytes of data to %s",
 			session->remote_service, strlen(string), t_msg->recipient );
@@ -896,21 +972,47 @@ static int osrfAppSessionSendBatch( osrfAppSession* session, osrfMessage* msgs[]
 	return retval;
 }
 
+/**
+	@brief Send a single osrfMessage to the remote service or client.
+	@param session Pointer to the osrfAppSession.
+	@param msg Pointer to the osrfMessage to be sent.
+	@return zero upon success, or 1 upon failure.
 
-
+	A thin wrapper.  Create an array of one element, and pass it to osrfAppSessionSendBatch().
+*/
 static int _osrf_app_session_send( osrfAppSession* session, osrfMessage* msg ){
-	if( !(session && msg) ) return 0;
+	if( !(session && msg) )
+		return 1;
 	osrfMessage* a[1];
 	a[0] = msg;
-	return osrfAppSessionSendBatch( session, a, 1 );
+	return  - osrfAppSessionSendBatch( session, a, 1 );
 }
 
 
 /**
-	Waits up to 'timeout' seconds for some data to arrive.
-	Any data that arrives will be processed according to its
-	payload and message type.  This method will return after
-	any data has arrived.
+	@brief Wait for any input messages to arrive, and process them as needed.
+	@param session Pointer to the osrfAppSession whose transport_session we will use.
+	@param timeout How many seconds to wait for the first input message.
+	@param recvd Pointer to an boolean int.  If you receive at least one message, set the boolean
+	to true; otherwise set it to false.
+	@return 0 upon success (even if a timeout occurs), or -1 upon failure.
+
+	A thin wrapper for osrf_stack_process().  The timeout applies only to the first
+	message; process subsequent messages if they are available, but don't wait for them.
+
+	The first parameter identifies an osrfApp session, but all we really use it for is to
+	get a pointer to the transport_session.  Typically, if not always, a given process
+	opens only a single transport_session (to talk to the Jabber server), and all app
+	sessions in that process use the same transport_session.
+
+	Hence this function indiscriminately waits for input messages for all osrfAppSessions,
+	not just the one specified.
+
+	Dispatch each message to the appropriate processing routine, depending on its type
+	and contents, and on whether we're acting as a client or as a server for that message.
+	For example, a response to a request may be appended to the input queue of the
+	relevant request.  A server session receiving a REQUEST message may execute the
+	requested method.  And so forth.
 */
 int osrf_app_session_queue_wait( osrfAppSession* session, int timeout, int* recvd ){
 	if(session == NULL) return 0;
@@ -935,8 +1037,9 @@ void osrfAppSessionFree( osrfAppSession* session ){
 
 	osrfLogDebug(OSRF_LOG_MARK,  "AppSession [%s] [%s] destroying self and deleting requests",
 			session->remote_service, session->session_id );
+	/* disconnect if we're a client */
 	if(session->type == OSRF_SESSION_CLIENT
-			&& session->state != OSRF_SESSION_DISCONNECTED ) { /* disconnect if we're a client */
+			&& session->state != OSRF_SESSION_DISCONNECTED ) {
 		osrfMessage* dis_msg = osrf_message_init( DISCONNECT, session->thread_trace, 1 );
 		_osrf_app_session_send( session, dis_msg );
 		osrfMessageFree(dis_msg);
@@ -972,6 +1075,16 @@ void osrfAppSessionFree( osrfAppSession* session ){
 	free(session);
 }
 
+/**
+	@brief Wait for a response to a given request, subject to a timeout.
+	@param session Pointer to the osrfAppSession that owns the request.
+	@param req_id Request ID for the request.
+	@param timeout How many seconds to wait.
+	@return A pointer to the received osrfMessage if one arrives; otherwise NULL.
+
+	A thin wrapper.  Given a session and a request ID, look up the corresponding request
+	and pass it to _osrf_app_request_recv().
+*/
 osrfMessage* osrfAppSessionRequestRecv(
 		osrfAppSession* session, int req_id, int timeout ) {
 	if(req_id < 0 || session == NULL)
@@ -980,8 +1093,20 @@ osrfMessage* osrfAppSessionRequestRecv(
 	return _osrf_app_request_recv( req, timeout );
 }
 
+/**
+	@brief In response to a specified request, send a payload of data to a client.
+	@param ses Pointer to the osrfAppSession that owns the request.
+	@param requestId Request ID of the osrfAppRequest.
+	@param data Pointer to a jsonObject containing the data payload.
+	@return 0 upon success, or -1 upon failure.
+
+	Translate the jsonObject to a JSON string, and send it wrapped in a RESULT message.
+
+	The only failure detected is if either of the two pointer parameters is NULL.
+*/
 int osrfAppRequestRespond( osrfAppSession* ses, int requestId, const jsonObject* data ) {
-	if(!ses || ! data ) return -1;
+	if( !ses || ! data )
+		return -1;
 
 	osrfMessage* msg = osrf_message_init( RESULT, requestId, 1 );
 	osrf_message_set_status_info( msg, NULL, "OK", OSRF_STATUS_OK );
@@ -997,6 +1122,21 @@ int osrfAppRequestRespond( osrfAppSession* ses, int requestId, const jsonObject*
 }
 
 
+/**
+	@brief Send one or two messages to a client in response to a specified request.
+	@param ses Pointer to the osrfAppSession that owns the request.
+	@param requestId Request ID of the osrfAppRequest.
+	@param data Pointer to a jsonObject containing the data payload.
+	@return  Zero in all cases.
+
+	If the @a data parameter is not NULL, translate the jsonObject into a JSON string, and
+	incorporate that string into a RESULT message as as the payload .  Also build a STATUS
+	message indicating that the response is complete.  Send both messages bundled together
+	in the same transport_message.
+
+	If the @a data parameter is NULL, send only a STATUS message indicating that the response
+	is complete.
+*/
 int osrfAppRequestRespondComplete(
 		osrfAppSession* ses, int requestId, const jsonObject* data ) {
 
@@ -1028,6 +1168,17 @@ int osrfAppRequestRespondComplete(
 	return 0;
 }
 
+/**
+	@brief Send a STATUS message, for a specified request, back to the client.
+	@param ses Pointer to the osrfAppSession connected to the client.
+	@param type A numeric code denoting the status.
+	@param name A string naming the status.
+	@param reqId The request ID of the request.
+	@param message A brief message describing the status.
+	@return 0 upon success, or -1 upon failure.
+
+	The only detected failure is when the @a ses parameter is NULL.
+*/
 int osrfAppSessionStatus( osrfAppSession* ses, int type,
 		const char* name, int reqId, const char* message ) {
 
@@ -1037,15 +1188,15 @@ int osrfAppSessionStatus( osrfAppSession* ses, int type,
 		_osrf_app_session_send( ses, msg );
 		osrfMessageFree( msg );
 		return 0;
-	}
-	return -1;
+	} else
+		return -1;
 }
 
 /**
 	@brief Free the global session cache.
 	
 	Note that the osrfHash that implements the global session cache does @em not have a
-	callback function installed for freeing its cargo.  As a result, any outstanding
+	callback function installed for freeing its cargo.  As a result, any remaining
 	osrfAppSessions are leaked, along with all the osrfAppRequests and osrfMessages they
 	own.
 */
