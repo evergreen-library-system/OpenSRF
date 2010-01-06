@@ -1,6 +1,18 @@
 #include <signal.h>
-#include "opensrf/osrf_prefork.h"
-#include "opensrf/osrf_app_session.h"
+#include <sys/types.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/wait.h>
+
+#include "opensrf/utils.h"
+#include "opensrf/log.h"
+#include "opensrf/transport_client.h"
+#include "opensrf/osrf_stack.h"
+#include "opensrf/osrf_settings.h"
 #include "opensrf/osrf_application.h"
 
 #define READ_BUFSIZE 1024
@@ -36,7 +48,7 @@ struct prefork_child_struct {
 
 typedef struct prefork_child_struct prefork_child;
 
-static prefork_simple* prefork_simple_init( transport_client* client,
+static int prefork_simple_init( prefork_simple* prefork, transport_client* client,
 	int max_requests, int min_children, int max_children );
 static prefork_child* launch_child( prefork_simple* forker );
 static void prefork_launch_children( prefork_simple* forker );
@@ -55,7 +67,7 @@ static prefork_child* prefork_child_init(
 
 /* listens on the 'data_to_child' fd and wait for incoming data */
 static void prefork_child_wait( prefork_child* child );
-static int prefork_free( prefork_simple* );
+static void prefork_clear( prefork_simple* );
 static int prefork_child_free( prefork_child* );
 static void osrf_prefork_register_routers( const char* appname );
 static void osrf_prefork_child_exit( prefork_child* );
@@ -118,38 +130,56 @@ int osrf_prefork_run(const char* appname) {
 
 	free(resc);
 
-	prefork_simple* forker = prefork_simple_init(
-		osrfSystemGetTransportClient(), maxr, minc, maxc);
+	prefork_simple forker;
 
-	if(forker == NULL) {
-		osrfLogError( OSRF_LOG_MARK, "osrf_prefork_run() failed to create prefork_simple object");
+	if( prefork_simple_init( &forker, osrfSystemGetTransportClient(), maxr, minc, maxc ) ) {
+		osrfLogError( OSRF_LOG_MARK,
+				"osrf_prefork_run() failed to create prefork_simple object" );
 		return -1;
 	}
 
-	forker->appname   = strdup(appname);
-	forker->keepalive = kalive;
+	// Finish initializing the prefork_simple
+	forker.appname   = strdup(appname);
+	forker.keepalive = kalive;
 
-	prefork_launch_children(forker);
+	// Spawn the children
+	prefork_launch_children( &forker );
 
+	// Tell the router that you're open for business
 	osrf_prefork_register_routers(appname);
 
+	// Sit back and let the requests roll in
 	osrfLogInfo( OSRF_LOG_MARK, "Launching osrf_forker for app %s", appname);
-	prefork_run(forker);
+	prefork_run( &forker );
 
 	osrfLogWarning( OSRF_LOG_MARK, "prefork_run() retuned - how??");
-	prefork_free(forker);
+	prefork_clear( &forker );
 	return 0;
-
 }
 
-/* sends the "register" packet to the specified router */
-static void osrf_prefork_send_router_registration(const char* appname, const char* routerName, const char* routerDomain) {
+/**
+	@brief Register the application with a specified router.
+	@param appname Name of the application.
+	@param routerName Name of the router.
+	@param routerDomain Domain of the router.
+
+	Tell the router that you're open for business so that it can route requests to you.
+*/
+static void osrf_prefork_send_router_registration(
+		const char* appname, const char* routerName, const char* routerDomain ) {
+	// Get a pointer to the global transport_client
 	transport_client* client = osrfSystemGetTransportClient();
+
+	// Construct the Jabber address of the router
 	char* jid = va_list_to_string( "%s@%s/router", routerName, routerDomain );
 	osrfLogInfo( OSRF_LOG_MARK, "%s registering with router %s", appname, jid );
+
+	// Create the registration message, and send it
 	transport_message* msg = message_init("registering", NULL, NULL, jid, NULL );
 	message_set_router_info( msg, NULL, NULL, appname, "register", 0 );
 	client_send_message( client, msg );
+
+	// Clean up
 	message_free( msg );
 	free(jid);
 }
@@ -316,26 +346,35 @@ static void prefork_child_process_request(prefork_child* child, char* data) {
 }
 
 
-static prefork_simple*  prefork_simple_init( transport_client* client,
-		int max_requests, int min_children, int max_children ) {
+/**
+	@brief Partially initialize a prefork_simple provided by the caller.
+	@param prefork Pointer to a a raw prefork_simple to be initialized.
+	@param client Pointer to a transport_client (connection to Jabber).
+	@param max_requests
+	@param min_children Minimum number of child processes to maintain.
+	@param max_children Maximum number of child processes to maintain.
+	@return 0 if successful, or 1 if not (due to invalid parameters).
+*/
+static int prefork_simple_init( prefork_simple* prefork, transport_client* client,
+		 int max_requests, int min_children, int max_children ) {
 
 	if( min_children > max_children ) {
 		osrfLogError( OSRF_LOG_MARK,  "min_children (%d) is greater "
 				"than max_children (%d)", min_children, max_children );
-		return NULL;
+		return 1;
 	}
 
 	if( max_children > ABS_MAX_CHILDREN ) {
 		osrfLogError( OSRF_LOG_MARK,  "max_children (%d) is greater than ABS_MAX_CHILDREN (%d)",
 				max_children, ABS_MAX_CHILDREN );
-		return NULL;
+		return 1;
 	}
 
 	osrfLogInfo(OSRF_LOG_MARK, "Prefork launching child with max_request=%d,"
 		"min_children=%d, max_children=%d", max_requests, min_children, max_children );
 
 	/* flesh out the struct */
-	prefork_simple* prefork = safe_malloc(sizeof(prefork_simple));
+	//prefork_simple* prefork = safe_malloc(sizeof(prefork_simple));
 	prefork->max_requests = max_requests;
 	prefork->min_children = min_children;
 	prefork->max_children = max_children;
@@ -348,7 +387,7 @@ static prefork_simple*  prefork_simple_init( transport_client* client,
 	prefork->first_child  = NULL;
 	prefork->connection   = client;
 
-	return prefork;
+	return 0;
 }
 
 static prefork_child* launch_child( prefork_simple* forker ) {
@@ -468,22 +507,23 @@ static void prefork_run(prefork_simple* forker) {
 			return;
 		}
 
+		// Wait indefinitely for an input message
 		osrfLogDebug( OSRF_LOG_MARK, "Forker going into wait for data...");
 		cur_msg = client_recv( forker->connection, -1 );
 
-		//fprintf(stderr, "Got Data %f\n", get_timestamp_millis() );
+		if( cur_msg == NULL )
+			continue;           // Error?  Interrupted by a signal?
 
-		if( cur_msg == NULL ) continue;
-
-		int honored = 0;     /* true if we've serviced the request */
+		int honored = 0;     /* will be set to true when we service the request */
 		int no_recheck = 0;
 
 		while( ! honored ) {
 
-			if(!no_recheck) check_children( forker, 0 );
+			if(!no_recheck)
+				check_children( forker, 0 );
 			no_recheck = 0;
 
-			osrfLogDebug( OSRF_LOG_MARK,  "Server received inbound data" );
+			osrfLogDebug( OSRF_LOG_MARK, "Server received inbound data" );
 			int k;
 			prefork_child* cur_child = forker->first_child;
 
@@ -496,7 +536,7 @@ static void prefork_run(prefork_simple* forker) {
 						forker->current_num_children, k);
 
 				if( cur_child->available ) {
-					osrfLogDebug( OSRF_LOG_MARK,  "forker sending data to %d", cur_child->pid );
+					osrfLogDebug( OSRF_LOG_MARK, "forker sending data to %d", cur_child->pid );
 
 					message_prepare_xml( cur_msg );
 					char* data = cur_msg->msg_xml;
@@ -557,7 +597,7 @@ static void prefork_run(prefork_simple* forker) {
 				osrfLogWarning( OSRF_LOG_MARK,  "No children available, waiting...");
 
 				check_children( forker, 1 );  /* non-poll version */
-				/* tell the loop no to call check_children again, since we're calling it now */
+				/* tell the loop not to call check_children again, since we're calling it now */
 				no_recheck = 1;
 			}
 
@@ -850,7 +890,7 @@ static prefork_child* prefork_child_init(
 }
 
 
-static int prefork_free( prefork_simple* prefork ) {
+static void prefork_clear( prefork_simple* prefork ) {
 
 	while( prefork->first_child != NULL ) {
 		osrfLogInfo( OSRF_LOG_MARK, "Killing children and sleeping 1 to reap..." );
@@ -860,8 +900,6 @@ static int prefork_free( prefork_simple* prefork ) {
 
 	client_free(prefork->connection);
 	free(prefork->appname);
-	free( prefork );
-	return 1;
 }
 
 static int prefork_child_free( prefork_child* child ) {

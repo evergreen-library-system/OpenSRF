@@ -1,7 +1,18 @@
-#include <opensrf/osrf_system.h>
-#include <opensrf/osrf_application.h>
-#include <opensrf/osrf_prefork.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/wait.h>
 #include <signal.h>
+
+#include "opensrf/utils.h"
+#include "opensrf/log.h"
+#include "opensrf/osrf_system.h"
+#include "opensrf/osrf_application.h"
+#include "opensrf/osrf_prefork.h"
 
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 256
@@ -86,6 +97,17 @@ int osrfSystemInitCache( void ) {
 }
 
 
+/**
+	@brief Set yourself up for business.
+	@param hostname Full network name of the host where the process is running; or 
+	'localhost' will do.
+	@param configfile Name of the configuration file; normally '/openils/conf/opensrf_core.xml'.
+	@param contextNode 
+	@return - Name of an aggregate within the configuration file, containing the relevant
+	subset of configuration stuff.
+
+	
+*/
 int osrfSystemBootstrap( const char* hostname, const char* configfile,
 		const char* contextNode ) {
 	if( !(hostname && configfile && contextNode) ) return -1;
@@ -108,8 +130,9 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 		return -1;
 	}
 
-	/** daemonize me **/
-	/* background and let our children do their thing */
+	// Turn into a daemon.  The parent forks and exits.  Only the
+	// child returns, with the standard streams (stdin, stdout, and
+	// stderr) redirected to /dev/null.
 	/* NOTE: This has been moved from below the 'if (apps)' block below ... move it back if things go crazy */
 	daemonize();
 

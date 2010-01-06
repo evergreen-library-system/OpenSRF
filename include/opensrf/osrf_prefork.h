@@ -1,22 +1,6 @@
 #ifndef OSRF_PREFORK_H
 #define OSRF_PREFORK_H
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/select.h>
-#include <sys/wait.h>
-
-#include <opensrf/utils.h>
-#include <opensrf/transport_message.h>
-#include <opensrf/transport_client.h>
-#include <opensrf/osrf_stack.h>
-#include <opensrf/osrf_settings.h>
-#include <opensrf/osrfConfig.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
