@@ -508,16 +508,14 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 }
 
 /**
-	@brief Find or create an osrfAppSession for a server.
+	@brief Create an osrfAppSession for a server.
 	@param session_id The session ID.  In practice this comes from the thread member of
 	the transport message from the client.
 	@param our_app The name of the service being provided.
 	@param remote_id Jabber ID of the client.
 	@return Pointer to the newly created osrfAppSession if successful, or NULL upon failure.
 
-	First, look in the global session cache for a session with the specified session ID.
-	If you find one, return it immediately, ignoring the values of the @a our_app and @a
-	remote_id parameters.  Otherwise:
+	If there is already a session with the specified id, report an error.  Otherwise:
 
 	- Allocate memory for an osrfAppSession.
 	- For talking with Jabber, grab an existing transport_client.  It should have been
@@ -535,12 +533,12 @@ osrfAppSession* osrf_app_server_session_init(
 	osrfLogDebug( OSRF_LOG_MARK, "Initing server session with session id %s, service %s,"
 			" and remote_id %s", session_id, our_app, remote_id );
 
-	// If such a session already exists, return it without further ado.
-	// In practice this should never happen, and should probably be treated as an
-	// error if it ever does.
 	osrfAppSession* session = osrf_app_session_find_session( session_id );
-	if(session)
-		return session;
+	if(session) {
+		osrfLogWarning( OSRF_LOG_MARK, "App session already exists for session id %s",
+				session_id );
+		return NULL;
+	}
 
 	session = safe_malloc(sizeof(osrfAppSession));
 
