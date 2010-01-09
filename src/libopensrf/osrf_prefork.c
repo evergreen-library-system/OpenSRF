@@ -9,7 +9,7 @@
 	child dies, either deliberately or otherwise, we can spawn another one to replace it,
 	keeping the number of children within a predefined range.
 
-	Use a singly-linked circular list to keep track of the children, forwarding requests to them
+	Use a doubly-linked circular list to keep track of the children, forwarding requests to them
 	in an approximately round-robin fashion.
 
 	For each child, set up two pipes:
@@ -51,9 +51,13 @@ typedef struct {
 	int data_to_parent;   /**< Unused. */
 	int current_num_children;   /**< How many children are currently on the list. */
 	int keepalive;        /**< Keepalive time for stateful sessions. */
-	char* appname;        /**< Name of the application.
+	char* appname;        /**< Name of the application. */
 	/** Points to a circular linked list of children */
 	struct prefork_child_struct* first_child;
+	/** List of allocated but unused prefork_children, available for reuse.  Each one is just
+		raw memory, apart from the "next" pointer used to stitch them together.  In particular,
+		there is no child process for them, and the file descriptors are not open. */
+	struct prefork_child_struct* free_list;
 	transport_client* connection;  /**< Connection to Jabber */
 } prefork_simple;
 
@@ -65,9 +69,10 @@ struct prefork_child_struct {
 	int write_status_fd;  /**< Child uses to notify parent when it's available again */
 	int available;        /**< Boolean; true when the child is between requests */
 	int max_requests;     /**< How many requests a child can process before terminating */
-	char* appname;        /**< Name of the application */
+	const char* appname;  /**< Name of the application */
 	int keepalive;        /**< Keepalive time for stateful sessions. */
 	struct prefork_child_struct* next;  /**< Linkage pointer for linked list */
+	struct prefork_child_struct* prev;  /**< Linkage pointer for linked list */
 };
 
 typedef struct prefork_child_struct prefork_child;
@@ -83,14 +88,14 @@ static void del_prefork_child( prefork_simple* forker, pid_t pid );
 static void check_children( prefork_simple* forker, int forever );
 static void prefork_child_process_request(prefork_child*, char* data);
 static int prefork_child_init_hook(prefork_child*);
-static prefork_child* prefork_child_init(
-		int max_requests, int read_data_fd, int write_data_fd,
+static prefork_child* prefork_child_init( prefork_simple* forker,
+		int read_data_fd, int write_data_fd,
 		int read_status_fd, int write_status_fd );
 
 /* listens on the 'data_to_child' fd and wait for incoming data */
 static void prefork_child_wait( prefork_child* child );
 static void prefork_clear( prefork_simple* );
-static void prefork_child_free( prefork_child* );
+static void prefork_child_free( prefork_simple* forker, prefork_child* );
 static void osrf_prefork_register_routers( const char* appname );
 static void osrf_prefork_child_exit( prefork_child* );
 
@@ -406,6 +411,7 @@ static int prefork_simple_init( prefork_simple* prefork, transport_client* clien
 	prefork->keepalive    = 0;
 	prefork->appname      = NULL;
 	prefork->first_child  = NULL;
+	prefork->free_list    = NULL;
 	prefork->connection   = client;
 
 	return 0;
@@ -430,12 +436,8 @@ static prefork_child* launch_child( prefork_simple* forker ) {
 
 	osrfLogInternal( OSRF_LOG_MARK,  "Pipes: %d %d %d %d",
 			data_fd[0], data_fd[1], status_fd[0], status_fd[1] );
-	prefork_child* child = prefork_child_init( forker->max_requests, data_fd[0],
+	prefork_child* child = prefork_child_init( forker, data_fd[0],
 			data_fd[1], status_fd[0], status_fd[1] );
-
-	child->appname = strdup(forker->appname);
-	child->keepalive = forker->keepalive;
-
 
 	add_prefork_child( forker, child );
 
@@ -791,7 +793,7 @@ static void prefork_child_wait( prefork_child* child ) {
 }
 
 /**
-	@brief Add a prefork_child to the list.
+	@brief Add a prefork_child to the end of the list.
 	@param forker Pointer to the prefork_simple that owns the list.
 	@param child Pointer to the prefork_child to be added.
 */
@@ -801,24 +803,17 @@ static void add_prefork_child( prefork_simple* forker, prefork_child* child ) {
 		// Simplest case: list is initially empty.
 		forker->first_child = child;
 		child->next = child;
-		return;
+		child->prev = child;
+	} else {
+		// Find the last node in the circular list.
+		prefork_child* last_child = forker->first_child->prev;
+
+		// Insert the new child between the last and first children.
+		last_child->next = child;
+		child->prev      = last_child;
+		child->next      = forker->first_child;
+		forker->first_child->prev = child;
 	}
-
-	// Reposition forker->first_child to the last node by walking around the circle.
-	prefork_child* start_child = forker->first_child;
-	while(1) {
-		if( forker->first_child->next == start_child )
-			break;
-		forker->first_child = forker->first_child->next;
-	}
-
-	// Insert the new child after forker->first_child.
-	forker->first_child->next = child;
-	child->next = start_child;
-	return;
-
-	// What had been the last node in the list is now the first node,
-	// and the new node is second.
 }
 
 /**
@@ -830,57 +825,39 @@ static void add_prefork_child( prefork_simple* forker, prefork_child* child ) {
 */
 static void del_prefork_child( prefork_simple* forker, pid_t pid ) {
 
-	if( forker->first_child == NULL ) { return; }
+	if( forker->first_child == NULL )
+		return;  // Empty list; bail out.
 
-	(forker->current_num_children)--;
 	osrfLogDebug( OSRF_LOG_MARK, "Deleting Child: %d", pid );
 
-	prefork_child* start_child = forker->first_child; /* starting point */
-	prefork_child* cur_child   = start_child; /* current pointer */
-	prefork_child* prev_child  = start_child; /* the trailing pointer */
-
-	/* special case where there is only one in the list */
-	if( start_child == start_child->next ) {
-		if( start_child->pid == pid ) {
-			forker->first_child = NULL;
-			prefork_child_free( start_child );
-		}
-		return;
-	}
-
-
-	/* special case where the first item in the list needs to be removed */
-	if( start_child->pid == pid ) {
-
-		/* find the last one so we can remove the start_child */
-		do {
-			prev_child = cur_child;
-			cur_child = cur_child->next;
-		} while( cur_child != start_child );
-
-		/* now cur_child == start_child */
-		prev_child->next = cur_child->next;
-		forker->first_child = prev_child;
-		prefork_child_free( cur_child );
-		return;
-	}
-
-	do {
-		prev_child = cur_child;
+	// Find the node in question
+	prefork_child* cur_child = forker->first_child; /* current pointer */
+	while( cur_child->pid != pid && cur_child->next != forker->first_child )
 		cur_child = cur_child->next;
 
-		if( cur_child->pid == pid ) {
-			prev_child->next = cur_child->next;
-			prefork_child_free( cur_child );
-			return;
+	if( cur_child->pid == pid ) {
+		// We found the right node.  Remove it from the list.
+		if( cur_child->next == cur_child )
+			forker->first_child = NULL;    // only child in the list
+		else {
+			if( forker->first_child == cur_child )
+				forker->first_child = cur_child->next;  // Reseat forker->first_child
+			
+			// Stitch the nodes on either side together
+			cur_child->prev->next = cur_child->next;
+			cur_child->next->prev = cur_child->prev;
 		}
-
-	} while(cur_child != start_child);
+		--forker->current_num_children;
+		
+		//Destroy the node
+		prefork_child_free( forker, cur_child );
+		
+	} // else we didn't find a matching node; bail out
 }
 
 /**
 	@brief Create and initialize a prefork_child.
-	@param max_requests How many requests to service before terminating.
+	@param forker Pointer to the prefork_simple that will own the prefork_child.
 	@param read_data_fd Used by child to read request from parent.
 	@param write_data_fd Used by parent to write request to child.
 	@param read_status_fd Used by parent to read status from child.
@@ -890,21 +867,30 @@ static void del_prefork_child( prefork_simple* forker, pid_t pid ) {
 	The calling code is responsible for freeing the prefork_child by calling
 	prefork_child_free().
 */
-static prefork_child* prefork_child_init(
-	int max_requests, int read_data_fd, int write_data_fd,
+static prefork_child* prefork_child_init( prefork_simple* forker,
+	int read_data_fd, int write_data_fd,
 	int read_status_fd, int write_status_fd ) {
 
-	prefork_child* child = (prefork_child*) safe_malloc(sizeof(prefork_child));
+	// Allocate a prefork_child -- from the free list if possible, or from
+	// the heap if necessary.  The free list is a non-circular, singly-linked list.
+	prefork_child* child;
+	if( forker->free_list ) {
+		child = forker->free_list;
+		forker->free_list = child->next;
+	} else
+		child = (prefork_child*) safe_malloc(sizeof(prefork_child));
+
 	child->pid              = 0;
-	child->max_requests     = max_requests;
 	child->read_data_fd     = read_data_fd;
 	child->write_data_fd    = write_data_fd;
 	child->read_status_fd   = read_status_fd;
 	child->write_status_fd  = write_status_fd;
 	child->available        = 1;
-	child->appname          = NULL;
-	child->keepalive        = 0;
+	child->max_requests     = forker->max_requests;
+	child->appname          = forker->appname;  // We don't make a separate copy
+	child->keepalive        = forker->keepalive;
 	child->next             = NULL;
+	child->prev             = NULL;
 
 	return child;
 }
@@ -920,7 +906,7 @@ static void prefork_clear( prefork_simple* prefork ) {
 
 	// Kill all the child processes with a single call, not by killing each one separately.
 	// Implication: we can't have more than one prefork_simple outstanding, because
-	// destroying one would kill the children of both.
+	// destroying one would kill the children of all.
 	while( prefork->first_child != NULL ) {
 		osrfLogInfo( OSRF_LOG_MARK, "Killing child processes ..." );
 		kill( 0, SIGKILL );
@@ -933,19 +919,34 @@ static void prefork_clear( prefork_simple* prefork ) {
 	while( (child_pid = waitpid(-1, NULL, WNOHANG)) > 0)
 		del_prefork_child( prefork, child_pid );
 
-	client_free(prefork->connection);    // Close the Jabber connection
+    // Close the Jabber connection
+	client_free(prefork->connection);
+	
+	// Physically free the free list of prefork_children.
+	prefork_child* child = prefork->first_child;
+	while( child ) {
+		prefork_child* temp = child->next;
+		free( child );
+		child = temp;
+	}
+
 	free(prefork->appname);
 }
 
 /**
 	@brief Destroy and deallocate a prefork_child.
+	@param forker Pointer to the prefork_simple that owns the prefork_child.
 	@param child Pointer to the prefork_child to be destroyed.
 */
-static void prefork_child_free( prefork_child* child ) {
-	free(child->appname);
+static void prefork_child_free( prefork_simple* forker, prefork_child* child ) {
 	close( child->read_data_fd );
 	close( child->write_data_fd );
 	close( child->read_status_fd );
 	close( child->write_status_fd );
-	free( child );
+
+	// Stick the prefork_child in a free list for potential reuse.  This is a
+	// non-circular, singly linked list.
+	child->prev = NULL;
+	child->next = forker->free_list;
+	forker->free_list = child;
 }
