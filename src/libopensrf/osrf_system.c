@@ -23,17 +23,16 @@ struct child_node;
 typedef struct child_node ChildNode;
 
 static void handleKillSignal(int signo) {
-    /* we are the top-level process and we've been 
-     * killed. Kill all of our children */
-    kill(0, SIGTERM);
-    sleep(1); /* give the children a chance to die before we reap them */
-    pid_t child_pid;
-    int status;
-    while( (child_pid=waitpid(-1,&status,WNOHANG)) > 0) 
-        osrfLogInfo(OSRF_LOG_MARK, "Killed child %d", child_pid);
-    _exit(0);
+	/* we are the top-level process and we've been
+		killed. Kill all of our children */
+	kill(0, SIGTERM);
+	sleep(1); /* give the children a chance to die before we reap them */
+	pid_t child_pid;
+	int status;
+	while( (child_pid=waitpid(-1,&status,WNOHANG)) > 0)
+		osrfLogInfo(OSRF_LOG_MARK, "Killed child %d", child_pid);
+	_exit(0);
 }
-
 
 struct child_node
 {
@@ -46,6 +45,7 @@ struct child_node
 
 static ChildNode* child_list;
 
+/** Pointer to the global transport_client; i.e. our connection to Jabber. */
 static transport_client* osrfGlobalTransportClient = NULL;
 
 static void add_child( pid_t pid, const char* app, const char* libfile );
@@ -82,7 +82,7 @@ int osrfSystemInitCache( void ) {
 			osrfCacheInit( servers, cacheServers->size, atoi(maxCache) );
 
 		} else {
-			const char* servers[] = { jsonObjectGetString(cacheServers) };		
+			const char* servers[] = { jsonObjectGetString(cacheServers) };
 			osrfLogInfo( OSRF_LOG_MARK, "Adding cache server %s", servers[0]);
 			osrfCacheInit( servers, 1, atoi(maxCache) );
 		}
@@ -98,21 +98,20 @@ int osrfSystemInitCache( void ) {
 
 
 /**
-	@brief Set yourself up for business.
-	@param hostname Full network name of the host where the process is running; or 
+	@brief Launch a collection of servers, as defined by the settings server.
+	@param hostname Full network name of the host where the process is running; or
 	'localhost' will do.
 	@param configfile Name of the configuration file; normally '/openils/conf/opensrf_core.xml'.
-	@param contextNode 
-	@return - Name of an aggregate within the configuration file, containing the relevant
-	subset of configuration stuff.
-
-	
+	@param contextNode Name of an aggregate within the configuration file, containing the
+	relevant subset of configuration stuff.
+	@return - Zero if successful, or -1 if not.
 */
 int osrfSystemBootstrap( const char* hostname, const char* configfile,
 		const char* contextNode ) {
-	if( !(hostname && configfile && contextNode) ) return -1;
+	if( !(hostname && configfile && contextNode) )
+		return -1;
 
-	/* first we grab the settings */
+	// Load the conguration, open the log, open a connection to Jabber
 	if(!osrfSystemBootstrapClientResc(configfile, contextNode, "settings_grabber" )) {
 		osrfLogError( OSRF_LOG_MARK,
 			"Unable to bootstrap for host %s from configuration file %s",
@@ -120,6 +119,7 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 		return -1;
 	}
 
+	// Get a list of applications to launch from the settings server
 	int retcode = osrf_settings_retrieve(hostname);
 	osrf_system_disconnect_client();
 
@@ -133,12 +133,11 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 	// Turn into a daemon.  The parent forks and exits.  Only the
 	// child returns, with the standard streams (stdin, stdout, and
 	// stderr) redirected to /dev/null.
-	/* NOTE: This has been moved from below the 'if (apps)' block below ... move it back if things go crazy */
 	daemonize();
 
 	jsonObject* apps = osrf_settings_host_value_object("/activeapps/appname");
 	osrfStringArray* arr = osrfNewStringArray(8);
-	
+
 	if(apps) {
 		int i = 0;
 
@@ -147,7 +146,7 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 
 		} else {
 			const jsonObject* app;
-			while( (app = jsonObjectGetIndex(apps, i++)) ) 
+			while( (app = jsonObjectGetIndex(apps, i++)) )
 				osrfStringArrayAdd(arr, jsonObjectGetString(app));
 		}
 		jsonObjectFree(apps);
@@ -161,40 +160,42 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 			if(lang && !strcasecmp(lang,"c"))  {
 
 				char* libfile = osrf_settings_host_value("/apps/%s/implementation", appname);
-		
+
 				if(! (appname && libfile) ) {
 					osrfLogWarning( OSRF_LOG_MARK, "Missing appname / libfile in settings config");
 					continue;
 				}
 
-				osrfLogInfo( OSRF_LOG_MARK, "Launching application %s with implementation %s", appname, libfile);
-		
+				osrfLogInfo( OSRF_LOG_MARK, "Launching application %s with implementation %s",
+						appname, libfile);
+
 				pid_t pid;
-		
-				if( (pid = fork()) ) { 
+
+				if( (pid = fork()) ) {    // if parent
 					// store pid in local list for re-launching dead children...
 					add_child( pid, appname, libfile );
 					osrfLogInfo( OSRF_LOG_MARK, "Running application child %s: process id %ld",
 								 appname, (long) pid );
-	
-				} else {
-		
+
+				} else {         // if child, run the application
+
 					osrfLogInfo( OSRF_LOG_MARK, " * Running application %s\n", appname);
-					if( osrfAppRegisterApplication( appname, libfile ) == 0 ) 
+					if( osrfAppRegisterApplication( appname, libfile ) == 0 )
 						osrf_prefork_run(appname);
-	
-					osrfLogDebug( OSRF_LOG_MARK, "Server exiting for app %s and library %s\n", appname, libfile );
+
+					osrfLogDebug( OSRF_LOG_MARK, "Server exiting for app %s and library %s\n",
+							appname, libfile );
 					exit(0);
 				}
 			} // language == c
-		} 
+		}
 	} // should we do something if there are no apps? does the wait(NULL) below do that for us?
 
 	osrfStringArrayFree(arr);
 
-    signal(SIGTERM, handleKillSignal);
-    signal(SIGINT, handleKillSignal);
-	
+	signal(SIGTERM, handleKillSignal);
+	signal(SIGINT, handleKillSignal);
+
 	while(1) {
 		errno = 0;
 		int status;
@@ -203,7 +204,8 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 			if(errno == ECHILD)
 				osrfLogError(OSRF_LOG_MARK, "We have no more live services... exiting");
 			else
-				osrfLogError(OSRF_LOG_MARK, "Exiting top-level system loop with error: %s", strerror(errno));
+				osrfLogError(OSRF_LOG_MARK, "Exiting top-level system loop with error: %s",
+						strerror(errno));
 			break;
 		} else {
 			report_child_status( pid, status );
@@ -226,16 +228,16 @@ static void report_child_status( pid_t pid, int status )
 		libfile = node->libfile ? node->libfile : "[none]";
 	} else
 		app = libfile = NULL;
-	
+
 	if( WIFEXITED( status ) )
 	{
 		int rc = WEXITSTATUS( status );  // return code of child process
 		if( rc )
 			osrfLogError( OSRF_LOG_MARK, "Child process %ld (app %s) exited with return code %d",
-						  (long) pid, app, rc );
+					(long) pid, app, rc );
 		else
 			osrfLogInfo( OSRF_LOG_MARK, "Child process %ld (app %s) exited normally",
-						  (long) pid, app );
+					(long) pid, app );
 	}
 	else if( WIFSIGNALED( status ) )
 	{
@@ -256,7 +258,7 @@ static void report_child_status( pid_t pid, int status )
 static void add_child( pid_t pid, const char* app, const char* libfile )
 {
 	/* Construct new child node */
-	
+
 	ChildNode* node = safe_malloc( sizeof( ChildNode ) );
 
 	node->pid = pid;
@@ -270,7 +272,7 @@ static void add_child( pid_t pid, const char* app, const char* libfile )
 		node->libfile = strdup( libfile );
 	else
 		node->libfile = NULL;
-	
+
 	/* Add new child node to the head of the list */
 
 	node->pNext = child_list;
@@ -288,7 +290,7 @@ static void delete_child( ChildNode* node ) {
 
 	if( ! node )
 		return;
-	
+
 	/* Detach the node from the list */
 
 	if( node->pPrev )
@@ -316,7 +318,7 @@ static ChildNode* seek_child( pid_t pid ) {
 
 	/* Return a pointer to the child node for the */
 	/* specified process ID, or NULL if not found */
-	
+
 	ChildNode* node = child_list;
 	while( node ) {
 		if( node->pid == pid )
@@ -330,7 +332,18 @@ static ChildNode* seek_child( pid_t pid ) {
 
 /*----------- End of routines to manage list of children --*/
 
+/**
+	@brief Bootstrap a generic application from info in the configuration file.
+	@param config_file Name of the configuration file.
+	@param context_node Name of an aggregate within the configuration file, containing the
+	relevant subset of configuration stuff.
+	@param resource Used to construct a Jabber resource name; may be NULL.
+	@return 1 if successful; zero or -1 if error.
 
+	- Load the configuration file.
+	- Open the log.
+	- Open a connection to Jabber.
+*/
 int osrfSystemBootstrapClientResc( const char* config_file,
 		const char* contextnode, const char* resource ) {
 
@@ -354,24 +367,23 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 			return 0;   /* Can't load configuration?  Bail out */
 	}
 
-
-	char* log_file		= osrfConfigGetValue( NULL, "/logfile");
+	char* log_file      = osrfConfigGetValue( NULL, "/logfile");
 	if(!log_file) {
 		fprintf(stderr, "No log file specified in configuration file %s\n",
 				config_file);
 		return -1;
 	}
 
-	char* log_level		= osrfConfigGetValue( NULL, "/loglevel" );
-	osrfStringArray* arr	= osrfNewStringArray(8);
+	char* log_level      = osrfConfigGetValue( NULL, "/loglevel" );
+	osrfStringArray* arr = osrfNewStringArray(8);
 	osrfConfigGetValueList(NULL, arr, "/domain");
 
-	char* username		= osrfConfigGetValue( NULL, "/username" );
-	char* password		= osrfConfigGetValue( NULL, "/passwd" );
-	char* port		= osrfConfigGetValue( NULL, "/port" );
-	char* unixpath		= osrfConfigGetValue( NULL, "/unixpath" );
-	char* facility		= osrfConfigGetValue( NULL, "/syslog" );
-	char* actlog		= osrfConfigGetValue( NULL, "/actlog" );
+	char* username       = osrfConfigGetValue( NULL, "/username" );
+	char* password       = osrfConfigGetValue( NULL, "/passwd" );
+	char* port           = osrfConfigGetValue( NULL, "/port" );
+	char* unixpath       = osrfConfigGetValue( NULL, "/unixpath" );
+	char* facility       = osrfConfigGetValue( NULL, "/syslog" );
+	char* actlog         = osrfConfigGetValue( NULL, "/actlog" );
 
 	/* if we're a source-client, tell the logger */
 	char* isclient = osrfConfigGetValue(NULL, "/client");
@@ -399,19 +411,22 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 	const char* domain = osrfStringArrayGetString( arr, 0 ); /* just the first for now */
 	if(!domain) {
 		fprintf(stderr, "No domain specified in configuration file %s\n", config_file);
-		osrfLogError( OSRF_LOG_MARK, "No domain specified in configuration file %s\n", config_file);
+		osrfLogError( OSRF_LOG_MARK, "No domain specified in configuration file %s\n",
+				config_file );
 		failure = 1;
 	}
 
 	if(!username) {
 		fprintf(stderr, "No username specified in configuration file %s\n", config_file);
-		osrfLogError( OSRF_LOG_MARK, "No username specified in configuration file %s\n", config_file);
+		osrfLogError( OSRF_LOG_MARK, "No username specified in configuration file %s\n",
+				config_file );
 		failure = 1;
 	}
 
 	if(!password) {
 		fprintf(stderr, "No password specified in configuration file %s\n", config_file);
-		osrfLogError( OSRF_LOG_MARK, "No password specified in configuration file %s\n", config_file);
+		osrfLogError( OSRF_LOG_MARK, "No password specified in configuration file %s\n",
+				config_file);
 		failure = 1;
 	}
 
@@ -467,7 +482,7 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 	free(log_file);
 	free(username);
 	free(password);
-	free(port);	
+	free(port);
 	free(unixpath);
 
 	if(osrfGlobalTransportClient)
@@ -476,6 +491,10 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 	return 0;
 }
 
+/**
+	@brief Disconnect from Jabber.
+	@return Zero in all cases.
+*/
 int osrf_system_disconnect_client( void ) {
 	client_disconnect( osrfGlobalTransportClient );
 	client_free( osrfGlobalTransportClient );
@@ -485,17 +504,13 @@ int osrf_system_disconnect_client( void ) {
 
 static int shutdownComplete = 0;
 int osrf_system_shutdown( void ) {
-    if(shutdownComplete) return 0;
+	if(shutdownComplete) return 0;
 	osrfConfigCleanup();
-    osrfCacheCleanup();
+	osrfCacheCleanup();
 	osrf_system_disconnect_client();
 	osrf_settings_free_host_config(NULL);
 	osrfAppSessionCleanup();
 	osrfLogCleanup();
-    shutdownComplete = 1;
+	shutdownComplete = 1;
 	return 1;
 }
-
-
-
-
