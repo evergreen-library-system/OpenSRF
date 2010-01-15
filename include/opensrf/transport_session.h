@@ -96,6 +96,8 @@ int session_connected( transport_session* session );
 
 int session_free( transport_session* session );
 
+int session_discard( transport_session* session );
+
 int session_connect( transport_session* session,
 		const char* username, const char* password,
 		const char* resource, int connect_timeout,

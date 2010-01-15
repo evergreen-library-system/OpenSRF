@@ -34,15 +34,19 @@ static void handleKillSignal(int signo) {
 	_exit(0);
 }
 
+/**
+	@brief Represents a child process.
+*/
 struct child_node
 {
-	ChildNode* pNext;
-	ChildNode* pPrev;
-	pid_t pid;
+	ChildNode* pNext;  /**< Linkage pointer for doubly linked list. */
+	ChildNode* pPrev;  /**< Linkage pointer for doubly linked list. */
+	pid_t pid;         /**< Process ID of the child process. */
 	char* app;
 	char* libfile;
 };
 
+/** List of child processes. */
 static ChildNode* child_list;
 
 /** Pointer to the global transport_client; i.e. our connection to Jabber. */
@@ -53,11 +57,28 @@ static void delete_child( ChildNode* node );
 static void delete_all_children( void );
 static ChildNode* seek_child( pid_t pid );
 
+/**
+	@brief Return a pointer to the global transport_client.
+	@return Pointer to the global transport_client, or NULL.
+
+	A given process needs only one connection to Jabber, so we keep it a pointer to it at
+	file scope.  This function returns that pointer.
+
+	If the connection has been opened by a previous call to osrfSystemBootstrapClientResc(),
+	Return the pointer.  Otherwise return NULL.
+*/
 transport_client* osrfSystemGetTransportClient( void ) {
 	return osrfGlobalTransportClient;
 }
 
+/**
+	@brief Discard the global transport_client, but without disconnecting from Jabber.
+
+	To be called by a child process in order to disregard the parent's connection without
+	disconnecting it, since disconnecting would disconnect the parent as well.
+*/
 void osrfSystemIgnoreTransportClient() {
+	client_discard( osrfGlobalTransportClient );
 	osrfGlobalTransportClient = NULL;
 }
 

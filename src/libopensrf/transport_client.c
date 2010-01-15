@@ -299,10 +299,27 @@ static void client_message_handler( void* client, transport_message* msg ){
 	@param client Pointer to the transport_client to be freed.
 	@return 1 if successful, or 0 if not.  The only error condition is if @a client is NULL.
 */
-int client_free( transport_client* client ){
-	if(client == NULL) return 0;
-
+int client_free( transport_client* client ) {
+	if(client == NULL)
+		return 0;
 	session_free( client->session );
+	client->session = NULL;
+	return client_discard( client );
+}
+
+/**
+	@brief Free a transport_client's resources, but without disconnecting.
+	@param client Pointer to the transport_client to be freed.
+	@return 1 if successful, or 0 if not.  The only error condition is if @a client is NULL.
+
+	A child process may call this in order to free the resources associated with the parent's
+	transport_client, but without disconnecting from Jabber, since disconnecting would
+	disconnect the parent as well.
+ */
+int client_discard( transport_client* client ) {
+	if(client == NULL)
+		return 0;
+	
 	transport_message* current = client->msg_q_head;
 	transport_message* next;
 

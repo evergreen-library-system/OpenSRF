@@ -201,19 +201,36 @@ transport_session* init_transport( const char* server,
 	return session;
 }
 
-
 /**
-	@brief Destroy a transport_session, and close its socket.
+	@brief Disconnect from Jabber, destroy a transport_session, and close its socket.
 	@param session Pointer to the transport_session to be destroyed.
 	@return 1 if successful, or 0 if not.
 
 	The only error condition is a NULL pointer argument.
 */
 int session_free( transport_session* session ) {
-	if( ! session ) { return 0; }
-
-	if( session->sock_id )
+	if( ! session )
+		return 0;
+	else {
 		session_disconnect( session );
+		return session_discard( session );
+	}
+}
+
+/**
+	@brief Destroy a transport_session and close its socket, without disconnecting from Jabber.
+	@param session Pointer to the transport_session to be destroyed.
+	@return 1 if successful, or 0 if not.
+
+	This function may be called from a child process in order to free resources associated
+	with the parent's transport_session, but without sending a disconnect to Jabber (since
+	that would disconnect the parent).
+
+	The only error condition is a NULL pointer argument.
+ */
+int session_discard( transport_session* session ) {
+	if( ! session )
+		return 0;
 
 	if(session->sock_mgr)
 		socket_manager_free(session->sock_mgr);
@@ -292,7 +309,7 @@ int session_wait( transport_session* session, int timeout ) {
 }
 
 /**
-	@brief Wrap a message in XML and send it to Jabber.
+	@brief Convert a transport_message to XML and send it to Jabber.
 	@param session Pointer to the transport_session.
 	@param msg Pointer to a transport_message enclosing the message.
 	@return 0 if successful, or -1 upon error.
@@ -323,10 +340,13 @@ int session_send_msg(
 	@param auth_type An enum: either AUTH_PLAIN or AUTH_DIGEST (see notes).
 	@return 1 if successful, or 0 upon error.
 
-	If @a connect_timeout is -1, wait indefinitely for input activity to appear.  If
+	If @a connect_timeout is -1, wait indefinitely for the Jabber server to respond.  If
 	@a connect_timeout is zero, don't wait at all.  If @a timeout is positive, wait that
 	number of seconds before timing out.  If @a connect_timeout has a negative value other
 	than -1, the results are not well defined.
+
+	The value of @a connect_timeout applies to each of two stages in the logon procedure.
+	Hence the logon may take up to twice the amount of time indicated.
 
 	If we connect as a Jabber component, we send the password as an SHA1 hash.  Otherwise
 	we look at the @a auth_type.  If it's AUTH_PLAIN, we send the password as plaintext; if

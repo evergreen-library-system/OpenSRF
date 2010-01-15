@@ -46,6 +46,8 @@ int client_disconnect( transport_client* client );
 
 int client_free( transport_client* client );
 
+int client_discard( transport_client* client );
+
 int client_send_message( transport_client* client, transport_message* msg );
 
 int client_connected( const transport_client* client );
