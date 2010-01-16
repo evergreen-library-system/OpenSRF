@@ -1,3 +1,8 @@
+/**
+	@file osrf_system.c
+	@brief Launch a collection of servers.
+*/
+
 #include <sys/types.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -22,18 +27,6 @@ static void report_child_status( pid_t pid, int status );
 struct child_node;
 typedef struct child_node ChildNode;
 
-static void handleKillSignal(int signo) {
-	/* we are the top-level process and we've been
-		killed. Kill all of our children */
-	kill(0, SIGTERM);
-	sleep(1); /* give the children a chance to die before we reap them */
-	pid_t child_pid;
-	int status;
-	while( (child_pid=waitpid(-1,&status,WNOHANG)) > 0)
-		osrfLogInfo(OSRF_LOG_MARK, "Killed child %d", child_pid);
-	_exit(0);
-}
-
 /**
 	@brief Represents a child process.
 */
@@ -52,10 +45,67 @@ static ChildNode* child_list;
 /** Pointer to the global transport_client; i.e. our connection to Jabber. */
 static transport_client* osrfGlobalTransportClient = NULL;
 
+/** Switch to be set by signal handler */
+static volatile sig_atomic_t sig_caught;
+
+/** Boolean: set to true when we finish shutting down. */
+static int shutdownComplete = 0;
+
 static void add_child( pid_t pid, const char* app, const char* libfile );
 static void delete_child( ChildNode* node );
 static void delete_all_children( void );
 static ChildNode* seek_child( pid_t pid );
+
+/**
+	@brief Wait on all dead child processes so that they won't be zombies.
+*/
+static void reap_children( void ) {
+	if( sig_caught ) {
+		if( SIGTERM == sig_caught || SIGINT == sig_caught ) {
+			osrfLogInfo( OSRF_LOG_MARK, "Killed by %s; terminating",
+					SIGTERM == sig_caught ? "SIGTERM" : "SIGINT" );
+		} else
+			osrfLogInfo( OSRF_LOG_MARK, "Killed by signal %d; terminating", (int) sig_caught );
+	}
+
+	// If we caught a signal, then the signal handler already did a kill().
+	// If we didn't, then do the kill() now.
+	if( ! sig_caught )
+		kill( 0, SIGTERM );
+
+	sleep(1); /* Give the children a chance to die before we reap them. */
+
+	// Wait for each dead child.  The WNOHANG option means to return immediately if
+	// there are no dead children, instead of waiting for them to die.  It is therefore
+	// possible for a child still to be alive when we exit this function, either because
+	// it intercepted the SIGTERM and ignored it, or because it took longer to die than
+	// the time we gave it.
+	pid_t child_pid;
+	while( (child_pid = waitpid(-1, NULL, WNOHANG)) > 0 )
+		osrfLogInfo(OSRF_LOG_MARK, "Killed child %d", child_pid);
+
+	// Remove all nodes from the list of child processes.
+	delete_all_children();
+}
+
+/**
+	@brief Signal handler for SIGTERM and SIGINT.
+
+	Kill all child processes, and set a switch so that we'll know that the signal arrived.
+*/
+static void handleKillSignal( int signo ) {
+	// First ignore SIGTERM.  Otherwise we would send SIGTERM to ourself, intercept it,
+	// and kill() again in an endless loop.
+	signal( SIGTERM, SIG_IGN );
+
+	//Kill all child processes.  This is safe to do in a signal handler, because POSIX
+	// specifies that kill() is reentrant.  It is necessary because, if we did the kill()
+	// only in reap_children() (above), then there would be a narrow window of vulnerability
+	// in the main loop: if the signal arrives between checking sig_caught and calling wait(),
+	// we would wait indefinitely for a child to die on its own.
+	kill( 0, SIGTERM );
+	sig_caught = signo;
+}
 
 /**
 	@brief Return a pointer to the global transport_client.
@@ -65,7 +115,7 @@ static ChildNode* seek_child( pid_t pid );
 	file scope.  This function returns that pointer.
 
 	If the connection has been opened by a previous call to osrfSystemBootstrapClientResc(),
-	Return the pointer.  Otherwise return NULL.
+	return the pointer.  Otherwise return NULL.
 */
 transport_client* osrfSystemGetTransportClient( void ) {
 	return osrfGlobalTransportClient;
@@ -82,10 +132,27 @@ void osrfSystemIgnoreTransportClient() {
 	osrfGlobalTransportClient = NULL;
 }
 
+/**
+	@brief Bootstrap a generic application from info in the configuration file.
+	@param config_file Name of the configuration file.
+	@param contextnode Name of an aggregate within the configuration file, containing the
+	relevant subset of configuration stuff.
+	@return 1 if successful; zero or -1 if error.
+
+	- Load the configuration file.
+	- Open the log.
+	- Open a connection to Jabber.
+
+	A thin wrapper for osrfSystemBootstrapClientResc, passing it NULL for a resource.
+*/
 int osrf_system_bootstrap_client( char* config_file, char* contextnode ) {
 	return osrfSystemBootstrapClientResc(config_file, contextnode, NULL);
 }
 
+/**
+	@brief Connect to one or more cache servers.
+	@return Zero in all cases.
+*/
 int osrfSystemInitCache( void ) {
 
 	jsonObject* cacheServers = osrf_settings_host_value_object("/cache/global/servers/server");
@@ -117,7 +184,6 @@ int osrfSystemInitCache( void ) {
 	return 0;
 }
 
-
 /**
 	@brief Launch a collection of servers, as defined by the settings server.
 	@param hostname Full network name of the host where the process is running; or
@@ -139,6 +205,8 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 			hostname, configfile );
 		return -1;
 	}
+
+	shutdownComplete = 0;
 
 	// Get a list of applications to launch from the settings server
 	int retcode = osrf_settings_retrieve(hostname);
@@ -209,35 +277,46 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 					exit(0);
 				}
 			} // language == c
-		}
-	} // should we do something if there are no apps? does the wait(NULL) below do that for us?
+		} // end while
+	}
 
 	osrfStringArrayFree(arr);
 
 	signal(SIGTERM, handleKillSignal);
 	signal(SIGINT, handleKillSignal);
 
-	while(1) {
-		errno = 0;
-		int status;
-		pid_t pid = wait( &status );
-		if(-1 == pid) {
-			if(errno == ECHILD)
-				osrfLogError(OSRF_LOG_MARK, "We have no more live services... exiting");
-			else
+	// Wait indefinitely for all the child processes to terminate, or for a signal to
+	// tell us to stop.  When there are no more child processes, wait() returns an
+	// ECHILD error and we break out of the loop.
+	int status;
+	pid_t pid;
+	while( ! sig_caught ) {
+		pid = wait( &status );
+		if( -1 == pid ) {
+			if( errno == ECHILD )
+				osrfLogError( OSRF_LOG_MARK, "We have no more live services... exiting" );
+			else if( errno != EINTR )
 				osrfLogError(OSRF_LOG_MARK, "Exiting top-level system loop with error: %s",
-						strerror(errno));
+						strerror( errno ) );
+
 			break;
 		} else {
 			report_child_status( pid, status );
 		}
 	}
 
-	delete_all_children();
+	reap_children();
+	osrfConfigCleanup();
+	osrf_system_disconnect_client();
+	osrf_settings_free_host_config(NULL);
 	return 0;
 }
 
-
+/**
+	@brief Report the exit status of a dead child process, then remove it from the list.
+	@param pid Process ID of the child.
+	@param status Exit status as captured by wait().
+*/
 static void report_child_status( pid_t pid, int status )
 {
 	const char* app;
@@ -248,7 +327,7 @@ static void report_child_status( pid_t pid, int status )
 		app     = node->app     ? node->app     : "[unknown]";
 		libfile = node->libfile ? node->libfile : "[none]";
 	} else
-		app = libfile = NULL;
+		app = libfile = "";
 
 	if( WIFEXITED( status ) )
 	{
@@ -276,6 +355,12 @@ static void report_child_status( pid_t pid, int status )
 
 /*----------- Routines to manage list of children --*/
 
+/**
+	@brief Add a node to the list of child processes.
+	@param pid Process ID of the child process.
+	@param app Name of the child application.
+	@param libfile Name of the shared library where the child process resides.
+*/
 static void add_child( pid_t pid, const char* app, const char* libfile )
 {
 	/* Construct new child node */
@@ -305,6 +390,10 @@ static void add_child( pid_t pid, const char* app, const char* libfile )
 	child_list = node;
 }
 
+/**
+	@brief Remove a node from the list of child processes.
+	@param node Pointer to the node to be removed.
+*/
 static void delete_child( ChildNode* node ) {
 
 	/* Sanity check */
@@ -329,12 +418,20 @@ static void delete_child( ChildNode* node ) {
 	free( node );
 }
 
+/**
+	@brief Remove all nodes from the list of child processes, rendering it empty.
+*/
 static void delete_all_children( void ) {
 
 	while( child_list )
 		delete_child( child_list );
 }
 
+/**
+	@brief Find the node for a child process of a given process ID.
+	@param pid The process ID of the child process.
+	@return A pointer to the corresponding node if found; otherwise NULL.
+*/
 static ChildNode* seek_child( pid_t pid ) {
 
 	/* Return a pointer to the child node for the */
@@ -356,7 +453,7 @@ static ChildNode* seek_child( pid_t pid ) {
 /**
 	@brief Bootstrap a generic application from info in the configuration file.
 	@param config_file Name of the configuration file.
-	@param context_node Name of an aggregate within the configuration file, containing the
+	@param contextnode Name of an aggregate within the configuration file, containing the
 	relevant subset of configuration stuff.
 	@param resource Used to construct a Jabber resource name; may be NULL.
 	@return 1 if successful; zero or -1 if error.
@@ -523,15 +620,28 @@ int osrf_system_disconnect_client( void ) {
 	return 0;
 }
 
-static int shutdownComplete = 0;
+/**
+	@brief Shut down a laundry list of facilities typically used by servers.
+
+	Things to shut down:
+	- Settings from configuration file
+	- Cache
+	- Connection to Jabber
+	- Settings from settings server
+	- Application sessions
+	- Logs
+*/
 int osrf_system_shutdown( void ) {
-	if(shutdownComplete) return 0;
-	osrfConfigCleanup();
-	osrfCacheCleanup();
-	osrf_system_disconnect_client();
-	osrf_settings_free_host_config(NULL);
-	osrfAppSessionCleanup();
-	osrfLogCleanup();
-	shutdownComplete = 1;
-	return 1;
+	if(shutdownComplete)
+		return 0;
+	else {
+		osrfConfigCleanup();
+		osrfCacheCleanup();
+		osrf_system_disconnect_client();
+		osrf_settings_free_host_config(NULL);
+		osrfAppSessionCleanup();
+		osrfLogCleanup();
+		shutdownComplete = 1;
+		return 1;
+	}
 }
