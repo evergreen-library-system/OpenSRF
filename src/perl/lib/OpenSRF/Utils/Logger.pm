@@ -251,20 +251,22 @@ sub _log_message {
 	}
 }
 
-
 sub _write_file {
-	my( $msg, $isact) = @_;
-	my $file = $logfile;
-	$file = $actfile if $isact;
+	my ($msg, $isact) = @_;
+	my $file = $isact ? $actfile : $logfile;
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);  
 	$year += 1900; $mon += 1;
-	sysopen( SINK, $file, O_NONBLOCK|O_WRONLY|O_APPEND|O_CREAT ) 
-		or die "Cannot sysopen $logfile: $!";
+
+    if ($file) {
+        sysopen( SINK, $file, O_NONBLOCK|O_WRONLY|O_APPEND|O_CREAT ) 
+            or die "Cannot sysopen $file: $!";
+    } else {
+        open (SINK, ">&2");  # print to STDERR as warned
+    }
 	binmode(SINK, ':utf8');
 	printf SINK "[%04d-%02d-%02d %02d:%02d:%02d] %s %s\n", $year, $mon, $mday, $hour, $min, $sec, $service, $msg;
 	close( SINK );
 }
 
-
-
 1;
+
