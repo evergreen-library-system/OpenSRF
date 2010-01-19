@@ -32,7 +32,7 @@ push @ISA, 'Exporter';
 %EXPORT_TAGS = (
 	common		=> [qw(interval_to_seconds seconds_to_interval sendmail tree_filter)],
 	daemon		=> [qw(safe_fork set_psname daemonize)],
-	datetime	=> [qw(clense_ISO8601 gcleanse_ISO8601 gmtime_ISO8601 interval_to_seconds seconds_to_interval)],
+	datetime	=> [qw(clense_ISO8601 cleanse_ISO8601 gmtime_ISO8601 interval_to_seconds seconds_to_interval)],
 );
 Exporter::export_ok_tags('common','daemon','datetime');  # add aa, cc and dd to @EXPORT_OK
 
