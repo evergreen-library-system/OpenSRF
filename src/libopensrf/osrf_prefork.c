@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/select.h>
-#include <signal.h>
 #include <sys/wait.h>
 
 #include "opensrf/utils.h"
@@ -199,6 +198,8 @@ int osrf_prefork_run( const char* appname ) {
 	@param routerDomain Domain of the router.
 
 	Tell the router that you're open for business so that it can route requests to you.
+
+	Called only by the parent process.
 */
 static void osrf_prefork_send_router_registration(
 		const char* appname, const char* routerName, const char* routerDomain ) {
@@ -219,8 +220,9 @@ static void osrf_prefork_send_router_registration(
 	free(jid);
 }
 
-/** parses a single "complex" router configuration chunk */
-static void osrf_prefork_parse_router_chunk(const char* appname, jsonObject* routerChunk) {
+/* parses a single "complex" router configuration chunk */
+// Called only by the parent process
+static void osrf_prefork_parse_router_chunk(const char* appname, const jsonObject* routerChunk) {
 
 	const char* routerName = jsonObjectGetString(jsonObjectGetKeyConst(routerChunk, "name"));
 	const char* domain = jsonObjectGetString(jsonObjectGetKeyConst(routerChunk, "domain"));
@@ -250,13 +252,19 @@ static void osrf_prefork_parse_router_chunk(const char* appname, jsonObject* rou
 	}
 }
 
+/**
+	@brief Register the application with one or more routers, according to the configuration.
+	@param appname Name of the application.
+
+	Called only by the parent process.
+*/
 static void osrf_prefork_register_routers( const char* appname ) {
 
 	jsonObject* routerInfo = osrfConfigGetValueObject(NULL, "/routers/router");
 
 	int i;
 	for(i = 0; i < routerInfo->size; i++) {
-		jsonObject* routerChunk = jsonObjectGetIndex(routerInfo, i);
+		const jsonObject* routerChunk = jsonObjectGetIndex(routerInfo, i);
 
 		if(routerChunk->type == JSON_STRING) {
 			/* this accomodates simple router configs */
@@ -266,30 +274,47 @@ static void osrf_prefork_register_routers( const char* appname ) {
 					routerName);
 			osrf_prefork_send_router_registration(appname, routerName, domain);
 
+			free( routerName );
+			free( domain );
 		} else {
 			osrf_prefork_parse_router_chunk(appname, routerChunk);
 		}
 	}
+
+	jsonObjectFree( routerInfo );
 }
 
+/**
+	@brief Initialize a child process.
+	@param child Pointer to the prefork_child representing the new child process.
+	@return Zero if successful, or -1 if not.
+
+	Called only by child processes.  Actions:
+	- Connect to one or more cache servers
+	- Reconfigure logger, if necessary
+	- Discard parent's Jabber connection and open a new one
+	- Dynamically call an application-specific initialization routine
+	- Change the command line as reported by ps
+*/
 static int prefork_child_init_hook(prefork_child* child) {
 
 	if(!child) return -1;
 	osrfLogDebug( OSRF_LOG_MARK, "Child init hook for child %d", child->pid);
 
+	// Connect to cache server(s).
 	osrfSystemInitCache();
 	char* resc = va_list_to_string("%s_drone", child->appname);
 
-	/* if we're a source-client, tell the logger now that we're a new process*/
+	// If we're a source-client, tell the logger now that we're a new process.
 	char* isclient = osrfConfigGetValue(NULL, "/client");
 	if( isclient && !strcasecmp(isclient,"true") )
 		osrfLogSetIsClient(1);
 	free(isclient);
 
-	/* we want to remove traces of our parent's socket connection
-	* so we can have our own */
+	// Remove traces of our parent's socket connection so we can have our own.
 	osrfSystemIgnoreTransportClient();
 
+	// Connect to Jabber
 	if(!osrfSystemBootstrapClientResc( NULL, NULL, resc )) {
 		osrfLogError( OSRF_LOG_MARK, "Unable to bootstrap client for osrf_prefork_run()");
 		free(resc);
@@ -298,6 +323,8 @@ static int prefork_child_init_hook(prefork_child* child) {
 
 	free(resc);
 
+	// Dynamically call the application-specific initialization function
+	// from a previously loaded shared library.
 	if( ! osrfAppRunChildInit(child->appname) ) {
 		osrfLogDebug(OSRF_LOG_MARK, "Prefork child_init succeeded\n");
 	} else {
@@ -305,10 +332,12 @@ static int prefork_child_init_hook(prefork_child* child) {
 		return -1;
 	}
 
+	// Change the command line as reported by ps
 	set_proc_title( "OpenSRF Drone [%s]", child->appname );
 	return 0;
 }
 
+// Called only by a child process
 static void prefork_child_process_request(prefork_child* child, char* data) {
 	if( !child ) return;
 
@@ -428,7 +457,7 @@ static int prefork_simple_init( prefork_simple* prefork, transport_client* clien
 }
 
 /**
-	@brief Spawn a new child process.
+	@brief Spawn a new child process and put it in the idle list.
 	@param forker Pointer to the prefork_simple that will own the process.
 	@return Pointer to the new prefork_child, or not at all.
 
@@ -508,18 +537,30 @@ static prefork_child* launch_child( prefork_simple* forker ) {
 	}
 }
 
+/**
+	@brief Terminate a child process.
+	@param child Pointer to the prefork_child representing the child process.
+
+	Called only by child processes.  Dynamically call an application-specific shutdown
+	function from a previously loaded shared library; then exit.
+*/
 static void osrf_prefork_child_exit(prefork_child* child) {
 	osrfAppRunExitCode();
 	exit(0);
 }
 
+/**
+	@brief Launch all the child processes, putting them in the idle list.
+	@param forker Pointer to the prefork_simple that will own the children.
+
+	Called only by the parent process (in order to become a parent).
+*/
 static void prefork_launch_children( prefork_simple* forker ) {
 	if(!forker) return;
 	int c = 0;
 	while( c++ < forker->min_children )
 		launch_child( forker );
 }
-
 
 /**
 	@brief Signal handler for SIGCHLD: note that a child process has terminated.
@@ -532,15 +573,15 @@ static void sigchld_handler( int sig ) {
 	child_dead = 1;
 }
 
-
 /**
 	@brief Replenish the collection of child processes, after one has terminated.
 	@param forker Pointer to the prefork_simple that manages the child processes.
 
-	This function is called when we notice (via a signal handler) that a child
-	process has died.
+	The parent calls this function when it notices (via a signal handler) that
+	a child process has died.
 
-	Spawn a new child process to replace each of the terminated ones.
+	Wait on the dead children so that they won't be zombies.  Spawn new ones as needed
+	to maintain at least a minimum number.
 */
 void reap_children( prefork_simple* forker ) {
 
@@ -552,10 +593,12 @@ void reap_children( prefork_simple* forker ) {
 	// Bury the children so that they won't be zombies.  WNOHANG means that waitpid() returns
 	// immediately if there are no waitable children, instead of waiting for more to die.
 	// Ignore the return code of the child.  We don't do an autopsy.
-	while( (child_pid = waitpid(-1, NULL, WNOHANG)) > 0)
+	while( (child_pid = waitpid(-1, NULL, WNOHANG)) > 0) {
+		--forker->current_num_children;
 		del_prefork_child( forker, child_pid );
+	}
 
-	/* Spawn more children as needed to maintain a minimum brood. */
+	// Spawn more children as needed.
 	while( forker->current_num_children < forker->min_children )
 		launch_child( forker );
 }
@@ -624,6 +667,7 @@ static void prefork_run( prefork_simple* forker ) {
 				// Grab the prefork_child at the head of the idle list
 				cur_child = forker->idle_list;
 				forker->idle_list = cur_child->next;
+				cur_child->next = NULL;
 
 				osrfLogInternal( OSRF_LOG_MARK,
 						"Searching for available child. cur_child->pid = %d", cur_child->pid );
@@ -657,24 +701,28 @@ static void prefork_run( prefork_simple* forker ) {
 					osrfLogDebug( OSRF_LOG_MARK,  "Launching new child with current_num = %d",
 							forker->current_num_children );
 
-					prefork_child* new_child = launch_child( forker );
-					if( new_child ) {
+					launch_child( forker );  // Put a new child into the idle list
+					if( forker->idle_list ) {
+
+						// Take the new child from the idle list
+						prefork_child* new_child = forker->idle_list;
+						forker->idle_list = new_child->next;
+						new_child->next = NULL;
 
 						osrfLogDebug( OSRF_LOG_MARK, "Writing to new child fd %d : pid %d",
 								new_child->write_data_fd, new_child->pid );
 
-						if(write(new_child->write_data_fd, msg_data, strlen(msg_data) + 1) >= 0 ) {
-							forker->first_child = new_child->next;
-							add_prefork_child( forker, new_child );
-							honored = 1;
-						} else {
+						int written = write(
+								new_child->write_data_fd, msg_data, strlen(msg_data) + 1);
+						if( written < 0 ) {
 							// This child appears to be dead or unusable.  Discard it.
 							osrfLogWarning( OSRF_LOG_MARK, "Write returned error %d: %s",
 											errno, strerror( errno ) );
 							kill( cur_child->pid, SIGKILL );
-							osrfLogWarning( OSRF_LOG_MARK, "Write returned error %d: %s",
-											errno, strerror( errno ) );
 							del_prefork_child( forker, cur_child->pid );
+						} else {
+							add_prefork_child( forker, new_child );
+							honored = 1;
 						}
 					}
 
@@ -696,13 +744,24 @@ static void prefork_run( prefork_simple* forker ) {
 		message_free( cur_msg );
 
 	} /* end top level listen loop */
-
 }
 
 
 /* XXX Add a flag which tells select() to wait forever on children
 	in the best case, this will be faster than calling usleep(x), and
 	in the worst case it won't be slower and will do less logging...
+*/
+/**
+	@brief See if any children have become available.
+	@param forker Pointer to the prefork_simple that owns the children.
+	@param forever Boolean: true if we should wait indefinitely.
+	@return 
+
+	Call select() for all the children in the active list.  Read each active file
+	descriptor and move the corresponding child to the idle list.
+
+	If @a forever is true, wait indefinitely for input.  Otherwise return immediately if
+	there are no active file descriptors.
 */
 static void check_children( prefork_simple* forker, int forever ) {
 
@@ -711,8 +770,8 @@ static void check_children( prefork_simple* forker, int forever ) {
 
 	if( NULL == forker->first_child ) {
 		// If forever is true, then we're here because we've run out of idle
-		// processes, so there should be some active ones around.  Otherwise
-		// the children may all be idle, and that's okay.
+		// processes, so there should be some active ones around.
+		// If forever is false, then the children may all be idle, and that's okay.
 		if( forever )
  			osrfLogError( OSRF_LOG_MARK, "No active child processes to check" );
 		return;
@@ -807,7 +866,20 @@ static void check_children( prefork_simple* forker, int forever ) {
 	}
 }
 
+/**
+	@brief Service up a set maximum number of requests; then shut down.
+	@param child Pointer to the prefork_child representing the child process.
 
+	Called only by child process.
+
+	Enter a loop, for up to max_requests iterations.  On each iteration:
+	- Wait indefinitely for a request from the parent.
+	- Service the request.
+	- Increment a counter.  If the limit hasn't been reached, notify the parent that you
+	are available for another request.
+
+	After exiting the loop, shut down and terminate the process.
+*/
 static void prefork_child_wait( prefork_child* child ) {
 
 	int i,n;
@@ -916,7 +988,7 @@ static void del_prefork_child( prefork_simple* forker, pid_t pid ) {
 			cur_child->prev->next = cur_child->next;
 			cur_child->next->prev = cur_child->prev;
 		}
-		--forker->current_num_children;
+		//--forker->current_num_children;
 
 		//Destroy the node
 		prefork_child_free( forker, cur_child );
@@ -939,7 +1011,7 @@ static void del_prefork_child( prefork_simple* forker, pid_t pid ) {
 			else
 				forker->idle_list = cur_child->next;
 
-			--forker->current_num_children;
+			//--forker->current_num_children;
 
 			//Destroy the node
 			prefork_child_free( forker, cur_child );
@@ -1010,7 +1082,7 @@ static void prefork_clear( prefork_simple* prefork ) {
 		prefork_child_free( prefork, child );
 		child = temp;
 	}
-	prefork->current_num_children = 0;
+	//prefork->current_num_children = 0;
 
 	// Physically free the free list of prefork_children.
 	child = prefork->free_list;
@@ -1030,7 +1102,7 @@ static void prefork_clear( prefork_simple* prefork ) {
 	// children will survive a bit longer.
 	sleep( 1 );
 	while( (waitpid(-1, NULL, WNOHANG)) > 0) {
-		;   // Another one died...go around again
+		--prefork->current_num_children;
 	}
 
 	free(prefork->appname);
