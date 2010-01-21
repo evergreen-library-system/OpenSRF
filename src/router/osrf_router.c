@@ -345,6 +345,12 @@ static void osrfRouterClassHandleIncoming( osrfRouter* router, const char* class
 
 					// A previous message bounced.  Try to send a clone of it to a
 					// different node of the same class.
+					
+					// First make a local copy of the class name.  If the class gets
+					// deleted, the classname parameter becomes invalid.
+					char classname_copy[ strlen( classname ) + 1 ];
+					strcpy( classname_copy, classname );
+
 					transport_message* bouncedMessage = osrfRouterClassHandleBounce(
 							router, classname, class, msg );
 					/* handle bounced message */
@@ -352,7 +358,12 @@ static void osrfRouterClassHandleIncoming( osrfRouter* router, const char* class
 						/* we have no one to send the requested message to */
 						message_free( msg );
 						osrfLogClearXid();
-						continue;
+						
+						// See if the class still exists
+						if( osrfHashGet( router->classes, classname_copy ) )
+							continue;   // It does; keep going
+						else
+							break;      // It doesn't; don't try to read from it any more
 					}
 					osrfRouterClassHandleMessage( router, class, bouncedMessage );
 					message_free( bouncedMessage );
