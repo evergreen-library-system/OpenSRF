@@ -82,6 +82,8 @@ sub DESTROY {
 		}
 	}
 }
+
+my $sig_pipe = 0;
 	
 sub listen {
 	my $self = shift;
@@ -125,47 +127,74 @@ sub listen {
 		# no routers defined
 	};
 
+    my $app = $self->{app};
 
-	
-			
-	$logger->transport( $self->{app} . " going into listen loop", INFO );
+	$logger->info("$app inbound: going into listen loop" );
 
 	while(1) {
 	
 		my $sock = $self->unix_sock();
 		my $o;
 
-		$logger->debug("Inbound listener calling process()");
-
 		try {
 			$o = $self->process(-1);
 
 			if(!$o){
-				$logger->error(
-					"Inbound received no data from the Jabber socket in process()");
+				$logger->error("$app inbound: received no data from the Jabber socket in process()");
 				usleep(100000); # otherwise we loop and pound syslog logger with errors
 			}
 
 		} catch OpenSRF::EX::JabberDisconnected with {
 
-			$logger->error("Inbound process lost its ".
-				"jabber connection.  Attempting to reconnect...");
+			$logger->error("$app inbound: process lost its jabber connection.  Attempting to reconnect...");
 			$self->initialize;
 			$o = undef;
 		};
 
+        next unless $o;
 
-		if($o) {
-			my $socket = IO::Socket::UNIX->new( Peer => $sock  );
-			throw OpenSRF::EX::Socket( 
-				"Unable to connect to UnixServer: socket-file: $sock \n :=> $! " )
-				unless ($socket->connected);
-			print $socket freeze($o);
-			$socket->close;
-		} 
+        while(1) {
+            # keep trying to deliver the message until we succeed
+
+            my $socket = IO::Socket::UNIX->new( Peer => $sock  );
+
+            unless($socket and $socket->connected) {
+                $logger->error("$app inbound: unable to connect to inbound socket $sock: $!");
+                usleep(50000); # 50 msec
+                next;
+            }
+
+            # block until the pipe is ready for writing
+            my $outfile = ''; 
+            vec($outfile, $socket->fileno, 1) = 1;
+            my $nfound = select(undef, $outfile, undef, undef);
+
+            next unless $nfound; # should not happen since we're blocking
+
+            if($nfound == -1) { # select failed
+                $logger->error("$app inbound: unable to write to socket: $!");
+                usleep(50000); # 50 msec
+                next;
+            }
+
+            $sig_pipe = 0;
+            local $SIG{'PIPE'} = sub { $sig_pipe = 1; };
+            print $socket freeze($o);
+
+            if($sig_pipe) {
+                # The attempt to write to the socket failed.  Wait a short time then try again.
+                # Don't bother closing the socket, it will only cause grief
+                $logger->error("$app inbound: got SIGPIPE, will retry after a short wait..."); 
+                usleep(50000); # 50 msec
+                next;
+            } 
+                
+            $socket->close;
+            last;
+        }
 	}
 
-	throw OpenSRF::EX::Socket( "How did we get here?!?!" );
+    $logger->error("$app inbound: exited process loop");
 }
 
 1;
