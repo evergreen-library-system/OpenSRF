@@ -127,7 +127,6 @@ static osrfHttpTranslator* osrfNewHttpTranslator(request_rec* apreq) {
     trans->handle = osrfSystemGetTransportClient();
     trans->recipient = apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_TO);
     trans->service = apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_SERVICE);
-    trans->thread = apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_THREAD); /* XXX create thread if necessary */
 
     const char* timeout = apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_TIMEOUT);
     if(timeout) 
@@ -144,6 +143,11 @@ static osrfHttpTranslator* osrfNewHttpTranslator(request_rec* apreq) {
     char buf[32];
     snprintf(buf, sizeof(buf), "%d%ld", getpid(), time(NULL));
     trans->delim = md5sum(buf);
+
+    /* Use thread if it has been passed in; otherwise, just use the delimiter */
+    trans->thread = apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_THREAD)
+        ?  apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_THREAD)
+        : (const char*)trans->delim;
 
     return trans;
 }
