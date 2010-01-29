@@ -254,10 +254,10 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	# Checks for libraries.
 	#-----------------------------
 
-	AC_CHECK_LIB([dl], [dlerror], [],AC_MSG_ERROR(***OpenSRF requires libdl))
-	AC_CHECK_LIB([ncurses], [initscr], [], AC_MSG_ERROR(***OpenSRF requires ncurses headers))
-	AC_CHECK_LIB([readline], [readline], [], AC_MSG_ERROR(***OpenSRF requires readline headers))
-	AC_CHECK_LIB([xml2], [xmlAddID], [], AC_MSG_ERROR(***OpenSRF requires libxml2 headers))
+	AC_SEARCH_LIBS([dlerror], [dl], [],AC_MSG_ERROR([***OpenSRF requires a library (typically libdl) that provides dlerror()]))
+	AC_CHECK_LIB([ncurses], [initscr], [], AC_MSG_ERROR(***OpenSRF requires ncurses development headers))
+	AC_CHECK_LIB([readline], [readline], [], AC_MSG_ERROR(***OpenSRF requires readline development headers))
+	AC_CHECK_LIB([xml2], [xmlAddID], [], AC_MSG_ERROR(***OpenSRF requires xml2 development headers))
 	# Check for libmemcached and set flags accordingly
 	PKG_CHECK_MODULES(memcached, libmemcached >= 0.8.0)
 	AC_SUBST(memcached_CFLAGS)
@@ -293,7 +293,7 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	AC_FUNC_STRFTIME
 	AC_FUNC_STRTOD
 	AC_FUNC_VPRINTF
-	AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname gettimeofday memset select socket strcasecmp strchr strdup strerror strncasecmp strndup strrchr strtol])
+	AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname gettimeofday malloc_stats memset select socket strcasecmp strchr strdup strerror strncasecmp strndup strrchr strtol])
 
 	#------------------------------------
 	# Configuration and output

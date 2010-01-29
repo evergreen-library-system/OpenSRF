@@ -1,4 +1,4 @@
-# Copyright (C) 2008 Equinox Software, Inc.
+# Copyright (C) 2008-2010 Equinox Software, Inc., and others
 # Kevin Beswick <kevinbeswick00@gmail.com>
 #
 # This program is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
 AM_CFLAGS = $(DEF_CFLAGS) -DASSUME_STATELESS  -DOSRF_STRICT_PARAMS -rdynamic -fno-strict-aliasing -DOSRF_JSON_ENABLE_XML_UTILS
 AM_LDFLAGS = $(DEF_LDFLAGS) -R $(libdir)
-LDADD = -lxml2 -ldl -lopensrf
+LDADD = -lopensrf
 
 DISTCLEANFILES = Makefile.in Makefile
 

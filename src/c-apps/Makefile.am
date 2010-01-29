@@ -21,13 +21,16 @@ noinst_PROGRAMS = timejson
 lib_LTLIBRARIES = osrf_dbmath.la osrf_math.la osrf_version.la
 
 timejson_SOURCES = timejson.c
-timejson_LDADD = -lopensrf
+timejson_LDADD = @top_builddir@/src/libopensrf/libopensrf.la
+
 osrf_dbmath_la_SOURCES = osrf_dbmath.c 
 osrf_dbmath_la_LDFLAGS = $(AM_LDFLAGS) -module
-osrf_dbmath_la_LIBADD = -lopensrf
+osrf_dbmath_la_LIBADD = @top_builddir@/src/libopensrf/libopensrf.la
+
 osrf_math_la_SOURCES = osrf_math.c
 osrf_math_la_LDFLAGS = $(AM_LDFLAGS) -module
-osrf_math_la_LIBADD =  -lopensrf
+osrf_math_la_LIBADD =  @top_builddir@/src/libopensrf/libopensrf.la
+
 osrf_version_la_SOURCES = osrf_version.c 
 osrf_version_la_LDFLAGS = $(AM_LDFLAGS) -module
-osrf_version_la_LIBADD = -lopensrf
+osrf_version_la_LIBADD = @top_builddir@/src/libopensrf/libopensrf.la
