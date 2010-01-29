@@ -49,8 +49,9 @@ OpenSRF.XHRequest.prototype.send = function() {
 
     } else {
 
-        if(!navigator.userAgent.match(/mozilla/i)) {
-
+	/* Only Firefox supports multipart calls, but Safari / Chrome include
+           "Mozilla" in their user agent strings... sigh */
+        if(!navigator.userAgent.match(/mozilla/i) || navigator.userAgent.match(/webkit/i)) {
             /* standard asynchronous call */
             xreq.onreadystatechange = function() {
                 if(xreq.readyState == 4)
