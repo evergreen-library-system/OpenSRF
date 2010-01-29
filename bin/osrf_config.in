@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Copyright (C) 2008 Equinox Software, Inc.
 # Kevin Beswick <kevinbeswick00@gmail.com>
@@ -20,7 +20,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 datarootdir=@datarootdir@
 
-function showInstalled {
+showInstalled() {
 	 JAVA=@OSRF_INSTALL_JAVA@
 	 PYTHON=@OSRF_INSTALL_PYTHON@
 	 if test "$JAVA" = "true"; then
@@ -31,7 +31,7 @@ function showInstalled {
 	 fi
 }
 
-function showAll {
+showAll() {
 	 echo @PACKAGE_STRING@	
 	 echo PREFIX=@prefix@
 	 echo BINDIR=@bindir@
@@ -48,7 +48,7 @@ function showAll {
 	 showInstalled;
 }
 
-function showHelp {
+showHelp() {
 	 echo 
 	 echo "------------------------------------------------------------"
 	 echo " osrf_config                                                "
@@ -77,53 +77,53 @@ function showHelp {
 
 case "$1" in
      --installed)
-		showInstalled;
+		showInstalled
 		;;
      --cconfig) cconfig;
       		;;
      --libxml)
-		echo @LIBXML2_HEADERS@;
+		echo @LIBXML2_HEADERS@
 		;;
      --apr)
-		echo @APR_HEADERS@;
+		echo @APR_HEADERS@
 		;;
      --apache)
-		echo @APACHE2_HEADERS@;
+		echo @APACHE2_HEADERS@
 		;;
      --prefix)
 		echo @prefix@
 		;;
      --version) 
-		echo @PACKAGE_STRING@;
+		echo @PACKAGE_STRING@
 		;;
      --bindir)
 		echo @bindir@
 		;;
      --libdir)
-		echo @libdir@;
+		echo @libdir@
 		;;
      --sysconfdir)
-		echo @sysconfdir@;
+		echo @sysconfdir@
 		;;
      --localstatedir)
-		echo @localstatedir@;
+		echo @localstatedir@
 		;;
      --tmpdir)
-		echo @TMP@;
+		echo @TMP@
 		;;
      --apxs)
-		echo @APXS2@;
+		echo @APXS2@
 		;;
      --includedir)
-		echo @includedir@;
+		echo @includedir@
 		;;
      --docdir)
-		echo @docdir@;
+		echo @docdir@
 		;;
      --help)
-		showHelp;
+		showHelp
 		;;
      *)
-		showAll;
+		showAll
 		;;
 esac

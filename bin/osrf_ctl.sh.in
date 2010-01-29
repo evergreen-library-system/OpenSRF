@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -28,40 +28,41 @@ OSRF_HOSTNAME=""
 [ $(whoami) != 'opensrf' ] && echo 'Must run as user "opensrf"' && exit;
 
 
-function usage {
-	echo "";
-	echo "usage: $0 [OPTION]... -c <c_config> -a <action>";
-	echo "";
-	echo "Mandatory parameters:";
-	echo -e "  -a\t\taction to perform";
-	echo "";
-	echo "Optional parameters:";
-	echo -e "  -c\t\tfull path to C configuration file (opensrf_core.xml)";
-	echo -e "  -d\t\tstore PID files in this directory";
-	echo -e "  -l\t\taccept 'localhost' as the fully-qualified domain name";
-	echo "";
-	echo "Actions include:";
-	echo -e "\tstart_router"
-	echo -e "\tstop_router"
-	echo -e "\trestart_router"
-	echo -e "\tstart_perl"
-	echo -e "\tstop_perl"
-	echo -e "\trestart_perl"
-	echo -e "\tstart_c"
-	echo -e "\tstop_c"
-	echo -e "\trestart_c"
-	echo -e "\tstart_osrf"
-	echo -e "\tstop_osrf"
-	echo -e "\trestart_osrf"
-	echo -e "\tstop_all" 
-	echo -e "\tstart_all"
-	echo -e "\trestart_all"
-	echo "";
-	echo "Examples:";
-	echo "  $0 -a restart_all";
-	echo "  $0 -l -c opensrf_core.xml -a restart_all";
-	echo "";
-	exit;
+usage() {
+	cat << EOF
+
+usage: $0 [OPTION]... -c <c_config> -a <action>
+
+Mandatory parameters:
+  -a    action to perform
+
+Optional parameters:";
+  -c    full path to C configuration file (opensrf_core.xml)
+  -d    store PID files in this directory
+  -l    accept 'localhost' as the fully-qualified domain name
+
+Actions include:
+    start_router
+    stop_router
+    restart_router
+    start_perl
+    stop_perl
+    restart_perl
+    start_c
+    stop_c
+    restart_c
+    start_osrf
+    stop_osrf
+    restart_osrf
+    stop_all
+    start_all
+    restart_all
+
+Examples:
+  $0 -a restart_all
+  $0 -l -c opensrf_core.xml -a restart_all
+
+EOF
 }
 
 # ---------------------------------------------------------------------------
@@ -96,13 +97,13 @@ PID_OSRF_C="$OPT_PID_DIR/osrf_c.pid";
 # ---------------------------------------------------------------------------
 # Utility code for checking the PID files
 # ---------------------------------------------------------------------------
-function do_action {
+do_action() {
 
 	action="$1"; 
 	pidfile="$2";
 	item="$3"; 
 
-	if [ $action == "start" ]; then
+	if [ $action = "start" ]; then
 
 		if [ -e $pidfile ]; then
 			pid=$(cat $pidfile);
@@ -112,7 +113,7 @@ function do_action {
 		echo "Starting $item";
 	fi;
 
-	if [ $action == "stop" ]; then
+	if [ $action = "stop" ]; then
 
 		if [ ! -e $pidfile ]; then
 			echo "$item not running";
@@ -138,7 +139,7 @@ function do_action {
 # ---------------------------------------------------------------------------
 
 
-function start_router {
+start_router() {
 	do_action "start" $PID_ROUTER "OpenSRF Router";
 	opensrf_router $OPT_CONFIG routers
     sleep 2; # give the router procs time to fork and appear in ps
@@ -147,28 +148,28 @@ function start_router {
 	return 0;
 }
 
-function stop_router {
+stop_router() {
 	do_action "stop" $PID_ROUTER "OpenSRF Router";
 	return 0;
 }
 
-function start_perl {
+start_perl() {
     echo "Starting OpenSRF Perl";
     opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR \
         --config $OPT_CONFIG --action start_all --settings-startup-pause 3
 	return 0;
 }
 
-function stop_perl {
+stop_perl() {
     echo "Stopping OpenSRF Perl";
     opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR --config $OPT_CONFIG --action stop_all
 	sleep 1;
 	return 0;
 }
 
-function start_c {
+start_c() {
 	host=$OSRF_HOSTNAME
-	if [ "_$host" == "_" ]; then
+	if [ "_$host" = "_" ]; then
 		host=$(perl -MNet::Domain=hostfqdn -e 'print hostfqdn()');
 	fi;
 
@@ -180,7 +181,7 @@ function start_c {
 	return 0;
 }
 
-function stop_c {
+stop_c() {
 	do_action "stop" $PID_OSRF_C "OpenSRF C";
 	sleep 1;
 	return 0;

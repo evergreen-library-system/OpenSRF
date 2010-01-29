@@ -202,7 +202,7 @@ fi
 # Checks for libraries.
 #-----------------------------
 
-AC_CHECK_LIB([dl], [dlerror], [],AC_MSG_ERROR(***OpenSRF requires libdl))
+AC_SEARCH_LIBS([dlerror], [dl], [], AC_MSG_ERROR([***OpenSRF requires a library (typically libdl) that provides dlerror()]))
 AC_SEARCH_LIBS([mc_req_free], [memcache], [], AC_MSG_ERROR(***OpenSRF requires memcache development headers))
 AC_CHECK_LIB([ncurses], [initscr], [], AC_MSG_ERROR(***OpenSRF requires ncurses development headers))
 AC_CHECK_LIB([readline], [readline], [], AC_MSG_ERROR(***OpenSRF requires readline development headers))
@@ -240,7 +240,7 @@ AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 AC_FUNC_STRTOD
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname gettimeofday memset select socket strcasecmp strchr strdup strerror strncasecmp strndup strrchr strtol])
+AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname gettimeofday malloc_stats memset select socket strcasecmp strchr strdup strerror strncasecmp strndup strrchr strtol])
 
 #------------------------------------
 # Configuration and output

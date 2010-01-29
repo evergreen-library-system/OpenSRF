@@ -57,8 +57,11 @@ int main( void ) {
 	else
 		printf( "Address space: %lu\n", (unsigned long) rlim.rlim_cur );
 
+#ifdef HAVE_MALLOC_STATS
 	malloc_stats();
-
+#else
+	fprintf(stderr, "malloc_stats() is not available on your system\n");
+#endif
 	return rc;
 }
 

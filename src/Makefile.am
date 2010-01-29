@@ -48,12 +48,12 @@ install-exec-local:
 	mkdir -p $(jsdir)
 
 install-exec-hook:
-	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/opensrf.xml.example'
-	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(DESTDIR)@sysconfdir@/opensrf.xml.example'
-	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/opensrf_core.xml.example'
-	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(DESTDIR)@sysconfdir@/opensrf_core.xml.example'
-	sed -i 's|LOCALSTATEDIR|$(VAR)|g' '$(DESTDIR)@sysconfdir@/srfsh.xml.example'
-	sed -i 's|SYSCONFDIR|$(ETCDIR)|g' '$(DESTDIR)@sysconfdir@/srfsh.xml.example'
+	for f in opensrf.xml.example opensrf_core.xml.example srfsh.xml.example ; do \
+		mv "$(DESTDIR)@sysconfdir@/$${f}" "$(DESTDIR)@sysconfdir@/$${f}.bak" ; \
+		sed -e 's|LOCALSTATEDIR|$(VAR)|g' -e 's|SYSCONFDIR|$(ETCDIR)|g' \
+			"$(DESTDIR)@sysconfdir@/$${f}.bak" > "$(DESTDIR)@sysconfdir@/$${f}" ; \
+		rm "$(DESTDIR)@sysconfdir@/$${f}.bak" ; \
+	done
 	cp -r @srcdir@/javascript/* $(jsdir)/
 
 uninstall-hook:
