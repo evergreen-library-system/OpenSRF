@@ -752,6 +752,10 @@ int send_request( const char* server,
 			osrfLogToStderr();
 			params = jsonParse( OSRF_BUFFER_C_STR( buffer ) );
 			osrfRestoreLogType();
+			if( params == NULL) {
+				fprintf(stderr, "JSON error detected, not executing\n");
+				return 1;
+			}
 		}
 	} else {
 		if(!last_result || ! last_result->_result_content) { 
@@ -762,12 +766,6 @@ int send_request( const char* server,
 			params = jsonNewObject(NULL);
 			jsonObjectPush(params, last_result->_result_content );
 		}
-	}
-
-	if(buffer->n_used > 0 && params == NULL) {
-		fprintf(stderr, "JSON error detected, not executing\n");
-		jsonObjectFree(params);
-		return 1;
 	}
 
 	int session_is_temporary;    // boolean
