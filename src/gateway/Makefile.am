@@ -23,8 +23,8 @@ install-exec-local:
 		then echo -e "#\n#LoadModule mod_placeholder /usr/lib/apache2/modules/mod_placeholder.so" \
 		>> $${d}/httpd.conf; \
 	fi
-	$(APXS2) -c $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_json_gateway.c apachetools.c apachetools.h libopensrf.so
-	$(APXS2) -c $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_http_translator.c apachetools.c apachetools.h libopensrf.so
+	$(APXS2) -c $(DEF_LDLIBS) $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_json_gateway.c apachetools.c apachetools.h libopensrf.so
+	$(APXS2) -c $(DEF_LDLIBS) $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_http_translator.c apachetools.c apachetools.h libopensrf.so
 	$(APXS2) -i -a @srcdir@/osrf_json_gateway.la
 	$(APXS2) -i -a @srcdir@/osrf_http_translator.la
 
