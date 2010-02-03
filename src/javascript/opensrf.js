@@ -195,6 +195,21 @@ OpenSRF.Request = function(session, reqid, args) {
     this.complete = false;
 }
 
+OpenSRF.Request.prototype.peek_last = function(timeout) {
+    if(this.response_queue.length > 0) {
+        var x = this.response_queue.pop();
+        this.response_queue.push(x);
+        return x;
+    }
+    return null;
+}
+
+OpenSRF.Request.prototype.peek = function(timeout) {
+    if(this.response_queue.length > 0)
+        return this.response_queue[0];
+    return null;
+}
+
 OpenSRF.Request.prototype.recv = function(timeout) {
     if(this.response_queue.length > 0)
         return this.response_queue.shift();
