@@ -53,10 +53,11 @@ endif
 SUBDIRS = $(MAYBE_CORE) $(MAYBE_PY) $(MAYBE_JA)
 
 install-exec-local:
-	mkdir -p $(VAR)
-	mkdir -p $(PID)
-	mkdir -p $(LOG)
-	mkdir -p $(SOCK)
+	$(MKDIR_P) $(VAR)
+	$(MKDIR_P) $(PID)
+	$(MKDIR_P) $(LOG)
+	$(MKDIR_P) $(SOCK)
+	$(MKDIR_P) $(jsdir)
 
 install-exec-hook:
 	if [ "$(MAYBE_CORE)" ]; then \
