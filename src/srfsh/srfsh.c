@@ -752,10 +752,6 @@ int send_request( const char* server,
 			osrfLogToStderr();
 			params = jsonParse( OSRF_BUFFER_C_STR( buffer ) );
 			osrfRestoreLogType();
-			if( params == NULL) {
-				fprintf(stderr, "JSON error detected, not executing\n");
-				return 1;
-			}
 		}
 	} else {
 		if(!last_result || ! last_result->_result_content) { 
@@ -768,6 +764,12 @@ int send_request( const char* server,
 		}
 	}
 
+	if(buffer->n_used > 0 && params == NULL) {
+		fprintf(stderr, "JSON error detected, not executing\n");
+		jsonObjectFree(params);
+		return 1;
+	}
+
 	int session_is_temporary;    // boolean
 	osrfAppSession* session = osrfHashGet( server_hash, server );
 	if( session ) {
@@ -777,24 +779,23 @@ int send_request( const char* server,
 		session_is_temporary = 1;                     // just for this request
 	}
 
-	if(!osrfAppSessionConnect(session)) {
+	double start = get_timestamp_millis();
+
+	int req_id = osrfAppSessionSendRequest( session, params, method, 1 );
+	if( -1 == req_id ) {
 		fprintf(stderr, "Unable to communicate with service %s\n", server);
-		osrfLogWarning( OSRF_LOG_MARK,  "Unable to connect to remote service %s\n", server );
+		osrfLogWarning( OSRF_LOG_MARK,
+				"Unable to communicate with remote service %s\n", server );
 		osrfAppSessionFree( session );
 		jsonObjectFree(params);
 		return 1;
 	}
-
-	double start = get_timestamp_millis();
-
-	int req_id = osrfAppSessionSendRequest( session, params, method, 1 );
 	jsonObjectFree(params);
 
 	osrfMessage* omsg = osrfAppSessionRequestRecv( session, req_id, recv_timeout );
 
 	if(!omsg) 
 		printf("\nReceived no data from server\n");
-
 
 	signal(SIGPIPE, SIG_IGN);
 
@@ -899,7 +900,6 @@ int send_request( const char* server,
 	if( osrf_app_session_request_complete( session, req_id ))
 		fputs("Request Completed Successfully\n", less);
 
-
 	fprintf(less, "Request Time in seconds: %.6f\n", end - start );
 	fputs("------------------------------------\n", less);
 
@@ -907,10 +907,8 @@ int send_request( const char* server,
 
 	osrf_app_session_request_finish( session, req_id );
 
-	if( session_is_temporary ) {
-		osrf_app_session_disconnect( session );
+	if( session_is_temporary )
 		osrfAppSessionFree( session );
-	}
 
 	return 1;
 
@@ -1046,11 +1044,37 @@ static char* tabs(int count) {
 }
 */
 
+/**
+	@brief Execute the "math_bench" command.
+	@param cmd_array A list of command arguments.
+	@return 1 if successful, 0 if not.
 
+	The first command argument is required.  It is the number of iterations requested.  If
+	it is less than 1, it is coerced to 1.
+
+	The second command argument is optional, with allowed values of 0 (the default), 1, or 2.
+	It controls when and whether we call osrf_app_session_disconnect().  If this argument is
+	out of range, it is coerced to a value of 0 or 2.
+*/
 static int handle_math( const osrfStringArray* cmd_array ) {
 	const char* word = osrfStringArrayGetString( cmd_array, 1 );
-	if( word )
-		return do_math( atoi( word ), 0 );
+	if( word ) {
+		int count = atoi( word );
+		if( count < 1 )
+			count = 1;
+
+		int style = 0;
+		const char* style_arg = osrfStringArrayGetString( cmd_array, 2 );
+		if( style_arg ) {
+			style = atoi( style_arg );
+			if( style > 2 )
+				style = 2;
+			else if( style < 0 )
+				style = 0;
+		}
+
+		return do_math( count, style );
+	}
 	return 0;
 }
 
@@ -1067,8 +1091,12 @@ static int do_math( int count, int style ) {
 	char* methods[] = { "add", "sub", "mult", "div" };
 	char* answers[] = { "3", "-1", "2", "0.5" };
 
+	// Initialize timings to zero.  This shouldn't make a difference, because
+	// we overwrite each timing anyway before reporting them.
 	float times[ count * 4 ];
-	memset(times, 0, sizeof(times));
+	int fi;
+	for( fi = 0; fi < count; ++fi )
+		times[ fi ] = 0.0;
 
 	int k;
 	for(k=0;k!=100;k++) {
