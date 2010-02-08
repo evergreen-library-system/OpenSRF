@@ -1,1 +1,5 @@
-#ChangeLog
+2010-02-03  dbs
+
+	* src/javascript/opensrf_xhr.js: Prevent Internet Explorer from
+	  making multipart-mixed-replace calls as well
+
