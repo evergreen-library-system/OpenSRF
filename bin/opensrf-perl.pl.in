@@ -216,7 +216,7 @@ sub msg {
 sub do_help {
     print <<HELP;
 
-    Usage: perl $0 --pid_dir @TMP@ --config @CONF_DIR@/opensrf_core.xml --service opensrf.settings --action start
+    Usage: perl $0 --pid-dir @TMP@ --config @CONF_DIR@/opensrf_core.xml --service opensrf.settings --action start
 
     --action <action>
         Actions include start, stop, restart, and start_all, stop_all, and restart_all
