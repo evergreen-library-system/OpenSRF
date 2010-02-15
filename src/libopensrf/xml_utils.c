@@ -3,6 +3,13 @@
 /* helper function */
 static jsonObject* _xmlToJSON(xmlNodePtr node, jsonObject*);
 
+/**
+	@brief Write then contents of an xmlNode to standard output.
+	@param node Pointer to an xmlNode
+
+	Write the text content of an xmlNode, and all its dependent nodes recursively, to
+	standard output.
+*/
 void recurse_doc( xmlNodePtr node ) {
 	if( node == NULL ) return;
 	printf("Recurse: %s =>  %s", node->name, node->content );
@@ -12,8 +19,6 @@ void recurse_doc( xmlNodePtr node ) {
 		t = t->next;
 	}
 }
-
-
 
 jsonObject* xmlDocToJSON(xmlDocPtr doc) {
 	if(!doc) return NULL;
@@ -27,7 +32,7 @@ static jsonObject* _xmlToJSON(xmlNodePtr node, jsonObject* obj) {
 	if(obj == NULL) obj = jsonNewObject(NULL);
 
 	if(node->type == XML_TEXT_NODE) {
-		jsonObjectSetString(obj, (char*) node->content);	
+		jsonObjectSetString(obj, (char*) node->content);
 
 	} else if(node->type == XML_ELEMENT_NODE || node->type == XML_ATTRIBUTE_NODE ) {
 
@@ -50,7 +55,7 @@ static jsonObject* _xmlToJSON(xmlNodePtr node, jsonObject* obj) {
 		}
 
 		xmlNodePtr child = node->children;
-                if (child) { // at least one...
+		if (child) { // at least one...
 			if (child != node->last) { // more than one -- ignore TEXT nodes
 				while(child) {
 					if (child->type != XML_TEXT_NODE) _xmlToJSON(child, new_obj);
@@ -59,8 +64,8 @@ static jsonObject* _xmlToJSON(xmlNodePtr node, jsonObject* obj) {
 			} else {
 				_xmlToJSON(child, new_obj);
 			}
-                }
-	}	
+		}
+	}
 
 	return obj;
 }
@@ -92,22 +97,48 @@ char* xmlDocToString(xmlDocPtr doc, int full) {
 	}
 }
 
+/**
+	@brief Search for the value of a given attribute in an attribute array.
+	@param atts Pointer to the attribute array to be searched.
+	@param atts Pointer to the attribute name to be sought.
+	@return A pointer to the attribute value if found, or NULL if not.
 
+	The @a atts parameter points to a ragged array of strings.  The @a atts[0] pointer points
+	to an attribute name, and @a atts[1] points to the corresponding attribute value.  The
+	remaining pointers likewise point alternately to names and values.  The end of the
+	list is marked by a NULL.
 
+	In practice, the @a atts array is constructed by the XML parser and passed to a callback
+	function.
 
-char* xmlSaxAttr( const xmlChar** atts, const char* name ) {
+*/
+const char* xmlSaxAttr( const xmlChar** atts, const char* name ) {
 	if( atts && name ) {
 		int i;
 		for(i = 0; (atts[i] != NULL); i++) {
 			if(!strcmp((char*) atts[i], name)) {
-				if(atts[++i]) return (char*) atts[i];
+				if(atts[++i])
+					return (const char*) atts[i];
 			}
 		}
 	}
 	return NULL;
 }
 
+/**
+	@brief Add a series of attributes to an xmlNode.
+	@param node Pointer to the xmlNode to which the attributes will be added.
+	@param atts Pointer to the attributes to be added.
+	@return Zero in all cases.
 
+	The @a atts parameter points to a ragged array of strings.  The @a atts[0] pointer points
+	to an attribute name, and @a atts[1] points to the corresponding attribute value.  The
+	remaining pointers likewise point alternately to names and values.  The end of the
+	list is marked by a NULL.
+
+	In practice, the @a atts array is constructed by the XML parser and passed to a callback
+	function.
+*/
 int xmlAddAttrs( xmlNodePtr node, const xmlChar** atts ) {
 	if( node && atts ) {
 		int i;

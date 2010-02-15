@@ -26,7 +26,7 @@ char* xmlDocToString(xmlDocPtr doc, int full);
 /* Takes an xmlChar** from a SAX callback and returns the value
 	for the attribute with name 'name'
 	*/
-char* xmlSaxAttr( const xmlChar** atts, const char* name ); 
+const char* xmlSaxAttr( const xmlChar** atts, const char* name ); 
 
 /**
   Sets the xml attributes from atts to the given dom node 
