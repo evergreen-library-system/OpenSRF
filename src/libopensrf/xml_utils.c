@@ -1,18 +1,29 @@
+/**
+	@file xml_utils.c
+	@brief Utility routines for XML documents.
+*/
+
 #include <opensrf/xml_utils.h>
 
 /* helper function */
-static jsonObject* _xmlToJSON(xmlNodePtr node, jsonObject*);
+static void _xmlToJSON(xmlNodePtr node, jsonObject*);
 
 /**
-	@brief Write then contents of an xmlNode to standard output.
-	@param node Pointer to an xmlNode
+	@brief Write the contents of an xmlNode to standard output.
+	@param node Pointer to an xmlNode.
 
 	Write the text content of an xmlNode, and all its dependent nodes recursively, to
 	standard output.
+
+	Warning: the output is pig-ugly, in part because whenever the child node is a tag
+	(rather than text), the content member is a NULL pointer.
+
+	Designed for debugging.
 */
 void recurse_doc( xmlNodePtr node ) {
 	if( node == NULL ) return;
-	printf("Recurse: %s =>  %s", node->name, node->content );
+	printf("Recurse: %s =>  %s", node->name,
+			node->content ? (const char*) node->content : "(null)" );
 	xmlNodePtr t = node->children;
 	while(t) {
 		recurse_doc(t);
@@ -20,16 +31,54 @@ void recurse_doc( xmlNodePtr node ) {
 	}
 }
 
+/**
+	@brief Translate an XML document into a jsonObject.
+	@param doc An xmlDocPtr representing the XML document.
+	@return A pointer to the newly created jsonObject.
+
+	The translation pays attention only to tags and enclosed text.  It ignores attributes,
+	comments, processing directives, and XML declarations.
+
+	The document as a whole is represented as a JSON_HASH with one member, whose key is the
+	root tag.
+
+	Every tag is represented as the key of a member in a JSON_HASH, whose corresponding value
+	depends on what the element encloses:
+
+	- If the element is empty, its value is a JSON_NULL.
+	- If the element encloses only text, its value is a JSON_STRING containing the enclosed
+	  text.  Special characters and UTF-8 characters are escaped according to JSON rules;
+	  otherwise, white space is preserved intact.
+	- If the element encloses one or more nested elements, its value is a JSON_HASH
+	  whose members represent the enclosed elements, except that:
+	- If there are two or more elements with the same tag in the same enclosing element,
+	  they collapse into a single entry whose value is a JSON_ARRAY of the corresponding values.
+
+	The calling code is responsible for freeing the jsonObject by calling jsonObjectFree().
+*/
 jsonObject* xmlDocToJSON(xmlDocPtr doc) {
-	if(!doc) return NULL;
-	return _xmlToJSON(xmlDocGetRootElement(doc), NULL);
+	if( !doc )
+		return NULL;
+	xmlNodePtr root = xmlDocGetRootElement( doc );
+	if( !root || xmlIsBlankNode( root ) )
+		return NULL;
+
+	jsonObject* obj = jsonNewObjectType( JSON_HASH );
+	_xmlToJSON( root, obj );
+	return obj;
 }
 
-static jsonObject* _xmlToJSON(xmlNodePtr node, jsonObject* obj) {
+/**
+	@brief Translate an xmlNodePtr into a jsonObject.
+	@param node Points to the XML node to be translated.
+	@param obj Pointer to an existing jsonObject into which the new jsonObject will be inserted.
 
-	if(!node) return NULL;
-	if(xmlIsBlankNode(node)) return NULL;
-	if(obj == NULL) obj = jsonNewObject(NULL);
+	See the description of xmlDocToJSON(), a thin wrapper for _xmlToJSON.
+*/
+static void _xmlToJSON(xmlNodePtr node, jsonObject* obj) {
+
+	if( !node || !obj ) return;
+	if(xmlIsBlankNode(node)) return;
 
 	if(node->type == XML_TEXT_NODE) {
 		jsonObjectSetString(obj, (char*) node->content);
@@ -38,17 +87,18 @@ static jsonObject* _xmlToJSON(xmlNodePtr node, jsonObject* obj) {
 
 		jsonObject* new_obj = jsonNewObject(NULL);
 
-		jsonObject* old;
-
-		/* do the duplicate node / array shuffle */
-		if( (old = jsonObjectGetKey(obj, (char*) node->name)) ) {
-			if(old->type == JSON_ARRAY ) {
+		jsonObject* old = jsonObjectGetKey(obj, (char*) node->name);
+		if( old ) {
+			// We have already encountered an element with the same tag
+			if( old->type == JSON_ARRAY ) {
+				// Add the new value to an existing JSON_ARRAY
 				jsonObjectPush(old, new_obj);
 			} else {
-				jsonObject* arr = jsonNewObject(NULL);
-				jsonObjectPush(arr, jsonObjectClone(old));
-				jsonObjectPush(arr, new_obj);
-				jsonObjectSetKey(obj, (char*) node->name, arr);
+				// Replace the earlier value with a JSON_ARRAY containing both values
+				jsonObject* arr = jsonNewObjectType( JSON_ARRAY );
+				jsonObjectPush( arr, jsonObjectClone(old) );
+				jsonObjectPush( arr, new_obj );
+				jsonObjectSetKey( obj, (char*) node->name, arr );
 			}
 		} else {
 			jsonObjectSetKey(obj, (char*) node->name, new_obj);
@@ -58,19 +108,28 @@ static jsonObject* _xmlToJSON(xmlNodePtr node, jsonObject* obj) {
 		if (child) { // at least one...
 			if (child != node->last) { // more than one -- ignore TEXT nodes
 				while(child) {
-					if (child->type != XML_TEXT_NODE) _xmlToJSON(child, new_obj);
+					if( child->type != XML_TEXT_NODE )
+						_xmlToJSON( child, new_obj );
 					child = child->next;
 				}
 			} else {
-				_xmlToJSON(child, new_obj);
+				_xmlToJSON( child, new_obj );
 			}
 		}
 	}
-
-	return obj;
 }
 
+/**
+	@brief Translate an xmlDocPtr to a character string.
+	@param doc An xmlDocPtr referencing an XML document.
+	@param full  Boolean; controls whether the output includes material outside the root.
+	@return Pointer to the generated string.
 
+	If @a full is true, the output includes any material outside of the root element, such
+	as processing directives, comments, and XML declarations.  Otherwise it excludes them.
+
+	The calling code is responsible for freeing the string by calling free().
+*/
 char* xmlDocToString(xmlDocPtr doc, int full) {
 
 	if(!doc) return NULL;
@@ -100,7 +159,7 @@ char* xmlDocToString(xmlDocPtr doc, int full) {
 /**
 	@brief Search for the value of a given attribute in an attribute array.
 	@param atts Pointer to the attribute array to be searched.
-	@param atts Pointer to the attribute name to be sought.
+	@param name Pointer to the attribute name to be sought.
 	@return A pointer to the attribute value if found, or NULL if not.
 
 	The @a atts parameter points to a ragged array of strings.  The @a atts[0] pointer points
@@ -108,9 +167,8 @@ char* xmlDocToString(xmlDocPtr doc, int full) {
 	remaining pointers likewise point alternately to names and values.  The end of the
 	list is marked by a NULL.
 
-	In practice, the @a atts array is constructed by the XML parser and passed to a callback
+	In practice, the XML parser constructs the @a atts array and passes it to a callback
 	function.
-
 */
 const char* xmlSaxAttr( const xmlChar** atts, const char* name ) {
 	if( atts && name ) {
@@ -136,7 +194,7 @@ const char* xmlSaxAttr( const xmlChar** atts, const char* name ) {
 	remaining pointers likewise point alternately to names and values.  The end of the
 	list is marked by a NULL.
 
-	In practice, the @a atts array is constructed by the XML parser and passed to a callback
+	In practice, the XML parser constructs the @a atts array and passes it to a callback
 	function.
 */
 int xmlAddAttrs( xmlNodePtr node, const xmlChar** atts ) {
@@ -151,4 +209,3 @@ int xmlAddAttrs( xmlNodePtr node, const xmlChar** atts ) {
 	}
 	return 0;
 }
-
