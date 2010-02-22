@@ -16,6 +16,23 @@ GNU General Public License for more details.
 #ifndef OSRF_CONFIG_H
 #define OSRF_CONFIG_H
 
+/**
+	@file osrfConfig.h
+	@brief Routines for loading, storing, and searching configurations.
+
+	A configuration file, encoded as XML, is loaded and translated into a jsonObject.  This
+	object is stored in an osrfConfig, along with an optional context string which, if
+	present, restricts subsequent searches to a subset of the jsonObject.
+
+	In theory the context string could identify multiple subtrees of the total configuration.
+	In practice it is used to partition a configuration file into different pieces, each piece
+	to be used by a different application.
+
+	Normally an application loads a default configuration, accessible from every linked
+	module.  It is also possible, although seldom useful, to create and search a configuration
+	distinct from the default configuration.
+*/
+
 #include <opensrf/xml_utils.h>
 #include <opensrf/utils.h>
 #include <opensrf/string_array.h>
@@ -25,89 +42,29 @@ GNU General Public License for more details.
 extern "C" {
 #endif
 
+/**
+	@brief Represents a configuration; normally loaded from an XML configuration file.
+*/
 typedef struct {
-	jsonObject* config;
-	char* configContext;
+	jsonObject* config;   /**< Represents the contents of the XML configuration file. */
+	char* configContext;  /**< Context string (optional). */
 } osrfConfig;
 
-
-/**
-	Parses a new config file.  Caller is responsible for freeing the returned
-		config object when finished.  
-	@param configFile The XML config file to parse.
-	@param configContext Optional root of the subtree in the config file where 
-	we will look for values. If it's not provided,  searches will be 
-	performed from the root of the config file
-	@return The config object if the file parses successfully.  Otherwise
-		it returns NULL;
-*/
 osrfConfig* osrfConfigInit(const char* configFile, const char* configContext);
 
-/**
-	@return True if we have a default config defined
-*/
-int osrfConfigHasDefaultConfig();
+int osrfConfigHasDefaultConfig( void );
 
-/**
-	Replaces the config object's json object.  This is useful
-	if you have a json object already and not an XML config
-	file to parse.
-	@param cfg The config object to alter
-	@param obj The json object to use when searching values
-*/
 void osrfConfigReplaceConfig(osrfConfig* cfg, const jsonObject* obj);
 
-/** Deallocates a config object 
-	@param cfg The config object to free
-*/
 void osrfConfigFree(osrfConfig* cfg);
 
-
-/* Assigns the default config file.  This file will be used whenever
-	NULL is passed to config retrieval functions 
-	@param cfg The config object to use as the default config
-*/
 void osrfConfigSetDefaultConfig(osrfConfig* cfg);
 
-/* frees the default config if one exists */
-void osrfConfigCleanup();
+void osrfConfigCleanup( void );
 
-
-/** 
-	Returns the value in the config found at 'path'.
-	If the value found at 'path' is a long or a double,
-	the value is stringified and then returned.
-	The caller must free the returned char* 
-
-	if there is a configContext, then it will be appended to 
-	the front of the path like so: //<configContext>/<path>
-	if no configContext was provided to osfConfigSetFile, then 
-	the path is interpreted literally.
-	@param cfg The config file to search or NULL if the default
-		config should be used
-	@param path The search path
-*/
 char* osrfConfigGetValue(const osrfConfig* cfg, const char* path, ...);
 
-
-/**
- *  @see osrfConfigGetValue
- *  @return jsonObject found at path
- */
-jsonObject* osrfConfigGetValueObject(osrfConfig* cfg, char* path, ...);
-
-
-/** 
-	Puts the list of values found at 'path' into the pre-allocated 
-	string array.  
-	Note that the config node found at 'path' must be an array.
-	@param cfg The config file to search or NULL if the default
-		config should be used
-	@param arr An allocated string_array where the values will
-		be stored
-	@param path The search path
-	@return the number of values added to the string array;
-*/
+jsonObject* osrfConfigGetValueObject(osrfConfig* cfg, const char* path, ...);
 
 int osrfConfigGetValueList(const osrfConfig* cfg, osrfStringArray* arr,
 		const char* path, ...);
