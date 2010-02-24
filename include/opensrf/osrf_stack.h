@@ -1,6 +1,11 @@
 #ifndef OSRF_STACK_H
 #define OSRF_STACK_H
 
+/**
+	@file osrf_stack.c
+	@brief Routines to receive and process input osrfMessages.
+*/
+
 #include <opensrf/transport_client.h>
 #include <opensrf/osrf_message.h>
 #include <opensrf/osrf_app_session.h>
