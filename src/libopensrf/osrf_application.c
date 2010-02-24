@@ -1,5 +1,10 @@
 #include <opensrf/osrf_application.h>
 
+/**
+	@file osrf_application.c
+	@brief Routines to manage dynamically loaded libraries.
+*/
+
 static osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symbolName,
 		const char* notes, int argc, int options, void* );
 static void osrfAppSetOnExit(osrfApplication* app, const char* appName);
@@ -19,7 +24,8 @@ int osrfAppRegisterApplication( const char* appName, const char* soFile ) {
 	if(!appName || ! soFile) return -1;
 	char* error;
 
-	if(!_osrfAppHash) _osrfAppHash = osrfNewHash();
+	if(!_osrfAppHash)
+		_osrfAppHash = osrfNewHash();
 
 	osrfLogInfo( OSRF_LOG_MARK, "Registering application %s with file %s", appName, soFile );
 
@@ -42,8 +48,9 @@ int osrfAppRegisterApplication( const char* appName, const char* soFile ) {
 	*(void **) (&init) = dlsym(app->handle, "osrfAppInitialize");
 
 	if( (error = dlerror()) != NULL ) {
-		osrfLogWarning( OSRF_LOG_MARK, 
-			"! Unable to locate method symbol [osrfAppInitialize] for app %s: %s", appName, error );
+		osrfLogWarning( OSRF_LOG_MARK,
+			"! Unable to locate method symbol [osrfAppInitialize] for app %s: %s",
+    		appName, error );
 
 	} else {
 
@@ -113,7 +120,7 @@ int osrfAppRunChildInit(const char* appname) {
 }
 
 
-void osrfAppRunExitCode() { 
+void osrfAppRunExitCode() {
 	osrfHashIterator* itr = osrfNewHashIterator(_osrfAppHash);
 	osrfApplication* app;
 	while( (app = osrfHashIteratorNext(itr)) ) {
@@ -127,7 +134,7 @@ void osrfAppRunExitCode() {
 }
 
 
-int osrfAppRegisterMethod( const char* appName, const char* methodName, 
+int osrfAppRegisterMethod( const char* appName, const char* methodName,
 		const char* symbolName, const char* notes, int argc, int options ) {
 
 	return osrfAppRegisterExtendedMethod(
@@ -142,7 +149,7 @@ int osrfAppRegisterMethod( const char* appName, const char* methodName,
 
 }
 
-int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName, 
+int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName,
 		const char* symbolName, const char* notes, int argc, int options, void * user_data ) {
 
 	if( !appName || ! methodName  ) return -1;
@@ -156,7 +163,7 @@ int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName,
 	osrfLogDebug( OSRF_LOG_MARK, "Registering method %s for app %s", methodName, appName );
 
 	osrfMethod* method = _osrfAppBuildMethod(
-		methodName, symbolName, notes, argc, options, user_data );		
+		methodName, symbolName, notes, argc, options, user_data );
 	method->options = options;
 
 	/* plug the method into the list of methods */
@@ -165,7 +172,7 @@ int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName,
 	if( options & OSRF_METHOD_STREAMING ) { /* build the atomic counterpart */
 		int newops = options | OSRF_METHOD_ATOMIC;
 		osrfMethod* atomicMethod = _osrfAppBuildMethod(
-			methodName, symbolName, notes, argc, newops, NULL );		
+			methodName, symbolName, notes, argc, newops, NULL );
 		osrfHashSet( app->methods, atomicMethod, atomicMethod->name );
 		atomicMethod->userData = method->userData;
 	}
@@ -178,18 +185,28 @@ int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName,
 static osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symbolName,
 		const char* notes, int argc, int options, void* user_data ) {
 
-	osrfMethod* method					= safe_malloc(sizeof(osrfMethod));
+	osrfMethod* method      = safe_malloc(sizeof(osrfMethod));
 
-	if(methodName) method->name		= strdup(methodName);
-	else method->name    = NULL;
-	if(symbolName) method->symbol		= strdup(symbolName);
-	else method->symbol  = NULL;
-	if(notes) method->notes				= strdup(notes);
-	else method->notes   = NULL;
-	if(user_data) method->userData	= user_data;
+	if(methodName)
+		method->name        = strdup(methodName);
+	else
+		method->name        = NULL;
 
-	method->argc							= argc;
-	method->options						= options;
+	if(symbolName)
+		method->symbol      = strdup(symbolName);
+	else
+		method->symbol      = NULL;
+
+	if(notes)
+		method->notes       = strdup(notes);
+	else
+		method->notes       = NULL;
+
+	if(user_data)
+		method->userData    = user_data;
+
+	method->argc            = argc;
+	method->options         = options;
 
 	if(options & OSRF_METHOD_ATOMIC) { /* add ".atomic" to the end of the name */
 		char mb[strlen(method->name) + 8];
@@ -204,46 +221,46 @@ static osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symb
 
 
 /**
-  Registers all of the system methods for this app so that they may be
-  treated the same as other methods */
+	Registers all of the system methods for this app so that they may be
+	treated the same as other methods
+*/
 static int _osrfAppRegisterSysMethods( const char* app ) {
 
-	osrfAppRegisterMethod( 
-			app, OSRF_SYSMETHOD_INTROSPECT, NULL, 
+	osrfAppRegisterMethod(
+			app, OSRF_SYSMETHOD_INTROSPECT, NULL,
 			"Return a list of methods whose names have the same initial "
-			"substring as that of the provided method name PARAMS( methodNameSubstring )", 
+			"substring as that of the provided method name PARAMS( methodNameSubstring )",
 			1, OSRF_METHOD_SYSTEM | OSRF_METHOD_STREAMING );
 
-	osrfAppRegisterMethod( 
-			app, OSRF_SYSMETHOD_INTROSPECT_ALL, NULL, 
-			"Returns a complete list of methods. PARAMS()", 0, 
+	osrfAppRegisterMethod(
+			app, OSRF_SYSMETHOD_INTROSPECT_ALL, NULL,
+			"Returns a complete list of methods. PARAMS()", 0,
 			OSRF_METHOD_SYSTEM | OSRF_METHOD_STREAMING );
 
-	osrfAppRegisterMethod( 
-			app, OSRF_SYSMETHOD_ECHO, NULL, 
-			"Echos all data sent to the server back to the client. PARAMS([a, b, ...])", 0, 
+	osrfAppRegisterMethod(
+			app, OSRF_SYSMETHOD_ECHO, NULL,
+			"Echos all data sent to the server back to the client. PARAMS([a, b, ...])", 0,
 			OSRF_METHOD_SYSTEM | OSRF_METHOD_STREAMING );
 
 	return 0;
 }
 
 /**
-  Finds the given app in the list of apps
-  @param name The name of the application
-  @return The application pointer or NULL if there is no such application
- */
+	Finds the given app in the list of apps
+	@param name The name of the application
+	@return The application pointer or NULL if there is no such application
+*/
 static osrfApplication* _osrfAppFindApplication( const char* name ) {
 	if(!name) return NULL;
 	return (osrfApplication*) osrfHashGet(_osrfAppHash, name);
 }
 
 /**
-  Finds the given method for the given app
-  @param app The application object
-  @param methodName The method to find
-  @return A method pointer or NULL if no such method 
-  exists for the given application
- */
+	@brief Find the given method for the given app.
+	@param app The application object.
+	@param methodName The method to find.
+	@return A method pointer or NULL if no such method exists for the given application.
+*/
 static osrfMethod* osrfAppFindMethod( osrfApplication* app, const char* methodName ) {
 	if(!app || ! methodName) return NULL;
 	return (osrfMethod*) osrfHashGet( app->methods, methodName );
@@ -255,7 +272,7 @@ osrfMethod* _osrfAppFindMethod( const char* appName, const char* methodName ) {
 }
 
 
-int osrfAppRunMethod( const char* appName, const char* methodName, 
+int osrfAppRunMethod( const char* appName, const char* methodName,
 		osrfAppSession* ses, int reqId, jsonObject* params ) {
 
 	if( !(appName && methodName && ses) ) return -1;
@@ -271,14 +288,14 @@ int osrfAppRunMethod( const char* appName, const char* methodName,
 	context.responses = NULL;
 
 	/* this is the method we're gonna run */
-	int (*meth) (osrfMethodContext*);	
+	int (*meth) (osrfMethodContext*);
 
 	if( !(app = _osrfAppFindApplication(appName)) )
-		return osrfAppRequestRespondException( ses, 
+		return osrfAppRequestRespondException( ses,
 				reqId, "Application not found: %s", appName );
-	
+
 	if( !(method = osrfAppFindMethod( app, methodName )) )
-		return osrfAppRequestRespondException( ses, reqId, 
+		return osrfAppRequestRespondException( ses, reqId,
 				"Method [%s] not found for service %s", methodName, appName );
 
 	context.method = method;
@@ -286,7 +303,7 @@ int osrfAppRunMethod( const char* appName, const char* methodName,
 	#ifdef OSRF_STRICT_PARAMS
 	if( method->argc > 0 ) {
 		if(!params || params->type != JSON_ARRAY || params->size < method->argc )
-			return osrfAppRequestRespondException( ses, reqId, 
+			return osrfAppRequestRespondException( ses, reqId,
 				"Not enough params for method %s / service %s", methodName, appName );
 	}
 	#endif
@@ -302,15 +319,15 @@ int osrfAppRunMethod( const char* appName, const char* methodName,
 		*(void **) (&meth) = dlsym(app->handle, method->symbol);
 
 		if( (error = dlerror()) != NULL ) {
-			return osrfAppRequestRespondException( ses, reqId, 
+			return osrfAppRequestRespondException( ses, reqId,
 				"Unable to execute method [%s]  for service %s", methodName, appName );
 		}
 
 		retcode = (*meth) (&context);
 	}
 
-	if(retcode < 0) 
-		return osrfAppRequestRespondException( 
+	if(retcode < 0)
+		return osrfAppRequestRespondException(
 				ses, reqId, "An unknown server error occurred" );
 
 	return _osrfAppPostProcess( &context, retcode );
@@ -330,21 +347,21 @@ static int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int 
 	if(!(ctx && ctx->method)) return -1;
 
 	if( ctx->method->options & OSRF_METHOD_ATOMIC ) {
-		osrfLogDebug( OSRF_LOG_MARK,   
+		osrfLogDebug( OSRF_LOG_MARK,
 			"Adding responses to stash for atomic method %s", ctx->method->name );
 
 		if( ctx->responses == NULL )
 			ctx->responses = jsonNewObjectType( JSON_ARRAY );
 
 		if ( data != NULL )
-			jsonObjectPush( ctx->responses, jsonObjectClone(data) );	
+			jsonObjectPush( ctx->responses, jsonObjectClone(data) );
 	}
 
 
-	if(	!(ctx->method->options & OSRF_METHOD_ATOMIC) && 
+	if( !(ctx->method->options & OSRF_METHOD_ATOMIC ) &&
 			!(ctx->method->options & OSRF_METHOD_CACHABLE) ) {
 
-		if(complete) 
+		if(complete)
 			osrfAppRequestRespondComplete( ctx->session, ctx->request, data );
 		else
 			osrfAppRequestRespond( ctx->session, ctx->request, data );
@@ -353,8 +370,6 @@ static int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int 
 
 	return 0;
 }
-
-
 
 
 static int _osrfAppPostProcess( osrfMethodContext* ctx, int retcode ) {
@@ -371,8 +386,8 @@ static int _osrfAppPostProcess( osrfMethodContext* ctx, int retcode ) {
 
 	} else {
 
-		if( retcode > 0 ) 
-			osrfAppSessionStatus( ctx->session, OSRF_STATUS_COMPLETE,  
+		if( retcode > 0 )
+			osrfAppSessionStatus( ctx->session, OSRF_STATUS_COMPLETE,
 					"osrfConnectStatus", ctx->request, "Request Complete" );
 	}
 
@@ -392,57 +407,57 @@ int osrfAppRequestRespondException( osrfAppSession* ses, int request, const char
 static void _osrfAppSetIntrospectMethod( osrfMethodContext* ctx, const osrfMethod* method, jsonObject* resp ) {
 	if(!(ctx && resp)) return;
 
-	jsonObjectSetKey(resp, "api_name",	jsonNewObject(method->name));
-	jsonObjectSetKey(resp, "method",	jsonNewObject(method->symbol));
-	jsonObjectSetKey(resp, "service",	jsonNewObject(ctx->session->remote_service));
-	jsonObjectSetKey(resp, "notes",		jsonNewObject(method->notes));
-	jsonObjectSetKey(resp, "argc",		jsonNewNumberObject(method->argc));
+	jsonObjectSetKey(resp, "api_name",  jsonNewObject(method->name));
+	jsonObjectSetKey(resp, "method",    jsonNewObject(method->symbol));
+	jsonObjectSetKey(resp, "service",   jsonNewObject(ctx->session->remote_service));
+	jsonObjectSetKey(resp, "notes",     jsonNewObject(method->notes));
+	jsonObjectSetKey(resp, "argc",      jsonNewNumberObject(method->argc));
 
-	jsonObjectSetKey(resp, "sysmethod", 
+	jsonObjectSetKey(resp, "sysmethod",
 			jsonNewNumberObject( (method->options & OSRF_METHOD_SYSTEM) ? 1 : 0 ));
-	jsonObjectSetKey(resp, "atomic",		
+	jsonObjectSetKey(resp, "atomic",
 			jsonNewNumberObject( (method->options & OSRF_METHOD_ATOMIC) ? 1 : 0 ));
-	jsonObjectSetKey(resp, "cachable",	
+	jsonObjectSetKey(resp, "cachable",
 			jsonNewNumberObject( (method->options & OSRF_METHOD_CACHABLE) ? 1 : 0 ));
 }
 
 /**
-  Trys to run the requested method as a system method.
-  A system method is a well known method that all
-  servers implement.  
-  @param context The current method context
-  @return 0 if the method is run successfully, return < 0 means
-  the method was not run, return > 0 means the method was run
-  and the application code now needs to send a 'request complete' 
-  message
- */
+	Tries to run the requested method as a system method.
+	A system method is a well known method that all
+	servers implement.
+	@param context The current method context
+	@return 0 if the method is run successfully, return < 0 means
+	the method was not run, return > 0 means the method was run
+	and the application code now needs to send a 'request complete'
+	message
+*/
 static int _osrfAppRunSystemMethod(osrfMethodContext* ctx) {
 	if( osrfMethodVerifyContext( ctx ) < 0 ) {
 		osrfLogError( OSRF_LOG_MARK,  "_osrfAppRunSystemMethod: Received invalid method context" );
 		return -1;
 	}
 
-	if(	!strcmp(ctx->method->name, OSRF_SYSMETHOD_INTROSPECT_ALL ) || 
+	if( !strcmp(ctx->method->name, OSRF_SYSMETHOD_INTROSPECT_ALL ) ||
 			!strcmp(ctx->method->name, OSRF_SYSMETHOD_INTROSPECT_ALL_ATOMIC )) {
 
 		return osrfAppIntrospectAll(ctx);
 	}
 
 
-	if(	!strcmp(ctx->method->name, OSRF_SYSMETHOD_INTROSPECT ) ||
+	if( !strcmp(ctx->method->name, OSRF_SYSMETHOD_INTROSPECT ) ||
 			!strcmp(ctx->method->name, OSRF_SYSMETHOD_INTROSPECT_ATOMIC )) {
 
 		return osrfAppIntrospect(ctx);
 	}
 
-	if(	!strcmp(ctx->method->name, OSRF_SYSMETHOD_ECHO ) ||
+	if( !strcmp(ctx->method->name, OSRF_SYSMETHOD_ECHO ) ||
 			!strcmp(ctx->method->name, OSRF_SYSMETHOD_ECHO_ATOMIC )) {
 
 		return osrfAppEcho(ctx);
 	}
 
 
-	osrfAppRequestRespondException( ctx->session, 
+	osrfAppRequestRespondException( ctx->session,
 			ctx->request, "System method implementation not found");
 
 	return 0;
@@ -507,7 +522,7 @@ static int osrfAppEcho( osrfMethodContext* ctx ) {
 		osrfLogError( OSRF_LOG_MARK,  "osrfAppEcho: Received invalid method context" );
 		return -1;
 	}
-	
+
 	int i;
 	for( i = 0; i < ctx->params->size; i++ ) {
 		const jsonObject* str = jsonObjectGetIndex(ctx->params,i);
@@ -517,16 +532,16 @@ static int osrfAppEcho( osrfMethodContext* ctx ) {
 }
 
 /**
-  Determine whether the context looks healthy.
-  Return 0 if it does, or -1 if it doesn't.
- */
+	Determine whether the context looks healthy.
+	Return 0 if it does, or -1 if it doesn't.
+*/
 int osrfMethodVerifyContext( osrfMethodContext* ctx )
 {
 	if( !ctx ) {
 		osrfLogError( OSRF_LOG_MARK,  "Context is NULL in app request" );
 		return -1;
 	}
-	
+
 	if( !ctx->session ) {
 		osrfLogError( OSRF_LOG_MARK,  "Session is NULL in app request" );
 		return -1;
@@ -559,10 +574,9 @@ int osrfMethodVerifyContext( osrfMethodContext* ctx )
 	// Log the call, with the method and parameters
 	char* params_str = jsonObjectToJSON( ctx->params );
 	if( params_str ) {
-		osrfLogInfo( OSRF_LOG_MARK, "CALL:	%s %s - %s",
+		osrfLogInfo( OSRF_LOG_MARK, "CALL:\t%s %s - %s",
 			 ctx->session->remote_service, ctx->method->name, params_str );
 		free( params_str );
 	}
 	return 0;
 }
-
