@@ -3,7 +3,7 @@
 
 /**
 	@file osrf_application.h
-	@brief Routines to manage dynamically loaded libraries.
+	@brief Routines to load and manage shared object libraries.
 */
 
 #include <opensrf/utils.h>
@@ -30,77 +30,57 @@ extern "C" {
 	there is no need to send any further data to the client.
 */
 
-
-/** This macro verifies methods receive the correct parameters */
+/** This macro verifies that methods receive the correct parameters */
 #define _OSRF_METHOD_VERIFY_CONTEXT(d) \
 	if(!d) return -1; \
-	if(!d->session) { osrfLogError( OSRF_LOG_MARK,  "Session is NULL in app request" ); return -1; }\
-	if(!d->method) { osrfLogError( OSRF_LOG_MARK,  "Method is NULL in app request" ); return -1; }\
-	if(d->method->argc) {\
-		if(!d->params) { osrfLogError( OSRF_LOG_MARK,  "Params is NULL in app request %s", d->method->name ); return -1; }\
+	if(!d->session) { \
+		 osrfLogError( OSRF_LOG_MARK, "Session is NULL in app request" ); \
+		 return -1; \
+	} \
+	if(!d->method) { \
+		osrfLogError( OSRF_LOG_MARK, "Method is NULL in app request" ); \
+		return -1; \
+	} \
+	if(d->method->argc) { \
+		if(!d->params) { \
+			osrfLogError( OSRF_LOG_MARK, "Params is NULL in app request %s", d->method->name ); \
+			return -1; \
+		} \
 		if( d->params->type != JSON_ARRAY ) { \
-			osrfLogError( OSRF_LOG_MARK,  "'params' is not a JSON array for method %s", d->method->name);\
-			return -1; }\
-	}\
-	if( !d->method->name ) { osrfLogError( OSRF_LOG_MARK,  "Method name is NULL"); return -1; }
+			osrfLogError( OSRF_LOG_MARK, "'params' is not a JSON array for method %s", \
+				d->method->name); \
+			return -1; } \
+	} \
+	if( !d->method->name ) { \
+		osrfLogError( OSRF_LOG_MARK, "Method name is NULL"); return -1; \
+	}
 
 #ifdef OSRF_LOG_PARAMS
 #define OSRF_METHOD_VERIFY_CONTEXT(d) \
 	_OSRF_METHOD_VERIFY_CONTEXT(d); \
-	char* __j = jsonObjectToJSON(d->params);\
+	char* __j = jsonObjectToJSON(d->params); \
 	if(__j) { \
-		osrfLogInfo( OSRF_LOG_MARK,  "CALL:\t%s %s - %s", d->session->remote_service, d->method->name, __j);\
+		osrfLogInfo( OSRF_LOG_MARK, "CALL:\t%s %s - %s", d->session->remote_service, \
+				d->method->name, __j);\
 		free(__j); \
 	}
 #else
 #define OSRF_METHOD_VERIFY_CONTEXT(d) _OSRF_METHOD_VERIFY_CONTEXT(d);
 #endif
 
-
-
-/* used internally to make sure the method description provided is OK */
-#define OSRF_METHOD_VERIFY_DESCRIPTION(app, d) \
-	if(!app) return -1; \
-	if(!d) return -1;\
-	if(!d->name) { osrfLogError( OSRF_LOG_MARK,  "No method name provided in description" ), return -1; } \
-	if(!d->symbol) { osrfLogError( OSRF_LOG_MARK,  "No method symbol provided in description" ), return -1; } \
-	if(!d->notes) d->notes = ""; \
-	if(!d->paramNotes) d->paramNotes = "";\
-	if(!d->returnNotes) d->returnNotes = "";
-
-
-
-
-/* Some well known parameters */
-#define OSRF_SYSMETHOD_INTROSPECT               "opensrf.system.method"
-#define OSRF_SYSMETHOD_INTROSPECT_ATOMIC        "opensrf.system.method.atomic"
-#define OSRF_SYSMETHOD_INTROSPECT_ALL           "opensrf.system.method.all"
-#define OSRF_SYSMETHOD_INTROSPECT_ALL_ATOMIC    "opensrf.system.method.all.atomic"
-#define OSRF_SYSMETHOD_ECHO                     "opensrf.system.echo"
-#define OSRF_SYSMETHOD_ECHO_ATOMIC              "opensrf.system.echo.atomic"
-
 #define OSRF_METHOD_SYSTEM          1
 #define OSRF_METHOD_STREAMING       2
 #define OSRF_METHOD_ATOMIC          4
 #define OSRF_METHOD_CACHABLE        8
 
-
-struct _osrfApplicationStruct {
-	void* handle;                      /**< the lib handle. */
-	osrfHash* methods;
-	void (*onExit) (void);
-};
-typedef struct _osrfApplicationStruct osrfApplication;
-
-
-struct _osrfMethodStruct {
-	char* name;                 /**< the method name */
-	char* symbol;               /**< the symbol name (function) */
-	char* notes;                /**< public method documentation */
-	int argc;                   /**< how many args this method expects */
-	//char* paramNotes;         /**< Description of the params expected for this method */
-	int options;                /**< describes the various options for this method */
-	void* userData;             /**< You can put your weeeeeeed in it ... */
+typedef struct {
+	char* name;                 /**< the method name. */
+	char* symbol;               /**< the symbol name (function name). */
+	char* notes;                /**< public method documentation. */
+	int argc;                   /**< how many args this method expects. */
+	//char* paramNotes;         /**< Description of the params expected for this method. */
+	int options;                /**< bitswitches setting various options for this method. */
+	void* userData;             /**< Opaque pointer to application-specific data. */
 
 	/*
 	int sysmethod;
@@ -108,18 +88,15 @@ struct _osrfMethodStruct {
 	int atomic;
 	int cachable;
 	*/
-};
-typedef struct _osrfMethodStruct osrfMethod;
+} osrfMethod;
 
-struct _osrfMethodContextStruct {
+typedef struct {
 	osrfAppSession* session;    /**< the current session. */
 	osrfMethod* method;         /**< the requested method. */
 	jsonObject* params;         /**< the params to the method. */
 	int request;                /**< request id. */
 	jsonObject* responses;      /**< array of cached responses. */
-};
-typedef struct _osrfMethodContextStruct osrfMethodContext;
-
+} osrfMethodContext;
 
 /**
 	Register an application
@@ -130,31 +107,25 @@ typedef struct _osrfMethodContextStruct osrfMethodContext;
 int osrfAppRegisterApplication( const char* appName, const char* soFile );
 
 /**
-	Register a method
-	Any method with  the OSRF_METHOD_STREAMING option set will have a ".atomic"
-	version of the method registered automatically
-	@param appName The name of the application that implements the method
-	@param methodName The fully qualified name of the method
-	@param symbolName The symbol name (function) that implements the method
+	@brief Register a method for a given application.
+	
+	@param appName Name of the application that implements the method.
+	@param methodName The fully qualified name of the method.
+	@param symbolName The symbol name (function name) that implements the method.
 	@param notes Public documentation for this method.
-	@params argc The number of arguments this method expects
-	@param streaming True if this is a streaming method that requires an atomic version
+	@params argc The number of arguments this method expects.
+	@param options Bit switches setting various options.
 	@return 0 on success, -1 on error
+
+	Any method with  the OSRF_METHOD_STREAMING option set will have a ".atomic"
+	version of the method registered automatically.
 */
 int osrfAppRegisterMethod( const char* appName, const char* methodName,
 		const char* symbolName, const char* notes, int argc, int options );
 
-
 int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName,
 		const char* symbolName, const char* notes, int argc, int options, void* );
 
-/**
-	Finds the given method for the given app
-	@param appName The application
-	@param methodName The method to find
-	@return A method pointer or NULL if no such method
-	exists for the given application
-*/
 osrfMethod* _osrfAppFindMethod( const char* appName, const char* methodName );
 
 /**
@@ -169,11 +140,11 @@ int osrfAppRunMethod( const char* appName, const char* methodName,
 		osrfAppSession* ses, int reqId, jsonObject* params );
 
 /**
-	Responds to the client with a method exception
-	@param ses The current session
-	@param request The request id
-	@param msg The debug message to send to the client
-	@return 0 on successfully sending of the message, -1 otherwise
+	@brief Respond to the client with a method exception.
+	@param ses The current session.
+	@param request The request id.
+	@param msg The debug message to send to the client.
+	@return 0 on successfully sending of the message, -1 otherwise.
 */
 int osrfAppRequestRespondException( osrfAppSession* ses, int request, const char* msg, ... );
 
@@ -183,9 +154,10 @@ int osrfAppRespondComplete( osrfMethodContext* context, const jsonObject* data )
 /* OSRF_METHOD_ATOMIC and/or OSRF_METHOD_CACHABLE and/or 0 for no special options */
 //int osrfAppProcessMethodOptions( char* method );
 
-/** Tells the backend process to run its child init function */
+/** Tell the backend process to run its child init function */
 int osrfAppRunChildInit(const char* appname);
-void osrfAppRunExitCode();
+
+void osrfAppRunExitCode( void );
 
 /**
 	Determine whether the context looks healthy.

@@ -2,15 +2,62 @@
 
 /**
 	@file osrf_application.c
-	@brief Routines to manage dynamically loaded libraries.
+	@brief Load and manage shared object libraries.
+
+	Maintain a registry of applications, using an osrfHash keyed on application name,
+
+	For each application, load a shared object library so that we can call
+	application-specific functions dynamically.  In order to map method names to the
+	corresponding functions (i.e. symbol names in the library), maintain a registry of
+	methods, using an osrfHash keyed on method name.
 */
+
+// The following macro is commented out because it appears to be unused.
+
+// Used internally to make sure the method description provided is OK
+/*
+#define OSRF_METHOD_VERIFY_DESCRIPTION(app, d) \
+	if(!app) return -1; \
+	if(!d) return -1;\
+	if(!d->name) { \
+		osrfLogError( OSRF_LOG_MARK,  "No method name provided in description" ), \
+		return -1; \
+} \
+	if(!d->symbol) { \
+		osrfLogError( OSRF_LOG_MARK, "No method symbol provided in description" ), \
+		return -1; \
+} \
+	if(!d->notes) \
+		d->notes = ""; \
+	if(!d->paramNotes) \
+		d->paramNotes = "";\
+	if(!d->returnNotes) \
+		d->returnNotes = "";
+*/
+
+/* Some well known parameters */
+#define OSRF_SYSMETHOD_INTROSPECT               "opensrf.system.method"
+#define OSRF_SYSMETHOD_INTROSPECT_ATOMIC        "opensrf.system.method.atomic"
+#define OSRF_SYSMETHOD_INTROSPECT_ALL           "opensrf.system.method.all"
+#define OSRF_SYSMETHOD_INTROSPECT_ALL_ATOMIC    "opensrf.system.method.all.atomic"
+#define OSRF_SYSMETHOD_ECHO                     "opensrf.system.echo"
+#define OSRF_SYSMETHOD_ECHO_ATOMIC              "opensrf.system.echo.atomic"
+
+/**
+	@brief Represent an Application.
+*/
+typedef struct {
+	void* handle;               /**< Handle to the shared object library. */
+	osrfHash* methods;          /**< Registry of method names. */
+	void (*onExit) (void);      /**< Exit handler for the application. */
+} osrfApplication;
 
 static osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symbolName,
 		const char* notes, int argc, int options, void* );
 static void osrfAppSetOnExit(osrfApplication* app, const char* appName);
 static int _osrfAppRegisterSysMethods( const char* app );
-static osrfApplication* _osrfAppFindApplication( const char* name );
-static osrfMethod* osrfAppFindMethod( osrfApplication* app, const char* methodName );
+static inline osrfApplication* _osrfAppFindApplication( const char* name );
+static inline osrfMethod* osrfAppFindMethod( osrfApplication* app, const char* methodName );
 static int _osrfAppRespond( osrfMethodContext* context, const jsonObject* data, int complete );
 static int _osrfAppPostProcess( osrfMethodContext* context, int retcode );
 static int _osrfAppRunSystemMethod(osrfMethodContext* context);
@@ -18,6 +65,10 @@ static int osrfAppIntrospect( osrfMethodContext* ctx );
 static int osrfAppIntrospectAll( osrfMethodContext* ctx );
 static int osrfAppEcho( osrfMethodContext* ctx );
 
+/**
+	Registry of applications.  The key of the hash is the application name, and the associated
+	data is an osrfApplication.
+*/
 static osrfHash* _osrfAppHash = NULL;
 
 int osrfAppRegisterApplication( const char* appName, const char* soFile ) {
@@ -95,6 +146,15 @@ static void osrfAppSetOnExit(osrfApplication* app, const char* appName) {
 }
 
 
+/**
+	@brief Run the application-specific child initialization function for a given application.
+	@param appname Name of the application.
+	@return Zero if successful, or if the application has no child initialization function; -1
+	if the application is not registered, or if the function returns non-zero.
+
+	The child initialization function must be named "osrfAppChildInit" within the shared
+	object library.  It initializes a drone process of a server.
+*/
 int osrfAppRunChildInit(const char* appname) {
 	osrfApplication* app = _osrfAppFindApplication(appname);
 	if(!app) return -1;
@@ -120,7 +180,10 @@ int osrfAppRunChildInit(const char* appname) {
 }
 
 
-void osrfAppRunExitCode() {
+/**
+	@brief Call the exit handler for every application that has one.
+*/
+void osrfAppRunExitCode( void ) {
 	osrfHashIterator* itr = osrfNewHashIterator(_osrfAppHash);
 	osrfApplication* app;
 	while( (app = osrfHashIteratorNext(itr)) ) {
@@ -146,7 +209,6 @@ int osrfAppRegisterMethod( const char* appName, const char* methodName,
 			options,
 			NULL
 	);
-
 }
 
 int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName,
@@ -221,8 +283,8 @@ static osrfMethod* _osrfAppBuildMethod( const char* methodName, const char* symb
 
 
 /**
-	Registers all of the system methods for this app so that they may be
-	treated the same as other methods
+	Register all of the system methods for this app so that they may be
+	treated the same as other methods.
 */
 static int _osrfAppRegisterSysMethods( const char* app ) {
 
@@ -246,28 +308,33 @@ static int _osrfAppRegisterSysMethods( const char* app ) {
 }
 
 /**
-	Finds the given app in the list of apps
-	@param name The name of the application
-	@return The application pointer or NULL if there is no such application
+	@brief Look up an application by name in the application registry.
+	@param name The name of the application.
+	@return Pointer to the corresponding osrfApplication if found, or NULL if not.
 */
-static osrfApplication* _osrfAppFindApplication( const char* name ) {
-	if(!name) return NULL;
+static inline osrfApplication* _osrfAppFindApplication( const char* name ) {
 	return (osrfApplication*) osrfHashGet(_osrfAppHash, name);
 }
 
 /**
-	@brief Find the given method for the given app.
-	@param app The application object.
-	@param methodName The method to find.
-	@return A method pointer or NULL if no such method exists for the given application.
+	@brief Look up a method by name for a given application.
+	@param app Pointer to the osrfApplication that owns the method.
+	@param methodName Name of the method to find.
+	@return Pointer to the corresponding osrfMethod if found, or NULL if not.
 */
-static osrfMethod* osrfAppFindMethod( osrfApplication* app, const char* methodName ) {
-	if(!app || ! methodName) return NULL;
+static inline osrfMethod* osrfAppFindMethod( osrfApplication* app, const char* methodName ) {
+	if( !app ) return NULL;
 	return (osrfMethod*) osrfHashGet( app->methods, methodName );
 }
 
+/**
+	@brief Look up a method by name for an application with a given name.
+	@param appName Name of the osrfApplication.
+	@param methodName Name of the method to find.
+	@return Pointer to the corresponding osrfMethod if found, or NULL if not.
+ */
 osrfMethod* _osrfAppFindMethod( const char* appName, const char* methodName ) {
-	if(!appName || ! methodName) return NULL;
+	if( !appName ) return NULL;
 	return osrfAppFindMethod( _osrfAppFindApplication(appName), methodName );
 }
 
@@ -543,7 +610,7 @@ int osrfMethodVerifyContext( osrfMethodContext* ctx )
 	}
 
 	if( !ctx->session ) {
-		osrfLogError( OSRF_LOG_MARK,  "Session is NULL in app request" );
+		osrfLogError( OSRF_LOG_MARK, "Session is NULL in app request" );
 		return -1;
 	}
 
