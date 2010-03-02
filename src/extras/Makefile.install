@@ -3,7 +3,7 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (etch/lenny), Ubuntu (gutsy/hardy/intrepid/karmic), and Gentoo.
+# Currently supports Debian (etch/lenny), Ubuntu (hardy/intrepid/karmic), and Gentoo.
 # Working towards support of CentOS 5 / RHEL 5.
 # Installs Perl prereqs, libjs with Perl wrapper
 #
@@ -11,8 +11,6 @@
 # 	make -f Makefile.install debian-etch
 # 	- or -
 # 	make -f Makefile.install debian-lenny
-# 	- or -
-# 	make -f Makefile.install ubuntu-gutsy
 # 	- or -
 # 	make -f Makefile.install ubuntu-hardy
 # 	- or -
@@ -46,10 +44,22 @@ SHELL=/bin/bash
 
 # ejabberd is not packaged on CentOS/RHEL, so we have to
 # download the installable package from the source
-EJABBERD_VER=2.0.2
-EJABBERD_PKG=ejabberd-2.0.2_2-linux-x86-installer.bin
-EJABBERD_PKG_x64=ejabberd-2.0.2_2-linux-x86_64-installer.bin
+EJABBERD_VER=2.1.2
+EJABBERD_PKG=ejabberd-2.1.2-linux-x86_64-installer.bin
+EJABBERD_PKG_x64=ejabberd-2.1.2-linux-x86_64-installer.bin
 EJABBERD_HOST=http://www.process-one.net/downloads/ejabberd
+
+# Centos and Redhat will require the rpmforge repository mostly for memcache and perl modules
+RPMFORGE_PKG=rpmforge-release-0.5.1-1.el5.rf.x86_64.rpm
+RPMFORGE_HOST=http://packages.sw.be/rpmforge-release
+
+# need newer libtool, autoconf, and automake on centos
+AUTOCONF_HOST=http://ftp.gnu.org/gnu/autoconf
+AUTOCONF_PKG=autoconf-2.65
+LIBTOOL_HOST=http://ftp.gnu.org/gnu/libtool
+LIBTOOL_PKG=libtool-2.2.6b
+AUTOMAKE_HOST=http://ftp.gnu.org/gnu/automake
+AUTOMAKE_PKG=automake-1.11
 
 # libmemcached is only packaged on newer distros
 LIBMEMCACHED=libmemcached-0.35
@@ -111,55 +121,63 @@ DEBS =  \
 	python-setuptools
 
 CENTOS = \
-	apr-util-devel \
+	apr-util-devel.x86_64 \
 	autoconf \
 	automake \
 	gcc \
+	gcc-c++ \
 	gdbm-devel \
 	httpd-devel \
 	less \
+	libmemcache-devel \
 	libtool \
 	libxml2-devel \
 	libxslt-devel \
 	make \
+	memcached \
 	mod_perl \
 	mod_ssl \
 	ncurses \
 	ncurses-devel \
 	ntp \
+	perl-Cache-Memcached \
+	perl-Class-DBI-AbstractSearch \
+	perl-Class-DBI-SQLite \
+	perl-DateTime \
+	perl-DateTime-Format-ISO8601 \
+	perl-DateTime-Format-Mail \
+	perl-DateTime-Set \
+	perl-DateTime-TimeZone \
 	perl-DBI \
-	perl-XML-LibXML \
-	perl-XML-Simple \
+	perl-Email-Send \
+	perl-Error \
+	perl-File-Find-Rule \
+	perl-FreezeThaw \
+	perl-JSON-XS \
 	perl-libwww-perl \
+	perl-Log-Log4perl \
+	perl-Memcached-libmemcached \
+	perl-Module-Build \
+	perl-Net-Jabber \
+	perl-Net-Server \
+	perl-RPC-XML \
+	perl-Template-Toolkit \
+	perl-Test-Pod \
+	perl-Tie-IxHash \
+	perl-UNIVERSAL-require \
+	perl-Unix-Syslog \
+	perl-XML-LibXML \
+	perl-XML-LibXSLT \
+	perl-XML-Parser \
+	perl-XML-Simple \
+	perl-XML-RPC \
 	psmisc \
 	python-devel \
 	python-setuptools\
 	readline-devel \
 	wget
 
-# Some of these packages have stupid bugs in their test suites
-# that are simply too painful to workaround
-CENTOS_PERL_NOTEST = \
-	RPC::XML
-
-CENTOS_PERL_LOCAL = \
-	XML-LibXSLT
-
 CENTOS_PERL = \
-	Cache::Memcached \
-	Class::DBI::AbstractSearch \
-	Class::DBI::SQLite \
-	Error \
-	File::Find::Rule \
-	FreezeThaw \
-	Log::Log4perl \
-	Net::Jabber \
-	Template \
-	Test::Pod \
-	Tie::IxHash \
-	Unix::Syslog \
-	UNIVERSAL::require \
-	XML::LibXSLT
 
 GENTOOS = \
 	vim\
@@ -236,7 +254,7 @@ all:
 	@echo "please specify an OS" && exit 0
 
 
-centos: install_centos_rpms install_ejabberd install_libmemcached install_libxml2 install_libxslt install_centos_perl create_ld_local
+centos: install_rpmforge install_centos_rpms install_ejabberd install_buildutils install_libmemcached install_libxml2 install_libxslt install_centos_perl create_ld_local
 
 debian-etch: generic_debian etch install_libmemcached
 debian-lenny: generic_debian lenny install_libmemcached
@@ -248,7 +266,6 @@ gentoo: install_gentoos install_gentoo_rc install_gentoo_perl install
 
 rhel: centos
 
-ubuntu-gutsy: generic_ubuntu install_cpan_xml hardy 
 ubuntu-hardy: generic_ubuntu install_cpan_xml hardy
 ubuntu-intrepid: generic_ubuntu install_cpan_xml intrepid
 ubuntu-karmic: generic_ubuntu karmic
@@ -277,6 +294,26 @@ install_ejabberd:
 	gunzip $(EJABBERD_PKG).gz
 	chmod u+x $(EJABBERD_PKG)
 	./$(EJABBERD_PKG) --mode unattended --prefix /opt/ejabberd --adminpw opensrf
+
+# Install rpmforge for redhat and centos
+install_rpmforge:
+	if [ ! -f $(RPMFORGE_PKG).gz ]; then wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG); fi;
+	rpm -Uvh --force ./$(RPMFORGE_PKG)
+	yum update -y
+
+# Install automake, autoconf, and libtool
+install_buildutils:
+	if [ ! -f $(LIBTOOL_PKG).tar.gz ]; then wget $(LIBTOOL_HOST)/$(LIBTOOL_PKG).tar.gz; fi;
+	tar zxf $(LIBTOOL_PKG).tar.gz
+	cd $(LIBTOOL_PKG) && ./configure --prefix=/usr && make && make install
+
+	if [ ! -f $(AUTOCONF_PKG).tar.gz ]; then wget $(AUTOCONF_HOST)/$(AUTOCONF_PKG).tar.gz; fi;
+	tar zxf $(AUTOCONF_PKG).tar.gz
+	cd $(AUTOCONF_PKG) && ./configure --prefix=/usr && make && make install
+	
+	if [ ! -f $(AUTOMAKE_PKG).tar.gz ]; then wget $(AUTOMAKE_HOST)/$(AUTOMAKE_PKG).tar.gz; fi;
+	tar zxf $(AUTOMAKE_PKG).tar.gz
+	cd $(AUTOMAKE_PKG) && ./configure --prefix=/usr && make && make install
 
 # Install libmemcached from the official project source
 install_libmemcached:
