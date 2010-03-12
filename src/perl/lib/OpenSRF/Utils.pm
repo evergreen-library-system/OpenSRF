@@ -41,7 +41,7 @@ our $date_parser = DateTime::Format::ISO8601->new;
 %EXPORT_TAGS = (
 	common		=> [qw(interval_to_seconds seconds_to_interval sendmail tree_filter)],
 	daemon		=> [qw(safe_fork set_psname daemonize)],
-	datetime	=> [qw(clense_ISO8601 gmtime_ISO8601 interval_to_seconds seconds_to_interval)],
+	datetime	=> [qw(clense_ISO8601 cleanse_ISO8601 gmtime_ISO8601 interval_to_seconds seconds_to_interval)],
 );
 
 Exporter::export_ok_tags('common','daemon','datetime');  # add aa, cc and dd to @EXPORT_OK
@@ -372,6 +372,10 @@ sub gmtime_ISO8601 {
 	my $s = $date[0];
 
 	return sprintf('%d-%0.2d-%0.2dT%0.2d:%0.2d:%0.2d+00:00', $y, $M, $d, $h, $m, $s);
+}
+
+sub cleanse_ISO8601 {
+    return clense_ISO8601(@_);
 }
 
 sub clense_ISO8601 {
