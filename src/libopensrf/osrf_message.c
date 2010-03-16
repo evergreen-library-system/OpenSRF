@@ -11,6 +11,7 @@
 #include <libxml/tree.h>
 
 #include <opensrf/osrf_message.h>
+#include "opensrf/osrf_stack.h"
 
 static jsonObject* osrfMessageToJSON( const osrfMessage* msg );
 static osrfMessage* deserialize_one_message( const jsonObject* message );
@@ -588,15 +589,22 @@ static osrfMessage* deserialize_one_message( const jsonObject* obj ) {
 	// Now that we have the essentials, create an osrfMessage
 	osrfMessage* msg = osrf_message_init( type, trace, protocol );
 
-	// Get the sender's locale, or leave it NULL if not specified.
-	if ( current_locale )
-		free( current_locale );
-
+	// Update current_locale with the locale of the message
+	// (or set it to NULL if not specified)
 	tmp = jsonObjectGetKeyConst( obj, "locale" );
 	if(tmp && ( msg->sender_locale = jsonObjectToSimpleString(tmp))) {
-		current_locale = strdup( msg->sender_locale );
+		if ( current_locale ) {
+			if( strcmp( current_locale, msg->sender_locale ) ) {
+				free( current_locale );
+				current_locale = strdup( msg->sender_locale );
+			} // else they're the same already, so don't replace one with the other
+		} else
+			current_locale = strdup( msg->sender_locale );
 	} else {
-		current_locale = NULL;
+		if ( current_locale ) {
+			free( current_locale );
+			current_locale = NULL;
+		}
 	}
 
 	tmp = jsonObjectGetKeyConst( obj, "payload" );
