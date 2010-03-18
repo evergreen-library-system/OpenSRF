@@ -355,7 +355,12 @@ static void osrfRouterClassHandleIncoming( osrfRouter* router, const char* class
 							router, classname, class, msg );
 					/* handle bounced message */
 					if( !bouncedMessage ) {
-						/* we have no one to send the requested message to */
+						/* we have no one to send the requested message to on our domain */
+
+                        /* XXX */
+                        /* XXX Here's where we plug in peer domains, inserting this brick into a wall */
+                        /* XXX */
+
 						message_free( msg );
 						osrfLogClearXid();
 						
