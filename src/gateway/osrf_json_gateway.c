@@ -18,7 +18,7 @@
 #define JSON_PROTOCOL "OSRFGatewayLegacyJSON"
 #define GATEWAY_USE_LEGACY_JSON 0
 
-typedef struct { 
+typedef struct {
 	int legacyJSON;
 } osrf_json_gateway_dir_config;
 
@@ -30,7 +30,8 @@ char* osrf_json_gateway_config_file = NULL;
 int bootstrapped = 0;
 int numserved = 0;
 
-static const char* osrf_json_gateway_set_default_locale(cmd_parms *parms, void *config, const char *arg) {
+static const char* osrf_json_gateway_set_default_locale(cmd_parms *parms,
+		void *config, const char *arg) {
 	if (arg)
 		osrf_json_default_locale = (char*) arg;
 	return NULL;
@@ -49,9 +50,9 @@ static const char* osrf_json_gateway_set_json_proto(cmd_parms *parms, void *conf
 
 /* tell apache about our commands */
 static const command_rec osrf_json_gateway_cmds[] = {
-	AP_INIT_TAKE1( GATEWAY_CONFIG, osrf_json_gateway_set_config, 
+	AP_INIT_TAKE1( GATEWAY_CONFIG, osrf_json_gateway_set_config,
 			NULL, RSRC_CONF, "osrf json gateway config file"),
-	AP_INIT_TAKE1( DEFAULT_LOCALE, osrf_json_gateway_set_default_locale, 
+	AP_INIT_TAKE1( DEFAULT_LOCALE, osrf_json_gateway_set_default_locale,
 			NULL, RSRC_CONF, "osrf json gateway default locale"),
 	AP_INIT_TAKE1( JSON_PROTOCOL, osrf_json_gateway_set_json_proto,
 			NULL, ACCESS_CONF, "osrf json gateway config file"),
@@ -60,16 +61,16 @@ static const command_rec osrf_json_gateway_cmds[] = {
 
 
 static void* osrf_json_gateway_create_dir_config( apr_pool_t* p, char* dir) {
-	osrf_json_gateway_dir_config* cfg = (osrf_json_gateway_dir_config*) 
+	osrf_json_gateway_dir_config* cfg = (osrf_json_gateway_dir_config*)
 			apr_palloc(p, sizeof(osrf_json_gateway_dir_config));
 	cfg->legacyJSON = GATEWAY_USE_LEGACY_JSON;
 	return (void*) cfg;
 }
 
 static apr_status_t child_exit(void* data) {
-    osrfLogInfo(OSRF_LOG_MARK, "Disconnecting on child cleanup...");
-    osrf_system_shutdown();
-    return OK;
+	osrfLogInfo(OSRF_LOG_MARK, "Disconnecting on child cleanup...");
+	osrf_system_shutdown();
+	return OK;
 }
 
 static void osrf_json_gateway_child_init(apr_pool_t *p, server_rec *s) {
@@ -80,7 +81,7 @@ static void osrf_json_gateway_child_init(apr_pool_t *p, server_rec *s) {
 	snprintf(buf, sizeof(buf), "%d", t);
 
 	if( ! osrfSystemBootstrapClientResc( cfg, CONFIG_CONTEXT, buf ) ) {
-		ap_log_error( APLOG_MARK, APLOG_ERR, 0, s, 
+		ap_log_error( APLOG_MARK, APLOG_ERR, 0, s,
 			"Unable to Bootstrap OpenSRF Client with config %s..", cfg);
 		return;
 	}
@@ -88,10 +89,10 @@ static void osrf_json_gateway_child_init(apr_pool_t *p, server_rec *s) {
 	bootstrapped = 1;
 	osrfLogInfo(OSRF_LOG_MARK, "Bootstrapping gateway child for requests");
 
-    // when this pool is cleaned up, it means the child 
-    // process is going away.  register some cleanup code
-    // XXX causes us to disconnect even for clone()'d process cleanup (as in mod_cgi)
-    //apr_pool_cleanup_register(p, NULL, child_exit, apr_pool_cleanup_null);
+	// when this pool is cleaned up, it means the child
+	// process is going away.  register some cleanup code
+	// XXX causes us to disconnect even for clone()'d process cleanup (as in mod_cgi)
+	//apr_pool_cleanup_register(p, NULL, child_exit, apr_pool_cleanup_null);
 }
 
 static int osrf_json_gateway_method_handler (request_rec *r) {
@@ -100,7 +101,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	if (strcmp(r->handler, MODULE_NAME )) return DECLINED;
 
 
-	osrf_json_gateway_dir_config* dir_conf =  
+	osrf_json_gateway_dir_config* dir_conf =
 		ap_get_module_config(r->per_dir_config, &osrf_json_gateway_module);
 
 
@@ -129,29 +130,29 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 
 	osrfLogSetAppname("osrf_json_gw");
 
-	char* osrf_locale	= NULL;
-	char* param_locale	= NULL;	/* locale for this call */
-	char* service		= NULL;	/* service to connect to */
-	char* method		= NULL;	/* method to perform */
-	char* format		= NULL;	/* method to perform */
-	char* a_l		= NULL;	/* request api level */
-	char* input_format	= NULL; /* POST data format, defaults to 'format' */
-	int   isXML		= 0;
-	int   api_level		= 1;
+	char* osrf_locale   = NULL;
+	char* param_locale  = NULL;  /* locale for this call */
+	char* service       = NULL;  /* service to connect to */
+	char* method        = NULL;  /* method to perform */
+	char* format        = NULL;  /* method to perform */
+	char* a_l           = NULL;  /* request api level */
+	char* input_format  = NULL;  /* POST data format, defaults to 'format' */
+	int   isXML         = 0;
+	int   api_level     = 1;
 
 	r->allowed |= (AP_METHOD_BIT << M_GET);
 	r->allowed |= (AP_METHOD_BIT << M_POST);
 
 	osrfLogDebug(OSRF_LOG_MARK, "osrf gateway: parsing URL params");
-	osrfStringArray* mparams	= NULL;
-	osrfStringArray* params	= apacheParseParms(r); /* free me */
-	param_locale		= apacheGetFirstParamValue( params, "locale" );
-	service			= apacheGetFirstParamValue( params, "service" );
-	method			= apacheGetFirstParamValue( params, "method" ); 
-	format			= apacheGetFirstParamValue( params, "format" ); 
-	input_format		= apacheGetFirstParamValue( params, "input_format" ); 
-	a_l			= apacheGetFirstParamValue( params, "api_level" ); 
-	mparams			= apacheGetParamValues( params, "param" ); /* free me */
+	osrfStringArray* mparams = NULL;
+	osrfStringArray* params  = apacheParseParms(r); /* free me */
+	param_locale             = apacheGetFirstParamValue( params, "locale" );
+	service                  = apacheGetFirstParamValue( params, "service" );
+	method                   = apacheGetFirstParamValue( params, "method" );
+	format                   = apacheGetFirstParamValue( params, "format" );
+	input_format             = apacheGetFirstParamValue( params, "input_format" );
+	a_l                      = apacheGetFirstParamValue( params, "api_level" );
+	mparams                  = apacheGetParamValues( params, "param" ); /* free me */
 
 	if(format == NULL)
 		format = strdup( "json" );
@@ -196,7 +197,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 
 
 	if (param_locale) {
-		growing_buffer* osrf_locale_buf = buffer_init(16);	
+		growing_buffer* osrf_locale_buf = buffer_init(16);
 		if (index(param_locale, ',')) {
 			int ind = index(param_locale, ',') - param_locale;
 			int i;
@@ -216,13 +217,13 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 
 	if(!(service && method)) {
 
-		osrfLogError(OSRF_LOG_MARK, 
+		osrfLogError(OSRF_LOG_MARK,
 			"Service [%s] not found or not allowed", service);
 		ret = HTTP_NOT_FOUND;
 
 	} else {
 
-		/* This will log all heaers to the apache error log 
+		/* This will log all heaers to the apache error log
 		const apr_array_header_t* arr = apr_table_elts(r->headers_in);
 		const void* ptr;
 
@@ -245,7 +246,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 			const char* str;
 			int i = 0;
 
-			while( (str = osrfStringArrayGetString(mparams, i++)) ) 
+			while( (str = osrfStringArrayGetString(mparams, i++)) )
 				jsonObjectPush(arr, parseJSONFunc(str));
 
 			req_id = osrfAppSessionSendRequest( session, arr, method, api_level );
@@ -273,7 +274,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		if( req_id == -1 ) {
 			osrfLogError(OSRF_LOG_MARK, "I am unable to communicate with opensrf..going away...");
 			osrfAppSessionFree(session);
-			/* we don't want to spawn an intense re-forking storm 
+			/* we don't want to spawn an intense re-forking storm
 			 * if there is no jabber server.. so give it some time before we die */
 			usleep( 100000 ); /* 100 milliseconds */
 			exit(1);
@@ -284,8 +285,9 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		/* log all requests to the activity log */
 		const char* authtoken = apr_table_get(r->headers_in, "X-OILS-Authtoken");
 		if(!authtoken) authtoken = "";
-		growing_buffer* act = buffer_init(128);	
-		buffer_fadd(act, "[%s] [%s] [%s] %s %s", r->connection->remote_ip, authtoken, osrf_locale, service, method );
+		growing_buffer* act = buffer_init(128);
+		buffer_fadd(act, "[%s] [%s] [%s] %s %s", r->connection->remote_ip,
+			authtoken, osrf_locale, service, method );
 		const char* str; int i = 0;
 		while( (str = osrfStringArrayGetString(mparams, i++)) ) {
 			if( i == 1 ) {
@@ -308,19 +310,20 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 
 		/* kick off the object */
 		if (isXML)
-			ap_rputs("<response xmlns=\"http://opensrf.org/-/namespaces/gateway/v1\"><payload>", r);
+			ap_rputs( "<response xmlns=\"http://opensrf.org/-/namespaces/gateway/v1\"><payload>",
+				r );
 		else
 			ap_rputs("{\"payload\":[", r);
 
-		int morethan1		= 0;
-		char* statusname	= NULL;
-		char* statustext	= NULL;
-		char* output		= NULL;
+		int morethan1       = 0;
+		char* statusname    = NULL;
+		char* statustext    = NULL;
+		char* output        = NULL;
 
 		while((omsg = osrfAppSessionRequestRecv( session, req_id, timeout ))) {
-	
+
 			statuscode = omsg->status_code;
-			jsonObject* res;	
+			const jsonObject* res;
 
 			if( ( res = osrfMessageGetResult(omsg)) ) {
 
@@ -333,16 +336,18 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 				ap_rputs(output, r);
 				free(output);
 				morethan1 = 1;
-		
+
 			} else {
-	
+
 				if( statuscode > 299 ) { /* the request returned a low level error */
-					statusname = omsg->status_name ? strdup(omsg->status_name) : strdup("Unknown Error");
-					statustext = omsg->status_text ? strdup(omsg->status_text) : strdup("No Error Message");
+					statusname = omsg->status_name ? strdup(omsg->status_name)
+						: strdup("Unknown Error");
+					statustext = omsg->status_text ? strdup(omsg->status_text) 
+						: strdup("No Error Message");
 					osrfLogError( OSRF_LOG_MARK,  "Gateway received error: %s", statustext );
 				}
 			}
-	
+
 			osrfMessageFree(omsg);
 			if(statusname) break;
 		}
@@ -359,7 +364,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		if(statusname) {
 
 			/* add a debug field if the request died */
-			ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r, 
+			ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r,
 					"OpenSRF JSON Request returned error: %s -> %s", statusname, statustext );
 			int l = strlen(statusname) + strlen(statustext) + 32;
 			char buf[l];
@@ -427,12 +432,8 @@ module AP_MODULE_DECLARE_DATA osrf_json_gateway_module = {
 	STANDARD20_MODULE_STUFF,
 	osrf_json_gateway_create_dir_config,
 	NULL,
-    NULL,
+	NULL,
 	NULL,
 	osrf_json_gateway_cmds,
 	osrf_json_gateway_register_hooks,
 };
-
-
-
-
