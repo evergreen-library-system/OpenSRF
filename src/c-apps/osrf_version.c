@@ -13,15 +13,15 @@ int osrfVersion( osrfMethodContext* );
 
 int osrfAppInitialize() {
 
-	osrfAppRegisterMethod( 
-			"opensrf.version", 
-			"opensrf.version.verify", 
-			"osrfVersion", 
+	osrfAppRegisterMethod(
+			"opensrf.version",
+			"opensrf.version.verify",
+			"osrfVersion",
 			"The data for a service/method/params combination will be retrieved "
 			"from the necessary server and the MD5 sum of the total values received "
-			"will be returned. PARAMS( serviceName, methodName, [param1, ...] )", 
+			"will be returned. PARAMS( serviceName, methodName, [param1, ...] )",
 			2, 0 );
-	
+
 	return 0;
 }
 
@@ -39,7 +39,7 @@ int osrfVersion( osrfMethodContext* ctx ) {
 	char* json = jsonObjectToJSON(ctx->params);
 	char* paramsmd5 = md5sum(json);
 	char* cachedmd5 = osrfCacheGetString(paramsmd5);
-	free(json); 
+	free(json);
 
 	if( cachedmd5 ) {
 		osrfLogDebug(OSRF_LOG_MARK,  "Found %s object in cache, returning....", cachedmd5 );
@@ -60,7 +60,7 @@ int osrfVersion( osrfMethodContext* ctx ) {
 		/* shove the additional params into an array */
 		jsonObject* tmpArray = jsonNewObject(NULL);
 		int i;
-		for( i = 2; i != ctx->params->size; i++ ) 
+		for( i = 2; i != ctx->params->size; i++ )
 			jsonObjectPush( tmpArray, jsonObjectClone(jsonObjectGetIndex(ctx->params, i)));
 
 		osrfAppSession* ses = osrfAppSessionClientInit(service);
@@ -70,7 +70,7 @@ int osrfVersion( osrfMethodContext* ctx ) {
 
 		if( omsg ) {
 
-			jsonObject* result = osrfMessageGetResult( omsg );
+			const jsonObject* result = osrfMessageGetResult( omsg );
 			char* resultjson = jsonObjectToJSON(result);
 			char* resultmd5 = md5sum(resultjson);
 			free(resultjson);
@@ -81,12 +81,13 @@ int osrfVersion( osrfMethodContext* ctx ) {
 				osrfAppRespondComplete( ctx, resp );
 				jsonObjectFree(resp);
 				osrfAppSessionFree(ses);
-				osrfLogDebug(OSRF_LOG_MARK, "Found version string %s, caching and returning...", resultmd5 );
+				osrfLogDebug(OSRF_LOG_MARK, 
+					"Found version string %s, caching and returning...", resultmd5 );
 				osrfCachePutString( paramsmd5, resultmd5, OSRF_VERSION_CACHE_TIME );
 				free(resultmd5);
 				free(paramsmd5);
 				return 0;
-			} 
+			}
 		}
 		osrfAppSessionFree(ses);
 	}
@@ -95,6 +96,3 @@ int osrfVersion( osrfMethodContext* ctx ) {
 
 	return -1;
 }
-
-
-
