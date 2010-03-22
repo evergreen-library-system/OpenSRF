@@ -667,7 +667,7 @@ static osrfMessage* deserialize_one_message( const jsonObject* obj ) {
 	The returned pointer points into the innards of the osrfMessage.  The calling code should
 	@em not call jsonObjectFree() on it, because the osrfMessage still owns it.
 */
-jsonObject* osrfMessageGetResult( osrfMessage* msg ) {
+const jsonObject* osrfMessageGetResult( osrfMessage* msg ) {
 	if(msg) return msg->_result_content;
 	return NULL;
 }

@@ -126,7 +126,7 @@ void osrf_message_add_object_param( osrfMessage* msg, const jsonObject* o );
 
 void osrf_message_add_param( osrfMessage*, const char* param_string );
 
-jsonObject* osrfMessageGetResult( osrfMessage* msg );
+const jsonObject* osrfMessageGetResult( osrfMessage* msg );
 
 char* osrfMessageSerializeBatch( osrfMessage* msgs [], int count );
 
