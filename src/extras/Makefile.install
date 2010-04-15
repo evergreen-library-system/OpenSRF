@@ -88,6 +88,10 @@ DEBS =  \
 	libcache-memcached-perl\
 	libclass-dbi-abstractsearch-perl\
 	libclass-dbi-sqlite-perl\
+	libdatetime-format-builder-perl\
+	libdatetime-format-mail-perl\
+	libdatetime-perl\
+	libdatetime-timezone-perl\
 	liberror-perl\
 	libexpat1-dev\
 	libfile-find-rule-perl\
