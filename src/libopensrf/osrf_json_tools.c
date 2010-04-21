@@ -13,8 +13,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#include <opensrf/osrf_json.h>
-#include <opensrf/osrf_json_utils.h>
+#include <ctype.h>
+#include "opensrf/osrf_json.h"
+#include "opensrf/osrf_json_utils.h"
 
 static jsonObject* findMultiPath( const jsonObject* o,
 		const char* root, const char* path );
@@ -45,42 +46,74 @@ static void append_indentation( growing_buffer* buf, int depth ) {
 
 	If the input pointer is NULL, return an empty string.
 
+	WARNING: if the input JSON is not well-formed, the output JSON is likely
+	to be even worse-formed.
+
 	The calling code is responsible for freeing the formatted copy.
 */
 char* jsonFormatString( const char* string ) {
-	if(!string) return strdup("");
+	if( !string ) return strdup( "" );
 
-	growing_buffer* buf = buffer_init(64);
+	growing_buffer* buf = buffer_init( 64 );
 	int i;
 	int depth = 0;
+	int in_quote = 0;   // boolean; true if in a string literal
+	int escaped = 0;    // boolean: true if previous character was a backslash
+	int beginning = 1;  // boolean: true if we're starting a new line
 
 	char c;
-	for(i = 0; string[i]; i++) {
-		c = string[i];
+	for( i = 0; string[i]; i++ ) {
+		c = string[ i ];
 
 		if( c == '{' || c == '[' ) {
 
 			OSRF_BUFFER_ADD_CHAR( buf, c );
-			OSRF_BUFFER_ADD_CHAR( buf, '\n' );
-			append_indentation( buf, ++depth );
+			if( !in_quote ) {
+				OSRF_BUFFER_ADD_CHAR( buf, '\n' );
+				append_indentation( buf, ++depth );
+				beginning = 1;
+			}
 
 		} else if( c == '}' || c == ']' ) {
 
-			OSRF_BUFFER_ADD_CHAR( buf, '\n' );
-			append_indentation( buf, --depth );
+			if( !in_quote ) {
+				OSRF_BUFFER_ADD_CHAR( buf, '\n' );
+				append_indentation( buf, --depth );
+				beginning = 1;
+			}
 			OSRF_BUFFER_ADD_CHAR( buf, c );
 
 		} else if( c == ',' ) {
 
 			OSRF_BUFFER_ADD_CHAR( buf, ',' );
-			OSRF_BUFFER_ADD_CHAR( buf, '\n' );
-			append_indentation( buf, depth );
+			if( !in_quote ) {
+				OSRF_BUFFER_ADD_CHAR( buf, '\n' );
+				append_indentation( buf, depth );
+				beginning = 1;
+			}
 
-		} else
-			OSRF_BUFFER_ADD_CHAR(buf, c);
+		} else {
+			// Ignore white space at the beginning of a line
+			if( beginning ) {
+				if( !isspace( (unsigned char) c )) {
+					OSRF_BUFFER_ADD_CHAR( buf, c );
+					beginning = 0;
+				}
+			} else {
+				OSRF_BUFFER_ADD_CHAR( buf, c );
+			}
+		}
+
+		if( '\\' == c )
+			escaped = !escaped;
+		else {
+			if( '\"' == c && !escaped )
+				in_quote = !in_quote;
+			escaped = 0;
+		}
 	}
 
-    return buffer_release(buf);
+    return buffer_release( buf );
 }
 
 
