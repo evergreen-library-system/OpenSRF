@@ -3,7 +3,7 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (etch/lenny), Ubuntu (hardy/intrepid/karmic), and Gentoo.
+# Currently supports Debian (etch/lenny), Ubuntu (hardy/karmic), and Gentoo.
 # Working towards support of CentOS 5 / RHEL 5.
 # Installs Perl prereqs, libjs with Perl wrapper
 #
@@ -13,8 +13,6 @@
 # 	make -f Makefile.install debian-lenny
 # 	- or -
 # 	make -f Makefile.install ubuntu-hardy
-# 	- or -
-# 	make -f Makefile.install ubuntu-intrepid
 # 	- or -
 # 	make -f Makefile.install ubuntu-karmic
 # 	- or -
@@ -271,10 +269,8 @@ gentoo: install_gentoos install_gentoo_rc install_gentoo_perl install
 rhel: centos
 
 ubuntu-hardy: generic_ubuntu install_cpan_xml hardy
-ubuntu-intrepid: generic_ubuntu install_cpan_xml intrepid
 ubuntu-karmic: generic_ubuntu karmic
 hardy: install_cpan install_libmemcached 
-intrepid: install_extra_debs install_libmemcached 
 karmic: install_extra_debs install_extra_debs_karmic
 generic_ubuntu: install_debs install_cpan_force debian_sys_config
 
