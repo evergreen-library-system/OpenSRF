@@ -90,10 +90,12 @@ static osrfHash* _osrfAppHash = NULL;
 	appear in subsequent log messages.
 */
 int osrfAppRegisterApplication( const char* appName, const char* soFile ) {
-	if(!appName || ! soFile) return -1;
+	if( !appName || ! soFile ) return -1;
 	char* error;
 
-	if(!_osrfAppHash)
+	osrfLogSetAppname( appName );
+
+	if( !_osrfAppHash )
 		_osrfAppHash = osrfNewHash();
 
 	osrfLogInfo( OSRF_LOG_MARK, "Registering application %s with file %s", appName, soFile );
@@ -136,8 +138,6 @@ int osrfAppRegisterApplication( const char* appName, const char* soFile ) {
 	_osrfAppRegisterSysMethods(appName);
 
 	osrfLogInfo( OSRF_LOG_MARK, "Application %s registered successfully", appName );
-
-	osrfLogSetAppname(appName);
 
 	osrfAppSetOnExit(app, appName);
 
