@@ -174,10 +174,7 @@ start_c() {
 	fi;
 
 	do_action "start" $PID_OSRF_C "OpenSRF C (host=$host)";
-	opensrf-c $host $OPT_CONFIG opensrf;
-    sleep 1; # give the main C proc time to appear in ps
-	pid=$(ps ax | grep "OpenSRF System-C" | grep -v grep | awk '{print $1}')
-	echo $pid > "$PID_OSRF_C";
+	opensrf-c $host $OPT_CONFIG opensrf "$PID_OSRF_C";
 	return 0;
 }
 

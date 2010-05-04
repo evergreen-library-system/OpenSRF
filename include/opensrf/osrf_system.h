@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+void osrfSystemSetPidFile( const char* name );
+
 int osrf_system_bootstrap_client( char* config_file, char* contextnode );
 
 int osrfSystemBootstrapClientResc( const char* config_file,

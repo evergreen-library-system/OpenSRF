@@ -51,6 +51,9 @@ static volatile sig_atomic_t sig_caught;
 /** Boolean: set to true when we finish shutting down. */
 static int shutdownComplete = 0;
 
+/** Name of file to which to write the process ID of the child process */
+char* pidfile_name = NULL;
+
 static void add_child( pid_t pid, const char* app, const char* libfile );
 static void delete_child( ChildNode* node );
 static void delete_all_children( void );
@@ -119,6 +122,27 @@ static void handleKillSignal( int signo ) {
 */
 transport_client* osrfSystemGetTransportClient( void ) {
 	return osrfGlobalTransportClient;
+}
+
+/**
+	@brief Save a copy of a file name to be used for writing a process ID.
+	@param name Designated file name, or NULL.
+
+	Save a file name for later use in saving a process ID.  If @a name is NULL, leave
+	the file name NULL.
+
+	When the parent process spawns a child, the child becomes a daemon.  The parent writes the
+	child's process ID to the PID file, if one has been designated, so that some other process
+	can retrieve the PID later and kill the daemon.
+*/
+void osrfSystemSetPidFile( const char* name ) {
+	if( pidfile_name )
+		free( pidfile_name );
+
+	if( name )
+		pidfile_name = strdup( name );
+	else
+		pidfile_name = NULL;
 }
 
 /**
@@ -222,7 +246,23 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 	// Turn into a daemon.  The parent forks and exits.  Only the
 	// child returns, with the standard streams (stdin, stdout, and
 	// stderr) redirected to /dev/null.
-	daemonize();
+	FILE* pidfile = NULL;
+	if( pidfile_name ) {
+		pidfile = fopen( pidfile_name, "w" );
+		if( !pidfile ) {
+			osrfLogError( OSRF_LOG_MARK, "Unable to open PID file \"%s\": %s",
+				pidfile_name, strerror( errno ) );
+			free( pidfile_name );
+			pidfile_name = NULL;
+			return -1;
+		}
+	}
+	daemonize_write_pid( pidfile );
+	if( pidfile ) {
+		fclose( pidfile );
+		free( pidfile_name );
+		pidfile_name = NULL;
+	}
 
 	jsonObject* apps = osrf_settings_host_value_object("/activeapps/appname");
 	osrfStringArray* arr = osrfNewStringArray(8);
@@ -588,8 +628,6 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 	snprintf(buf, len - 1, "%s_%s_%s_%ld", resource, host, tbuf, (long) getpid() );
 
 	if(client_connect( client, username, password, buf, 10, AUTH_DIGEST )) {
-		/* child nodes will leak the parents client... but we can't free
-			it without disconnecting the parents client :( */
 		osrfGlobalTransportClient = client;
 	}
 

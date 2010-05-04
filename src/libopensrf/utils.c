@@ -647,11 +647,22 @@ char* uescape( const char* string, int size, int full_escape ) {
 	@brief Become a proper daemon.
 	@return 0 if successful, or -1 if not.
 
-	Call fork().  The parent exits.  The child moves to the root
-	directory, detaches from the terminal, and redirects the
-	standard streams (stdin, stdout, stderr) to /dev/null.
+	Call fork().  The parent exits.  The child moves to the root directory, detaches from
+	the terminal, and redirects the standard streams (stdin, stdout, stderr) to /dev/null.
 */
 int daemonize( void ) {
+	return daemonize_write_pid( NULL );
+}
+/**
+	@brief Become a proper daemon, and report the childs process ID.
+	@return 0 if successful, or -1 if not.
+
+	Call fork().  If pidfile is not NULL, the parent writes the process ID of the child
+	process to the specified file.  Then it exits.  The child moves to the root
+	directory, detaches from the terminal, and redirects the standard streams (stdin,
+	stdout, stderr) to /dev/null.
+ */
+int daemonize_write_pid( FILE* pidfile ) {
 	pid_t f = fork();
 
 	if (f == -1) {
@@ -677,6 +688,10 @@ int daemonize( void ) {
 		return 0;
 
 	} else { // We're in the parent...
+		if( pidfile ) {
+			fprintf( pidfile, "%ld\n", (long) f );
+			fclose( pidfile );
+		}
 		_exit(0);
 	}
 }
