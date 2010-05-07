@@ -246,23 +246,7 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 	// Turn into a daemon.  The parent forks and exits.  Only the
 	// child returns, with the standard streams (stdin, stdout, and
 	// stderr) redirected to /dev/null.
-	FILE* pidfile = NULL;
-	if( pidfile_name ) {
-		pidfile = fopen( pidfile_name, "w" );
-		if( !pidfile ) {
-			osrfLogError( OSRF_LOG_MARK, "Unable to open PID file \"%s\": %s",
-				pidfile_name, strerror( errno ) );
-			free( pidfile_name );
-			pidfile_name = NULL;
-			return -1;
-		}
-	}
-	daemonize_write_pid( pidfile );
-	if( pidfile ) {
-		fclose( pidfile );
-		free( pidfile_name );
-		pidfile_name = NULL;
-	}
+	daemonize();
 
 	jsonObject* apps = osrf_settings_host_value_object("/activeapps/appname");
 	osrfStringArray* arr = osrfNewStringArray(8);
@@ -281,6 +265,7 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 		jsonObjectFree(apps);
 
 		const char* appname = NULL;
+		int first_launch = 1;             // Boolean
 		i = 0;
 		while( (appname = osrfStringArrayGetString(arr, i++)) ) {
 
@@ -306,9 +291,35 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 					osrfLogInfo( OSRF_LOG_MARK, "Running application child %s: process id %ld",
 								 appname, (long) pid );
 
+					if( first_launch ) {
+						if( pidfile_name ) {
+							// Write our own PID to a PID file so that somebody can use it to
+							// send us a signal later.  If we don't find any C apps to launch,
+							// then we will quietly exit without writing a PID file, and without
+							// waiting to be killed by a signal.
+
+							FILE* pidfile = fopen( pidfile_name, "w" );
+							if( !pidfile ) {
+								osrfLogError( OSRF_LOG_MARK, "Unable to open PID file \"%s\": %s",
+									pidfile_name, strerror( errno ) );
+								free( pidfile_name );
+								pidfile_name = NULL;
+								return -1;
+							} else {
+								fprintf( pidfile, "%ld\n", (long) getpid() );
+								fclose( pidfile );
+							}
+						}
+						first_launch = 0;
+					}
+
 				} else {         // if child, run the application
 
 					osrfLogInfo( OSRF_LOG_MARK, " * Running application %s\n", appname);
+					if( pidfile_name ) {
+						free( pidfile_name );    // tidy up some debris from the parent
+						pidfile_name = NULL;
+					}
 					if( osrfAppRegisterApplication( appname, libfile ) == 0 )
 						osrf_prefork_run(appname);
 
@@ -339,6 +350,10 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 				osrfLogError(OSRF_LOG_MARK, "Exiting top-level system loop with error: %s",
 						strerror( errno ) );
 
+			// Since we're not being killed by a signal as usual, delete the PID file
+			// so that no one will try to kill us when we're already dead.
+			if( pidfile_name )
+				remove( pidfile_name );
 			break;
 		} else {
 			report_child_status( pid, status );
@@ -349,6 +364,8 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 	osrfConfigCleanup();
 	osrf_system_disconnect_client();
 	osrf_settings_free_host_config(NULL);
+	free( pidfile_name );
+	pidfile_name = NULL;
 	return 0;
 }
 
