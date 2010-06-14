@@ -794,7 +794,7 @@ static void osrfRouterHandleAppRequest( osrfRouter* router, const transport_mess
 
 	// Translate the JSON into a list of osrfMessages
 	router->message_list = osrfMessageDeserialize( msg->body, router->message_list );
-	osrfMessage* omsg = NULL;
+	const osrfMessage* omsg = NULL;
 
 	// Process each osrfMessage
 	int i;
@@ -816,10 +816,9 @@ static void osrfRouterHandleAppRequest( osrfRouter* router, const transport_mess
 				default:
 					break;
 			}
-
-			osrfMessageFree( omsg );
 		}
 	}
+	osrfListClear( router->message_list );
 
 	return;
 }
