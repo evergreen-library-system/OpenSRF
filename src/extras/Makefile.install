@@ -235,8 +235,10 @@ FEDORAS = \
 	perl-XML-Simple \
 	psmisc \
 	python-devel \
+	python-dns \
 	python-memcached \
 	python-setuptools \
+	python-simplejson \
 	readline-devel
 
 FEDORA_CPAN = \
