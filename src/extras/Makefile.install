@@ -208,15 +208,19 @@ FEDORAS = \
 	perl-Class-DBI \
 	perl-Class-DBI-SQLite \
 	perl-DateTime-Format-Builder \
+	perl-DateTime-Format-ISO8601 \
 	perl-DateTime-Format-Mail \
+	perl-DateTime-Set \
 	perl-devel \
 	perl-Error \
 	perl-File-Find-Rule \
 	perl-FreezeThaw \
+	perl-JSON-XS \
 	perl-libwww-perl \
 	perl-Log-Log4perl \
 	perl-Module-Build \
 	perl-Net-Jabber \
+	perl-Net-Server \
 	perl-RPC-XML \
 	perl-SQL-Abstract-Limit \
 	perl-Template-Toolkit \
