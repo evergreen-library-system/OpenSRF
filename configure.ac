@@ -170,18 +170,44 @@ AC_ARG_WITH([apxs],
 [  --with-apxs=path                 location of the apxs (Apache extension) tool (default is /usr/bin/apxs2)],
 [APXS2=${withval}],
 [APXS2=/usr/bin/apxs2])
+if ! test -x "$APXS2"; then
+	for i in /usr/bin /usr/sbin /usr/local/apache/bin /usr/local/apache2/bin ; do
+		for j in apxs apxs2 ; do
+			if test -x "$i/$j"; then
+				APXS2="$i/$j"
+				break
+			fi
+		done
+	done
+fi
 AC_SUBST([APXS2])
 
 AC_ARG_WITH([apache],
 [  --with-apache=path               location of the Apache headers (default is /usr/include/apache2)],
 [APACHE2_HEADERS=${withval}],
 [APACHE2_HEADERS=/usr/include/apache2])
+if ! test -d "$APACHE2_HEADERS"; then
+	for i in /usr/include/httpd ; do
+		if test -d "$i"; then
+			APACHE2_HEADERS="$i"
+			break
+		fi
+	done
+fi
 AC_SUBST([APACHE2_HEADERS])
 
 AC_ARG_WITH([apr],
 [  --with-apr=path                  location of the Apache Portable Runtime headers (default is /usr/include/apr-1.0/)],
 [APR_HEADERS=${withval}],
 [APR_HEADERS=/usr/include/apr-1.0])
+if ! test -d "$APR_HEADERS"; then
+	for i in /usr/include/apr-1 ; do
+		if test -d "$i"; then
+			APR_HEADERS="$i"
+			break
+		fi
+	done
+fi
 AC_SUBST([APR_HEADERS])
 
 AC_ARG_WITH([libxml],
