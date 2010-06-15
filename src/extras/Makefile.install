@@ -42,15 +42,19 @@ SHELL=/bin/bash
 # Gentoo needs explicit versions on many of these packages
 # to simulate a "blessed" set of packages
 
+# 64 or 32 bit os?
+LBITS=$(shell getconf LONG_BIT)
+
 # ejabberd is not packaged on CentOS/RHEL, so we have to
 # download the installable package from the source
 EJABBERD_VER=2.1.2
-EJABBERD_PKG=ejabberd-2.1.2-linux-x86_64-installer.bin
+EJABBERD_PKG=ejabberd-2.1.2-linux-x86-installer.bin
 EJABBERD_PKG_x64=ejabberd-2.1.2-linux-x86_64-installer.bin
 EJABBERD_HOST=http://www.process-one.net/downloads/ejabberd
 
 # Centos and Redhat will require the rpmforge repository mostly for memcache and perl modules
-RPMFORGE_PKG=rpmforge-release-0.5.1-1.el5.rf.x86_64.rpm
+RPMFORGE_PKG_x64=rpmforge-release-0.5.1-1.el5.rf.x86_64.rpm
+RPMFORGE_PKG=rpmforge-release-0.5.1-1.el5.rf.i386.rpm
 RPMFORGE_HOST=http://packages.sw.be/rpmforge-release
 
 # need newer libtool, autoconf, and automake on centos
@@ -125,7 +129,7 @@ DEBS =  \
 	python-setuptools
 
 CENTOS = \
-	apr-util-devel.x86_64 \
+	apr-util-devel \
 	autoconf \
 	automake \
 	gcc \
@@ -206,6 +210,7 @@ FEDORAS = \
 	ntpdate \
 	perl-Cache-Memcached \
 	perl-Class-DBI \
+	perl-Class-DBI-AbstractSearch \
 	perl-Class-DBI-SQLite \
 	perl-DateTime-Format-Builder \
 	perl-DateTime-Format-ISO8601 \
@@ -240,9 +245,6 @@ FEDORAS = \
 	python-setuptools \
 	python-simplejson \
 	readline-devel
-
-FEDORA_CPAN = \
-	Class::DBI::AbstractSearch
 
 GENTOOS = \
 	vim\
@@ -327,7 +329,7 @@ etch: install_cpan
 lenny: install_extra_debs
 generic_debian: install_debs install_cpan_force install_cpan_xml debian_sys_config
 
-fedora13: install_fedora_rpms install_fedora_perl
+fedora13: install_fedora_rpms
 
 gentoo: install_gentoos install_gentoo_rc install_gentoo_perl install
 
@@ -354,16 +356,14 @@ install_cpan_xml:
 	for m in $(CPAN_MODULES_XML); do perl -MCPAN -e "install \"$$m\";"; done
 
 # Install ejabberd from official project installer binary
-install_ejabberd:    
-	if [ ! -f $(EJABBERD_PKG).gz ]; then wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG).gz; fi;
-	gunzip $(EJABBERD_PKG).gz
-	chmod u+x $(EJABBERD_PKG)
-	./$(EJABBERD_PKG) --mode unattended --prefix /opt/ejabberd --adminpw opensrf
+install_ejabberd:
+	if [ $(LBITS) -eq 64 ]; then if [ ! -f $(EJABBERD_PKG_x64).gz ]; then wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG_x64).gz; fi; gunzip $(EJABBERD_PKG_x64).gz; chmod u+x $(EJABBERD_PKG_x64); ./$(EJABBERD_PKG_x64) --mode unattended --prefix /opt/ejabberd --adminpw opensrf ; fi;
+	if [ $(LBITS) -eq 32 ]; then if [ ! -f $(EJABBERD_PKG).gz ]; then wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG).gz; fi; gunzip $(EJABBERD_PKG).gz; chmod u+x $(EJABBERD_PKG); ./$(EJABBERD_PKG) --mode unattended --prefix /opt/ejabberd --adminpw opensrf ; fi;
 
 # Install rpmforge for redhat and centos
 install_rpmforge:
-	if [ ! -f $(RPMFORGE_PKG).gz ]; then wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG); fi;
-	rpm -Uvh --force ./$(RPMFORGE_PKG)
+	if [ $(LBITS) -eq 64 ]; then if [ ! -f $(RPMFORGE_PKG_x64) ]; then wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG_x64) ; yum -y remove subversion*i386 ; fi; rpm -Uvh --force ./$(RPMFORGE_PKG_x64) ; fi;
+	if [ $(LBITS) -eq 32 ]; then if [ ! -f $(RPMFORGE_PKG) ]; then wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG) ; fi; rpm -Uvh --force ./$(RPMFORGE_PKG) ; fi;
 	yum update -y
 
 # Install automake, autoconf, and libtool
@@ -448,12 +448,10 @@ install_gentoo_perl:
 install_fedora_rpms:
 	yum -y install $(FEDORAS)
 
-install_fedora_perl:
-	for m in $(FEDORA_CPAN); do perl -MCPAN -e "install \"$$m\";"; done
-
 # CENTOS
 install_centos_rpms:
 	yum -y install $(CENTOS)
+	yum -y update
 
 install_centos_perl:
 	for m in $(CENTOS_PERL_FORCE); do perl -MCPAN -e "CPAN::Shell->force(qw#install $$m#);"; done
