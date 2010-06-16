@@ -166,19 +166,13 @@ CENTOS = \
 	perl-Log-Log4perl \
 	perl-Memcached-libmemcached \
 	perl-Module-Build \
-	perl-Net-Jabber \
 	perl-Net-Server \
-	perl-RPC-XML \
 	perl-Template-Toolkit \
 	perl-Test-Pod \
 	perl-Tie-IxHash \
 	perl-UNIVERSAL-require \
 	perl-Unix-Syslog \
-	perl-XML-LibXML \
-	perl-XML-LibXSLT \
 	perl-XML-Parser \
-	perl-XML-Simple \
-	perl-XML-RPC \
 	psmisc \
 	python-devel \
 	python-setuptools\
@@ -186,6 +180,12 @@ CENTOS = \
 	wget
 
 CENTOS_PERL = \
+	Net::Jabber \
+	Net::XMPP \
+	RPC::XML \
+	XML::LibXML \
+	XML::LibXSLT \
+	XML::Simple
 
 FEDORAS = \
 	autoconf \
@@ -357,13 +357,38 @@ install_cpan_xml:
 
 # Install ejabberd from official project installer binary
 install_ejabberd:
-	if [ $(LBITS) -eq 64 ]; then if [ ! -f $(EJABBERD_PKG_x64).gz ]; then wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG_x64).gz; fi; gunzip $(EJABBERD_PKG_x64).gz; chmod u+x $(EJABBERD_PKG_x64); ./$(EJABBERD_PKG_x64) --mode unattended --prefix /opt/ejabberd --adminpw opensrf ; fi;
-	if [ $(LBITS) -eq 32 ]; then if [ ! -f $(EJABBERD_PKG).gz ]; then wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG).gz; fi; gunzip $(EJABBERD_PKG).gz; chmod u+x $(EJABBERD_PKG); ./$(EJABBERD_PKG) --mode unattended --prefix /opt/ejabberd --adminpw opensrf ; fi;
+	if [ $(LBITS) -eq 64 ]; then \
+		if [ ! -f $(EJABBERD_PKG_x64).gz ]; then \
+			wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG_x64).gz; \
+		fi; \
+		gunzip $(EJABBERD_PKG_x64).gz; \
+		chmod u+x $(EJABBERD_PKG_x64); \
+		./$(EJABBERD_PKG_x64) --mode unattended --prefix /opt/ejabberd --adminpw opensrf ; \
+	fi;
+	if [ $(LBITS) -eq 32 ]; then \
+		if [ ! -f $(EJABBERD_PKG).gz ]; then \
+			wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG).gz; \
+		fi; \
+		gunzip $(EJABBERD_PKG).gz; \
+		chmod u+x $(EJABBERD_PKG); \
+		./$(EJABBERD_PKG) --mode unattended --prefix /opt/ejabberd --adminpw opensrf ; \
+	fi;
 
 # Install rpmforge for redhat and centos
 install_rpmforge:
-	if [ $(LBITS) -eq 64 ]; then if [ ! -f $(RPMFORGE_PKG_x64) ]; then wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG_x64) ; yum -y remove subversion*i386 ; fi; rpm -Uvh --force ./$(RPMFORGE_PKG_x64) ; fi;
-	if [ $(LBITS) -eq 32 ]; then if [ ! -f $(RPMFORGE_PKG) ]; then wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG) ; fi; rpm -Uvh --force ./$(RPMFORGE_PKG) ; fi;
+	if [ $(LBITS) -eq 64 ]; then \
+		if [ ! -f $(RPMFORGE_PKG_x64) ]; then \
+			wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG_x64) ; \
+			yum -y remove subversion*i386 ; \
+		fi; \
+		rpm -Uvh --force ./$(RPMFORGE_PKG_x64) ; \
+	fi;
+	if [ $(LBITS) -eq 32 ]; then \
+		if [ ! -f $(RPMFORGE_PKG) ]; then \
+			wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG) ; \
+		fi; \
+		rpm -Uvh --force ./$(RPMFORGE_PKG) ; \
+	fi;
 	yum update -y
 
 # Install automake, autoconf, and libtool
