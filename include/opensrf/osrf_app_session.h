@@ -19,9 +19,6 @@
 extern "C" {
 #endif
 
-#define DEF_RECV_TIMEOUT 6 /* receive timeout */
-#define DEF_QUEUE_SIZE
-
 enum OSRF_SESSION_STATE { 
 	OSRF_SESSION_CONNECTING,
 	OSRF_SESSION_CONNECTED,
