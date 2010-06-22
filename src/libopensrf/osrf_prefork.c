@@ -23,6 +23,7 @@
 	to the parent.  Then the parent knows that it can send that child another request.
 */
 
+#include <errno.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -919,8 +920,18 @@ static void prefork_child_wait( prefork_child* child ) {
 			buffer_reset( gbuf );
 		}
 
-		if( i < child->max_requests - 1 )
-			write( child->write_status_fd, "available" /*less than 64 bytes*/, 9 );
+		if( i < child->max_requests - 1 ) {
+			size_t msg_len = 9;
+			ssize_t len = write(
+				child->write_status_fd, "available" /*less than 64 bytes*/, msg_len );
+			if( len != msg_len ) {
+				osrfLogError( OSRF_LOG_MARK, 
+					"Drone terminating: unable to notify listener of availability: %s",
+					strerror( errno ));
+				buffer_free(gbuf);
+				osrf_prefork_child_exit(child);
+			}
+		}
 	}
 
 	buffer_free(gbuf);
@@ -952,66 +963,6 @@ static void add_prefork_child( prefork_simple* forker, prefork_child* child ) {
 		child->prev      = last_child;
 		child->next      = forker->first_child;
 		forker->first_child->prev = child;
-	}
-}
-
-/**
-	@brief Remove a prefork_child, representing a terminated child, from the list it's on.
-	@param forker Pointer to the prefork_simple that owns the child.
-	@param pid Process ID of the child to be removed.
-
-	Look for the node in the active list, and, failing that, in the idle list.  If you
-	find it, close its file descriptors and put it in the free list for potential reuse.
-*/
-static void old_del_prefork_child( prefork_simple* forker, pid_t pid ) {
-
-	if( forker->first_child == NULL )
-		return;  // Empty list; bail out.
-
-	osrfLogDebug( OSRF_LOG_MARK, "Deleting Child: %d", pid );
-
-	// Find the node in question
-	prefork_child* cur_child = forker->first_child; /* current pointer */
-	while( cur_child->pid != pid && cur_child->next != forker->first_child )
-		cur_child = cur_child->next;
-
-	if( cur_child->pid == pid ) {
-		// We found the right node.  Remove it from the list.
-		if( cur_child->next == cur_child )
-			forker->first_child = NULL;    // only child in the list
-		else {
-			if( forker->first_child == cur_child )
-				forker->first_child = cur_child->next;  // Reseat forker->first_child
-
-			// Stitch the nodes on either side together
-			cur_child->prev->next = cur_child->next;
-			cur_child->next->prev = cur_child->prev;
-		}
-
-		//Destroy the node
-		prefork_child_free( forker, cur_child );
-
-	} else {
-		// Maybe it's in the idle list.  This can happen if, for example,
-		// a child is killed by a signal while it's between requests.
-
-		prefork_child* prev = NULL;
-		cur_child = forker->idle_list;
-		while( cur_child && cur_child->pid != pid ) {
-			prev = cur_child;
-			cur_child = cur_child->next;
-		}
-
-		if( cur_child ) {
-			// Detach from the list
-			if( prev )
-				prev->next = cur_child->next;
-			else
-				forker->idle_list = cur_child->next;
-
-			//Destroy the node
-			prefork_child_free( forker, cur_child );
-		} // else we can't find it, so do nothing.
 	}
 }
 
