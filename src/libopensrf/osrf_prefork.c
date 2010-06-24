@@ -93,7 +93,7 @@ static void add_prefork_child( prefork_simple* forker, prefork_child* child );
 
 static void del_prefork_child( prefork_simple* forker, pid_t pid );
 static void check_children( prefork_simple* forker, int forever );
-static void prefork_child_process_request(prefork_child*, char* data);
+static int  prefork_child_process_request(prefork_child*, char* data);
 static int prefork_child_init_hook(prefork_child*);
 static prefork_child* prefork_child_init( prefork_simple* forker,
 		int read_data_fd, int write_data_fd,
@@ -339,8 +339,10 @@ static int prefork_child_init_hook(prefork_child* child) {
 }
 
 // Called only by a child process
-static void prefork_child_process_request(prefork_child* child, char* data) {
-	if( !child ) return;
+// Non-zero return code means that the child process has decided to terminate immediately,
+// without waiting for a DISCONNECT or max_requests.
+static int prefork_child_process_request(prefork_child* child, char* data) {
+	if( !child ) return 0;
 
 	transport_client* client = osrfSystemGetTransportClient();
 
@@ -359,11 +361,20 @@ static void prefork_child_process_request(prefork_child* child, char* data) {
 	transport_message* msg = new_message_from_xml( data );
 
 	osrfAppSession* session = osrf_stack_transport_handler(msg, child->appname);
-	if(!session) return;
+	if(!session) return 0;
+
+	int rc = session->panic;
+
+	if( rc ) {
+		osrfLogWarning( OSRF_LOG_MARK,
+			"Drone for session %s terminating immediately", session->session_id );
+		osrfAppSessionFree( session );
+		return rc;
+	}
 
 	if( session->stateless && session->state != OSRF_SESSION_CONNECTED ) {
 		osrfAppSessionFree( session );
-		return;
+		return rc;
 	}
 
 	osrfLogDebug( OSRF_LOG_MARK, "Entering keepalive loop for session %s", session->session_id );
@@ -382,6 +393,9 @@ static void prefork_child_process_request(prefork_child* child, char* data) {
 		end     = time(NULL);
 
 		osrfLogDebug(OSRF_LOG_MARK, "Data received == %d", recvd);
+
+		if( session->panic )
+			rc = 1;
 
 		if(retval) {
 			osrfLogError(OSRF_LOG_MARK, "queue-wait returned non-success %d", retval);
@@ -404,11 +418,15 @@ static void prefork_child_process_request(prefork_child* child, char* data) {
 
 			break;
 		}
+
+		// If the child process has decided to terminate immediately
+		if( rc )
+			break;
 	}
 
 	osrfLogDebug( OSRF_LOG_MARK, "Exiting keepalive loop for session %s", session->session_id );
 	osrfAppSessionFree( session );
-	return;
+	return rc;
 }
 
 /**
@@ -909,15 +927,22 @@ static void prefork_child_wait( prefork_child* child ) {
 			break;
 		}
 
+		int terminate_now = 0;     // Boolean
+
 		if( n < 0 ) {
 			osrfLogWarning( OSRF_LOG_MARK,
 					"Prefork child read returned error with errno %d", errno );
 			break;
 
 		} else if( gotdata ) {
-			osrfLogDebug(OSRF_LOG_MARK, "Prefork child got a request.. processing..");
-			prefork_child_process_request(child, gbuf->buf);
+			osrfLogDebug( OSRF_LOG_MARK, "Prefork child got a request.. processing.." );
+			terminate_now = prefork_child_process_request( child, gbuf->buf );
 			buffer_reset( gbuf );
+		}
+
+		if( terminate_now ) {
+			osrfLogWarning( OSRF_LOG_MARK, "Prefork child terminating abruptly" );
+			break;
 		}
 
 		if( i < child->max_requests - 1 ) {

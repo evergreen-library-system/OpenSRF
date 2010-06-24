@@ -84,6 +84,10 @@ struct osrf_app_session_struct {
 
 	/** Hash table of pending requests. */
 	osrfAppRequest* request_hash[ OSRF_REQUEST_HASH_SIZE ];
+
+	/** Boolean: true if the app wants to terminate the process.  Typically this means that */
+	/** a drone has lost its database connection and can therefore no longer function.      */
+	int panic;
 };
 typedef struct osrf_app_session_struct osrfAppSession;
 
@@ -145,6 +149,8 @@ int osrfAppSessionStatus( osrfAppSession* ses, int type,
 		const char* name, int reqId, const char* message );
 
 void osrfAppSessionCleanup( void );
+
+void osrfAppSessionPanic( osrfAppSession* ses );
 
 #ifdef __cplusplus
 }
