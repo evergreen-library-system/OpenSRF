@@ -27,7 +27,7 @@
 # Notes:
 #
 # 	This makefile has been tested much more with Ubuntu and Debian than
-#   CentOS, Gentoo, or RHEL.
+#   CentOS, Fedora, Gentoo, or RHEL.
 #
 # 	Gentoo (especially amd64) requires a good bit of masked package
 # 	mangling for some packages.  These are not documented here because
@@ -66,7 +66,7 @@ AUTOMAKE_HOST=http://ftp.gnu.org/gnu/automake
 AUTOMAKE_PKG=automake-1.11
 
 # libmemcached is only packaged on newer distros
-LIBMEMCACHED=libmemcached-0.35
+LIBMEMCACHED=libmemcached-0.40
 LIBMEMCACHED_HOST=http://download.tangent.org
 
 # XML::LibXSLT fails due to old libxslt
