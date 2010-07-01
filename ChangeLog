@@ -1,6 +1,14 @@
 2010-07-01  dbs
 
-	* .: Create rel_1_4_0 branch for next major release
+	* src/extras/Makefile.install: Backport r1976 to add support for Ubuntu Lucid;
+	  make Karmic an alias for Lucid.
+	  Bump libmemcached version to 0.40
+
+	* ChangeLog: Check in ChangeLog for 1.2.2 - 1.4.0
+
+	* .: Tag 1.4.0 for release
+
+	* Create rel_1_4_0 branch for next major release
 
 	* Merge r1950 through r1969 from trunk; prep for 1.4.0 release
 
