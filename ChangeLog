@@ -1,1 +1,1955 @@
-#ChangeLog
+2010-07-01  dbs
+
+	* .: Create rel_1_4_0 branch for next major release
+
+	* Merge r1950 through r1969 from trunk; prep for 1.4.0 release
+
+2010-04-22  dbs
+
+	* Gutsy is way out of support, pull it from the list and add Karmic
+
+	* Create rel_1_4 branch for next major OpenSRF release
+
+2010-04-21  scottmk
+
+	* Fix the jsonFormatString function.
+	  
+	  Specifically: it was misbehaving when a string literal contained
+	  a comma, square bracket, or curly brace. Now it pays attention to
+	  whether those characters are in within quotes or not, and treats
+	  them accordingly.
+	  
+	  It also applies more consistent indentation by consuming
+	  extraneous white space that would otherwise lead to ragged margins.
+	  
+	  M src/libopensrf/osrf_json_tools.c
+
+2010-04-15  dbs
+
+	* Forward-port r1943: install packaged DateTime Perl modules instead of CPAN
+
+2010-03-22  scottmk
+
+	* Apply the const qualifier to the return value from osrfMessageGetResult().
+	  
+	  M include/opensrf/osrf_message.h
+	  M src/libopensrf/osrf_message.c
+
+	* Apply the const qualifier to one variable. Tidy up white space.
+	  
+	  M src/gateway/osrf_json_gateway.c
+
+	* Added a const qualifier to one variable.
+	  
+	  Tidied up white space.
+	  
+	  M src/c-apps/osrf_version.c
+
+	* Tidying up white space; no substantive changes.
+	  
+	  M src/c-apps/osrf_math.c
+
+2010-03-18  miker
+
+	* just adding a marker for where the "peer domain" logic should likely be plugged
+	  in
+
+2010-03-16  scottmk
+
+	* A small performance tweak.
+	  
+	  When we receive a new message, we update current_locale with the
+	  locale of the message.
+	  
+	  The tweak: if current_locale is already the same as the locale of
+	  the message (which is presumably most of the time in practice), then
+	  don't update it. That way we avoid a malloc() and a free().
+	  
+	  M src/libopensrf/osrf_message.c
+
+2010-03-08  scottmk
+
+	* Miscellaneous minor changes. mostly for clarity:
+	  
+	  1. Changed return type of _osrfAppRegisterSysMethods from int to void,
+	  since we never looked at the return code anyway.
+	  
+	  2. In osrfAppRegisterApplication(): 0pen the shared object before
+	  allocating an osrfApplication, so that we don't have to free the
+	  osrfApplication if the open fails.
+	  
+	  3. In osrfAppRegisterExtendedMethod(): when creating an atomic method,
+	  pass the userData pointer to _osrfAppBuildMethod() instead of
+	  installing it on a separate line.
+	  
+	  4. In _osrfAppBuildMethod(): for an atomic method, build the method
+	  name correctly the first time, instead of building it incorrectly
+	  and later replacing it.
+	  
+	  5. In osrfAppRunMethod(): rearranged things a bit for clarity.
+	  Simplified the declaration and dereferencing of the meth pointer.
+	  
+	  6. In osrfAppIntrospect(): Introduced an early return in order to
+	  reduce the level of indentation of the rest of the function. Moved
+	  some declarations closer to their first uses.
+	  
+	  7. In osrfAppIntrospectAll(): moved the declaration of resp into the
+	  loop where it is used.
+	  
+	  8. Finished adding doxygen-style comments to document the functions.
+	  Touched up the white space here and there.
+	  
+	  M src/libopensrf/osrf_application.c
+
+2010-03-02  dbs
+
+	* Apply patch from Lee Dickens <ldickens@esilibrary.com> to add support for
+	  RedHat/CentOS
+	  
+	  Also, remove support for Ubuntu Gutsy while we're in the file
+
+2010-02-26  scottmk
+
+	* Tidying up various things; nothing very substantial.
+	  
+	  1. Added newlines and indentation within long macros to make them look
+	  more like real code.
+	  
+	  2. The OSRF_METHOD_VERIFY_DESCRIPTION macro is not used anywhere. I
+	  moved it from the header into the implementation file and commented it
+	  out, preserving it like a fly in amber in case we ever want to revive it.
+	  
+	  3. Moved the definition of the struct osrfApplication from the header
+	  into the application file, since no other file references it.
+	  
+	  4. Moved the OSRF_SYSMETHOD_* macros from the header into the implementation
+	  file, since they are not referenced elsewhere.
+	  
+	  5. Turned _osrfAppFindApplication() and osrfAppFindMethod into inline
+	  functions, since each is a trivial wrapper for another function.
+	  
+	  6. Added a formal void parameter to osrfAppRunExitCode, so that its
+	  signature is a prototype rather than a mere declaration.
+	  
+	  7. Removed a couple of redundant sanity checks.
+	  
+	  8. Further tinkered with comments and white space.
+	  
+	  M include/opensrf/osrf_application.h
+	  M src/libopensrf/osrf_application.c
+
+2010-02-24  scottmk
+
+	* Tidy up white space and comments; no substantive changes.
+	  
+	  M include/opensrf/osrf_application.h
+	  M src/libopensrf/osrf_application.c
+
+	* 1. Refactored _do_client() and _do_server() so as to untangle some
+	  needlessly convoluted and confusing logic.
+	  
+	  2. In particular: eliminated osrf_stack_application_handler() altogether,
+	  breaking it into pieces and incorporating them into the calling functions.
+	  
+	  3. Added doxygen-style comments to document all functions.
+	  
+	  M include/opensrf/osrf_stack.h
+	  M src/libopensrf/osrf_stack.c
+
+2010-02-23  dbs
+
+	* Simple demo of text services; returning a string, an array, a hash
+
+2010-02-22  scottmk
+
+	* 1. Added doxygen-style comments to document all functions.
+	  
+	  2. For osrfConfigHasDefault() and osrfConfigCleanup(): added a formal void
+	  parameter
+	  so that the header will contain prototypes rather than mere declarations.
+	  
+	  3. In osrfConfigValueObject: added a sanity check for a non-loaded
+	  configuration.
+	  
+	  4. In osrfConfigGetValueList(): replaced a call to jsonObjectToSimpleString()
+	  with
+	  a call to jsonObjectGetString(), in order to eliminate a malloc() and free().
+	  
+	  5. Tidied up the white space here and there.
+	  
+	  M include/opensrf/osrfConfig.h
+	  M src/libopensrf/osrfConfig.c
+
+2010-02-21  scottmk
+
+	* 1. Reworked the xmlDocToJSON and _xmlDocToJSON functions for clarity.
+	  In particular: _xmlDocToJSON() now returns void, and requires its
+	  second parameter (the jsonObject*) to be non-NULL. The old version
+	  behaved differently depending on whether the second parameter was NULL.
+	  I found that arrangement confusing.
+	  
+	  2. Finished adding doxygen-style comments; removed comments from the
+	  header so that they won't override the more complete comments in the
+	  implementation file.
+	  
+	  3. Tinkered with white space here and there.
+	  
+	  M include/opensrf/xml_utils.h
+	  M src/libopensrf/xml_utils.c
+
+2010-02-15  scottmk
+
+	* 1. Change xmlSaxAttr() to return const char* instead of
+	  non-const char*.
+	  
+	  2. Add some doxygen-style comments.
+	  
+	  3. Tidy up the white space here and there.
+	  
+	  M include/opensrf/xml_utils.h
+	  M src/libopensrf/xml_utils.c
+
+2010-02-10  phasefx
+
+	* fix usage example
+
+2010-02-07  scottmk
+
+	* Tidying up various things; nothing substantial.
+	  
+	  1. Moved most of the header into the implementation, since most of it
+	  is not referenced anywhere else, and is not likely ever to be.
+	  
+	  2. Sprinkled the const qualifier here and there.
+	  
+	  3. Cleaned up the white space and comments a bit.
+	  
+	  M src/jserver/osrf_chat.c
+	  M src/jserver/osrf_chat.h
+
+2010-02-06  scottmk
+
+	* 1. For the "request" command: removed the calls to osrfAppSessionConnect()
+	  and osrf_app_session_disconnect(). There's no point in opening and closing
+	  a connection for a single request.
+	  
+	  2. For the "math_bench" command: coerce the first command argument to a
+	  positive value. In the old code, a zero value led to a division-by-zero,
+	  and a negative value led to a segfault.
+	  
+	  3. For the "math_bench" command: accept an optional second parameter
+	  to control whether and when we call osrf_app_session_disconnect(). It
+	  has valid values of 0 (the default), 1, and 2; values out of range are
+	  coerced to valid values.
+	  
+	  4. In do_math(): initialize the array of floats by setting each float
+	  to zero, instead of by using memset() to fill the array with
+	  all-bits-zero. The C Standard does not guarantee that all-bits-zero
+	  represents zero for a float.
+	  
+	  (This last change shouldn't make any difference anyway, because each float
+	  in the array is overwritten before it is read. Still, anything not worth
+	  doing is not worth doing badly.)
+	  
+	  M src/srfsh/srfsh.c
+
+2010-02-05  dbs
+
+	* Ensure target JavaScript directory is created before copying files into it
+	  
+	  Thanks to Warren Layton for spotting this on a fresh install
+
+2010-02-03  dbs
+
+	* Forward-port r1919 from rel_1_2 to prevent Internet Explorer from making
+	  multipart-mixed-replace calls
+
+2010-02-03  miker
+
+	* add non-destructive methods for grabbing first and last responses on the
+	  response queue
+
+2010-02-02  dbs
+
+	* Forward-port r1908 + r1914 from rel_1_2 to improve portability without breaking
+
+2010-02-01  scottmk
+
+	* Rearrange the error handling a bit in send_request(). The old code
+	  looked like it would segfault in the case of a relay command.
+	  
+	  M src/srfsh/srfsh.c
+
+2010-01-29  dbs
+
+	* Forward-port Dan McMahill's portability patches r1907 and r1908
+	  
+	  Improve support for building, compiling, and running OpenSRF on non-Linux
+	  distributions such as NetBSD.
+
+2010-01-28  dbs
+
+	* Provide a thread if the translator wasn't passed one in the request headers
+	  
+	  The OpenSRF-over-HTTP spec says that the translator will generate a thread
+	  in the response if one wasn't passed in the request; however, we were trying
+	  to pass a null pointer back and that doesn't work so well.
+	  
+	  As we're already generating a reasonably unique string for the purposes
+	  of delim in the multipart data response, let's also use that for the
+	  response thread when necessary.
+
+	* Add an example Apache virtual host configuration and curl script for testing the
+	  math service
+
+	* Prevent WebKit-based browsers (Chrome and Safari) from requesting multipart
+	  
+	  "You want the multipart? YOU CAN'T HANDLE THE MULTIPART!"
+
+2010-01-25  erickson
+
+	* Added some fault tolerance to the inbound-to-unixserver message handoff process.
+	  In some conditions, the unix socket will result in sigpipe (anecdotally, seen
+	  more oftenvirtualized environments). these changes add a call to select before
+	  writing to the socket to check for socket availability and add a sigpipe handler
+	  that forces the inbound process to wait a brief period of time before trying the
+	  delivery again
+
+2010-01-21  erickson
+
+	* similar to recent opensrf-c changes, keep active and idle child procs in
+	  separate lists for faster access and simpler code. also some formatting/comment
+	  updates
+
+2010-01-21  scottmk
+
+	* Bug fix.
+	  
+	  When all the servers for a given server go away, the router deletes the
+	  server class from its internal data structures. However that can happen
+	  in the middle of a loop receiving successive messages from that server.
+	  
+	  The old code would continue trying to read more messages from the
+	  deleted server class, leading to a segfault.
+	  
+	  The new code checks to see whether the server class still exists. If
+	  not, it breaks out of the loop.
+	  
+	  M src/router/osrf_router.c
+
+2010-01-20  scottmk
+
+	* Reverting to a previous version believed to be good.
+	  A recent update introduced a nasty bug, not yet squashed.
+	  
+	  M src/libopensrf/osrf_prefork.c
+
+	* 1. Correct some mangling of the linked list pointers that
+	  keep track of child processes.
+	  
+	  2. Rearrange the way we we keep track of how many children we
+	  have. The old way was a little dodgy in some situations.
+	  
+	  3. Plug some memory leaks in osrf_prefork_register_routers().
+	  
+	  4. Add more doxygen-style comments.
+	  
+	  M src/libopensrf/osrf_prefork.c
+
+2010-01-19  erickson
+
+	* Patch from Joe Atzberger:
+	  
+	  When running from command-line, logger warns "Logger found no config. Using
+	  STDERR" but in fact fails to do so. That blocks atomic testing of dependent
+	  modules, including almost all of EG's Application and Utils.
+	  
+	  Also, in _write_file when failing to sysopen the target file, the die message
+	  reports a different variable than the one actually targeted.
+
+2010-01-19  dbs
+
+	* Get on board the typo train - woo woooooo!
+
+2010-01-19  miker
+
+	* keep the typo around for a while ... sorry, dbs ;)
+
+2010-01-19  dbs
+
+	* Address long-standing typo: clense_ISO8601
+
+2010-01-18  scottmk
+
+	* Instead of keeping all child processes in a single list, keep them in two
+	  separate lists: one list of those which are currently servicing requests,
+	  and another list of idle children. Move the children back and forth as
+	  their status changes.
+	  
+	  This change has three advantages:
+	  
+	  1. When searching for an active child, there is a smaller list to search.
+	  
+	  2. When doing a select() to identify children that have become available,
+	  we can look for messages only from the active children, since the idle
+	  ones won't write anything back to the parent. (Actually we could have
+	  done this with a single list, but we didn't.)
+	  
+	  3. Probably most important: since the idle list functions as a stack, we
+	  assign the next request to the child that was most recently active, or was
+	  most recently launched. That's the child that is most likely still to be
+	  physically in memory. Formerly we assigned requests to children approximately
+	  on a round-robin basis. As a result we assigned each new request to the
+	  child that was most likely to be swapped out.
+	  
+	  Also, in prefork_clear(): kill each child process individually. Sending a
+	  SIGKILL to the entire process group kills the parent as well as the
+	  children.
+	  
+	  M src/libopensrf/osrf_prefork.c
+
+2010-01-16  scottmk
+
+	* Refactored the signal handling so that we shut down in an orderly
+	  fashion instead of calling _exit() from inside a signal handler.
+	  
+	  M include/opensrf/osrf_system.h
+	  M src/libopensrf/osrf_system.c
+
+2010-01-15  scottmk
+
+	* Close a substantial resource leak in drone processes.
+	  
+	  A drone inherits the transport_client of its parent process,
+	  including a socket and a substantial amount of memory. The
+	  old code avoided freeing the transport_client in order to
+	  avoid disconnecting the parent from Jabber.
+	  
+	  The new code contrives to reclaim the resources without
+	  sending a disconnect to Jabber. Hence the parent remains
+	  connected.
+	  
+	  M include/opensrf/transport_client.h
+	  M include/opensrf/transport_session.h
+	  M src/libopensrf/osrf_system.c
+	  M src/libopensrf/transport_session.c
+	  M src/libopensrf/transport_client.c
+
+2010-01-14  scottmk
+
+	* Tinkering with comments and white space; nothing substantive.
+	  
+	  M src/libopensrf/osrf_system.c
+
+2010-01-09  scottmk
+
+	* 1. For keeping track of the child processes: use a doubly-linked
+	  list instead of a singly-linked list. The resulting list manipulations
+	  are both simpler (fewer special cases) and faster (no need to traverse
+	  then entire list just to find the end).
+	  
+	  2. Maintain a free list of prefork_child structures that have been
+	  allocated but are not currently in use. Allocate from the free list
+	  when possible, in order to avoid churning through malloc() and free().
+	  
+	  3. When initializing prefork_child.appname: assign it the same value
+	  as the corresponding field in the parental prefork_simple, instead of
+	  creating a separate copy. The parental copy will remain valid until
+	  after all the prefork_children are gone.
+	  
+	  M src/libopensrf/osrf_prefork.c
+
+	* In srf_app_server_session_init(): if the requested session already
+	  exists, treat it as an error.
+	  
+	  M src/libopensrf/osrf_app_session.c
+
+2010-01-08  scottmk
+
+	* Added or modified a lot of comments; made some minor tweaks to white space.
+	  
+	  Eliminated the min_children member of the prefork_child structure. We
+	  didn't use it for anything, and it made no sense anyway.
+	  
+	  Moved the closing of the child's file descriptors into prefork_child_free()
+	  in order to eliminate duplicated code. Also we were closing two of the
+	  file descriptors twice.
+	  
+	  prefork_child_free() now returns void instead of a pointless int.
+	  
+	  In reap_children(): reset the child_dead at the beginning of the function
+	  instead of at the end. Otherwise we could miss a SIGCHLD that occurs during
+	  the function.
+	  
+	  Pass NULL as the second parameter to waitpid(). We don't do anything with the
+	  children's return codes, so there's no need to capture them.
+	  
+	  Eliminated all calls to osrf_clearbuf() as pointless.
+	  
+	  In prefork_clear(): instead of sleeping for a second after sending the SIGKILL
+	  to the child processes, go through a waitpid() loop. (In practice this
+	  function is all but unreachable anyway.)
+	  
+	  M src/libopensrf/osrf_prefork.c
+
+2010-01-06  scottmk
+
+	* Moved nested #includes out of osrf_prefork.h and into the implementation files.
+	  Somne of the #includes turned out to be unnecessary, so I eliminated them.
+	  
+	  In osrf_prefork.c: instead of dynamically allocating a prefork_simple,
+	  allocate it on the stack. That way we avoid a malloc() and free().
+	  
+	  Renamed prefork_free() to prefork_clear(), since it no longer frees the
+	  prefork_simple itself, but only memory owned by the prefork_simple. Also
+	  it now returns void instead of int, since there are no errors to detect
+	  or report.
+	  
+	  Added some comments.
+	  
+	  M include/opensrf/osrf_prefork.h
+	  M src/libopensrf/osrf_system.c
+	  M src/libopensrf/osrf_prefork.c
+
+2010-01-05  scottmk
+
+	* Mostly tidying up white space and comments. Also rearranged
+	  the #includes a bit.
+	  
+	  M src/libopensrf/osrf_prefork.c
+
+2010-01-03  scottmk
+
+	* Finished adding doxygen-style comments to document the app session
+	  functions. Removed comments from the header so that they wouldn't
+	  override more complete comments in the implementation file.
+	  
+	  Tweaked the white space here and there.
+	  
+	  Changed the return code in a few cases, for consistency. A couple of
+	  functions seemed unable to decide whether 0 was good and 1 was bad,
+	  or vice versa.
+	  
+	  M include/opensrf/osrf_app_session.h
+	  M src/libopensrf/osrf_app_session.c
+
+2010-01-01  scottmk
+
+	* Incorporate _osrf_app_request_resend into osrf_app_session_request_resend(),
+	  which had been its only caller. The code is trivial enough that it will be
+	  simple to break out again if necessary. Meanwhile having it all in a single
+	  function makes it more readable.
+	  
+	  Free the hash table of requests correctly; i.e. all of each linked list, not
+	  just the first node.
+	  
+	  Various additions and refinements to comments; occasional tweaks to white space.
+	  
+	  M include/opensrf/osrf_app_session.h
+	  M src/libopensrf/osrf_app_session.c
+
+	* Changed the way pending requests are stored in an osrfAppSession.
+	  
+	  Before, pending requests were stored in a so-called request_queue.
+	  However it wasn't a queue at all, except in name. It was an
+	  osrfList, i.e. an expandable pointer array used as a random
+	  access container. Request ids were used as subscripts into the
+	  array.
+	  
+	  Since we don't reuse request ids (except in the theoretical case
+	  of a wraparound), the array grew without limit. This unbounded
+	  growth in the memory footprint could create problems for a
+	  long-running busy process. It might have contributed to the
+	  rumored instabililty of chopchop, our homegrown Jabber server.
+	  
+	  Now, pending requests are stored in a hash table, where each
+	  of 64 slots holds a doubly linked list. There should be no
+	  effect on performance unless there are hundreds or thousands
+	  of pending requests at once, in which case we would probably
+	  get bogged down anyway.
+	  
+	  M include/opensrf/osrf_app_session.h
+	  M src/libopensrf/osrf_app_session.c
+
+2009-12-29  scottmk
+
+	* Add a stream parser for JSON, and a format_json utility
+	  that uses it.
+	  
+	  A include/opensrf/jsonpush.h
+	  A src/c-apps/format_json.c
+	  A src/libopensrf/jsonpush.c
+
+2009-12-28  scottmk
+
+	* Add routines for calculating SHA1 and MD5 digests, based on the
+	  gnutls package. These routines are designed to replace the
+	  current functions shahash() and md5sum(), but they are not
+	  drop-in replacements because they have different signatures.
+	  
+	  Prerequisites: packages gcrypt and gnutls.
+	  
+	  This code is based on a contribution by Jason Stephenson.
+	  
+	  A include/opensrf/osrf_digest.h
+	  A src/libopensrf/osrf_digest.c
+
+2009-12-20  scottmk
+
+	* 1. In the parent router process: wait for all of the immediate
+	  child processes to terminate before exiting.
+	  
+	  This change eliminates the need for the shell script invoking
+	  the router to sleep before running a ps to identify the effective
+	  router processes (which are grandchildren of the parent). By the
+	  time the parent exits, the children will have launched the
+	  grandchildren and exited.
+	  
+	  2. If any of the immediate child processes terminates abnormally
+	  (either a non-zero return code or termination by a signal), issue
+	  a warning message to that effect. This message goes to standard
+	  error, since the parent process never opens a log file.
+	  
+	  3. Apply the volatile qualifier to a couple of variables that
+	  are updated asynchronously by a signal handler.
+	  
+	  M src/router/osrf_router.c
+	  M src/router/osrf_router_main.c
+
+2009-12-16  scottmk
+
+	* Correct a typo in a warning message
+	  
+	  M src/libopensrf/osrf_app_session.c
+
+	* Log a warning message whenever the deprecated function
+	  osrfAppSessionMakeRequest() is called.
+	  
+	  M src/libopensrf/osrf_app_session.c
+
+2009-12-15  scottmk
+
+	* Replace calls to osrfAppSessionMakeRequest() with
+	  calls to osrfAppSessionSendRequest().
+	  
+	  M src/gateway/osrf_json_gateway.c
+
+	* Replace calls to osrfAppSessionMakeRequest() with
+	  calls to osrfAppSessionSendRequest().
+	  
+	  M src/c-apps/osrf_version.c
+	  M src/c-apps/osrf_math.c
+	  M src/libopensrf/osrf_settings.c
+
+2009-12-14  scottmk
+
+	* 1. In osrf_app_session.[ch]: Create a new function
+	  osrfAppSessionSendRequest(), similar to osrfAppSessionMakeRequest()
+	  but without the param_strings parameter.
+	  
+	  2. Replace the old function with the new one in srfsh.c.
+	  
+	  M include/opensrf/osrf_app_session.h
+	  M src/libopensrf/osrf_app_session.c
+	  M src/srfsh/srfsh.c
+
+2009-12-10  dbs
+
+	* Remove vestigial TODO now that it is TODONE
+
+	* So. libmemcached has only been packaged on really fresh distros. Install from
+	  source elsewhere.
+	  
+	  Thanks for the nudge from Bill Erickson.
+
+2009-12-10  scottmk
+
+	* Add three new functions:
+	  
+	  osrfListSwap() -- swaps the contents of two osrfLists
+	  
+	  osrfStringArrayClear() -- renders an osrfStringArray empty
+	  
+	  osrfStringArraySwap() -- swaps the contents of two osrfStringArrays
+	  
+	  M include/opensrf/osrf_list.h
+	  M src/libopensrf/string_array.c
+	  M src/libopensrf/osrf_list.c
+
+2009-12-10  dbs
+
+	* Transition from libmemcache to libmemcached - an actively maintained memcached
+	  client library.
+	  
+	  As of this commit, you (I'm looking at you, buildbot) will require the
+	  pkg-config and
+	  libmemcached development packages to build and run OpenSRF.
+
+2009-12-08  scottmk
+
+	* Eliminated the function pointer osrf_stack_entry_point so that
+	  osrf_app_session_queue_wait() can call osrf_stack_process() directly.
+	  This change entails some juggling of declarations, headers, and the
+	  like, but does not substantively affect the processing.
+	  
+	  Also: made a number of other minor changes, mostly to comments
+	  and white space.
+	  
+	  M include/opensrf/osrf_stack.h
+	  M include/opensrf/osrf_app_session.h
+	  M src/libopensrf/osrf_app_session.c
+	  M src/libopensrf/osrf_stack.c
+
+2009-12-07  scottmk
+
+	* Added some comments, tinkered with white space;
+	  no substantive changes
+	  
+	  M src/libopensrf/osrf_stack.c
+
+2009-12-02  erickson
+
+	* Prevent infinite loop (with logging) in child process reaping.
+	  
+	  From the perl docs on waitpid:
+	  
+	  Note that on some systems, a return value of "-1" could mean that child
+	  processes are being automatically reaped. See perlipc for details, and for other
+	  examples.
+
+2009-11-30  dbs
+
+	* Futher cleanup for autoconf substituted variables
+	  
+	  examples/multisession-test.pl:
+	  * Remove "use lib" statement as OpenSRF Perl modules are now installed in a
+	  standard location
+	  
+	  configure.ac:
+	  * Use equality instead of assignment operator when checking for $prefix
+	  * Add copyright statement to header
+
+2009-11-27  dbs
+
+	* Partial fix for launchpad bug 489294: OpenSRF seems to depend on explicit
+	  --prefix configure option
+	  
+	  In the process of creating Perl and Python scripts using AC_SUBST(sysconfdir),
+	  autoconf would generate variables like '${prefix}' if no explicit --prefix
+	  option was passed to configure - and this would cause those scripts to fail
+	  with syntax errors.
+	  
+	  We can work around that, and so we shall. The bigger question is whether
+	  creating scripts with hardcoded defaults results in problems when it comes
+	  to creating system packages; according to
+	  http://www.gnu.org/software/hello/manual/autoconf/Installation-Directory-Variables.html
+	  one should try to defer these changes to the Makefile so that the
+	  destination directory can be specified at make or make install time,
+	  instead.
+	  
+	  At least this gets us working with no explicit configure options again.
+	  Perhaps a packaging expert can help us out of this mire :)
+
+2009-11-25  scottmk
+
+	* Replacing calls to the old JSON parser with calls to the
+	  new JSON parser.
+	  
+	  M src/gateway/osrf_json_gateway.c
+	  M src/c-apps/osrf_math.c
+	  M src/c-apps/timejson.c
+	  M src/libopensrf/osrf_json_test.c
+	  M src/libopensrf/osrf_message.c
+	  M src/libopensrf/osrf_cache.c
+
+2009-11-20  dbs
+
+	* Patch from Jeroen van Meeuwen (Fedora Project) <kanarip@fedoraproject.org> to
+	  use $(APXS2)
+	  
+	  Attached patch makes the auto foo respect the --with-apxs ./configure option for
+	  src/gateway/Makefile.am.
+
+2009-11-16  scottmk
+
+	* Tinkering with comments and white space.
+	  
+	  Enclose local #included files with quotes instead
+	  of angle brackets.
+	  
+	  M include/opensrf/osrf_app_session.h
+	  M src/libopensrf/osrf_app_session.c
+
+	* Eliminated two members of the osrfMessage structure:
+	  result_string and sender_tz_offset. Neither is used for
+	  anything, and either may be easily reinstated if necessary.
+	  
+	  I was tempted to eliminate the protocol member as well,
+	  since it isn't used for anything either. However it's
+	  populated from one of the parameters to osrf_message_init().
+	  Getting rid of the protocol member properly would ramify
+	  to all the code that calls osrf_message_init(), which would
+	  be a lot of work to undo if necessary, so I left it alone.
+	  
+	  M include/opensrf/osrf_message.h
+	  M src/libopensrf/osrf_message.c
+
+	* 1. Changes to comments and white space.
+	  
+	  2. Eliminated the macro OSRF_MAX_PARAMS, which is nowhere used. It was
+	  all but unusable anyway, since it included a terminal semicolon.
+	  
+	  I considered eliminating the macro OSRF_XML_NAMESPACE as well, since
+	  it is also unused. However I stayed my hand, since it would be more
+	  difficult to reconstruct if the need arose.
+	  
+	  M include/opensrf/osrf_message.h
+	  M src/libopensrf/osrf_message.c
+
+2009-11-15  scottmk
+
+	* Move the libxml headers out of the header and into the
+	  implementation file.
+	  
+	  The files that #include osrf_message.h compile just fine
+	  without the nested libxml headers, and there's no reason
+	  to make the compiler paw through them.
+	  
+	  M include/opensrf/osrf_message.h
+	  M src/libopensrf/osrf_message.c
+
+	* Replace the the call to osrf_message_deserialize()
+	  with a call to osrfMessageDeserialize().
+	  
+	  M src/router/osrf_router.c
+
+	* Create a new function osrfMessageDeserialize(), as a
+	  replacement for osrf_message_deserialize().
+	  
+	  The older osrf_message_deserialize() receives an array of
+	  pointers to populate, along with a maximum number. If the
+	  JSON input contains more than the maximum number of
+	  messages, the extras are silently discarded. This design
+	  forces the calling code to guess how many messages it
+	  might ever receive at one time, with no way to determine
+	  whether its guess was good enough.
+	  
+	  The newer function returns an osrfList of pointers, and
+	  can therefore return all the messages it finds in the
+	  input, with no risk of loss.
+	  
+	  M include/opensrf/osrf_message.h
+	  M src/libopensrf/osrf_message.c
+
+	* Created a new function osrfListClear() to take an existing
+	  osrfList and make it empty.
+	  
+	  M include/opensrf/osrf_list.h
+	  M src/libopensrf/osrf_list.c
+
+2009-11-14  scottmk
+
+	* Pulled the creation of a single osrfMessage from a jsonObject
+	  into a separate function. This change simplifies
+	  osrf_message_deserialize(), and will make it easier to create
+	  a replacement for it.
+	  
+	  Also: tinkered with some of the comments and white space.
+	  
+	  M src/libopensrf/osrf_message.c
+
+	* Tidied up various things:
+	  
+	  1. Miscellaneous adjustments to white space.
+	  
+	  2. Added doxygen-style comments to document all functions. Removed most
+	  comments from the header so that they won't override those in the
+	  implementation file.
+	  
+	  3. Slightly rearranged or otherwise tweaked the logic here and there
+	  for clarity.
+	  
+	  4. osrf_messasge_set_locale() now returns a const pointer, to discourage
+	  the calling code from changing or freeing the message's copy of the
+	  locale.
+	  
+	  5. Eliminated the full_param_string member of osrfMessage. We weren't
+	  using it for anything, except to initialize it to NULL.
+	  
+	  6. Plugged several memory leaks (potential but not actual).
+	  
+	  7. Made osrfMessageToJSON a static function. No other source file
+	  needs to call it.
+	  
+	  8. Replaced a couple of calls to jsonObjectToSimpleString() with calls
+	  to jsonObjectGetString(), in order to eliminate a malloc and free.
+	  
+	  M include/opensrf/osrf_message.h
+	  M src/libopensrf/osrf_message.c
+
+2009-11-10  scottmk
+
+	* 1. Fixed a bug whereby the display of request results was not showing up
+	  when pretty-printing was turned off. We were calling jsonObjectGetString()
+	  when we should have been calling jsonObjectToJSON(), and thereby getting
+	  NULL instead of a usable string, for any but the most trivial of results.
+	  
+	  Also: applied some minor refinements to nearby code.
+	  
+	  2. In handle_request(): eliminated a couple of superfluous variables.
+	  
+	  3. Corrected an erroneous statement in the help message. Request output
+	  passes through less when raw_print is false, not when it's true.
+	  
+	  4. Tidied up the white space here and there.
+	  
+	  M src/srfsh/srfsh.c
+
+2009-11-09  scottmk
+
+	* No substantive changes.
+	  
+	  Corrected some erroneous comments, and tweaked the
+	  white space here and there.
+	  
+	  M include/opensrf/utils.h
+
+	* Miscellaneous minor tweaks:
+	  
+	  1. Moved nested #includes out of the header file and into the
+	  implementation files as needed.
+	  
+	  2. Additions and refinements to comments; adjustments to white space.
+	  
+	  3. Changed several functions to return void instead of int, since we don't
+	  look at the return values anyway.
+	  
+	  4. Added the const qualifier to several function parameters.
+	  
+	  5. In osrfRouterHandleAppRequest(): initialize arr[], an array of pointers,
+	  by setting each pointer to NULL. We had been using memset() on the lot,
+	  relying on a the non-portable assumption that a NULL pointer is
+	  represented by all-bits-zero.
+	  
+	  6. Minor rearrangements of the logic here and there, mostly to free things
+	  as soon as we're done with them instead of waiting until the end of the block,
+	  or to defer the declarations of things until we're about to use them.
+	  
+	  7. Replaced a couple of calls to jsonObjectToSimpleString() with calls to
+	  jsonObjectGetString(), in order to eliminate a malloc() and a free().
+	  
+	  8. Renamed osrfRouterHandleAppResponse() to osrfRouterSendAppResponse(),
+	  which is more descriptive and less vague.
+	  
+	  M src/router/osrf_router.h
+	  M src/router/osrf_router.c
+	  M src/router/osrf_router_main.c
+
+2009-11-06  scottmk
+
+	* Corrected a glitch in the command-line parser. Now commas
+	  are treated as the equivalent of white space between
+	  parameters. For example { "a":5 },{ "b":true } is parsed as
+	  two separate JSON objects, even though there is no white space
+	  between them.
+	  
+	  M src/srfsh/srfsh.c
+
+2009-11-05  scottmk
+
+	* Several bug fixes:
+	  
+	  1. In osrfRouterRun(): eliminate the counting of sockets. Rely
+	  on the traversal of the class list to cover all the active
+	  sockets. Otherwise we would enter an infinite loop if we had just
+	  deleted a class with an active socket.
+	  
+	  2. In osrfRouterClassHandleIncoming(): in the case of an error
+	  message that we can't reroute to a different node, do a continue
+	  instead of a return. Otherwise we delay any further messages that
+	  may be enqueued for the same class, and possibly skip them entirely.
+	  
+	  Also, in the same scenario: free the message before continuing, in
+	  order to avoid a memory leak, and clear the transaction id for the
+	  logging routines.
+	  
+	  3. In osrfRouterClassHandleBounce(): remove the dead node when it is the
+	  last one left for its class. Remove the class as well, since it is
+	  no longer usable. We had been leaving the dead node around, for no
+	  good reason.
+	  
+	  M src/router/osrf_router.c
+
+	* 1. Further refinement of comments.
+	  
+	  2. In osrfRouterClassHandleIncoming() and osrfRouterClassHandleBounce():
+	  rearranged the logic a bit for clarity.
+	  
+	  3. In _osrfRouterFillFDSet(): reuse the osrfHashIterator that's available
+	  in the osrfRouter instead of creating and destroying a fresh one.
+	  
+	  M src/router/osrf_router.c
+
+2009-11-04  scottmk
+
+	* Eliminate a potential (if unlikely) memory leak: Free a
+	  transport_message.error_type before overlaying it.
+	  
+	  M src/libopensrf/transport_message.c
+
+	* 1. Added an osrfHashIterator as a member of osrfRouter, so that
+	  we can reuse it when repeatedly traversing the list of classes.
+	  This way we don't have to create and destroy an osrfHashIterator
+	  on every iteration.
+	  
+	  2. In osrfRouterRun(): eliminated a pointless hash look up in the
+	  innermost loop.
+	  
+	  M src/router/osrf_router.c
+
+2009-11-03  scottmk
+
+	* 1. Changed several functions that were returning int so that
+	  they return void instead. We weren't checking the return codes
+	  anyway, since the functions in question handle their error
+	  conditions on their own.
+	  
+	  2. Eliminated a pointless memset().
+	  
+	  3. For message received from the top-level transport_client, we
+	  have to branch according to whether the message is a command
+	  or an app request. I moved that decision up one level in the
+	  calling hierarchy.
+	  
+	  Rationale: the two branches are peers. Neither should be
+	  treated as if it is a subordinate of the other. That peerage
+	  is better expressed by making them two branches of the same if
+	  statement, rather than conditionally calling one of the branches
+	  from inside the other.
+	  
+	  Minor performance benefit: for one of the branches we avoid an
+	  extra layer of function call.
+	  
+	  4. Related to the above: renamed osrfRouterHandleMessage() to
+	  osrfRouterHandleCommand(), since handling commands is all it
+	  does now. Also rearranged its logic a bit.
+	  
+	  5. Extended and refined the comments.
+	  
+	  M src/router/osrf_router.c
+
+	* In the main loop of the router: if the select call fails for
+	  any reason other than an harmless signal (i.e. one whose
+	  handler didn't set a switch to stop the loop), then break
+	  out of the loop and terminate.
+	  
+	  The old code would ignore the error and keep looping, using up
+	  ca. 98% of the CPU until somebody killed it.
+	  
+	  M src/router/osrf_router.c
+
+2009-11-02  scottmk
+
+	* 1. Move the declaration of osrfRouter out of the header
+	  and into osrf_router.c. There's no need for any other
+	  source file to know about the internals.
+	  
+	  2. Eliminate the ROUTER_SOCKFD macro in favor of the new
+	  client_sock_fd() function. Reason: it needlessly coupled
+	  the osrfRouter and osrfRouterClass structures by requiring
+	  each of them to have a member named "connection".
+	  
+	  3. Further tinkering with the comments.
+	  
+	  M src/router/osrf_router.h
+	  M src/router/osrf_router.c
+
+	* New function: client_sock_fd(). It returns the socket fd used
+	  by the transport_session underlying a specified transport_client.
+	  
+	  Purpose: increase the level of encapsulation, so that the
+	  calling code doesn't need to know about three layers of internals.
+	  
+	  M include/opensrf/transport_client.h
+	  M src/libopensrf/transport_client.c
+
+	* Changed the signal handling.
+	  
+	  There are very few things you can safely do within a signal handler, and
+	  shutting down an osrfRouter is not among them.
+	  
+	  Now the signal handler just sets a switch for the main loop to look at.
+	  The select call looks for errno == EINTR and then looks at the switch
+	  that the signal handler sets. If the switch is set, we exit the otherwise
+	  infinite loop. Then we free the osrfRouter and re-raise the signal.
+	  
+	  M src/router/osrf_router.h
+	  M src/router/osrf_router.c
+	  M src/router/osrf_router_main.c
+
+2009-10-31  scottmk
+
+	* Fixed a bug in osrfRouterClassFree(). We were trying free
+	  the same osrfRouterClass twice -- once directly, and once
+	  by an unintended recursion.
+	  
+	  M src/router/osrf_router.c
+	  M src/router/osrf_router_main.c
+
+	* Tinkering with white space and comments. No
+	  substantive changes.
+	  
+	  M src/router/osrf_router.c
+
+2009-10-30  scottmk
+
+	* 1. Tidy up the white space.
+	  
+	  2. Add copious comments, mostly doxygen-style, to document
+	  the functions and the transport_client struct.
+	  
+	  3. In client_connect(): plug a memory leak by freeing
+	  client->xmpp_id before overlaying it. Plug a potential
+	  similar leak in client_send_message().
+	  
+	  4. In client_send_message(): return 1 (an error) instead of
+	  0 (success) when the first parameter is NULL.
+	  
+	  M include/opensrf/transport_client.h
+	  M src/libopensrf/transport_client.c
+
+2009-10-29  sboyette
+
+	* exit with error code when tools are not found
+
+2009-10-29  miker
+
+	* give decodeJS a way to try to load a class that was requested but does not yet
+	  exist
+
+2009-10-29  scottmk
+
+	* Add doxygen-style comments to document the
+	  transport_message structure.
+	  
+	  M include/opensrf/transport_message.h
+
+	* 1. Tidy up the white space.
+	  
+	  2. Add doxygen-style comments to document all functions.
+	  
+	  M src/libopensrf/transport_message.c
+
+2009-10-28  scottmk
+
+	* 1. In endElementHandler(), responding to an error: don't explain what a
+	  401 error is unless that's the error that happened.
+	  
+	  2. In parseWarningHandler() and parseErrorHandler(): issue messages via
+	  the usual logging routines instead of writing them to stdout and stderr.
+	  
+	  3. Finish the doxygen-style commenting.
+	  
+	  M include/opensrf/transport_session.h
+	  M src/libopensrf/transport_session.c
+
+	* 1. Added comments to document the process of connecting to Jabber.
+	  
+	  2. Added doxygen-style comments to document the final two functions.
+	  
+	  3. Several minor performance tweaks and rearrangements.
+	  
+	  M src/libopensrf/transport_session.c
+
+2009-10-25  dbs
+
+	* Improve the 'help' output for srfsh:
+	  * Document the method-name parameter for the introspect command
+	  * Document the currently supported srfsh variables
+	  * Reorganize the help slightly to place more emphasis on
+	  introspect and request and cut down on some of the blank lines.
+
+2009-10-25  scottmk
+
+	* 1. Moved several macros from the header to the implementation file. They aren't
+	  used
+	  anywhere else.
+	  
+	  2. Renamed SERVER_SOCKET and CLIENT_SOCKET to LISTENER_SOCKET and DATA_SOCKET,
+	  respectively. The new names more accurately reflect the uses to which the two
+	  socket types are put. (Note that some so-called CLIENT_SOCKETs were, in fact,
+	  opened by servers.)
+	  
+	  3. Changed socket_open_udp_server() to open a DATA_SOCKET (formerly called a
+	  CLIENT_SOCKET) instead of a LISTENER_SOCKET (formerly called a SERVER_SOCKET).
+	  Otherwise an attempt to wait on such a socket would wind up treating it like
+	  a listener. That doesn't work for UDP. In practice this change has no effect,
+	  since no application ever calls this function anyway.
+	  
+	  4. Always close a socket before removing the associated socket_node. Otherwise
+	  we
+	  will leak sockets in some situations.
+	  
+	  5. Tinkered further with the comments, especially in the header file.
+	  
+	  M include/opensrf/socket_bundle.h
+	  M src/libopensrf/socket_bundle.c
+
+	* Merged _socket_route_data() into its only caller, after untangling its logic.
+	  
+	  The old function traversed the linked list of socket_nodes in a loop,
+	  examining each node at the bottom of the loop in order to identify the next
+	  node. It went through elaborate and confusing gyrations to avoid dereferencing
+	  a pointer for a node that had been deleted.
+	  
+	  A better solution is to get a pointer to the next node *before* deleting the
+	  current one. The resulting code is simple and easy to understand.
+	  
+	  M src/libopensrf/socket_bundle.c
+
+2009-10-24  scottmk
+
+	* Implemented session_connected(), which had been declared in the header but never
+	  defined.
+	  
+	  Changed transport_client.c to use session_connected(), so that it wouldn't need
+	  to
+	  see a declaration of jabber_machine.
+	  
+	  Moved from transport_session.h to transport_session.c: several macros and the
+	  declaration of jabber_machine, of which none are needed elsewhere.
+	  
+	  Removed some comments from the header so that they won't override more complete
+	  comments in the implementation file.
+	  
+	  In session_connect(): inserted a return statement in order to bypass some
+	  superfluous string comparisons.
+	  
+	  Added the const qualifier to the return type of get_xml_attr(). We don't want to
+	  be able to overwrite the text returned by the XML parser.
+	  
+	  In endElementHandler(): look for "stream:error", to match the opening tag,
+	  instead
+	  of "error:error".
+	  
+	  Resest status_buffer along with the other buffers.
+	  
+	  Introduced several minor performance tweaks.
+	  
+	  Added more doxygen-style comments for documentation.
+	  
+	  M include/opensrf/transport_session.h
+	  M src/libopensrf/transport_session.c
+	  M src/libopensrf/transport_client.c
+
+2009-10-22  scottmk
+
+	* Various cleanups in transport_session.c:
+	  
+	  1. In init_transport(): guard against a NULL server parameter.
+	  
+	  2. In session_free(): if the session is still open, disconnect it.
+	  
+	  3. In session_connect(): if we open a socket but are unable to connect to
+	  Jabber, close the
+	  socket and set the sock_id member to zero. If the socket is already open, return
+	  an error,
+	  instead of reusing the existing socket (and trying to overlay any open Jabber
+	  session).
+	  
+	  4. In session_connect(): guard against an invalid auth_type.
+	  
+	  5. In session_connect(): corrected some errors in the way we calculate buffer
+	  sizes,
+	  
+	  6. In session_disconnect(): send a disconnect message only if the socket is
+	  still open.
+	  
+	  7. Tidied up white space and comments in various places.
+	  
+	  8. Added doxygen-style comments to document some of the functions.
+	  
+	  M src/libopensrf/transport_session.c
+
+2009-10-18  scottmk
+
+	* Eliminated _socket_route_data_id() as a separate function, incorporating
+	  its contents into the end of socket_wait().
+	  
+	  Rationale: _socket_route_data_id() was called in only a single place.
+	  It was little more than a mildly obfuscated if test, branching to two
+	  very different functions. Having this code fragment in a separate function
+	  just made the logic harder to follow.
+	  
+	  Also: added a couple more doxygen-style comments.
+	  
+	  M src/libopensrf/socket_bundle.c
+
+2009-10-17  scottmk
+
+	* 1. In socket_connected(): if the select() fails because it is interrupted
+	  by a signal, it doesn't mean that the socket is invalid, so try again.
+	  
+	  2. In _socket_handle_client_data(): remove two unnecessary calls to the
+	  osrf_clearbuf macro.
+	  
+	  3. Add more doxygen-style comments to document the functions; edit a few
+	  existing comments in various ways.
+	  
+	  M src/libopensrf/socket_bundle.c
+
+2009-10-13  scottmk
+
+	* 1. In socket_open_tcp_client(): use getaddrinfo() instead of gethostbyname().
+	  The latter is obsolete, according to the man page and other sources.
+	  
+	  2. Add doxygen-style comments to document several more functions.
+	  
+	  M src/libopensrf/socket_bundle.c
+
+	* 1. Moved the declaration of socket_node from the header into the
+	  implementation file. No other source files need to be exposed
+	  to it.
+	  
+	  2. Contrived to avoid leaking sockets in case of error exits;
+	  sometimes by changing the sequence of operations, sometimes by
+	  inserting a close().
+	  
+	  3. In socket_open_tcp_client() and socket_open_udp_client():
+	  removed the call to bind(). Ordinarily a client socket doesn't
+	  need to know or care what its local address is.
+	  
+	  4. In socket_open_udp_client(): eliminated the second and third
+	  parameters, which define the remote address. That information
+	  wasn't going anywhare anyway. For a UDP socket, you have no
+	  use for the remote address until you actually try to send or
+	  receive.
+	  
+	  5. Added doxygen-style comments to document some of the functions.
+	  
+	  M include/opensrf/socket_bundle.h
+	  M src/libopensrf/socket_bundle.c
+
+2009-10-12  scottmk
+
+	* 1. Replace the old JSON parser (jsonParseString()) with a newer, faster one
+	  (jsonParse()).
+	  
+	  2. Because the new JSON parser is strict about syntax errors that the old
+	  parser would ignore, it was necessary to parse the srfsh command line more
+	  intelligently. Otherwise it would be impossible to build a JSON string
+	  internally with reliably correct syntax.
+	  
+	  Hence: instead of using strtok() to break up the command line into tokens, we
+	  now use a rudimentary recursive descent parser to isolate JSON strings as
+	  distinct arguments, even if they contain embedded white space.
+	  
+	  As a fairly benign side effect of these changes, the treatment of commas
+	  in the command line is changing a bit. All parts of the command line
+	  (not just JSON strings) may now be optionally separated by commas.
+	  
+	  3. We now use an osrfStringArray to hold the results of parsing, rather
+	  than a bare array of pointers.
+	  
+	  4. The function formerly known as "parse_request" is now named
+	  "process_request",
+	  because it does a lot more than just parsing.
+	  
+	  M src/srfsh/srfsh.c
+
+2009-10-12  dbs
+
+	* Clean up and clarify configure help and messages a wee bit
+
+	* Chop chopchop out of the default make / install target
+	  
+	  chopchop is a basic XMPP server that is not used in production, so
+	  let's not bother with building and installing it in the default configuration.
+	  
+	  We introduce a new configure option, --enable-chopchop, for those who do
+	  want to build and install chopchop.
+
+2009-10-11  scottmk
+
+	* Add doxygen-style comments to document macros, and an overview
+	  at the top.
+	  
+	  M include/opensrf/log.h
+
+	* Add doxygen-style comments to document all functions and all variables
+	  at file scope.
+	  
+	  In log.h: remove some existing comments so that they won't override
+	  the more complete comments in log.c.
+	  
+	  M include/opensrf/log.h
+	  M src/libopensrf/log.c
+
+2009-10-11  dbs
+
+	* Add a '-l' option to treat the hostname as 'localhost', to match osrf_ctl.sh.
+	  
+	  This will be useful in testing and tutorial scenarios.
+
+2009-10-10  scottmk
+
+	* 1. osrfLogGetXid now returns a pointer to const. We don't want the
+	  calling code to be able to overwrite the cached copy of the
+	  transaction id.
+	  
+	  2. Add doxygen-style comments to document some of the functions.
+	  
+	  M include/opensrf/log.h
+	  M src/libopensrf/log.c
+
+	* Performance tweak to the logging routines.
+	  
+	  _osrfLogToFile() is no longer a variadic function. We always sent it the
+	  same format string, and there was no point in sending a variable-length
+	  parameter list that never actually varied in length.
+	  
+	  Now we send it a fixed-length parameter list -- and thereby avoid two
+	  calls to vsnprintf() that had been hidden in the VA_LIST_TO_STRING macro.
+	  
+	  Also: added doxygen-style comments to several of the functions.
+	  
+	  M src/libopensrf/log.c
+
+2009-10-08  scottmk
+
+	* Fix a bug in md5sum() (which only affected code compiled
+	  with debugging turned on).
+	  
+	  md5sum() builds an md5 message digest in a buffer. Originally
+	  it used memset() to initialize the buffer with binary zeroes.
+	  At some point the call to memset() was replaced with the
+	  osrf_clearbuf() macro. When compiled in debugging mode,
+	  osrf_clearbuf() fills the buffer with exclamation points;
+	  otherwise it reverts to the original memset().
+	  
+	  In this case the use of osrf_clearbuf is inappropriate, because
+	  we use strcat() to build the message digest, two bytes at a
+	  time. We don't need to use memset(), but the first byte needs
+	  to be initialized to a nul byte so that strcat() will work as
+	  intended. Hence:
+	  
+	  1. Remove the call to osrf_clearbuf().
+	  
+	  2. Put a nul byte at the beginning of the buffer.
+	  
+	  Also, I made the buffer smaller. There's no reason for it
+	  to be 256 bytes long.
+	  
+	  M src/libopensrf/utils.c
+
+2009-10-05  scottmk
+
+	* Small performance tweak.
+	  
+	  Replaced two occurrences of jsonParseString( "[]" ) with the
+	  equivalant (and faster) call to jsonNewObject( JSON_ARRAY ).
+	  
+	  M src/libopensrf/osrf_application.c
+	  M src/srfsh/srfsh.c
+
+	* Performance tweak to message handling.
+	  
+	  In five locations in osrf_message.c, we were turning a jsonObject into
+	  a JSON string, only to parse it again back into a jsonObject:
+	  
+	  -- osrf_message_add_object_param()
+	  -- osrfMessageToJSON() (two occurrences)
+	  -- osrf_message_deserialize() (two occurrences)
+	  
+	  That's silly.
+	  
+	  This new version copies the original jsonObject directly, with no round
+	  trip through a JSON string. We use jsonObjectDecodeClass() to do the
+	  copy, in order to make sure that all class hints are decoded into
+	  classnames.
+	  
+	  (Until recently, jsonObjectDecodeClass() would remove classnames that were
+	  already present. That's presumably the reason for the curious and
+	  inefficient two-step procedure that we were using up till now.)
+	  
+	  Also: In two locations (in osrf_message_add_object_param() and
+	  osrf_message_add_param()) We used jsonParseString() to parse a
+	  hard-coded "[]". I replaced those calls with equivalent (and faster)
+	  calls to jsonNewObjectType( JSON_ARRAY );
+	  
+	  Also: in osrf_message_set_result_content() I eliminated a pointless test
+	  for nullity of the json_string variable. An earlier test already
+	  guarantees that json_string is not NULL.
+	  
+	  M src/libopensrf/osrf_message.c
+
+	* Created a new function osrfHashExtract(). It extracts an item with a
+	  given key from an osrfHash, without destroying it, leaving the rest
+	  of the osrfHash intact.
+	  
+	  M include/opensrf/osrf_hash.h
+	  M src/libopensrf/osrf_hash.c
+
+	* Tweak jsonObjectDecodeClass so that it preserves classnames
+	  that are already present. The previous version would add
+	  new classnames, if it found them encoded, but would drop
+	  any old ones.
+	  
+	  At present this change will have no effect. Apart from a
+	  couple of recursive calls, the only function that calls
+	  jsonObjectDecodeClass() is jsonParseString(). In that case,
+	  we pass a freshly parsed jsonObject that can't possibly
+	  have any classnames yet.
+	  
+	  However this change will enable us to use this function
+	  elsewhere (specifically in osrf_message.c), resulting in
+	  simpler and faster code.
+	  
+	  M src/libopensrf/osrf_json_tools.c
+
+2009-10-04  scottmk
+
+	* Enhance the performance of the recursive descent JSON parser,
+	  mainly the jsonParse() function.
+	  
+	  1. The old version would create a jsonObject and then copy it, with
+	  possible modifications, via a call to jsonObjectDecodeClass(), in
+	  order to decode class hints into the classname member. Finally, it
+	  would throw away the original jsonObject.
+	  
+	  The copying operation is expensive, and the new version eliminates
+	  it. When decoding is desired (which is nearly always), execution
+	  passes through a parallel version of the get_hash() function, which
+	  does the decoding on the fly.
+	  
+	  In my benchmarking, the new version reduces the parsing time by
+	  around 35 - 45 percent. It is now at least twice as fast as the
+	  older jsonParseString() function, which uses a finite state
+	  machine instead of recursive descent.
+	  
+	  2. In get_number(): instead of allocating and destroying a
+	  temporary growing_buffer, use the one available in the
+	  Parser structure.
+	  
+	  3. In osrf_json.h: Applied some pedantic corrections to the
+	  doxygen comments for the old parser.
+	  
+	  --------
+	  
+	  In all cases tested, the new version produces results identical
+	  to those of the old version. The results are also identical to
+	  those of the older parser, apart from error detection.
+	  
+	  M include/opensrf/osrf_json.h
+	  M src/libopensrf/osrf_parse_json.c
+
+2009-10-02  scottmk
+
+	* Change the return type of jsonObjectGetString so that it
+	  is a pointer to const char, instead of to non-const char.
+	  
+	  We don't want the calling code to be able to modify the innards
+	  of the jsonObject, at least not by this back door.
+	  
+	  I have already examined all uses of this function and modified
+	  them where necessary to avoid compile problems.
+	  
+	  M include/opensrf/osrf_json.h
+	  M src/libopensrf/osrf_json_object.c
+
+	* 1. Add doxygen-style comments to document functions in the
+	  recursive-descent JSON parser. Tidy up or correct existing
+	  comments here and there.
+	  
+	  2. In report_error(): add the const qualifier to the
+	  third parameter.
+	  
+	  M include/opensrf/osrf_json.h
+	  M src/libopensrf/osrf_parse_json.c
+
+2009-09-29  scottmk
+
+	* We routinely grab a chunk of configuration file that doesn't
+	  apply to the router process. When we detect the spurious hit,
+	  we throw it away and go on to the next one.
+	  
+	  We had been detecting the spurious hit after forking, thus
+	  wasting a fork.
+	  
+	  Now we detect the spurious hit before forking, so that we
+	  don't waste a fork.
+	  
+	  M src/router/osrf_router_main.c
+
+	* Comment out an error message added in the previous patch.
+	  
+	  The error message reported what looks like an error condition:
+	  the config file doesn't provide transport info. However what
+	  appears to be happening is that the program tries to read
+	  several different sections of the config file, of which some
+	  are relevant and some aren't, due to some overloading of the
+	  <routers> tag. As a result it routinely spawns irrelevant
+	  children, only to watch them die.
+	  
+	  There's got to be a better way, but for now I'll just
+	  suppress the error message.
+	  
+	  M src/router/osrf_router_main.c
+
+2009-09-29  dbs
+
+	* Let's give OpenSRF a spin on Ubuntu Karmic
+
+2009-09-28  scottmk
+
+	* 1. Eliminated some memory leaks by replacing calls to
+	  jsonObjectFindPath() (whose return values weren't getting
+	  freed) with calls to jsonObjectGetKey(). This change will
+	  also speed up the configuration a bit by avoiding the
+	  cloning of objects.
+	  
+	  2. Changed setupRouter so that it returns void instead of int.
+	  We weren't looking at the return value anyway. Since the
+	  function normally enters an infinite loop, any return
+	  represents some kind of error.
+	  
+	  3. If the configuration file has no transport information,
+	  issue a message before exiting (to standard error, since we
+	  don't have a log file yet).
+	  
+	  4. Add doxygen-style comments for documentation.
+	  
+	  M src/router/osrf_router_main.c
+
+	* 1. Changed osrfLogFacilityToInt() so that it accepts
+	  a const pointer.
+	  
+	  2. Added the const qualifier to various variables.
+	  
+	  3. In osrf_router_main.c: Removed three inappropriate
+	  calls to free(). Some memory leaks remain, where we
+	  fetch some cloned jsonObjects from jsonObjectFindPath()
+	  and don't free them.
+	  
+	  M include/opensrf/log.h
+	  M src/router/osrf_router_main.c
+	  M src/gateway/osrf_http_translator.c
+	  M src/libopensrf/osrf_prefork.c
+	  M src/libopensrf/log.c
+	  M src/libopensrf/osrf_application.c
+
+2009-09-28  dbs
+
+	* And place headers in /prefix/include/opensrf/ again, fixing regression to
+	  /prefix/include/
+
+	* W h i t e s p a c e matters when defining automake targets
+	  
+	  Headers weren't being installed as the include_HEADER target wasn't being
+	  parsed.
+
+2009-09-25  scottmk
+
+	* 1. Add doxygen markup for documentation.
+	  
+	  2. In jsonNewObjectType(): explicitly initialize a JSON_BOOL to false, instead
+	  of implicitly relying on the expectation that a NULL pointer is represented
+	  by all-bits-zero.
+	  
+	  3. In jsonObjectExtractIndex(): set the parent pointer to NULL in the
+	  extracted jsonObject.
+	  
+	  M include/opensrf/osrf_json.h
+	  M src/libopensrf/osrf_json_object.c
+
+2009-09-18  sboyette
+
+	* LogServer was removed from distro but not from MANIFEST - fixed
+
+2009-09-17  phasefx
+
+	* correct the test for modifying the *.xml.example files
+
+2009-09-15  sboyette
+
+	* POD/docs cleanup
+
+	* 100% test coverage
+
+	* WIP
+
+	* WIP
+
+	* more test
+
+	* sync
+
+	* stowing WIP
+
+	* WIP
+
+2009-09-14  dbs
+
+	* Make building & installing the core components of OpenSRF optional.
+	  
+	  For now, this will be of most interest to those interested in installing only
+	  the JavaScript files from OpenSRF. If you disable the core components in
+	  configure, then dependency checking for those core components is skipped and
+	  the JavaScript files will be installed to the desired location.
+	  
+	  For example:
+	  
+	  ./autogen.sh
+	  ./configure --prefix=/openils --sysconfdir=/openils/conf --disable-core
+	  sudo make install
+	  
+	  ... will result in only the OpenSRF JavaScript files being installed in
+	  /openils/lib/javascript/ (although at the moment, the other directories
+	  will still be created).
+
+2009-09-13  scottmk
+
+	* Changed the signature of osrfStringArrayGetString():
+	  
+	  1. It receives a pointer to osrfStringArray. That pointer
+	  is now a pointer to const.
+	  
+	  2. It returns a character pointer. That pointer is now a
+	  pointer to const.
+	  
+	  I have already examined all existing calls to this function,
+	  and modified them where necessary.
+
+	* In osrf_json_gateway.c: added the const qualifier to three
+	  different local variables, all named "str".
+
+2009-09-12  scottmk
+
+	* In apacheGetParamValues() and apacheGetFirstParamValue():
+	  applied const qualifier to nkey.
+	  
+	  Also: changed the ensuing NULL tests to look at nkey
+	  instead of key, since key has already been verified as
+	  non-NULL.
+	  
+	  Actually it looks like nkey is guaranteed to be non-NULL
+	  as well, but that depends on the correct functioning
+	  of osrfStringArray; so I left the NULL test, as
+	  revised, in place.
+
+	* In osrfAppSessionClientInit(): added a const
+	  qualifier to domain.
+
+	* In osrfSystemBootstrap(): added a const qualifier
+	  to appname.
+
+	* In osrfBigHashFree: added a const qualifier to key,
+	  and removed a pointless cast.
+
+	* In osrfStringArrayRemove(): fixed a bug whereby we would decrement
+	  the size member even if no string was actually removed.
+	  
+	  Added Doxygen-style comments to document everything.
+	  
+	  Removed a few comments in the header so that they wouldn't
+	  override comments in the implementation file.
+
+2009-09-11  scottmk
+
+	* In osrfNewHash(): specify a size for the osrfList used as a hash table,
+	  so as to avoid wasting memory.
+	  
+	  In osrfHashSet(): rearranged the logic a bit for clarity; no change in
+	  behavior.
+	  
+	  In osrfHashIteratorNext(): added a bit of protection against a corrupted
+	  iterator.
+	  
+	  Throughout: added Doxygen-style comments for documentation. Removed
+	  some comments from the header so that they wouldn't override more
+	  complete comments from the implementation file.
+
+2009-09-10  erickson
+
+	* initial support for capturing bytes read from gateway response
+
+2009-09-10  dbs
+
+	* Use working Perl syntax in example print hostname command.
+
+	* Add a linefeed to the Perl "print hostname" command
+
+2009-09-08  scottmk
+
+	* 1. Moved the declaration of the osrf_host_config struct out of the header.
+	  Nothing outside of osrf_settings.c needs access to any members of this
+	  struct.
+	  
+	  2. Made the osrf_settings_new_host_config function static; removed its
+	  prototype from the header.
+	  
+	  3. Made the "config" pointer static.
+	  
+	  4. Rearranged osrf_settings_free_host_config a bit to protect against
+	  attempts to free the cached config twice.
+	  
+	  5. Finished adding doxygen-style markup comments.
+
+	* Tweaking comments for doxygen:
+	  
+	  Moved the overview from the implementation file to the header.
+	  
+	  Deleted some comments from the header so that they wouldn't
+	  override more complete comments from the implementation file.
+
+2009-09-04  scottmk
+
+	* Enhanced the error messages from osrf_settings_host_value() and
+	  osrf_settings_host_value_object() to include the requested
+	  search path. That should make it easier to identify the caller
+	  and thereby figure out what went wrong.
+	  
+	  Also: added a couple of Doxygen-style comments.
+
+2009-09-04  erickson
+
+	* for consistency with other config files and ease of install automation, set the
+	  default password to 'password'
+
+	* assume 'yes' to fetching dependencies; reduce the verbosity of package downloads
+
+2009-09-03  scottmk
+
+	* 1. In osrfListSetDefault(): install the standard function
+	  free() as the default item-freeing callback function,
+	  instead of the gossamer-thin and useless wrapper for it,
+	  osrfListVanillaFree(). This change eliminates a layer of
+	  function call overhead.
+	  
+	  2. Eliminate osrfListVanillaFree() as neither used nor useful.
+	  
+	  3. Add doxygen-style comments to document every function.
+
+	* 1. A minor streamlining of va_list_to_string(), to eliminate
+	  a layer of copying.
+	  
+	  2. Corrected some faulty comments for doxygen.
+
+2009-08-31  erickson
+
+	* repaired partial change from 'class' to 'pkg'. added use strict/warnings
+
+2009-08-31  scottmk
+
+	* 1. Add comments to be recognized by doxygen or other such
+	  documentation generators.
+	  
+	  2. Change the values returned by buffer_fadd(), buffer_add(),
+	  buffer_add_n(), and buffer_add_char() to make them more
+	  consistent. In practice we never pay any attention to the
+	  return values anyway.
+
+2009-08-28  sboyette
+
+	* changed 'my' globals to 'our' globals for testing purposes
+
+	* first tests
+
+	* more cleanup and documentation in progress
+
+	* yanking LogServer test file
+
+	* removing use of LogServer
+
+	* removing _json_hint_to_class
+
+	* shuffling around, adding POD stubs
+
+2009-08-25  sboyette
+
+	* removing OSRF::Utils::LogServer at berick's suggestion
+
+	* rearranging things a bit, docs. no actual code changes.
+
+	* new test files for Utils breakout
+
+	* removed $VERSION construct which caused undef warnings when not under svn, and
+	  only occurred in 2 modules
+
+	* method prettyJSON doesnt exist anymore
+
+	* ditto
+
+	* that last version change was rather poorly timed, as it turns out
+
+2009-08-21  sboyette
+
+	* local doc updates for recent changes. wondering how much point there is in
+	  keeping these around, long-term
+
+	* preëmptive version bump
+
+	* 'make check' works as promised. perl tests moved to 'check' target
+
+2009-08-20  sboyette
+
+	* updating MANIFEST for Module::Build-ness
+
+2009-08-17  sboyette
+
+	* added separate install fail diagnostic message
+
+	* removing files no longer needed
+
+	* 'make' will now just plain make again without proceeding to install.
+	  Added Build to files swept by 'make clean'
+
+	* Going back to dumping a script (unbreaking non-root make vs. make install)
+
+2009-08-13  sboyette
+
+	* Added DISTCLEANFILES to make "make distclean" work better
+
+	* AC_CONFIG_MACRO_DIR added at the behest of libtoolize
+
+	* Added distclean-local: target and DISTCLEANFILES to make 'make distclean' work
+	  superawesomely
+	  Added ACLOCAL_AMFLAGS at the behest of libtoolize
+
+	* Build.PL built; build/test/install all selfcontained and automatic now
+
+	* M::B changes
+
+	* M::B changes
+
+2009-08-05  scottmk
+
+	* Extended the JSON_INIT_CLEAR macro to avoid segfaults.
+	  
+	  Scenario: converting a JSON_BOOL, with a value of true, to a JSON_HASH or
+	  JSON_ARRAY. The true value (in a union with an osrfHash* and an osrfList*)
+	  was being interpreted as a non_NULL pointer and deferenced. Oops.
+	  
+	  With this change, we clear the boolean value (by nullifying one of the
+	  unioned pointers) whenever changing from a JSON_BOOL to anything else.
+
+	* Performance tweak to jsonIterator.
+	  
+	  Instead of storing a malloc'd copy of the key of a JSON_HASH entry,
+	  just store a const pointer to the key string stored in the
+	  internal osrfHash. That way we don't have to do a malloc and
+	  free every time we bump the iterator.
+	  
+	  This change also requires the addition of a couple of const qualifiers
+	  in the client code.
+
+2009-07-29  erickson
+
+	* set the 'from' address in outbound jabber messages
+
+	* set the 'from' address in outbound xmpp messages
+
+2009-07-28  erickson
+
+	* reduce unnecessary calls to fcntl() while reading from the socket
+
