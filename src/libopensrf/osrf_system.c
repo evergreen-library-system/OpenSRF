@@ -51,6 +51,9 @@ static volatile sig_atomic_t sig_caught;
 /** Boolean: set to true when we finish shutting down. */
 static int shutdownComplete = 0;
 
+/** Name of file to which to write the process ID of the child process */
+char* pidfile_name = NULL;
+
 static void add_child( pid_t pid, const char* app, const char* libfile );
 static void delete_child( ChildNode* node );
 static void delete_all_children( void );
@@ -119,6 +122,27 @@ static void handleKillSignal( int signo ) {
 */
 transport_client* osrfSystemGetTransportClient( void ) {
 	return osrfGlobalTransportClient;
+}
+
+/**
+	@brief Save a copy of a file name to be used for writing a process ID.
+	@param name Designated file name, or NULL.
+
+	Save a file name for later use in saving a process ID.  If @a name is NULL, leave
+	the file name NULL.
+
+	When the parent process spawns a child, the child becomes a daemon.  The parent writes the
+	child's process ID to the PID file, if one has been designated, so that some other process
+	can retrieve the PID later and kill the daemon.
+*/
+void osrfSystemSetPidFile( const char* name ) {
+	if( pidfile_name )
+		free( pidfile_name );
+
+	if( name )
+		pidfile_name = strdup( name );
+	else
+		pidfile_name = NULL;
 }
 
 /**
@@ -241,6 +265,7 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 		jsonObjectFree(apps);
 
 		const char* appname = NULL;
+		int first_launch = 1;             // Boolean
 		i = 0;
 		while( (appname = osrfStringArrayGetString(arr, i++)) ) {
 
@@ -266,9 +291,35 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 					osrfLogInfo( OSRF_LOG_MARK, "Running application child %s: process id %ld",
 								 appname, (long) pid );
 
+					if( first_launch ) {
+						if( pidfile_name ) {
+							// Write our own PID to a PID file so that somebody can use it to
+							// send us a signal later.  If we don't find any C apps to launch,
+							// then we will quietly exit without writing a PID file, and without
+							// waiting to be killed by a signal.
+
+							FILE* pidfile = fopen( pidfile_name, "w" );
+							if( !pidfile ) {
+								osrfLogError( OSRF_LOG_MARK, "Unable to open PID file \"%s\": %s",
+									pidfile_name, strerror( errno ) );
+								free( pidfile_name );
+								pidfile_name = NULL;
+								return -1;
+							} else {
+								fprintf( pidfile, "%ld\n", (long) getpid() );
+								fclose( pidfile );
+							}
+						}
+						first_launch = 0;
+					}
+
 				} else {         // if child, run the application
 
 					osrfLogInfo( OSRF_LOG_MARK, " * Running application %s\n", appname);
+					if( pidfile_name ) {
+						free( pidfile_name );    // tidy up some debris from the parent
+						pidfile_name = NULL;
+					}
 					if( osrfAppRegisterApplication( appname, libfile ) == 0 )
 						osrf_prefork_run(appname);
 
@@ -299,6 +350,10 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 				osrfLogError(OSRF_LOG_MARK, "Exiting top-level system loop with error: %s",
 						strerror( errno ) );
 
+			// Since we're not being killed by a signal as usual, delete the PID file
+			// so that no one will try to kill us when we're already dead.
+			if( pidfile_name )
+				remove( pidfile_name );
 			break;
 		} else {
 			report_child_status( pid, status );
@@ -309,6 +364,8 @@ int osrfSystemBootstrap( const char* hostname, const char* configfile,
 	osrfConfigCleanup();
 	osrf_system_disconnect_client();
 	osrf_settings_free_host_config(NULL);
+	free( pidfile_name );
+	pidfile_name = NULL;
 	return 0;
 }
 
@@ -588,8 +645,6 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 	snprintf(buf, len - 1, "%s_%s_%s_%ld", resource, host, tbuf, (long) getpid() );
 
 	if(client_connect( client, username, password, buf, 10, AUTH_DIGEST )) {
-		/* child nodes will leak the parents client... but we can't free
-			it without disconnecting the parents client :( */
 		osrfGlobalTransportClient = client;
 	}
 

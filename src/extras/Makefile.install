@@ -3,8 +3,8 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (etch/lenny), Ubuntu (hardy/intrepid/karmic), and Gentoo.
-# Working towards support of CentOS 5 / RHEL 5.
+# Currently supports Debian (etch/lenny), Ubuntu (hardy/karmic), and Gentoo.
+# Working towards support of CentOS 5 / RHEL 5 and Fedora.
 # Installs Perl prereqs, libjs with Perl wrapper
 #
 # usage:
@@ -14,8 +14,6 @@
 # 	- or -
 # 	make -f Makefile.install ubuntu-hardy
 # 	- or -
-# 	make -f Makefile.install ubuntu-intrepid
-# 	- or -
 # 	make -f Makefile.install ubuntu-karmic
 # 	- or -
 # 	make -f Makefile.install centos
@@ -23,6 +21,8 @@
 # 	make -f Makefile.install rhel
 # 	- or -
 # 	make -f Makefile.install gentoo
+# 	- or -
+# 	make -f Makefile.install fedora13
 #
 # Notes:
 #
@@ -42,15 +42,19 @@ SHELL=/bin/bash
 # Gentoo needs explicit versions on many of these packages
 # to simulate a "blessed" set of packages
 
+# 64 or 32 bit os?
+LBITS=$(shell getconf LONG_BIT)
+
 # ejabberd is not packaged on CentOS/RHEL, so we have to
 # download the installable package from the source
 EJABBERD_VER=2.1.2
-EJABBERD_PKG=ejabberd-2.1.2-linux-x86_64-installer.bin
+EJABBERD_PKG=ejabberd-2.1.2-linux-x86-installer.bin
 EJABBERD_PKG_x64=ejabberd-2.1.2-linux-x86_64-installer.bin
 EJABBERD_HOST=http://www.process-one.net/downloads/ejabberd
 
 # Centos and Redhat will require the rpmforge repository mostly for memcache and perl modules
-RPMFORGE_PKG=rpmforge-release-0.5.1-1.el5.rf.x86_64.rpm
+RPMFORGE_PKG_x64=rpmforge-release-0.5.1-1.el5.rf.x86_64.rpm
+RPMFORGE_PKG=rpmforge-release-0.5.1-1.el5.rf.i386.rpm
 RPMFORGE_HOST=http://packages.sw.be/rpmforge-release
 
 # need newer libtool, autoconf, and automake on centos
@@ -125,7 +129,7 @@ DEBS =  \
 	python-setuptools
 
 CENTOS = \
-	apr-util-devel.x86_64 \
+	apr-util-devel \
 	autoconf \
 	automake \
 	gcc \
@@ -162,19 +166,13 @@ CENTOS = \
 	perl-Log-Log4perl \
 	perl-Memcached-libmemcached \
 	perl-Module-Build \
-	perl-Net-Jabber \
 	perl-Net-Server \
-	perl-RPC-XML \
 	perl-Template-Toolkit \
 	perl-Test-Pod \
 	perl-Tie-IxHash \
 	perl-UNIVERSAL-require \
 	perl-Unix-Syslog \
-	perl-XML-LibXML \
-	perl-XML-LibXSLT \
 	perl-XML-Parser \
-	perl-XML-Simple \
-	perl-XML-RPC \
 	psmisc \
 	python-devel \
 	python-setuptools\
@@ -182,6 +180,71 @@ CENTOS = \
 	wget
 
 CENTOS_PERL = \
+	Net::Jabber \
+	Net::XMPP \
+	RPC::XML \
+	XML::LibXML \
+	XML::LibXSLT \
+	XML::Simple
+
+FEDORAS = \
+	autoconf \
+	automake \
+	ejabberd \
+	expat-devel \
+	gcc \
+	gdbm-devel \
+	httpd \
+	httpd-devel \
+	less \
+	libgcrypt-devel \
+	libmemcached \
+	libmemcached-devel \
+	libtool \
+	libxml2-devel \
+	libxml2-python \
+	libxslt-devel \
+	make \
+	memcached \
+	mod_perl \
+	ntpdate \
+	perl-Cache-Memcached \
+	perl-Class-DBI \
+	perl-Class-DBI-AbstractSearch \
+	perl-Class-DBI-SQLite \
+	perl-DateTime-Format-Builder \
+	perl-DateTime-Format-ISO8601 \
+	perl-DateTime-Format-Mail \
+	perl-DateTime-Set \
+	perl-devel \
+	perl-Error \
+	perl-File-Find-Rule \
+	perl-FreezeThaw \
+	perl-JSON-XS \
+	perl-libwww-perl \
+	perl-Log-Log4perl \
+	perl-Module-Build \
+	perl-Net-Jabber \
+	perl-Net-Server \
+	perl-RPC-XML \
+	perl-SQL-Abstract-Limit \
+	perl-Template-Toolkit \
+	perl-Test-Deep \
+	perl-Test-Exception \
+	perl-Test-Pod \
+	perl-Tie-IxHash \
+	perl-UNIVERSAL-require \
+	perl-Unix-Syslog \
+	perl-XML-LibXML \
+	perl-XML-LibXSLT \
+	perl-XML-Simple \
+	psmisc \
+	python-devel \
+	python-dns \
+	python-memcached \
+	python-setuptools \
+	python-simplejson \
+	readline-devel
 
 GENTOOS = \
 	vim\
@@ -266,15 +329,15 @@ etch: install_cpan
 lenny: install_extra_debs
 generic_debian: install_debs install_cpan_force install_cpan_xml debian_sys_config
 
+fedora13: install_fedora_rpms
+
 gentoo: install_gentoos install_gentoo_rc install_gentoo_perl install
 
 rhel: centos
 
 ubuntu-hardy: generic_ubuntu install_cpan_xml hardy
-ubuntu-intrepid: generic_ubuntu install_cpan_xml intrepid
 ubuntu-karmic: generic_ubuntu karmic
 hardy: install_cpan install_libmemcached 
-intrepid: install_extra_debs install_libmemcached 
 karmic: install_extra_debs install_extra_debs_karmic
 generic_ubuntu: install_debs install_cpan_force debian_sys_config
 
@@ -293,16 +356,39 @@ install_cpan_xml:
 	for m in $(CPAN_MODULES_XML); do perl -MCPAN -e "install \"$$m\";"; done
 
 # Install ejabberd from official project installer binary
-install_ejabberd:    
-	if [ ! -f $(EJABBERD_PKG).gz ]; then wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG).gz; fi;
-	gunzip $(EJABBERD_PKG).gz
-	chmod u+x $(EJABBERD_PKG)
-	./$(EJABBERD_PKG) --mode unattended --prefix /opt/ejabberd --adminpw opensrf
+install_ejabberd:
+	if [ $(LBITS) -eq 64 ]; then \
+		if [ ! -f $(EJABBERD_PKG_x64).gz ]; then \
+			wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG_x64).gz; \
+		fi; \
+		gunzip $(EJABBERD_PKG_x64).gz; \
+		chmod u+x $(EJABBERD_PKG_x64); \
+		./$(EJABBERD_PKG_x64) --mode unattended --prefix /opt/ejabberd --adminpw opensrf ; \
+	fi;
+	if [ $(LBITS) -eq 32 ]; then \
+		if [ ! -f $(EJABBERD_PKG).gz ]; then \
+			wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG).gz; \
+		fi; \
+		gunzip $(EJABBERD_PKG).gz; \
+		chmod u+x $(EJABBERD_PKG); \
+		./$(EJABBERD_PKG) --mode unattended --prefix /opt/ejabberd --adminpw opensrf ; \
+	fi;
 
 # Install rpmforge for redhat and centos
 install_rpmforge:
-	if [ ! -f $(RPMFORGE_PKG).gz ]; then wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG); fi;
-	rpm -Uvh --force ./$(RPMFORGE_PKG)
+	if [ $(LBITS) -eq 64 ]; then \
+		if [ ! -f $(RPMFORGE_PKG_x64) ]; then \
+			wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG_x64) ; \
+			yum -y remove subversion*i386 ; \
+		fi; \
+		rpm -Uvh --force ./$(RPMFORGE_PKG_x64) ; \
+	fi;
+	if [ $(LBITS) -eq 32 ]; then \
+		if [ ! -f $(RPMFORGE_PKG) ]; then \
+			wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG) ; \
+		fi; \
+		rpm -Uvh --force ./$(RPMFORGE_PKG) ; \
+	fi;
 	yum update -y
 
 # Install automake, autoconf, and libtool
@@ -383,9 +469,14 @@ install_gentoo_perl:
 
 # ------------------------------------------------------------------
 
+# Fedora
+install_fedora_rpms:
+	yum -y install $(FEDORAS)
+
 # CENTOS
 install_centos_rpms:
 	yum -y install $(CENTOS)
+	yum -y update
 
 install_centos_perl:
 	for m in $(CENTOS_PERL_FORCE); do perl -MCPAN -e "CPAN::Shell->force(qw#install $$m#);"; done

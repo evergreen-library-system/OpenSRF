@@ -19,9 +19,6 @@
 extern "C" {
 #endif
 
-#define DEF_RECV_TIMEOUT 6 /* receive timeout */
-#define DEF_QUEUE_SIZE
-
 enum OSRF_SESSION_STATE { 
 	OSRF_SESSION_CONNECTING,
 	OSRF_SESSION_CONNECTED,
@@ -87,6 +84,10 @@ struct osrf_app_session_struct {
 
 	/** Hash table of pending requests. */
 	osrfAppRequest* request_hash[ OSRF_REQUEST_HASH_SIZE ];
+
+	/** Boolean: true if the app wants to terminate the process.  Typically this means that */
+	/** a drone has lost its database connection and can therefore no longer function.      */
+	int panic;
 };
 typedef struct osrf_app_session_struct osrfAppSession;
 
@@ -148,6 +149,8 @@ int osrfAppSessionStatus( osrfAppSession* ses, int type,
 		const char* name, int reqId, const char* message );
 
 void osrfAppSessionCleanup( void );
+
+void osrfAppSessionPanic( osrfAppSession* ses );
 
 #ifdef __cplusplus
 }

@@ -647,9 +647,8 @@ char* uescape( const char* string, int size, int full_escape ) {
 	@brief Become a proper daemon.
 	@return 0 if successful, or -1 if not.
 
-	Call fork().  The parent exits.  The child moves to the root
-	directory, detaches from the terminal, and redirects the
-	standard streams (stdin, stdout, stderr) to /dev/null.
+	Call fork().  The parent exits.  The child moves to the root directory, detaches from
+	the terminal, and redirects the standard streams (stdin, stdout, stderr) to /dev/null.
 */
 int daemonize( void ) {
 	pid_t f = fork();

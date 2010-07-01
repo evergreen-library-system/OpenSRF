@@ -19,7 +19,6 @@ Well-tested values for <osname> include:
   * "debian-etch" for Debian 4.0
   * "debian-lenny" for Debian 5.0
   * "ubuntu-hardy" for Ubuntu 8.04
-  * "ubuntu-intrepid" for Ubuntu 8.10
   * "ubuntu-karmic" for Ubuntu 9.10
 
 Less-tested values for <osname> include:

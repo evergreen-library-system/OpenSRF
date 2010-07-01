@@ -64,38 +64,38 @@ static void parseErrorHandler( void *session, const char* msg, ... );
 // Tells the SAX parser which functions will be used as event callbacks
 // ---------------------------------------------------------------------------------
 static xmlSAXHandler SAXHandlerStruct = {
-   NULL,							/* internalSubset */
-   NULL,							/* isStandalone */
-   NULL,							/* hasInternalSubset */
-   NULL,							/* hasExternalSubset */
-   NULL,							/* resolveEntity */
-   NULL,							/* getEntity */
-   NULL,							/* entityDecl */
-   NULL,							/* notationDecl */
-   NULL,							/* attributeDecl */
-   NULL,							/* elementDecl */
-   NULL,							/* unparsedEntityDecl */
-   NULL,							/* setDocumentLocator */
-   NULL,							/* startDocument */
-   NULL,							/* endDocument */
-   startElementHandler,		/* startElement */
-   endElementHandler,		/* endElement */
-   NULL,							/* reference */
-   characterHandler,			/* characters */
-   NULL,							/* ignorableWhitespace */
-   NULL,							/* processingInstruction */
-   NULL,							/* comment */
-   parseWarningHandler,		/* xmlParserWarning */
-   parseErrorHandler,		/* xmlParserError */
-   NULL,							/* xmlParserFatalError : unused */
-   NULL,							/* getParameterEntity */
-   NULL,							/* cdataBlock; */
-   NULL,							/* externalSubset; */
-   1,
-   NULL,
-   NULL,							/* startElementNs */
-   NULL,							/* endElementNs */
-   NULL							/* xmlStructuredErrorFunc */
+	NULL,                  /* internalSubset */
+	NULL,                  /* isStandalone */
+	NULL,                  /* hasInternalSubset */
+	NULL,                  /* hasExternalSubset */
+	NULL,                  /* resolveEntity */
+	NULL,                  /* getEntity */
+	NULL,                  /* entityDecl */
+	NULL,                  /* notationDecl */
+	NULL,                  /* attributeDecl */
+	NULL,                  /* elementDecl */
+	NULL,                  /* unparsedEntityDecl */
+	NULL,                  /* setDocumentLocator */
+	NULL,                  /* startDocument */
+	NULL,                  /* endDocument */
+	startElementHandler,   /* startElement */
+	endElementHandler,     /* endElement */
+	NULL,                  /* reference */
+	characterHandler,      /* characters */
+	NULL,                  /* ignorableWhitespace */
+	NULL,                  /* processingInstruction */
+	NULL,                  /* comment */
+	parseWarningHandler,   /* xmlParserWarning */
+	parseErrorHandler,     /* xmlParserError */
+	NULL,                  /* xmlParserFatalError : unused */
+	NULL,                  /* getParameterEntity */
+	NULL,                  /* cdataBlock; */
+	NULL,                  /* externalSubset; */
+	1,
+	NULL,
+	NULL,                  /* startElementNs */
+	NULL,                  /* endElementNs */
+	NULL                   /* xmlStructuredErrorFunc */
 };
 
 // ---------------------------------------------------------------------------------
@@ -144,23 +144,23 @@ transport_session* init_transport( const char* server,
 	session->component = component;
 
 	/* initialize the data buffers */
-	session->body_buffer		= buffer_init( JABBER_BODY_BUFSIZE );
-	session->subject_buffer		= buffer_init( JABBER_SUBJECT_BUFSIZE );
-	session->thread_buffer		= buffer_init( JABBER_THREAD_BUFSIZE );
-	session->from_buffer		= buffer_init( JABBER_JID_BUFSIZE );
-	session->status_buffer		= buffer_init( JABBER_STATUS_BUFSIZE );
-	session->recipient_buffer	= buffer_init( JABBER_JID_BUFSIZE );
+	session->body_buffer        = buffer_init( JABBER_BODY_BUFSIZE );
+	session->subject_buffer     = buffer_init( JABBER_SUBJECT_BUFSIZE );
+	session->thread_buffer      = buffer_init( JABBER_THREAD_BUFSIZE );
+	session->from_buffer        = buffer_init( JABBER_JID_BUFSIZE );
+	session->status_buffer      = buffer_init( JABBER_STATUS_BUFSIZE );
+	session->recipient_buffer   = buffer_init( JABBER_JID_BUFSIZE );
 	session->message_error_type = buffer_init( JABBER_JID_BUFSIZE );
-	session->session_id			= buffer_init( 64 );
+	session->session_id         = buffer_init( 64 );
 
 	session->message_error_code = 0;
 
 	/* for OpenSRF extensions */
-	session->router_to_buffer	= buffer_init( JABBER_JID_BUFSIZE );
-	session->router_from_buffer	= buffer_init( JABBER_JID_BUFSIZE );
-	session->osrf_xid_buffer	= buffer_init( JABBER_JID_BUFSIZE );
-	session->router_class_buffer	= buffer_init( JABBER_JID_BUFSIZE );
-	session->router_command_buffer	= buffer_init( JABBER_JID_BUFSIZE );
+	session->router_to_buffer   = buffer_init( JABBER_JID_BUFSIZE );
+	session->router_from_buffer = buffer_init( JABBER_JID_BUFSIZE );
+	session->osrf_xid_buffer    = buffer_init( JABBER_JID_BUFSIZE );
+	session->router_class_buffer    = buffer_init( JABBER_JID_BUFSIZE );
+	session->router_command_buffer  = buffer_init( JABBER_JID_BUFSIZE );
 
 	session->router_broadcast   = 0;
 
@@ -187,7 +187,7 @@ transport_session* init_transport( const char* server,
 	session->sock_mgr->data_received = &grab_incoming;
 	session->sock_mgr->on_socket_closed = NULL;
 	session->sock_mgr->socket = NULL;
-	session->sock_mgr->blob	= session;
+	session->sock_mgr->blob = session;
 
 	session->port = port;
 	session->server = strdup(server);
@@ -227,7 +227,7 @@ int session_free( transport_session* session ) {
 	that would disconnect the parent).
 
 	The only error condition is a NULL pointer argument.
- */
+*/
 int session_discard( transport_session* session ) {
 	if( ! session )
 		return 0;
@@ -372,7 +372,7 @@ int session_connect( transport_session* session,
 
 	// Open a client socket connecting to the Jabber server
 	if(session->port > 0) {   // use TCP
-		session->sock_id = socket_open_tcp_client( 
+		session->sock_id = socket_open_tcp_client(
 				session->sock_mgr, session->port, session->server );
 		if( session->sock_id <= 0 ) {
 			session->sock_id = 0;
@@ -694,7 +694,7 @@ static void startElementHandler(
 	@param attr_name Name of the attribute you're looking for.
 	@return The value of the attribute if found, or NULL if not.
 
-	In the array to which @a atts points, the zeroth entry is an attribute name, and the 
+	In the array to which @a atts points, the zeroth entry is an attribute name, and the
 	one after that is its value.  Subsequent entries alternate between names and values.
 	The last entry is NULL to terminate the list.
 */
@@ -882,10 +882,12 @@ static void characterHandler(
 	}
 
 	if( machine->in_error ) {
-		/* for now... */
-		osrfLogWarning( OSRF_LOG_MARK,  "ERROR XML fragment: %s\n", ch );
+		char msg[ len + 1 ];
+		strncpy( msg, p, len );
+		msg[ len ] = '\0';
+		osrfLogWarning( OSRF_LOG_MARK,
+			"Text of error message received from Jabber: %s", msg );
 	}
-
 }
 
 /**

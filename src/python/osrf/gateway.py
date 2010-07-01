@@ -69,14 +69,15 @@ class JSONGatewayRequest(GatewayRequest):
         obj = to_object(data)
 
         if obj['status'] != 200:
-            sys.stderr.write('JSON gateway returned status %d:\n%s\n' % (obj['status'], s))
+            sys.stderr.write('JSON gateway returned status %d:\n' % (obj['status']))
             return None
 
         # the gateway wraps responses in an array to handle streaming data
         # if there is only one item in the array, it (probably) wasn't a streaming request
         p = obj['payload']
         if len(p) > 1: return p
-        return p[0]
+        if len(p): return p[0]
+        return None
 
     def encodeParam(self, param):
         return osrf.json.to_json(param)

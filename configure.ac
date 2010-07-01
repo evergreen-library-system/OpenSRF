@@ -1,6 +1,6 @@
 # Copyright (C) 2008 Equinox Software, Inc.
 # Kevin Beswick <kevinbeswick00@gmail.com>
-# Copyright (C) 2009 Dan Scott <dscott@laurentian.ca>
+# Copyright (C) 2009-2010 Dan Scott <dscott@laurentian.ca>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -58,8 +58,6 @@ AC_DEFUN([AC_PYTHON_MOD],[
 		exit 1
         fi
 ])
-
-
 
 #-------------------------------
 # Installation options
@@ -146,6 +144,7 @@ AM_CONDITIONAL(DEBUG, test x$debug = xtrue)
 # path to the directory containing the java dependency jar files (included if java installs)
 if test $OSRF_INSTALL_JAVA; then
 	AC_SUBST([OSRF_JAVA_DEPSDIR], [/opt/java])
+    AC_CONFIG_FILES([src/java/Makefile])
 fi
 
 #--------------------------------
@@ -171,18 +170,44 @@ AC_ARG_WITH([apxs],
 [  --with-apxs=path                 location of the apxs (Apache extension) tool (default is /usr/bin/apxs2)],
 [APXS2=${withval}],
 [APXS2=/usr/bin/apxs2])
+if ! test -x "$APXS2"; then
+	for i in /usr/bin /usr/sbin /usr/local/apache/bin /usr/local/apache2/bin ; do
+		for j in apxs apxs2 ; do
+			if test -x "$i/$j"; then
+				APXS2="$i/$j"
+				break
+			fi
+		done
+	done
+fi
 AC_SUBST([APXS2])
 
 AC_ARG_WITH([apache],
 [  --with-apache=path               location of the Apache headers (default is /usr/include/apache2)],
 [APACHE2_HEADERS=${withval}],
 [APACHE2_HEADERS=/usr/include/apache2])
+if ! test -d "$APACHE2_HEADERS"; then
+	for i in /usr/include/httpd ; do
+		if test -d "$i"; then
+			APACHE2_HEADERS="$i"
+			break
+		fi
+	done
+fi
 AC_SUBST([APACHE2_HEADERS])
 
 AC_ARG_WITH([apr],
 [  --with-apr=path                  location of the Apache Portable Runtime headers (default is /usr/include/apr-1.0/)],
 [APR_HEADERS=${withval}],
 [APR_HEADERS=/usr/include/apr-1.0])
+if ! test -d "$APR_HEADERS"; then
+	for i in /usr/include/apr-1 ; do
+		if test -d "$i"; then
+			APR_HEADERS="$i"
+			break
+		fi
+	done
+fi
 AC_SUBST([APR_HEADERS])
 
 AC_ARG_WITH([libxml],
@@ -227,6 +252,19 @@ IFS=${IFSBAK}
 AC_CONFIG_FILES([Makefile
 	src/Makefile])
 
+#PYTHON TESTS
+if test x$OSRF_INSTALL_PYTHON = xtrue; then
+    AC_CHECK_PROG([HAVE_PYTHON],python,yes,no)
+    if test $HAVE_PYTHON = "no"; then
+        AC_MSG_ERROR([*** python not found, aborting])
+    fi
+    AC_PYTHON_MOD([setuptools])
+    AC_CONFIG_FILES([
+        examples/math_client.py
+        src/python/Makefile
+    ])
+fi
+
 if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	#--------------------------------
 	# Check for dependencies.
@@ -239,16 +277,6 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	else
 	AC_MSG_ERROR([*** apxs not found, aborting])
 	fi  
-
-	#PYTHON TESTS
-	if test x$OSRF_INSTALL_PYTHON = xtrue; then
-		AC_CHECK_PROG([HAVE_PYTHON],python,yes,no)
-		if test $HAVE_PYTHON = "no"; then
-			AC_MSG_ERROR([*** python not found, aborting])
-		fi
-		AC_PYTHON_MOD([setuptools])
-	fi
-
 
 	#-----------------------------
 	# Checks for libraries.
@@ -302,16 +330,13 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	AC_CONFIG_FILES([doc/dokuwiki-doc-stubber.pl
 			 examples/math_xul_client/Makefile
 			 examples/math_bench.pl
-			 examples/math_client.py
 			 examples/multisession-test.pl
 			 src/c-apps/Makefile
 			 src/gateway/Makefile
-			 src/java/Makefile
 			 src/jserver/Makefile
 			 src/libopensrf/Makefile
 			 src/perl/Makefile
 			 src/ports/strn_compat/Makefile
-			 src/python/Makefile
 			 src/router/Makefile
 			 src/srfsh/Makefile
 			 bin/opensrf-perl.pl

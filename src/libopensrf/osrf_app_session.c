@@ -240,8 +240,12 @@ void osrf_app_session_request_reset_timeout( osrfAppSession* session, int req_id
 	becomes available before the end of the timeout; otherwise NULL;
 
 	If there is already a message available in the input queue for this request, dequeue and
-	return it 	immediately.  Otherwise wait up to timeout seconds until you either get an
+	return it immediately.  Otherwise wait up to timeout seconds until you either get an
 	input message for the specified request, run out of time, or encounter an error.
+
+	If the only message we receive for this request is a STATUS message with a status code
+	OSRF_STATUS_COMPLETE, then return NULL.  That means that the server has nothing further
+	to send in response to this request.
 
 	You may also receive other messages for other requests, and other sessions.  These other
 	messages will be wholly or partially processed behind the scenes while you wait for the
@@ -271,7 +275,7 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 		osrfLogDebug( OSRF_LOG_MARK,  "In app_request receive with remaining time [%d]",
 				(int) remaining );
 
-		
+
 		osrf_app_session_queue_wait( req->session, 0, NULL );
 		if(req->session->transport_error) {
 			osrfLogError(OSRF_LOG_MARK, "Transport error in recv()");
@@ -474,6 +478,7 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 	session->remote_service = strdup(remote_service);
 	session->session_locale = NULL;
 	session->transport_error = 0;
+	session->panic = 0;
 
 	#ifdef ASSUME_STATELESS
 	session->stateless = 1;
@@ -813,6 +818,8 @@ int osrfAppSessionConnect( osrfAppSession* session ) {
 
 	/* defaulting to protocol 1 for now */
 	osrfMessage* con_msg = osrf_message_init( CONNECT, session->thread_trace, 1 );
+
+	// Address this message to the router
 	osrf_app_session_reset_remote( session );
 	session->state = OSRF_SESSION_CONNECTING;
 	int ret = _osrf_app_session_send( session, con_msg );
@@ -999,12 +1006,12 @@ static int _osrf_app_session_send( osrfAppSession* session, osrfMessage* msg ){
 	message; process subsequent messages if they are available, but don't wait for them.
 
 	The first parameter identifies an osrfApp session, but all we really use it for is to
-	get a pointer to the transport_session.  Typically, if not always, a given process
-	opens only a single transport_session (to talk to the Jabber server), and all app
-	sessions in that process use the same transport_session.
+	get a pointer to the transport_session.  Typically, a given process opens only a single
+	transport_session (to talk to the Jabber server), and all app sessions in that process
+	use the same transport_session.
 
-	Hence this function indiscriminately waits for input messages for all osrfAppSessions,
-	not just the one specified.
+	Hence this function indiscriminately waits for input messages for all osrfAppSessions
+	tied to the same Jabber session, not just the one specified.
 
 	Dispatch each message to the appropriate processing routine, depending on its type
 	and contents, and on whether we're acting as a client or as a server for that message.
@@ -1059,7 +1066,7 @@ void osrfAppSessionFree( osrfAppSession* session ){
 	free(session->orig_remote_id);
 	free(session->session_id);
 	free(session->remote_service);
-	
+
 	// Free the request hash
 	int i;
 	for( i = 0; i < OSRF_REQUEST_HASH_SIZE; ++i ) {
@@ -1192,7 +1199,7 @@ int osrfAppSessionStatus( osrfAppSession* ses, int type,
 
 /**
 	@brief Free the global session cache.
-	
+
 	Note that the osrfHash that implements the global session cache does @em not have a
 	callback function installed for freeing its cargo.  As a result, any remaining
 	osrfAppSessions are leaked, along with all the osrfAppRequests and osrfMessages they
@@ -1203,7 +1210,14 @@ void osrfAppSessionCleanup( void ) {
 	osrfAppSessionCache = NULL;
 }
 
+/**
+	@brief Arrange for immediate termination of the process.
+	@param ses Pointer to the current osrfAppSession.
 
-
-
-
+	Typical use case: a server drone loses its database connection, thereby becoming useless.
+	It terminates so that it will not receive further requests, being unable to service them.
+*/
+void osrfAppSessionPanic( osrfAppSession* ses ) {
+	if( ses )
+		ses->panic = 1;
+}
