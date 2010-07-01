@@ -3,8 +3,8 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (etch/lenny), Ubuntu (hardy/karmic), and Gentoo.
-# Working towards support of CentOS 5 / RHEL 5 and Fedora.
+# Currently supports Debian (etch/lenny), Ubuntu (hardy/karmic/lucid), and Gentoo.
+# Initial support for CentOS 5 / RHEL 5 and Fedora.
 # Installs Perl prereqs, libjs with Perl wrapper
 #
 # usage:
@@ -15,6 +15,8 @@
 # 	make -f Makefile.install ubuntu-hardy
 # 	- or -
 # 	make -f Makefile.install ubuntu-karmic
+# 	- or -
+# 	make -f Makefile.install ubuntu-lucid
 # 	- or -
 # 	make -f Makefile.install centos
 # 	- or -
@@ -27,7 +29,7 @@
 # Notes:
 #
 # 	This makefile has been tested much more with Ubuntu and Debian than
-#   CentOS, Gentoo, or RHEL.
+#   CentOS, Fedora, Gentoo, or RHEL.
 #
 # 	Gentoo (especially amd64) requires a good bit of masked package
 # 	mangling for some packages.  These are not documented here because
@@ -66,7 +68,7 @@ AUTOMAKE_HOST=http://ftp.gnu.org/gnu/automake
 AUTOMAKE_PKG=automake-1.11
 
 # libmemcached is only packaged on newer distros
-LIBMEMCACHED=libmemcached-0.35
+LIBMEMCACHED=libmemcached-0.40
 LIBMEMCACHED_HOST=http://download.tangent.org
 
 # XML::LibXSLT fails due to old libxslt
@@ -289,7 +291,7 @@ EXTRA_DEBS = \
 	libjson-xs-perl \
 	libnet-server-perl
 
-EXTRA_DEBS_UBUNTU_KARMIC = \
+EXTRA_DEBS_UBUNTU_LUCID = \
 	libmemcached-dev\
 	libxml-libxml-perl \
 	libxml-libxslt-perl
@@ -336,9 +338,10 @@ gentoo: install_gentoos install_gentoo_rc install_gentoo_perl install
 rhel: centos
 
 ubuntu-hardy: generic_ubuntu install_cpan_xml hardy
-ubuntu-karmic: generic_ubuntu karmic
+ubuntu-karmic: ubuntu-lucid
+ubuntu-lucid: generic_ubuntu lucid
 hardy: install_cpan install_libmemcached 
-karmic: install_extra_debs install_extra_debs_karmic
+lucid: install_extra_debs install_extra_debs_lucid
 generic_ubuntu: install_debs install_cpan_force debian_sys_config
 
 # - COMMON TARGETS ---------------------------------------------------------
@@ -452,8 +455,8 @@ install_extra_debs:
 	$(APT_TOOL) install $(EXTRA_DEBS)
 
 # Install even more packaged dependencies on modern distros
-install_extra_debs_karmic:
-	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_KARMIC)
+install_extra_debs_lucid:
+	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_LUCID)
 
 # ------------------------------------------------------------------
 # - GENTOO ---------------------------------------------------------
