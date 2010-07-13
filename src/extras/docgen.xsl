@@ -60,10 +60,10 @@ span.subcode { color:darkblue;}        </style>
 
 <!--#if expr="$QUERY_STRING = /all=on/" -->
   <!--#set var="all" value="on" -->
-  <!--#set var="method" value="opensrf.sysemt.method.all" -->
+  <!--#set var="method" value="opensrf.system.method.all" -->
 <!--#else -->
   <!--#set var="all" value="off" -->
-  <!--#set var="method" value="opensrf.sysemt.method" -->
+  <!--#set var="method" value="opensrf.system.method" -->
 <!--#endif -->
 
 <!--#if expr='$QUERY_STRING = /param=%22(.+?)%22/' -->
