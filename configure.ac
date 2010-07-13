@@ -36,7 +36,9 @@ fi
 
 # Perl and Python scripts don't want ${prefix} if no value was specified
 eval "eval CONF_DIR=$sysconfdir"
+eval "eval PID_DIR=$localstatedir"
 AC_SUBST([CONF_DIR])
+AC_SUBST([PID_DIR])
 
 AC_SUBST(prefix)
 AC_SUBST(bindir)

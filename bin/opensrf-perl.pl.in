@@ -28,7 +28,7 @@ use OpenSRF::Utils::Config;
 my $opt_action = undef;
 my $opt_service = undef;
 my $opt_config = "@CONF_DIR@/opensrf_core.xml";
-my $opt_pid_dir = "@TMP@";
+my $opt_pid_dir = "@PID_DIR@/run/opensrf";
 my $opt_no_daemon = 0;
 my $opt_settings_pause = 0;
 my $opt_localhost = 0;
