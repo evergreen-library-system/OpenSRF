@@ -13,7 +13,6 @@
 #include <opensrf/osrf_message.h>
 #include "opensrf/osrf_stack.h"
 
-static jsonObject* osrfMessageToJSON( const osrfMessage* msg );
 static osrfMessage* deserialize_one_message( const jsonObject* message );
 
 static char default_locale[17] = "en-US\0\0\0\0\0\0\0\0\0\0\0\0";
@@ -234,7 +233,7 @@ void osrf_message_set_status_info( osrfMessage* msg,
 
 
 /**
-	@brief Populate the _result_content membersof an osrfMessage.
+	@brief Populate the _result_content membersof an osrfMessage from a JSON string.
 	@param msg Pointer to the osrfMessage to be populated.
 	@param json_string A JSON string encoding a result.
 
@@ -246,6 +245,22 @@ void osrf_message_set_result_content( osrfMessage* msg, const char* json_string 
 		jsonObjectFree( msg->_result_content );
 
 	msg->_result_content = jsonParse(json_string);
+}
+
+
+/**
+	@brief Populate the _result_content membersof an osrfMessage from a JSON object.
+	@param msg Pointer to the osrfMessage to be populated.
+	@param obj Pointer to a jsonObject encoding a result.
+
+	Used for a RESULT message to return the results of a remote procedure call.
+*/
+void osrf_message_set_result( osrfMessage* msg, const jsonObject* obj ) {
+	if( msg == NULL || obj == NULL) return;
+	if( msg->_result_content )
+		jsonObjectFree( msg->_result_content );
+
+	msg->_result_content = jsonObjectDecodeClass( obj );
 }
 
 
@@ -364,7 +379,7 @@ char* osrf_message_serialize(const osrfMessage* msg) {
 
 	The calling code is responsible for freeing the returned jsonObject.
 */
-static jsonObject* osrfMessageToJSON( const osrfMessage* msg ) {
+jsonObject* osrfMessageToJSON( const osrfMessage* msg ) {
 
 	jsonObject* json = jsonNewObjectType(JSON_HASH);
 	jsonObjectSetClass(json, "osrfMessage");

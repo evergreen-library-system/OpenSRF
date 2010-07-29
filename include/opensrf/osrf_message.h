@@ -108,9 +108,13 @@ void osrf_message_set_status_info( osrfMessage*,
 
 void osrf_message_set_result_content( osrfMessage*, const char* json_string );
 
+void osrf_message_set_result( osrfMessage* msg, const jsonObject* obj );
+
 void osrfMessageFree( osrfMessage* );
 
 char* osrf_message_to_xml( osrfMessage* );
+
+jsonObject* osrfMessageToJSON( const osrfMessage* msg );
 
 char* osrf_message_serialize(const osrfMessage*);
 
