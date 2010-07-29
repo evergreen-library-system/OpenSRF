@@ -48,6 +48,19 @@ sub argc {
 	return $self->{argc};
 }
 
+sub max_chunk_size {
+	my $self = shift;
+	return 0 unless ref($self);
+	return $self->{max_chunk_size} if (defined($self->{max_chunk_size}));
+	return 10240;
+}
+
+sub max_chunk_count {
+	my $self = shift;
+	return 0 unless ref($self);
+	return $self->{max_chunk_count} || 0;
+}
+
 sub api_name {
 	my $self = shift;
 	return 1 unless ref($self);
@@ -138,6 +151,8 @@ sub handler {
 		if (ref $coderef) {
 			my @args = $app_msg->params;
 			my $appreq = OpenSRF::AppRequest->new( $session );
+			$appreq->max_chunk_size( $coderef->max_chunk_size );
+			$appreq->max_chunk_count( $coderef->max_chunk_count );
 
 			$log->debug( "in_request = $in_request : [" . $appreq->threadTrace."]", INTERNAL );
 			if( $in_request ) {

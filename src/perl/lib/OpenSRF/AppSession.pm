@@ -826,6 +826,12 @@ sub new {
 			threadTrace		=> $threadTrace,
 			payload			=> $payload,
 			complete		=> 0,
+			resp_count		=> 0,
+			max_chunk_count		=> 0,
+			current_chunk_count	=> 0,
+			max_chunk_size		=> 0,
+			current_chunk_size	=> 0,
+			current_chunk		=> [],
 			timeout_reset		=> 0,
 			recv_timeout		=> 30,
 			remaining_recv_timeout	=> 30,
@@ -837,6 +843,20 @@ sub new {
 	push @{ $self->session->{request_queue} }, $self;
 
 	return $self;
+}
+
+sub max_chunk_count {
+	my $self = shift;
+	my $value = shift;
+	$self->{max_chunk_count} = $value if (defined($value));
+	return $self->{max_chunk_count};
+}
+
+sub max_chunk_size {
+	my $self = shift;
+	my $value = shift;
+	$self->{max_chunk_size} = $value if (defined($value));
+	return $self->{max_chunk_size};
 }
 
 sub recv_timeout {
@@ -969,6 +989,26 @@ sub respond {
 		$response->content($msg);
 	}
 
+    if ($self->{max_chunk_count} > 0 or $self->{max_chunk_size} > 0) { # we are chunking, and we need to test the size or count
+
+        $self->{current_chunk_size} += OpenSRF::Utils::JSON->perl2JSON($response);
+        push @{$self->{current_chunk}}, $response;  
+        $self->{current_chunk_count}++;
+
+        if (
+                ($self->{max_chunk_size}  && $self->{current_chunk_size}  >= $self->{max_chunk_size} ) ||
+                ($self->{max_chunk_count} && $self->{current_chunk_count} >= $self->{max_chunk_count})
+        ) { # send chunk and reset
+            my $send_res = $self->session->send(( map { ('RESULT', $_) } @{$self->{current_chunk}} ), $self->threadTrace);
+            $self->{current_chunk} = [];
+            $self->{current_chunk_size} = 0;
+            $self->{current_chunk_count} = 0;
+            return $send_res;
+        } else { # not at a chunk yet, just queue it up
+            return $self->session->app_request( $self->threadTrace );
+        }
+    }
+
 	$self->session->send('RESULT', $response, $self->threadTrace);
 }
 
@@ -985,12 +1025,14 @@ sub respond_complete {
 		$response->content($msg);
 	}
 
+    push @{$self->{current_chunk}}, $response;
+
 	my $stat = OpenSRF::DomainObject::oilsConnectStatus->new(
 		statusCode => STATUS_COMPLETE(),
 		status => 'Request Complete' );
 
 
-	$self->session->send( 'RESULT' => $response, 'STATUS' => $stat, $self->threadTrace);
+	$self->session->send( ( map { ('RESULT', $_) } @{$self->{current_chunk}} ), 'STATUS' => $stat, $self->threadTrace);
 	$self->complete(1);
 }
 
