@@ -479,6 +479,7 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 	session->session_locale = NULL;
 	session->transport_error = 0;
 	session->panic = 0;
+	session->outbuf = NULL;   // Not used by client
 
 	#ifdef ASSUME_STATELESS
 	session->stateless = 1;
@@ -560,7 +561,8 @@ osrfAppSession* osrf_app_server_session_init(
 	// to the compile-time macro ASSUME_STATELESS.
 	int stateless = 0;
 	char* statel = osrf_settings_host_value("/apps/%s/stateless", our_app );
-	if(statel) stateless = atoi(statel);
+	if( statel )
+		stateless = atoi( statel );
 	free(statel);
 
 	session->remote_id = strdup(remote_id);
@@ -582,11 +584,15 @@ osrfAppSession* osrf_app_server_session_init(
 
 	session->userData = NULL;
 	session->userDataFree = NULL;
+	session->transport_error = 0;
 
 	// Initialize the hash table
 	int i;
 	for( i = 0; i < OSRF_REQUEST_HASH_SIZE; ++i )
 		session->request_hash[ i ] = NULL;
+
+	session->panic = 0;
+	session->outbuf = buffer_init( 4096 );
 
 	_osrf_app_session_push_session( session );
 	return session;
@@ -952,28 +958,42 @@ static int osrfAppSessionSendBatch( osrfAppSession* session, osrfMessage* msgs[]
 		}
 	}
 
-	// Bundle all the osrfMessages into a single transport_message, then send it.
+	// Translate the collection of osrfMessages into a JSON array
 	char* string = osrfMessageSerializeBatch(msgs, size);
 
+	// Send the JSON as the payload of a transport_message
 	if( string ) {
-
-		transport_message* t_msg = message_init(
-				string, "", session->session_id, session->remote_id, NULL );
-		message_set_osrf_xid( t_msg, osrfLogGetXid() );
-
-		retval = client_send_message( session->transport_handle, t_msg );
-		if( retval )
-			osrfLogError(OSRF_LOG_MARK, "client_send_message failed");
-
-		osrfLogInfo(OSRF_LOG_MARK, "[%s] sent %d bytes of data to %s",
-			session->remote_service, strlen(string), t_msg->recipient );
-
-		osrfLogDebug(OSRF_LOG_MARK, "Sent: %s", string );
-
+		retval = osrfSendTransportPayload( session, string );
 		free(string);
-		message_free( t_msg );
 	}
 
+	return retval;
+}
+
+/**
+	@brief Wrap a given string in a transport message and send it.
+	@param session Pointer to the osrfAppSession responsible for sending the message(s).
+	@param payload A string to be sent via Jabber.
+	@return 0 upon success, or -1 upon failure.
+
+	In practice the payload is normally a JSON string, but this function assumes nothing
+	about it.
+*/
+int osrfSendTransportPayload( osrfAppSession* session, const char* payload ) {
+	transport_message* t_msg = message_init(
+		payload, "", session->session_id, session->remote_id, NULL );
+	message_set_osrf_xid( t_msg, osrfLogGetXid() );
+
+	int retval = client_send_message( session->transport_handle, t_msg );
+	if( retval )
+		osrfLogError( OSRF_LOG_MARK, "client_send_message failed" );
+
+	osrfLogInfo(OSRF_LOG_MARK, "[%s] sent %d bytes of data to %s",
+		session->remote_service, strlen( payload ), t_msg->recipient );
+
+	osrfLogDebug( OSRF_LOG_MARK, "Sent: %s", payload );
+
+	message_free( t_msg );
 	return retval;
 }
 
@@ -1077,6 +1097,10 @@ void osrfAppSessionFree( osrfAppSession* session ){
 			app = next;
 		}
 	}
+
+	if( session->outbuf )
+		buffer_free( session->outbuf );
+
 	free(session);
 }
 

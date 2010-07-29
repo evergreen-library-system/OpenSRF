@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-enum OSRF_SESSION_STATE { 
+enum OSRF_SESSION_STATE {
 	OSRF_SESSION_CONNECTING,
 	OSRF_SESSION_CONNECTED,
 	OSRF_SESSION_DISCONNECTED
@@ -80,7 +80,7 @@ struct osrf_app_session_struct {
 	/** Callback function for freeing user's session data. */
 	void (*userDataFree) (void*);
 
-    int transport_error;
+	int transport_error;
 
 	/** Hash table of pending requests. */
 	osrfAppRequest* request_hash[ OSRF_REQUEST_HASH_SIZE ];
@@ -88,6 +88,9 @@ struct osrf_app_session_struct {
 	/** Boolean: true if the app wants to terminate the process.  Typically this means that */
 	/** a drone has lost its database connection and can therefore no longer function.      */
 	int panic;
+
+	/** Buffer used by server drone to collect outbound response messages */
+	growing_buffer* outbuf;
 };
 typedef struct osrf_app_session_struct osrfAppSession;
 
@@ -123,6 +126,8 @@ osrfMessage* osrfAppSessionRequestRecv(
 void osrf_app_session_request_finish( osrfAppSession* session, int request_id );
 
 int osrf_app_session_request_resend( osrfAppSession*, int request_id );
+
+int osrfSendTransportPayload( osrfAppSession* session, const char* payload );
 
 void osrf_app_session_reset_remote( osrfAppSession* );
 
