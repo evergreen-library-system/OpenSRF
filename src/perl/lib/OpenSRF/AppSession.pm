@@ -991,7 +991,7 @@ sub respond {
 
     if ($self->{max_chunk_count} > 0 or $self->{max_chunk_size} > 0) { # we are chunking, and we need to test the size or count
 
-        $self->{current_chunk_size} += OpenSRF::Utils::JSON->perl2JSON($response);
+        $self->{current_chunk_size} += length(OpenSRF::Utils::JSON->perl2JSON($response));
         push @{$self->{current_chunk}}, $response;  
         $self->{current_chunk_count}++;
 
