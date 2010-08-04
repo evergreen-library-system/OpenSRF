@@ -203,13 +203,8 @@ sub handler {
 				my $time = sprintf '%.3f', time() - $start;
 
 				$log->debug( "Method duration for [$method_name]:  ". $time );
-				if( defined( $resp ) ) {
-					$appreq->respond_complete( $resp );
-				} else {
-				        $appreq->status( OpenSRF::DomainObject::oilsConnectStatus->new(
-								statusCode => STATUS_COMPLETE(),
-								status => 'Request Complete' ) );
-				}
+				$appreq->respond_complete( $resp );
+
 			} catch Error with {
 				my $e = shift;
 				warn "Caught error from 'run' method: $e\n";
@@ -281,14 +276,9 @@ sub handler {
 					$log->debug( "Method duration for [".$aref->[2]->api_name." -> ".join(', ',@{$aref->[1]}).']:  '.$time, DEBUG );
 
 					$appreq = $aref->[0];	
-					if( ref( $response ) ) {
-						$appreq->respond_complete( $response );
-					} else {
-					        $appreq->status( OpenSRF::DomainObject::oilsConnectStatus->new(
-									statusCode => STATUS_COMPLETE(),
-									status => 'Request Complete' ) );
-					}
+					$appreq->respond_complete( $response );
 					$log->debug( "Executed: " . $appreq->threadTrace, INTERNAL );
+
 				} catch Error with {
 					my $e = shift;
 					if(UNIVERSAL::isa($e,"Error")) {

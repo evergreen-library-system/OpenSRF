@@ -1017,20 +1017,21 @@ sub respond_complete {
 	my $msg = shift;
 	return unless ($self and $self->session and !$self->complete);
 
-	my $response;
-	if (ref($msg) && UNIVERSAL::isa($msg, 'OpenSRF::DomainObject::oilsResult')) {
-		$response = $msg;
-	} else {
-		$response = new OpenSRF::DomainObject::oilsResult;
-		$response->content($msg);
-	}
+    if (defined($msg)) {
+    	my $response;
+	    if (ref($msg) && UNIVERSAL::isa($msg, 'OpenSRF::DomainObject::oilsResult')) {
+		    $response = $msg;
+    	} else {
+	    	$response = new OpenSRF::DomainObject::oilsResult;
+		    $response->content($msg);
+    	}
 
-    push @{$self->{current_chunk}}, $response;
+        push @{$self->{current_chunk}}, $response;
+    }
 
 	my $stat = OpenSRF::DomainObject::oilsConnectStatus->new(
 		statusCode => STATUS_COMPLETE(),
 		status => 'Request Complete' );
-
 
 	$self->session->send( ( map { ('RESULT', $_) } @{$self->{current_chunk}} ), 'STATUS' => $stat, $self->threadTrace);
 	$self->complete(1);
