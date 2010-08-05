@@ -8,4 +8,5 @@
   <port>5222</port>
   <logfile>LOCALSTATEDIR/log/srfsh.log</logfile>
   <loglevel>4</loglevel>
+  <client>true</client>
 </srfsh>
