@@ -99,40 +99,11 @@ extern "C" {
 */
 /*@{*/
 /**
-	@brief  Marks a method as a system method.
-
-	System methods are implemented by generic functions, called via static linkage.  They
-	are not loaded or executed from shared objects.
-*/
-#define OSRF_METHOD_SYSTEM          1
-/**
 	@brief Notes that the method may return more than one result.
 
 	For a @em streaming method, we register both an atomic method and a non-atomic method.
-	See also OSRF_METHOD_ATOMIC.
 */
 #define OSRF_METHOD_STREAMING       2
-/**
-	@brief  Combines all responses into a single RESULT message.
-
-	For a @em non-atomic method, the server returns each response to the client in a
-	separate RESULT message.  It sends a STATUS message at the end to signify the end of the
-	message stream.
-
-	For an @em atomic method, the server buffers all responses until the method returns,
-	and then sends them all at once in a single RESULT message (followed by a STATUS message).
-	Each individual response is encoded as an entry in a JSON array.  This buffering is
-	transparent to the function that implements the method.
-
-	Atomic methods incur less networking overhead than non-atomic methods, at the risk of
-	creating excessively large RESULT messages.  The HTTP gateway requires the atomic versions
-	of streaming methods because of the stateless nature of the HTTP protocol.
-
-	If OSRF_METHOD_STREAMING is set for a method, the application generates both an atomic
-	and a non-atomic method, whose names are identical except that the atomic one carries a
-	suffix of ".atomic".
-*/
-#define OSRF_METHOD_ATOMIC          4
 /**
 	@brief  Notes that a previous result to the same call may be available in memcache.
 
