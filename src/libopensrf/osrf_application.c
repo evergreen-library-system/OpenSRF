@@ -678,17 +678,18 @@ static int _osrfAppPostProcess( osrfMethodContext* ctx, int retcode ) {
 			ctx->method->name, retcode );
 
 	if(ctx->responses) {
-		// We have cached responses to return, collected in a JSON ARRAY (we haven't sent
-		// any responses yet).  Now send them all at once, followed by a STATUS message
-		// to say that we're finished.
+		// We have cached atomic responses to return, collected in a JSON ARRAY (we
+		// haven't sent any responses yet).  Now send them all at once, followed by
+		// a STATUS message to say that we're finished.
 		osrfAppRequestRespondComplete( ctx->session, ctx->request, ctx->responses );
 
 	} else {
-		// We have no cached responses to return.
+		// We have no cached atomic responses to return, but we may have some
+		// non-atomic messages waiting in the buffer.
 		if( retcode > 0 )
-			// Send a STATUS message to say that we're finished.
-			osrfAppSessionStatus( ctx->session, OSRF_STATUS_COMPLETE,
-					"osrfConnectStatus", ctx->request, "Request Complete" );
+			// Send a STATUS message to say that we're finished, and to force a
+			// final flush of the buffer.
+			osrfAppRespondComplete( ctx, NULL );
 	}
 
 	return 0;
