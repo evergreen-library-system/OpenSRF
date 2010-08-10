@@ -124,6 +124,7 @@ typedef struct {
 	//char* paramNotes;         /**< Description of the params expected for this method. */
 	int options;                /**< Bit switches setting various options for this method. */
 	void* userData;             /**< Opaque pointer to application-specific data. */
+	size_t bufsize;             /**< How big a buffer to use for non-atomic methods */
 
 	/*
 	int sysmethod;
@@ -148,6 +149,8 @@ int osrfAppRegisterMethod( const char* appName, const char* methodName,
 
 int osrfAppRegisterExtendedMethod( const char* appName, const char* methodName,
 		const char* symbolName, const char* notes, int argc, int options, void* );
+
+int osrfMethodSetBufferSize( const char* appName, const char* methodName, size_t bufsize );
 
 osrfMethod* _osrfAppFindMethod( const char* appName, const char* methodName );
 
