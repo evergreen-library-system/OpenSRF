@@ -251,9 +251,9 @@ EXTRA_DEBS = \
 
 EXTRA_DEBS_SQUEEZE = \
 	libmemcached-dev \
+	libmemcached-tools \
 	libxml-libxml-perl \
-	libxml-libxslt-perl \
-	memcached-tools
+	libxml-libxslt-perl
 
 EXTRA_DEBS_UBUNTU_LUCID = \
 	libmemcached-dev\
@@ -411,7 +411,7 @@ install_debs:
 install_extra_debs:
 	$(APT_TOOL) install $(EXTRA_DEBS)
 
-install_extra_debs_squeeze:
+install_extra_debs_squeeze: install_extra_debs
 	$(APT_TOOL) install $(EXTRA_DEBS_SQUEEZE)
 
 # Install even more packaged dependencies on modern distros
