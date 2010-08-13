@@ -288,7 +288,7 @@ centos: install_rpmforge install_centos_rpms install_ejabberd install_buildutils
 debian-lenny: generic_debian install_cpan_xml lenny install_libmemcached
 debian-squeeze: generic_debian squeeze
 lenny: install_extra_debs
-squeeze: install_extra_squeeze_debs
+squeeze: install_extra_debs_squeeze
 generic_debian: install_debs debian_sys_config
 
 fedora13: install_fedora_rpms
