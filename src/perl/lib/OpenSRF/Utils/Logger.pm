@@ -40,6 +40,7 @@ my $syslog_enabled = 0;			# is syslog enabled?
 my $act_syslog_enabled = 0;	# is syslog enabled?
 my $logfile_enabled = 1;		# are we logging to a file?
 my $act_logfile_enabled = 1;	# are we logging to a file?
+my $max_log_msg_len = 1536;			# SYSLOG default maximum is 2048
 
 our $logger = "OpenSRF::Utils::Logger";
 
@@ -68,6 +69,10 @@ sub set_config {
 	}
 
 	$loglevel =  $config->bootstrap->loglevel; 
+
+	if ($config->bootstrap->loglength) {
+		$max_log_msg_len = $config->bootstrap->loglength;
+	}
 
 	$logfile = $config->bootstrap->logfile;
 	if($logfile =~ /^syslog/) {
@@ -239,7 +244,8 @@ sub _log_message {
 
 	$msg = "[$n:"."$$".":$file:$line_no:$osrf_xid] $msg";
 
-	$msg = substr($msg, 0, 1536); 
+	# Trim the message to the configured maximum log message length
+	$msg = substr($msg, 0, $max_log_msg_len); 
 
 	if( $level == ACTIVITY() ) {
 		if( is_act_syslog() ) { syslog( $fac | $l, $msg ); } 

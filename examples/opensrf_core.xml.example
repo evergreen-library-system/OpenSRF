@@ -56,6 +56,10 @@ vim:et:ts=2:sw=2:
     <!-- 0 None, 1 Error, 2 Warning, 3 Info, 4 debug, 5 Internal (Nasty) -->
     <loglevel>3</loglevel>
 
+    <!-- Maximum log message length; if using syslog, you might need to adjust
+         your syslog service's configuration to match longer message lengths -->
+    <loglength>1536</loglength>
+
     <!-- config file for the services -->
     <settings_config>SYSCONFDIR/opensrf.xml</settings_config>
 
