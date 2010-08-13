@@ -1,16 +1,17 @@
 # ---------------------------------------------------------------------
 # Author: Bill Erickson <erickson@esilibrary.com>
+# Author: Dan Scott <dscott@laurentian.ca>
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (etch/lenny), Ubuntu (hardy/lucid), and Gentoo.
+# Currently supports Debian (lenny/squeeze), Ubuntu (hardy/lucid)
 # Working towards support of CentOS 5 / RHEL 5 and Fedora.
 # Installs Perl prereqs, libjs with Perl wrapper
 #
 # usage:
-# 	make -f Makefile.install debian-etch
-# 	- or -
 # 	make -f Makefile.install debian-lenny
+# 	- or -
+# 	make -f Makefile.install debian-squeeze
 # 	- or -
 # 	make -f Makefile.install ubuntu-hardy
 # 	- or -
@@ -20,18 +21,12 @@
 # 	- or -
 # 	make -f Makefile.install rhel
 # 	- or -
-# 	make -f Makefile.install gentoo
-# 	- or -
 # 	make -f Makefile.install fedora13
 #
 # Notes:
 #
 # 	This makefile has been tested much more with Ubuntu and Debian than
-#   CentOS, Fedora, Gentoo, or RHEL.
-#
-# 	Gentoo (especially amd64) requires a good bit of masked package
-# 	mangling for some packages.  These are not documented here because
-# 	they will continue to evolve
+#   CentOS, Fedora, or RHEL.
 #
 # ---------------------------------------------------------------------
 
@@ -246,41 +241,6 @@ FEDORAS = \
 	python-simplejson \
 	readline-devel
 
-GENTOOS = \
-	vim\
-	ntp\
-	memcached\
-	libmemcached\
-	net-misc/telnet-bsd\
-	app-portage/gentoolkit\
-	gsasl\
-	ejabberd\
-	mod_perl\
-	net-fs/nfs-utils\
-	dev-libs/apr\
-	dev-perl/Cache-Memcached\
-	dev-perl/DBI\
-	dev-perl/Log-Log4perl\
-	dev-perl/Unix-Syslog\
-	dev-perl/XML-LibXML\
-	dev-perl/XML-LibXSLT\
-	dev-perl/XML-Simple\
-	dev-perl/Net-Jabber\
-	dev-perl/libwww-perl\
-	dev-perl/Template-Toolkit\
-	dev-perl/Error\
-	dev-perl/Tie-IxHash\
-	dev-perl/FreezeThaw
-
-GENTOO_RC = \
-	ejabberd\
-	memcached\
-	portmap
-
-GENTOO_PERL = \
-	Class::DBI::AbstractSearch\
-	UNIVERSAL::require
-
 DEB_APACHE_MODS = \
 	ssl
 
@@ -288,6 +248,12 @@ EXTRA_DEBS = \
 	libdatetime-format-iso8601-perl \
 	libjson-xs-perl \
 	libnet-server-perl
+
+EXTRA_DEBS_SQUEEZE = \
+	libmemcached-dev \
+	libxml-libxml-perl \
+	libxml-libxslt-perl \
+	memcached-tools
 
 EXTRA_DEBS_UBUNTU_LUCID = \
 	libmemcached-dev\
@@ -311,10 +277,6 @@ CPAN_MODULES_XML = \
 	XML::LibXML \
 	XML::LibXSLT
 
-# generic CPAN modules to force
-CPAN_MODULES_FORCE = \
-	TMTM/Class-DBI-0.96.tar.gz
-
 # ----------------------------------------------------------------------------
 
 all: 
@@ -323,15 +285,13 @@ all:
 
 centos: install_rpmforge install_centos_rpms install_ejabberd install_buildutils install_libmemcached install_libxml2 install_libxslt install_centos_perl create_ld_local
 
-debian-etch: generic_debian etch install_libmemcached
-debian-lenny: generic_debian lenny install_libmemcached
-etch: install_cpan
+debian-lenny: generic_debian install_cpan_xml lenny install_libmemcached
+debian-squeeze: generic_debian squeeze
 lenny: install_extra_debs
-generic_debian: install_debs install_cpan_force install_cpan_xml debian_sys_config
+squeeze: install_extra_squeeze_debs
+generic_debian: install_debs debian_sys_config
 
 fedora13: install_fedora_rpms
-
-gentoo: install_gentoos install_gentoo_rc install_gentoo_perl install
 
 rhel: centos
 
@@ -339,7 +299,7 @@ ubuntu-hardy: generic_ubuntu install_cpan_xml hardy
 ubuntu-lucid: generic_ubuntu lucid
 hardy: install_cpan install_libmemcached 
 lucid: install_extra_debs install_extra_debs_lucid
-generic_ubuntu: install_debs install_cpan_force debian_sys_config
+generic_ubuntu: install_debs debian_sys_config
 
 # - COMMON TARGETS ---------------------------------------------------------
 
@@ -451,23 +411,12 @@ install_debs:
 install_extra_debs:
 	$(APT_TOOL) install $(EXTRA_DEBS)
 
+install_extra_debs_squeeze:
+	$(APT_TOOL) install $(EXTRA_DEBS_SQUEEZE)
+
 # Install even more packaged dependencies on modern distros
 install_extra_debs_lucid:
 	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_LUCID)
-
-# ------------------------------------------------------------------
-# - GENTOO ---------------------------------------------------------
-
-install_gentoos:
-	emerge -n $(GENTOOS)
-
-install_gentoo_rc:
-	for m in $(GENTOO_RC); do rc-update add $$m default; done;
-
-install_gentoo_perl:
-	for m in $(GENTOO_PERL); do perl -MCPAN -e "install \"$$m\";"; done
-
-# ------------------------------------------------------------------
 
 # Fedora
 install_fedora_rpms:
