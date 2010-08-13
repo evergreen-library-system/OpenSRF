@@ -449,7 +449,7 @@ static int handle_login( const osrfStringArray* cmd_array ) {
 		if(type) buffer_fadd( argbuf, ", \"type\" : \"%s\"", type );
 		if(orgloci) buffer_fadd( argbuf, ", \"org\" : %d", orgloci );
 		if(workstation) buffer_fadd( argbuf, ", \"workstation\" : \"%s\"", workstation);
-		buffer_add(argbuf, "}");
+		buffer_add_char( argbuf, '}' );
 
 		free(pass_buf);
 		free(mess_buf);
@@ -712,7 +712,7 @@ static int handle_request( const osrfStringArray* cmd_array, int relay ) {
 		if( !relay ) {
 			int first = 1;   // boolean
 			buffer = buffer_init( 128 );
-			buffer_add( buffer, "[" );
+			buffer_add_char( buffer, '[' );
 			for(i = 3; ; i++ ) {
 				const char* word = osrfStringArrayGetString( cmd_array, i );
 				if( !word )
