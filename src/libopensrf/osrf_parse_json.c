@@ -410,7 +410,7 @@ static jsonObject* get_hash( Parser* parser ) {
 		}
 		char* key_copy = strdup( key );
 
-		if( jsonObjectGetKey( hash, key_copy ) ) {
+		if( jsonObjectGetKeyConst( hash, key_copy ) ) {
 			report_error( parser, '"', "Duplicate key in JSON object" );
 			jsonObjectFree( hash );
 			return NULL;
@@ -495,7 +495,7 @@ static jsonObject* get_decoded_hash( Parser* parser ) {
 		}
 		char* key_copy = strdup( key );
 
-		if( jsonObjectGetKey( hash, key_copy ) ) {
+		if( jsonObjectGetKeyConst( hash, key_copy ) ) {
 			report_error( parser, '"', "Duplicate key in JSON object" );
 			jsonObjectFree( hash );
 			return NULL;
