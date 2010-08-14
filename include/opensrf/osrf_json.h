@@ -134,6 +134,16 @@ struct _jsonIteratorStruct {
 };
 typedef struct _jsonIteratorStruct jsonIterator;
 
+/**
+	@brief Macros for upward compatibility with an old, defunct version
+    of the JSON parser.
+*/
+/*@{*/
+#define jsonParseString                jsonParse
+#define jsonParseStringRaw             jsonParseRaw
+#define jsonParseStringFmt             jsonParseFmt
+/*@}*/
+
 jsonObject* jsonParse( const char* str );
 
 jsonObject* jsonParseRaw( const char* str );
