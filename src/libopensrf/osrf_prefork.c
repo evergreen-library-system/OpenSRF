@@ -966,7 +966,7 @@ static void prefork_child_wait( prefork_child* child ) {
 				set_fl( child->read_data_fd, O_NONBLOCK );
 				gotdata = 1;
 			}
-			buffer_add( gbuf, buf );
+			buffer_add_n( gbuf, buf, n );
 		}
 
 		if( errno == EAGAIN )
