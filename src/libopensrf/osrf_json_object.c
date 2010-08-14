@@ -30,7 +30,6 @@ GNU General Public License for more details.
 #include <limits.h>
 #include <opensrf/log.h>
 #include <opensrf/osrf_json.h>
-#include <opensrf/osrf_json_utils.h>
 #include <opensrf/osrf_utf8.h>
 
 /* cleans up an object if it is morphing another object, also
@@ -479,7 +478,7 @@ const jsonObject* jsonObjectGetKeyConst( const jsonObject* obj, const char* key 
 	@brief Recursively traverse a jsonObject, translating it into a JSON string.
 	@param obj Pointer to the jsonObject to be translated.
 	@param buf Pointer to a growing_buffer that will receive the JSON string.
-	@param do_classname Boolean; if true, expand class names.
+	@param do_classname Boolean; if true, expand (i.e. encode) class names.
 	@param second_pass Boolean; should always be false except for some recursive calls.
  
 	If @a do_classname is true, expand any class names, as described in the discussion of

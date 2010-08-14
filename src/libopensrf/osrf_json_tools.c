@@ -15,7 +15,6 @@ GNU General Public License for more details.
 
 #include <ctype.h>
 #include "opensrf/osrf_json.h"
-#include "opensrf/osrf_json_utils.h"
 
 static jsonObject* findMultiPath( const jsonObject* o,
 		const char* root, const char* path );

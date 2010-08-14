@@ -7,7 +7,7 @@
 # 	OSRF_INC="../../include/opensrf" LDLIBS="-lxml2" \
 # 	make -f Makefile.json standalone
 # ------------------------------------------------------------------
-TARGETS = osrf_json_object.o osrf_json_parser.o osrf_json_tools.o osrf_legacy_json.o osrf_json_xml.o
+TARGETS = osrf_json_object.o osrf_parse_json.o osrf_json_tools.o osrf_legacy_json.o osrf_json_xml.o
 
 # these are only needed when compiling the standalone version
 EXT_TARGETS = osrf_list.o osrf_hash.o utils.o log.o md5.o string_array.o
@@ -17,10 +17,10 @@ all:	$(TARGETS)
 standalone: $(TARGETS) $(EXT_TARGETS)
 	$(CC) -shared -W1 $(CFLAGS) $(LDFLAGS) $(LDLIBS) $(TARGETS) $(EXT_TARGETS) -o libosrf_json.so
 
-osrf_json_object.o:	osrf_json_object.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
-osrf_json_parser.o:	osrf_json_parser.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
-osrf_json_tools.o:	osrf_json_tools.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
-osrf_legacy_json.o:	osrf_legacy_json.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_utils.h
+osrf_json_object.o:	osrf_json_object.c $(OSRF_INC)/osrf_json.h
+osrf_parse_json.o:	osrf_parse_json.c $(OSRF_INC)/osrf_json.h
+osrf_json_tools.o:	osrf_json_tools.c $(OSRF_INC)/osrf_json.h
+osrf_legacy_json.o:	osrf_legacy_json.c $(OSRF_INC)/osrf_json.h
 osrf_json_xml.o:	osrf_json_xml.c $(OSRF_INC)/osrf_json.h $(OSRF_INC)/osrf_json_xml.h
 
 

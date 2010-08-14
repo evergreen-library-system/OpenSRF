@@ -23,7 +23,6 @@ GNU General Public License for more details.
 #include <stdio.h>
 #include <ctype.h>
 #include <opensrf/osrf_json.h>
-#include <opensrf/osrf_json_utils.h>
 
 /**
 	@brief A collection of things the parser uses to keep track of what it's doing.
