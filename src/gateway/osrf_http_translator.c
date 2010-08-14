@@ -198,8 +198,10 @@ static int osrfHttpTranslatorSetTo(osrfHttpTranslator* trans) {
             sessionCache = osrfCacheGetObject(trans->thread);
 
             if(sessionCache) {
-                const char* ipAddr = jsonObjectGetString(jsonObjectGetKey(sessionCache, "ip"));
-                const char* recipient = jsonObjectGetString(jsonObjectGetKey(sessionCache, "jid"));
+                const char* ipAddr = jsonObjectGetString(
+                    jsonObjectGetKeyConst( sessionCache, "ip" ));
+                const char* recipient = jsonObjectGetString(
+                    jsonObjectGetKeyConst( sessionCache, "jid" ));
 
                 // choosing a specific recipient address requires that the recipient and 
                 // thread be cached on the server (so drone processes cannot be hijacked)
@@ -208,7 +210,8 @@ static int osrfHttpTranslatorSetTo(osrfHttpTranslator* trans) {
                         trans->remoteHost, trans->recipient);
                     stat = 1;
                     trans->service = apr_pstrdup(
-                        trans->apreq->pool, jsonObjectGetString(jsonObjectGetKey(sessionCache, "service")));
+                        trans->apreq->pool, jsonObjectGetString(
+                            jsonObjectGetKeyConst( sessionCache, "service" )));
 
                 } else {
                     osrfLogError(OSRF_LOG_MARK, 
