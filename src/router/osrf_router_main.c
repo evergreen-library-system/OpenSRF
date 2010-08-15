@@ -94,7 +94,7 @@ int main( int argc, char* argv[] ) {
 	int i;
 	for(i = 0; i < configInfo->size; i++) {
 		jsonObject* configChunk = jsonObjectGetIndex(configInfo, i);
-		if( ! jsonObjectGetKey( configChunk, "transport" ) )
+		if( ! jsonObjectGetKeyConst( configChunk, "transport" ) )
 		{
 			// In searching the configuration file for a given context, we may have found a
 			// spurious hit on an unrelated part of the configuration file that happened to use
@@ -115,8 +115,7 @@ int main( int argc, char* argv[] ) {
 	}
 
 	if( parent ) {
-		// Wait for all child processes to terminate.
-		// If any ended abnormally, report it.
+		// Wait for all child processes to terminate; report their fates
 		while( 1 ) {  // Loop until all children terminate
 			int status;
 			errno = 0;
@@ -130,9 +129,9 @@ int main( int argc, char* argv[] ) {
 				// or _exit(), or by returning from main()
 				int child_rc = WEXITSTATUS( status );
 				if( child_rc ) {
-					osrfLogWarning( OSRF_LOG_MARK,
+					osrfLogWarning( OSRF_LOG_MARK, 
 						"Child router process %ld exited with return status %d",
-						(long) child_pid, child_rc );
+	  					(long) child_pid, child_rc );
 					rc = EXIT_FAILURE;
 				} else {
 					;    // Terminated successfully; silently ignore
@@ -146,7 +145,7 @@ int main( int argc, char* argv[] ) {
 					extra = "with core dump ";
 #endif
 				osrfLogWarning( OSRF_LOG_MARK, "Child router process %ld killed %sby signal %d",
-					(long) child_pid, extra, signo );
+	 				(long) child_pid, extra, signo );
 
 				rc = EXIT_FAILURE;
 			}
@@ -173,17 +172,17 @@ int main( int argc, char* argv[] ) {
 */
 static void setupRouter(jsonObject* configChunk) {
 
-	jsonObject* transport_cfg = jsonObjectGetKey( configChunk, "transport" );
+	const jsonObject* transport_cfg = jsonObjectGetKeyConst( configChunk, "transport" );
 
-	const char* server   = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "server" ) );
-	const char* port     = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "port" ) );
-	const char* username = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "username" ) );
-	const char* password = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "password" ) );
-	const char* resource = jsonObjectGetString( jsonObjectGetKey( transport_cfg, "resource" ) );
+	const char* server   = jsonObjectGetString( jsonObjectGetKeyConst( transport_cfg, "server" ));
+	const char* port     = jsonObjectGetString( jsonObjectGetKeyConst( transport_cfg, "port" ));
+	const char* username = jsonObjectGetString( jsonObjectGetKeyConst( transport_cfg, "username" ));
+	const char* password = jsonObjectGetString( jsonObjectGetKeyConst( transport_cfg, "password" ));
+	const char* resource = jsonObjectGetString( jsonObjectGetKeyConst( transport_cfg, "resource" ));
 
-	const char* level    = jsonObjectGetString( jsonObjectGetKey( configChunk, "loglevel" ) );
-	const char* log_file = jsonObjectGetString( jsonObjectGetKey( configChunk, "logfile" ) );
-	const char* facility = jsonObjectGetString( jsonObjectGetKey( configChunk, "syslog" ) );
+	const char* level    = jsonObjectGetString( jsonObjectGetKeyConst( configChunk, "loglevel" ));
+	const char* log_file = jsonObjectGetString( jsonObjectGetKeyConst( configChunk, "logfile" ));
+	const char* facility = jsonObjectGetString( jsonObjectGetKeyConst( configChunk, "syslog" ));
 
 	int llevel = 1;
 	if(level) llevel = atoi(level);
@@ -241,6 +240,7 @@ static void setupRouter(jsonObject* configChunk) {
 		osrfLogInfo( OSRF_LOG_MARK,  "Router adding trusted client: %s", clientDomain);
 		osrfStringArrayAdd(tclients, clientDomain);
 	}
+
 
 	if( tclients->size == 0 || tservers->size == 0 ) {
 		osrfLogError( OSRF_LOG_MARK,
