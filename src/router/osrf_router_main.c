@@ -30,7 +30,7 @@ static osrfRouter* router = NULL;
 
 static volatile sig_atomic_t stop_signal = 0;
 
-static void setupRouter(jsonObject* configChunk);
+static void setupRouter( const jsonObject* configChunk );
 
 /**
 	@brief Respond to signal by setting a switch that will interrupt the main loop.
@@ -93,7 +93,7 @@ int main( int argc, char* argv[] ) {
 	int parent = 1;    // boolean
 	int i;
 	for(i = 0; i < configInfo->size; i++) {
-		jsonObject* configChunk = jsonObjectGetIndex(configInfo, i);
+		const jsonObject* configChunk = jsonObjectGetIndex( configInfo, i );
 		if( ! jsonObjectGetKeyConst( configChunk, "transport" ) )
 		{
 			// In searching the configuration file for a given context, we may have found a
@@ -170,7 +170,7 @@ int main( int argc, char* argv[] ) {
 	Configure oneself, daemonize, and then call osrfRouterRun() to go into a
 	near-endless loop.  Return when interrupted by a signal, or when something goes wrong.
 */
-static void setupRouter(jsonObject* configChunk) {
+static void setupRouter( const jsonObject* configChunk ) {
 
 	const jsonObject* transport_cfg = jsonObjectGetKeyConst( configChunk, "transport" );
 
