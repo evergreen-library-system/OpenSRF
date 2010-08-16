@@ -43,12 +43,15 @@ int osrfConnected = 0;
 char recipientBuf[128];
 char contentTypeBuf[80];
 
+#if 0
+// Commented out to avoid compiler warning
 // for development only, writes to apache error log
 static void _dbg(char* s, ...) {
     VA_LIST_TO_STRING(s);
     fprintf(stderr, "%s\n", VA_BUF);
     fflush(stderr);
 }
+#endif
 
 // Translator struct
 typedef struct {
@@ -116,13 +119,14 @@ static osrfHttpTranslator* osrfNewHttpTranslator(request_rec* apreq) {
     trans->messages = NULL;
 
     /* load the message body */
-	osrfStringArray* params	= apacheParseParms(apreq);
+    osrfStringArray* params	= apacheParseParms(apreq);
     trans->body = apacheGetFirstParamValue(params, "osrf-msg");
     osrfStringArrayFree(params);
 
     /* load the request headers */
-    if (apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_XID)) // force our log xid to match the caller
-	    osrfLogForceXid(strdup(apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_XID)));
+    if (apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_XID))
+        // force our log xid to match the caller
+        osrfLogForceXid(strdup(apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_XID)));
 
     trans->handle = osrfSystemGetTransportClient();
     trans->recipient = apr_table_get(apreq->headers_in, OSRF_HTTP_HEADER_TO);
@@ -161,6 +165,8 @@ static void osrfHttpTranslatorFree(osrfHttpTranslator* trans) {
     osrfListFree(trans->messages);
 }
 
+#if 0
+// Commented out to avoid compiler warning
 static void osrfHttpTranslatorDebug(osrfHttpTranslator* trans) {
     _dbg("-----------------------------------");
     _dbg("body = %s", trans->body);
@@ -169,6 +175,7 @@ static void osrfHttpTranslatorDebug(osrfHttpTranslator* trans) {
     _dbg("multipart = %d", trans->multipart);
     _dbg("recipient = %s", trans->recipient);
 }
+#endif
 
 /**
  * Determines the correct recipient address based on the requested 
@@ -185,7 +192,8 @@ static int osrfHttpTranslatorSetTo(osrfHttpTranslator* trans) {
         } else {
             // service is specified, build a recipient address 
             // from the router, domain, and service
-            int size = snprintf(recipientBuf, 128, "%s@%s/%s", routerName, domainName, trans->service);
+            int size = snprintf(recipientBuf, 128, "%s@%s/%s", routerName,
+                domainName, trans->service);
             recipientBuf[size] = '\0';
             osrfLogDebug(OSRF_LOG_MARK, "Set recipient to %s", recipientBuf);
             trans->recipient = recipientBuf;
@@ -206,7 +214,8 @@ static int osrfHttpTranslatorSetTo(osrfHttpTranslator* trans) {
                 // choosing a specific recipient address requires that the recipient and 
                 // thread be cached on the server (so drone processes cannot be hijacked)
                 if(!strcmp(ipAddr, trans->remoteHost) && !strcmp(recipient, trans->recipient)) {
-                    osrfLogDebug(OSRF_LOG_MARK, "Found cached session from host %s and recipient %s", 
+                    osrfLogDebug( OSRF_LOG_MARK,
+                        "Found cached session from host %s and recipient %s",
                         trans->remoteHost, trans->recipient);
                     stat = 1;
                     trans->service = apr_pstrdup(
@@ -234,7 +243,7 @@ static int osrfHttpTranslatorSetTo(osrfHttpTranslator* trans) {
  * Parses the request body and logs any REQUEST messages to the activity log
  */
 static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
-    osrfMessage* msg;
+    const osrfMessage* msg;
     osrfMessage* msgList[MAX_MSGS_PER_PACKET];
     int numMsgs = osrf_message_deserialize(trans->body, msgList, MAX_MSGS_PER_PACKET);
     osrfLogDebug(OSRF_LOG_MARK, "parsed %d opensrf messages in this packet", numMsgs);
@@ -264,11 +273,12 @@ static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
         switch(msg->m_type) {
 
             case REQUEST: {
-                jsonObject* params = msg->_params;
+                const jsonObject* params = msg->_params;
                 growing_buffer* act = buffer_init(128);	
-                buffer_fadd(act, "[%s] [%s] %s %s", trans->remoteHost, "", trans->service, msg->method_name);
+                buffer_fadd(act, "[%s] [%s] %s %s", trans->remoteHost, "",
+                    trans->service, msg->method_name);
 
-                jsonObject* obj = NULL;
+                const jsonObject* obj = NULL;
                 int i = 0;
                 char* str; 
                 while((obj = jsonObjectGetIndex(params, i++))) {
@@ -291,6 +301,19 @@ static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
 
             case DISCONNECT:
                 trans->disconnecting = 1;
+                break;
+
+            case RESULT:
+                osrfLogWarning( OSRF_LOG_MARK, "Unexpected RESULT message received" );
+                break;
+
+            case STATUS:
+                osrfLogWarning( OSRF_LOG_MARK, "Unexpected STATUS message received" );
+                break;
+
+            default:
+                osrfLogWarning( OSRF_LOG_MARK, "Invalid message type %d received",
+                    msg->m_type );
                 break;
         }
     }
@@ -325,11 +348,12 @@ static void osrfHttpTranslatorInitHeaders(osrfHttpTranslator* trans, transport_m
     if(trans->multipart) {
         sprintf(contentTypeBuf, MULTIPART_CONTENT_TYPE, trans->delim);
         contentTypeBuf[79] = '\0';
-        osrfLogDebug(OSRF_LOG_MARK, "content type %s : %s : %s", MULTIPART_CONTENT_TYPE, trans->delim, contentTypeBuf);
-	    ap_set_content_type(trans->apreq, contentTypeBuf);
+        osrfLogDebug(OSRF_LOG_MARK, "content type %s : %s : %s", MULTIPART_CONTENT_TYPE,
+        trans->delim, contentTypeBuf);
+        ap_set_content_type(trans->apreq, contentTypeBuf);
         ap_rprintf(trans->apreq, "--%s\n", trans->delim);
     } else {
-	    ap_set_content_type(trans->apreq, JSON_CONTENT_TYPE);
+        ap_set_content_type(trans->apreq, JSON_CONTENT_TYPE);
     }
 }
 
@@ -344,7 +368,7 @@ static void osrfHttpTranslatorCacheSession(osrfHttpTranslator* trans, const char
     osrfCachePutObject((char*) trans->thread, cacheObj, CACHE_TIME);
 }
 
-           
+
 /**
  * Writes a single chunk of multipart/x-mixed-replace content
  */
@@ -352,7 +376,8 @@ static void osrfHttpTranslatorWriteChunk(osrfHttpTranslator* trans, transport_me
     osrfLogInternal(OSRF_LOG_MARK, "sending multipart chunk %s", msg->body);
     ap_rprintf(trans->apreq, 
         "Content-type: %s\n\n%s\n\n", JSON_CONTENT_TYPE, msg->body);
-    //osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: Content-type: %s\n\n%s\n\n", JSON_CONTENT_TYPE, msg->body);
+    //osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: Content-type: %s\n\n%s\n\n",
+    //JSON_CONTENT_TYPE, msg->body);
     if(trans->complete) {
         ap_rprintf(trans->apreq, "--%s--\n", trans->delim);
         //osrfLogInternal(OSRF_LOG_MARK, "Apache sending data: --%s--\n", trans->delim);
@@ -440,7 +465,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
                     OSRF_BUFFER_ADD_CHAR(buf, ',');
                     OSRF_BUFFER_ADD(buf, newbuf);
                 }
-                
+
                 ap_rputs(buf->buf, trans->apreq);
                 buffer_free(buf);
             }
@@ -462,11 +487,14 @@ static void testConnection(request_rec* r) {
 	}
 }
 
+#if 0
+// Commented out to avoid compiler warning
 // it's dead, Jim
 static apr_status_t childExit(void* data) {
     osrf_system_shutdown();
     return OK;
 }
+#endif
 
 static void childInit(apr_pool_t *p, server_rec *s) {
 	if(!osrfSystemBootstrapClientResc(configFile, configCtx, "translator")) {
@@ -526,7 +554,3 @@ module AP_MODULE_DECLARE_DATA osrf_http_translator_module = {
     osrfHttpTranslatorCmds,
 	registerHooks,
 };
-
-
-
-
