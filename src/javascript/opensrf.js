@@ -245,13 +245,24 @@ OpenSRF.NetMessage = function(to, from, thread, body) {
 OpenSRF.Stack = function() {
 }
 
+// global inbound message queue
+OpenSRF.Stack.queue = [];
+
 OpenSRF.Stack.push = function(net_msg, callbacks) {
     var ses = OpenSRF.Session.find_session(net_msg.thread); 
     if(!ses) return;
     ses.remote_id = net_msg.from;
     osrf_msgs = JSON2js(net_msg.body);
-    for(var i = 0; i < osrf_msgs.length; i++) 
-        OpenSRF.Stack.handle_message(ses, osrf_msgs[i], callbacks);        
+
+    // push the latest responses onto the end of the inbound message queue
+    for(var i = 0; i < osrf_msgs.length; i++)
+        OpenSRF.Stack.queue.push({msg : osrf_msgs[i], callbacks : callbacks});
+
+    // continue processing responses, oldest to newest
+    while(OpenSRF.Stack.queue.length) {
+        var data = OpenSRF.Stack.queue.shift();
+        OpenSRF.Stack.handle_message(ses, data.msg, data.callbacks);
+    }
 }
 
 OpenSRF.Stack.handle_message = function(ses, osrf_msg, callbacks) {
