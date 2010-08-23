@@ -1,1 +1,282 @@
-#ChangeLog
+2010-08-23  dbs
+
+	* .: Tag the OpenSRF 1.6 alpha release
+
+	* Bring supported distros up to date, warn about Java support
+
+	* Create rel_1_6 branch for next major OpenSRF release
+
+2010-08-18  erickson
+
+	* Due to the async nature of xmllhttprequest, processing http responses (which
+	  often lead to further async-request laden callbacks) at receive time can result
+	  in out-of-order message handling. To bring order to this chaos, push all inbound
+	  message onto a queue, then go back to processing the older messages in order of
+	  oldest to newest.
+
+2010-08-16  scottmk
+
+	* A few minor tweaks in the name of const-correctness.
+	  
+	  M src/router/osrf_router_main.c
+
+	* Several minor and inconsequential changes:
+	  
+	  1. Tidied up the white space in a few places.
+	  
+	  2. Commented out several unused functions, used only for development,
+	  in order to eliminate some annoying compiler warnings.
+	  
+	  3. Added the const qualifier to several variables.
+	  
+	  4. Added three branches to a switch/case structure, in order to
+	  eliminate some compiler warnings about untested enum values. The
+	  new branches merely issue warning messages to the log (presumably
+	  we don't expect to see RESULT or STATUS messages in this
+	  context).
+	  
+	  M src/gateway/osrf_http_translator.c
+
+2010-08-15  scottmk
+
+	* 1. Pedantic change for const-correctness: replaced all calls to
+	  jsonObjectGetKey() with calls to jsonObjectGetKeyConst().
+	  
+	  2. Tidied up white space and comments here and there.
+	  
+	  M src/router/osrf_router_main.c
+
+2010-08-14  scottmk
+
+	* Pedantic change for const-correctness: change three calls to
+	  jsonObjectGetKey() to call jsonObjectGetKeyConst() instead.
+	  
+	  M src/gateway/osrf_http_translator.c
+
+	* Pedantic change for const-correctness: replace two calls to
+	  jsonObjectGetKey() with calls to jsonObjectGetKeyConst().
+	  
+	  M src/libopensrf/osrf_parse_json.c
+
+	* Minor performance tweak: replace a call to buffer_add()
+	  with a call to buffer_add_n().
+	  
+	  In this case we already know how many characters to add,
+	  so we can avoid a call to strlen().
+	  
+	  M src/libopensrf/osrf_prefork.c
+
+	* Add some macros for upward compatibility from the old JSON parser.
+	  
+	  These macros map the old functions to the equivalent new ones.
+	  
+	  M include/opensrf/osrf_json.h
+
+	* Eliminate the old JSON parser, implemented in osrf_json_parser.c and
+	  the associated header osrf_json_utils.h.
+	  
+	  This parser has been completely replaced by a newer one implemented
+	  in osrf_parse_json.c, plus an incremental JSON parser (so far
+	  unused) in jsonpush.c..
+	  
+	  The even older parser of JSON-with-comments is not affected.
+	  
+	  D include/opensrf/osrf_json_utils.h
+	  M include/opensrf/osrf_json.h
+	  D src/libopensrf/osrf_json_parser.c
+	  M src/libopensrf/osrf_json_object.c
+	  M src/libopensrf/Makefile.json
+	  M src/libopensrf/osrf_json_tools.c
+	  M src/libopensrf/Makefile.am
+	  M src/libopensrf/osrf_parse_json.c
+	  M Makefile.am
+
+2010-08-13  dbs
+
+	* Get the extra_debs into Squeeze as well; fix a typo in libmemcached-tools
+
+	* Make the names of the rules for installing extra Squeeze debs line up
+
+	* Make log length in Perl logger a configurable value to assist debugging
+	  
+	  If logging to syslog instead of a file, you might need to adjust the
+	  syslog configuration to accept longer than its own default lengths of
+	  log messages
+
+2010-08-13  scottmk
+
+	* Minor cleanup:
+	  
+	  Changed two calls to buffer_add(), when appending a single character,
+	  to call buffer_add_char() instead, which is slightly more efficient.
+	  
+	  M src/srfsh/srfsh.c
+
+2010-08-13  dbs
+
+	* First cut at adding Debian Squeeze to OpenSRF prerequisite installer
+	  
+	  Along the way, make a few other changes:
+	  * drop Debian Etch and Gentoo support
+	  * add dscott@laurentian.ca to the author list
+	  * remove Class::DBI as that's actually a prereq for Evergreen, not OpenSRF
+
+2010-08-11  scottmk
+
+	* Adding comments and tinkering with white space.
+	  No substantive changes.
+	  
+	  M src/libopensrf/osrf_prefork.c
+
+2010-08-10  scottmk
+
+	* Provide a way for a service to set the effective buffer size for a
+	  specified method.
+	  
+	  Non-atomic methods accumulate RESULT messages into a buffer, from which
+	  they are flushed when the buffer is about to overflow, or when the
+	  closing STATUS message is issued.
+	  
+	  The new osrfMethodSetBufferSize() function allows the service to favor
+	  large buffers (for greater throughput) or small ones (for a lower
+	  latency for the first response).
+	  
+	  Since the buffersize is not an absolute limit, the effective buffer
+	  size may be set to zero, in which case each RESULT message will be
+	  packaged and sent in a separate XMPP message as soon as it is ready.
+	  
+	  Changing the buffer size has no effect on an atomic method, nor on a
+	  method that returns only one RESULT message.
+	  
+	  M include/opensrf/osrf_application.h
+	  M src/libopensrf/osrf_application.c
+
+2010-08-09  scottmk
+
+	* Cruft removal; there should be no outwardly visible effects.
+	  
+	  1. Remove the OSRF_METHOD_ATOMIC and OSRF_METHOD_SYSTEM options
+	  from the interface functions osrfRegisterMethod() and
+	  osrfRegisterExtendedMethod().
+	  
+	  An application cannot usefully apply these options when it registers
+	  a method, and if it tries, it will almost certainly not work as
+	  intended anyway.
+	  
+	  This change required considerable refactoring of the code
+	  responsible for registering methods.
+	  
+	  2. When the attempt to initialize an application fails, remove
+	  the application from the application list and destroy it,
+	  instead of keeping it around in an unusable state.
+	  
+	  3. Eliminate some redundant lookups of application by name
+	  when registering system methods.
+	  
+	  M include/opensrf/osrf_application.h
+	  M src/libopensrf/osrf_application.c
+
+	* Fixed a bug in the chunking.
+	  
+	  Short version: The non-atomic system methods weren't working. Now
+	  they are.
+	  
+	  Long version: When a method returns a value greater than zero, a
+	  post-processing step sends a STATUS message to signify that the
+	  response is complete. In the old code this post-processing
+	  bypassed the buffer-flushing step, so that anything still in the
+	  buffer didn't get sent.
+	  
+	  The non-atomic system methods returned positive return codes and
+	  were therefore subject to this problem. I don't know if any
+	  non-system methods return postive return codes, but if they do,
+	  they would also have been affected.
+	  
+	  M src/libopensrf/osrf_application.c
+
+2010-08-05  gmc
+
+	* set transaction ID by default to make it easier to trace requests from srfsh
+	  
+	  Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+2010-08-04  miker
+
+	* always use respond_complete to finish a request, whether there is a final
+	  message or not
+
+2010-08-04  scottmk
+
+	* Implement the chunking of OSRF messages. I.e. bundle multiple
+	  OSRF messages into an XMPP message, up to about 10k bytes, so
+	  as to reduce networking overhead.
+	  
+	  M include/opensrf/osrf_application.h
+	  M src/libopensrf/osrf_application.c
+
+2010-08-03  miker
+
+	* Mike, when adding the length, actually add the length, not the string
+
+2010-07-29  scottmk
+
+	* 1. Add a buffer to osrfAppSession structure; for future use
+	  
+	  2. New function osrfSendTransportPayload(). This a repackaging of
+	  existing functionality pulled out into a separate function so that
+	  it can be reused in other contexts.
+	  
+	  These changes are preparation for future changes, and will have no
+	  visible effect by themselves.
+	  
+	  M include/opensrf/osrf_app_session.h
+	  M src/libopensrf/osrf_app_session.c
+
+2010-07-29  miker
+
+	* Add response chunking support to the Perl implementation of OpenSRF
+	  
+	  Two new optional paramters to register_method are now supported:
+	  * max_chunk_size
+	  * max_chunk_count
+	  
+	  OpenSRF has always supported message bundling, but only respond_complete made
+	  use of this fact by sending the final result message and the completion status
+	  message in the same XMPP envelope. Now, on a per method basis, RESULT messages
+	  can be bundled (cached) until one of three conditions occurs:
+	  
+	  * The size of the JSON of the RESULT messages matches or exceeds max_chunk_size
+	  * The number of RESULT messages cached matches or exceeds max_chunk_count
+	  * respond_complete is called (which happens implicitly by returning from a
+	  method)
+	  
+	  Because the overhead of sending multiple XMPP messages far outweighs the caching
+	  and cache management costs of chunking, the default for max_chunk_size is set
+	  at 10240 bytes (10k). The default for max_chunk_count is 0. To turn off chunking
+	  completely, set the max_chunk_size register_method parameter to 0.
+
+2010-07-29  scottmk
+
+	* 1. Make osrfMessageToJSON() available at global scope.
+	  
+	  2. New function osrf_message_set_result() -- a more efficient alternative
+	  to osrf_message_set_result_content().
+	  
+	  Typically when using the older function, we convert a jsonObject to JSON
+	  text, and then parse the JSON text back into a jsonObject. With the new
+	  function we can avoid the round trip through the text format.
+	  
+	  M include/opensrf/osrf_message.h
+	  M src/libopensrf/osrf_message.c
+
+2010-07-13  dbs
+
+	* Whitespace / description cleanup
+
+	* Teach opensrf-perl.pl the same PID directory as osrf_ctl.sh
+	  
+	  This should cut down on one more command-line option when working
+	  with individual Perl services.
+
+	* Typo fix to display all OpenSRF methods: sysemt -> system
+
