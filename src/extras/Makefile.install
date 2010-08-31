@@ -116,7 +116,6 @@ DEBS =  \
 	libxml-simple-perl\
 	libxslt1-dev\
 	memcached\
-	ntpdate\
 	pkg-config\
 	psmisc\
 	python-dev\
@@ -142,7 +141,6 @@ CENTOS = \
 	mod_ssl \
 	ncurses \
 	ncurses-devel \
-	ntp \
 	perl-Cache-Memcached \
 	perl-Class-DBI-AbstractSearch \
 	perl-Class-DBI-SQLite \
@@ -202,7 +200,6 @@ FEDORAS = \
 	make \
 	memcached \
 	mod_perl \
-	ntpdate \
 	perl-Cache-Memcached \
 	perl-Class-DBI \
 	perl-Class-DBI-AbstractSearch \
