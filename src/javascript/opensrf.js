@@ -438,5 +438,18 @@ osrfServerError.prototype.statusCode = function() {
         this.hash.statusCode = d; 
     return this.hash.statusCode; 
 }
-
+function osrfContinueStatus(hash) { 
+    this.hash = hash;
+    this._encodehash = true;
+}
+osrfContinueStatus.prototype.status = function() {
+    if(arguments.length == 1) 
+        this.hash.status = d; 
+    return this.hash.status; 
+}
+osrfContinueStatus.prototype.statusCode = function() {
+    if(arguments.length == 1) 
+        this.hash.statusCode = d; 
+    return this.hash.statusCode; 
+}
 
