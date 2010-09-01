@@ -12,7 +12,6 @@ use Time::HiRes qw/time/;
 use OpenSRF::EX qw/:try/;
 use Carp;
 use OpenSRF::Utils::JSON;
-#use OpenSRF::UnixServer;  # to get the server class from UnixServer::App
 
 sub DESTROY{};
 

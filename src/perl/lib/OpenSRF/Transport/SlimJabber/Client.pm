@@ -8,12 +8,7 @@ use OpenSRF::Utils::Config;
 use OpenSRF::Utils::Logger qw/$logger/;
 use OpenSRF::Transport::SlimJabber::XMPPReader;
 use OpenSRF::Transport::SlimJabber::XMPPMessage;
-use IO::Socket::UNIX;
-use FreezeThaw qw/freeze/;
-
-sub DESTROY{
-    shift()->disconnect;
-}
+use IO::Socket::INET;
 
 =head1 NAME
 
@@ -153,6 +148,7 @@ sub initialize {
 	    unless ( $self->reader->connected );
 
     $self->xmpp_id("$username\@$host/$resource");
+    $logger->debug("Created XMPP connection " . $self->xmpp_id);
 	return $self;
 }
 

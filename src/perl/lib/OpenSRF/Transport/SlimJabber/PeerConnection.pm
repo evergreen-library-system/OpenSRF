@@ -60,8 +60,6 @@ sub new {
 	OpenSRF::EX::Config->throw( "JPeer could not load all necessary values from config" )
 		unless ( $username and $password and $resource and $host and $port );
 
-	OpenSRF::Utils::Logger->transport( "Built Peer with", INTERNAL );
-
 	my $self = __PACKAGE__->SUPER::new( 
 		username		=> $username,
 		resource		=> $resource,

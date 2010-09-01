@@ -2,10 +2,9 @@ package OpenSRF::System;
 use strict; use warnings;
 use OpenSRF;
 use base 'OpenSRF';
-use OpenSRF::Utils::Logger qw(:level);
+use OpenSRF::Utils::Logger qw($logger);
 use OpenSRF::Transport::Listener;
 use OpenSRF::Transport;
-use OpenSRF::UnixServer;
 use OpenSRF::Utils;
 use OpenSRF::EX qw/:try/;
 use POSIX qw/setsid :sys_wait_h/;
@@ -13,7 +12,7 @@ use OpenSRF::Utils::Config;
 use OpenSRF::Utils::SettingsParser;
 use OpenSRF::Utils::SettingsClient;
 use OpenSRF::Application;
-use Net::Server::PreFork;
+use OpenSRF::Server;
 
 my $bootstrap_config_file;
 sub import {
@@ -66,5 +65,48 @@ sub connected {
 	}
 	return 0;
 }
+
+sub run_service {
+    my($class, $service) = @_;
+
+    $0 = "OpenSRF Listener [$service]";
+
+    # temp connection to use for application initialization
+    OpenSRF::System->bootstrap_client(client_name => "system_client");
+
+    my $sclient = OpenSRF::Utils::SettingsClient->new;
+    my $getval = sub { $sclient->config_value(apps => $service => @_); };
+
+    my $impl = $getval->('implementation');
+
+    OpenSRF::Application::server_class($service);
+    OpenSRF::Application->application_implementation($impl);
+    OpenSRF::Utils::JSON->register_class_hint(name => $impl, hint => $service, type => 'hash');
+    OpenSRF::Application->application_implementation->initialize()
+        if (OpenSRF::Application->application_implementation->can('initialize'));
+
+    # kill the temp connection
+    OpenSRF::Transport::PeerHandle->retrieve->disconnect;
+
+    my $server = OpenSRF::Server->new(
+        $service,
+        keepalive => $getval->('keepalive') || 5,
+        max_requests =>  $getval->(unix_config => 'max_requests') || 10000,
+        max_children =>  $getval->(unix_config => 'max_children') || 20,
+        min_children =>  $getval->(unix_config => 'min_children') || 1,
+        min_spare_children =>  $getval->(unix_config => 'min_spare_children'),
+        max_spare_children =>  $getval->(unix_config => 'max_spare_children')
+    );
+
+    while(1) {
+        eval { $server->run; };
+        # we only arrive here if the server died a painful death
+        $logger->error("server: died with error $@");
+        $server->cleanup(1);
+        $logger->info("server: restarting after fatal crash...");
+        sleep 2;
+    }
+}
+
 
 1;
