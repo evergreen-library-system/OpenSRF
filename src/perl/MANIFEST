@@ -21,12 +21,10 @@ lib/OpenSRF/Transport/Listener.pm
 lib/OpenSRF/Transport/PeerHandle.pm
 lib/OpenSRF/Transport/SlimJabber.pm
 lib/OpenSRF/Transport/SlimJabber/Client.pm
-lib/OpenSRF/Transport/SlimJabber/Inbound.pm
 lib/OpenSRF/Transport/SlimJabber/MessageWrapper.pm
 lib/OpenSRF/Transport/SlimJabber/PeerConnection.pm
 lib/OpenSRF/Transport/SlimJabber/XMPPMessage.pm
 lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
-lib/OpenSRF/UnixServer.pm
 lib/OpenSRF/Utils.pm
 lib/OpenSRF/Utils/Cache.pm
 lib/OpenSRF/Utils/Config.pm
