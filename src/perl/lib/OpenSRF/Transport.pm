@@ -13,15 +13,6 @@ use OpenSRF::Transport::SlimJabber::MessageWrapper;
 # --- These must be implemented by all Transport subclasses
 # -------------------------------------------
 
-=head2 get_listener
-
-Returns the package name of the package the system will use to 
-gather incoming requests
-
-=cut
-
-sub get_listener { shift()->alert_abstract(); }
-
 =head2 get_peer_client
 
 Returns the name of the package responsible for client communication

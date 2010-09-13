@@ -34,7 +34,6 @@ sub load_bootstrap_config {
 	OpenSRF::Utils::JSON->register_class_hint(name => "OpenSRF::Application", hint => "method", type => "hash");
 	OpenSRF::Transport->message_envelope("OpenSRF::Transport::SlimJabber::MessageWrapper");
 	OpenSRF::Transport::PeerHandle->set_peer_client("OpenSRF::Transport::SlimJabber::PeerConnection");
-	OpenSRF::Transport::Listener->set_listener("OpenSRF::Transport::SlimJabber::Inbound");
 	OpenSRF::Application->server_class('client');
 }
 

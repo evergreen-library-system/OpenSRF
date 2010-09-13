@@ -9,8 +9,6 @@ classes for handling transport layer messaging
 =cut
 
 
-sub get_listener { return "OpenSRF::Transport::SlimJabber::Inbound"; }
-
 sub get_peer_client { return "OpenSRF::Transport::SlimJabber::PeerConnection"; }
 
 sub get_msg_envelope { return "OpenSRF::Transport::SlimJabber::MessageWrapper"; }
