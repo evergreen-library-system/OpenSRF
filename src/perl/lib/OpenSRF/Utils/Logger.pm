@@ -255,6 +255,8 @@ sub _log_message {
 		if( is_syslog() ) { syslog( $fac | $l, $msg ); }
 		elsif( is_filelog() ) { _write_file($msg); }
 	}
+
+	return $msg;
 }
 
 sub _write_file {
