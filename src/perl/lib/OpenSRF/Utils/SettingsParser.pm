@@ -134,7 +134,13 @@ sub XML2perl {
 # returns the full config hash for a given server
 sub get_server_config {
 	my( $self, $server ) = @_;
-	my $xpath = "/opensrf/default|/opensrf/hosts/$server";
+
+    # Work around a Net::Domain bug that can result in fqdn like foo.example.com,bar.com
+    my @servers = split /,/, $server;
+    my $xpath = "/opensrf/default";
+    foreach (@servers) {
+        $xpath .= "|/opensrf/hosts/$_";
+    }
 	return $self->_get( $xpath );
 }
 
