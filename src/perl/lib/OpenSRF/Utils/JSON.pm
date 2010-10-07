@@ -219,7 +219,7 @@ sub perl2JSONObject {
     }
 
     if($ref ne 'HASH' and $ref ne 'ARRAY') {
-        $ref = $pkg->lookup_hint($ref) if $pkg->lookup_hint($ref);
+        $ref = $_class_map{classes}{$ref}{hint} || $ref;
         $jsonobj = {$JSON_CLASS_KEY => $ref, $JSON_PAYLOAD_KEY => $jsonobj};
     }
 
