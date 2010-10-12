@@ -90,6 +90,9 @@ vim:et:ts=2:sw=2:
         <!-- max stateful requests before a session automatically disconnects a client -->
         <max_requests>97</max_requests>
 
+        <!-- this will disable the stderr output log for this service -->
+        <!--<diable_stderr>true</disable_stderr>-->
+
         <!-- settings for the backend application drones.  These are probably sane defaults -->
         <unix_config>
 

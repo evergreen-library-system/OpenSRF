@@ -34,12 +34,15 @@ sub new {
     my($class, $service, %args) = @_;
     my $self = bless(\%args, $class);
 
-    $self->{service}         = $service; # service name
-    $self->{num_children}    = 0; # number of child processes
-    $self->{osrf_handle}     = undef; # xmpp handle
-    $self->{routers}         = []; # list of registered routers
-    $self->{active_list}     = []; # list of active children
-    $self->{idle_list}       = []; # list of idle children
+    $self->{service}        = $service; # service name
+    $self->{num_children}   = 0; # number of child processes
+    $self->{osrf_handle}    = undef; # xmpp handle
+    $self->{routers}        = []; # list of registered routers
+    $self->{active_list}    = []; # list of active children
+    $self->{idle_list}      = []; # list of idle children
+
+    $self->{stderr_log} = $self->{stderr_log_path} . "/${service}_stderr.log" 
+        if $self->{stderr_log_path};
 
     $self->{min_spare_children} ||= 0;
 
@@ -344,6 +347,17 @@ sub spawn_child {
     } else { # child process
 
         $SIG{$_} = 'DEFAULT' for (qw/INT TERM QUIT HUP/);
+
+        if($self->{stderr_log}) {
+
+            $chatty and $logger->internal("server: redirecting STDERR to " . $self->{stderr_log});
+
+            close STDERR;
+            unless( open(STDERR, '>>' . $self->{stderr_log}) ) {
+                $logger->error("server: unable to open STDERR log file: " . $self->{stderr_log} . " : $@");
+                open STDERR, '>/dev/null'; # send it back to /dev/null
+            }
+        }
 
         $child->{pid} = $$;
         eval {

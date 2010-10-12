@@ -86,6 +86,10 @@ sub run_service {
 
     # kill the temp connection
     OpenSRF::Transport::PeerHandle->retrieve->disconnect;
+    
+    # if this service does not want stderr output, it will be redirected to /dev/null
+    my $disable_stderr = $getval->('disable_stderr') || '';
+    my $stderr_path = ($disable_stderr =~ /true/i) ? undef : $sclient->config_value(dirs => 'log');
 
     my $server = OpenSRF::Server->new(
         $service,
@@ -94,7 +98,8 @@ sub run_service {
         max_children =>  $getval->(unix_config => 'max_children') || 20,
         min_children =>  $getval->(unix_config => 'min_children') || 1,
         min_spare_children =>  $getval->(unix_config => 'min_spare_children'),
-        max_spare_children =>  $getval->(unix_config => 'max_spare_children')
+        max_spare_children =>  $getval->(unix_config => 'max_spare_children'),
+        stderr_log_path => $stderr_path
     );
 
     while(1) {
