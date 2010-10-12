@@ -241,12 +241,12 @@ OpenSRF.Stack.push = function(net_msg, callbacks) {
 
     // push the latest responses onto the end of the inbound message queue
     for(var i = 0; i < osrf_msgs.length; i++)
-        OpenSRF.Stack.queue.push({msg : osrf_msgs[i], callbacks : callbacks});
+        OpenSRF.Stack.queue.push({msg : osrf_msgs[i], callbacks : callbacks, ses : ses});
 
     // continue processing responses, oldest to newest
     while(OpenSRF.Stack.queue.length) {
         var data = OpenSRF.Stack.queue.shift();
-        OpenSRF.Stack.handle_message(ses, data.msg, data.callbacks);
+        OpenSRF.Stack.handle_message(data.ses, data.msg, data.callbacks);
     }
 }
 
