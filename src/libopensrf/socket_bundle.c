@@ -309,17 +309,20 @@ int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr)
 	// ------------------------------------------------------------------
 	struct addrinfo hints = { 0, 0, 0, 0, 0, NULL, NULL, NULL };
 	hints.ai_socktype = SOCK_STREAM;
-	struct addrinfo* addr_info = NULL;
+	struct addrinfo* addr_info_list = NULL;
 	errno = 0;
-	int rc = getaddrinfo( dest_addr, NULL, &hints, &addr_info );
-	if( rc || ! addr_info ) {
+	int rc = getaddrinfo( dest_addr, NULL, &hints, &addr_info_list );
+	if( rc || ! addr_info_list ) {
 		osrfLogWarning( OSRF_LOG_MARK, "socket_open_tcp_client(): No Such Host => %s: %s",
 			dest_addr, gai_strerror( rc ) );
+		if( addr_info_list )
+			freeaddrinfo( addr_info_list );
 		return -1;
 	}
 
 	// Look for an address supporting IPv4.  Someday we'll look for
 	// either IPv4 or IPv6, and branch according to what we find.
+	const struct addrinfo* addr_info = addr_info_list;
 	while( addr_info && addr_info->ai_family != PF_INET ) {
 		addr_info = addr_info->ai_next;
 	}
@@ -327,6 +330,8 @@ int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr)
 	if( ! addr_info ) {
 		osrfLogWarning( OSRF_LOG_MARK,
 			"socket_open_tcp_client(): Host %s does not support IPV4", dest_addr );
+		if( addr_info_list )
+			freeaddrinfo( addr_info_list );
 		return -1;
 	}
 
@@ -337,6 +342,8 @@ int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr)
 	if( (sock_fd = socket( AF_INET, SOCK_STREAM, 0 )) < 0 ) {
 		osrfLogWarning( OSRF_LOG_MARK, "socket_open_tcp_client(): Cannot create TCP socket: %s",
 			strerror( errno ) );
+		if( addr_info_list )
+			freeaddrinfo( addr_info_list );
 		return -1;
 	}
 
@@ -352,7 +359,7 @@ int socket_open_tcp_client(socket_manager* mgr, int port, const char* dest_addr)
 	struct sockaddr_in* ai_addr_in = (struct sockaddr_in*) addr_info->ai_addr;
 	remoteAddr.sin_addr.s_addr = ai_addr_in->sin_addr.s_addr;
 
-	freeaddrinfo( addr_info );
+	freeaddrinfo( addr_info_list );
 
 	// ------------------------------------------------------------------
 	// Connect to server
