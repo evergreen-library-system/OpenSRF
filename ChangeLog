@@ -1,1 +1,216 @@
-#ChangeLog
+Changes for the 1.2.3 release:
+
+2010-10-15  dbs
+
+	* README, src/perl/lib/OpenSRF.pm: Update to version 1.2.3; remove Intrepid from
+	  supported distros list
+
+2010-10-12  erickson
+
+	* src/javascript/opensrf.js: when we add xhr responses onto the end of the queue,
+	  stash the original session as well, otherwise we're attempting to ask a session
+	  questions about requests it's not tracking
+
+2010-08-18  erickson
+
+	* src/javascript/opensrf.js: back-port 2008: async message handling ordering
+
+2010-04-15  dbs
+
+	* src/extras/Makefile.install: Install DateTime packages rather than relying on
+	  CPAN
+	  
+	  etch and hardy have all but DateTime::Format::ISO8601 packaged;
+	  if we don't install the DateTime packages, D:F:ISO8601 forces a CPAN
+	  install - and building current versions of DateTime appears to be problematic
+	  on Hardy, at least
+	  
+	  We were installing these packages as prereqs in the Evergreen Makefile.install,
+	  so this problem might stem all the way back to the split of the Evergreen and
+	  OpenSRF dependency installers.
+
+2010-03-12  miker
+
+	* src/perl/lib/OpenSRF/Utils.pm: backport spelling fix alias to reduce pain in
+	  backporting
+
+Changes for the 1.2.2 release:
+
+2010-02-03  dbs
+
+	* src/javascript/opensrf_xhr.js: Prevent Internet Explorer from
+	  making multipart-mixed-replace calls as well
+
+Changes for the 1.2.1 release:
+
+2009-11-20  dbs
+
+	* [r1859] Patch from Jeroen van Meeuwen (Fedora Project)
+	  <kanarip@fedoraproject.org> to use $(APXS2)
+	  
+	  Attached patch makes the auto foo respect the --with-apxs
+	  ./configure option for src/gateway/Makefile.am.
+
+	* [r1860] Backport Ubuntu Karmic prereq install target to 1.2
+	  branch
+
+	* [r1861] Merge Bill Erickson's fixes (r1730, r1731) from trunk for
+	  recent versions of ejabberd
+	  
+	  Set the 'from' address in outbound xmpp messages
+
+2009-12-02  erickson
+
+	* [r1866] Prevent infinite loop (with logging) in child process
+	  reaping.
+	  
+	  From the perl docs on waitpid:
+	  
+	  Note that on some systems, a return value of "-1" could mean that
+	  child processes are being automatically reaped. See perlipc for
+	  details, and for other examples.
+
+2010-01-25  erickson
+
+	* [r1902] Added some fault tolerance to the inbound-to-unixserver
+	  message handoff process. In some conditions, the unix socket will
+	  result in sigpipe (anecdotally, seen more oftenvirtualized
+	  environments). these changes add a call to select before writing
+	  to the socket to check for socket availability and add a sigpipe
+	  handler that forces the inbound process to wait a brief period of
+	  time before trying the delivery again
+
+2010-01-29  dbs
+
+	* [r1907] Apply patches for enhancing portability, from Dan
+	  McMahill
+	  
+	  The following is a list of the patches and a brief description of
+	  what they are supposed to address. They were needed for building
+	  OpenSRF-1.2.0 (the most recent release) on a NetBSD system.
+	  
+	  patch-aa -- some systems have dlerror() in libc instead of libdl
+	  so use AC_SEARCH_LIBS to see if we need an explicit -ldl or not.
+	  Fail in the same way as the previous code if we can't find
+	  dlerror() anywhere.
+	  
+	  malloc_stats() is malloc implementation specific so check for it
+	  and define HAVE_MALLOC_STATS if we do.
+	  
+	  patch-ab -- No need to explicitly list -lxml2 -ldl -lmemcache in
+	  LDADD. These were automatically filled in via the LIBS variable
+	  which is filled in via AC_SEARCH_LIBS and AC_CHECK_LIB. Also this
+	  way -ldl only shows up if it is actually needed.
+	  
+	  patch-ac -- Only conditionally call malloc_stats() if it exists.
+	  On systems without malloc_stats(), just print a warning to the
+	  effect.
+	  
+	  patch-ad -- Instead of using -lopensrf for foo_la_LIBADD use
+	  @top_builddir@/src/libopensrf/libopensrf.la. This is the way to
+	  link to the not-yet-installed libtool library we just built.
+	  
+	  patch-af -- "sed -i" is a GNU sed extension and not portable to
+	  Solaris or the various BSDs. Rework the target a little to be
+	  more portable.
+	  
+	  patch-ag -- Use /bin/sh instead of /bin/bash. And to make sure
+	  this will work on non-Linux systems where /bin/sh is *not* bash,
+	  make things a little more portable. The biggest is that function
+	  foo { code here } is replaced by the more portable foo() {code
+	  here} syntax.
+	  
+	  patch-ah -- Use /bin/sh instead of /bin/bash. And to make sure
+	  this will work on non-Linux systems where /bin/sh is *not* bash,
+	  make things a little more portable. Of note, "echo -e" is
+	  non-portable so instead use as "here document" which is more
+	  portable and also I think easier to edit anyway. Also address the
+	  function syntax and finally "==" is a bash extension to "test".
+	  "=" does the same thing and is portable to other shells.
+	  
+	  Developer's Certificate of Origin 1.1
+	  
+	  By making a contribution to this project, I certify that:
+	  
+	  (a) The contribution was created in whole or in part by me and I
+	  have the right to submit it under the open source license
+	  indicated in the file; or
+	  
+	  (b) The contribution is based upon previous work that, to the
+	  best of my knowledge, is covered under an appropriate open source
+	  license and I have the right under that license to submit that
+	  work with modifications, whether created in whole or in part by
+	  me, under the same open source license (unless I am permitted to
+	  submit under a different license), as indicated in the file; or
+	  
+	  (c) The contribution was provided directly to me by some other
+	  person who certified (a), (b) or (c) and I have not modified it.
+	  
+	  (d) I understand and agree that this project and the contribution
+	  are public and that a record of the contribution (including all
+	  personal information I submit with it, including my sign-off) is
+	  maintained indefinitely and may be redistributed consistent with
+	  this project or the open source license(s) involved.
+	  
+	  Signed-off-by: Dan McMahill <dmcmahill@NetBSD.org>
+
+	* [r1908] Apply one more portability patch from Dan McMahill
+	  
+	  patch-ae -- $$(command) is ok with bash and ksh but is not
+	  portable to all /bin/sh implementations. Also instead of hard
+	  coding "apxs2" use the APXS2 variable which was set during the
+	  configure process. This is especially helpful when the binary is
+	  installed as apxs instead of apxs2.
+	  
+	  Finally, remove the DEF_LDLIBS from the apxs2 compilation/link
+	  line. As near as I can tell this only removed -lopensrf which is
+	  ok because we already had libopensrf.so explicitly listed.
+	  Including -lopensrf didn't work correctly since libopensrf had
+	  been built but not yet installed.
+	  
+	  Developer's Certificate of Origin 1.1
+	  
+	  By making a contribution to this project, I certify that:
+	  
+	  (a) The contribution was created in whole or in part by me and I
+	  have the right to submit it under the open source license
+	  indicated in the file; or
+	  
+	  (b) The contribution is based upon previous work that, to the
+	  best of my knowledge, is covered under an appropriate open source
+	  license and I have the right under that license to submit that
+	  work with modifications, whether created in whole or in part by
+	  me, under the same open source license (unless I am permitted to
+	  submit under a different license), as indicated in the file; or
+	  
+	  (c) The contribution was provided directly to me by some other
+	  person who certified (a), (b) or (c) and I have not modified it.
+	  
+	  (d) I understand and agree that this project and the contribution
+	  are public and that a record of the contribution (including all
+	  personal information I submit with it, including my sign-off) is
+	  maintained indefinitely and may be redistributed consistent with
+	  this project or the open source license(s) involved.
+	  
+	  Signed-off-by: Dan McMahill <dmcmahill@NetBSD.org>
+
+	* [r1910] Backport r1904 from trunk: Prevent WebKit?-based browsers
+	  (Chrome and Safari) from requesting multipart
+
+	* [r1911] Backport r1905 from trunk: Add an example Apache virtual
+	  host configuration and curl script for testing the math service
+
+	* [r1912] Backport r1906 from trunk: Provide a thread if the
+	  translator wasn't passed one in the request headers
+
+2010-02-02  dbs
+
+	* [r1914] Revert part of r1908 - Apache won't load its opensrf
+	  modules without DEF_LDLIBS
+
+2010-02-02  miker
+
+	* [r1916] .[CPY]: Tagging 1.2.1
+
+	* [r1917] src/perl/lib/OpenSRF.pm, src/python/setup.py: updating
+	  version numbers
