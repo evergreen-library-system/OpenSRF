@@ -21,6 +21,7 @@ Well-tested values for <osname> include:
   * "fedora13" for Fedora 13
   * "ubuntu-hardy" for Ubuntu 8.04
   * "ubuntu-karmic" for Ubuntu 9.10
+  * "ubuntu-lucid" for Ubuntu 10.04
 
 Less-tested values for <osname> include:
   * "centos" for CentOS 5
