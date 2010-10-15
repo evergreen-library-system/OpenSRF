@@ -20,7 +20,6 @@ Well-tested values for <osname> include:
   * "debian-lenny" for Debian 5.0
   * "ubuntu-gutsy" for Ubuntu 7.10
   * "ubuntu-hardy" for Ubuntu 8.04
-  * "ubuntu-intrepid" for Ubuntu 8.10
 
 Less-tested values for <osname> include:
   * "centos" for CentOS 5 and Red Hat Enterprise Linux 5
