@@ -181,7 +181,7 @@ sub handler {
 
 	}
 
-	$logger->debug(sprintf("Message processing duration: %.3fs",(time() - $start_time)), DEBUG);
+	$logger->info(sprintf("Message processing duration: %.3fs", (time() - $start_time)));
 
 	return $app_session;
 }
