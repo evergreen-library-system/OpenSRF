@@ -167,8 +167,7 @@ sub handler {
 			try {  
 
 				if( ! $msg->handler( $app_session ) ) { return 0; }
-
-				$logger->debug("Successfully handled message", DEBUG);
+				$logger->info(sprintf("Message processing duration: %.3f", (time() - $start_time)));
 
 			} catch Error with {
 
@@ -184,13 +183,10 @@ sub handler {
 		} else { 
 
 			if( ! $msg->handler( $app_session ) ) { return 0; } 
-			$logger->debug("Successfully handled message", DEBUG);
+			$logger->debug(sprintf("Response processing duration: %.3f", (time() - $start_time)));
 
 		}
-
 	}
-
-	$logger->info(sprintf("Message processing duration: %.3fs", (time() - $start_time)));
 
 	return $app_session;
 }
