@@ -48,7 +48,7 @@ extern "C" {
 #endif
 
 /* models a single socket connection */
-struct socket_node;
+struct socket_node_struct;
 typedef struct socket_node_struct socket_node;
 
 
