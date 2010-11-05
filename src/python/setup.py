@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='OpenSRF',
-    version='1.0.0',
+    version='2.0.0',
     install_requires=[
         'dnspython', # required by pyxmpp
     	'python-memcached',
@@ -19,6 +19,6 @@ setup(name='OpenSRF',
     author_email='erickson@esilibrary.com',
     license="GPL",
     url='http://www.open-ils.org/',
-    packages=['osrf'],
+    packages=['osrf', 'osrf.apps'],
     scripts=['srfsh.py']
 )
