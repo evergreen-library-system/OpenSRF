@@ -109,7 +109,7 @@ def do_init():
 
     for key in settings.keys():
         svc = settings[key]
-        if isinstance(svc, dict) and svc['language'] == 'python':
+        if isinstance(svc, dict) and 'language' in svc and svc['language'] == 'python':
             services[key] = svc
 
 
