@@ -41,7 +41,11 @@ endif
 
 if BUILDCORE
 MAYBE_CORE = libopensrf c-apps router srfsh gateway perl
+if BUILDPYTHON
+dist_bin_SCRIPTS = @top_srcdir@/bin/opensrf-perl.pl @top_srcdir@/src/python/opensrf.py
+else
 dist_bin_SCRIPTS = @top_srcdir@/bin/opensrf-perl.pl
+endif
 bin_SCRIPTS = @top_srcdir@/bin/osrf_config @top_srcdir@/bin/osrf_ctl.sh 
 dist_sysconf_DATA = @top_srcdir@/examples/opensrf.xml.example @top_srcdir@/examples/opensrf_core.xml.example @top_srcdir@/examples/srfsh.xml.example 
 endif
