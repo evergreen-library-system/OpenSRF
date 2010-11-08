@@ -100,8 +100,13 @@ sub do_init {
     if($apps) {
         $apps = [$apps] unless ref $apps;
         for my $app (@$apps) {
-            push(@hosted_services, $app) 
-                if $sclient->config_value('apps', $app, 'language') =~ /perl/i;
+            if (!$sclient->config_value('apps', $app)) {
+                msg("Service '$app' is listed for this host, but there is no configuration for it in $opt_config");
+                next;
+            }
+            if ($sclient->config_value('apps', $app, 'language') =~ /perl/i) {
+                push(@hosted_services, $app);
+            }
         }
     }
     return 1;
