@@ -19,10 +19,18 @@
 # 02110-1301, USA
 # -----------------------------------------------------------------------
 
+'''
+Provides an environment for managing OpenSRF services written in Python
+'''
+
 import sys, getopt, os, signal
 import osrf.system, osrf.server, osrf.app, osrf.set, osrf.json
 
 def do_help():
+    '''
+    Print help for the OpenSRF Python application process manager
+    '''
+
     print '''
     Manage OpenSRF application processes
 
@@ -59,38 +67,18 @@ def do_help():
     '''
     sys.exit(0)
 
-
-# Parse the command line options
-ops, args = None, None
-try:
-    ops, args = getopt.getopt(sys.argv[1:], 'a:s:f:c:p:dhl')
-except getopt.GetoptError, e:
-    print '* %s' % str(e)
-    do_help()
-
-options = dict(ops)
-
-if '-a' not in options or '-f' not in options:
-    do_help()
-
-action = options['-a']
-config_file = options['-f']
-pid_dir = options['-p']
-
-service = options.get('-s')
-config_ctx = options.get('-c', 'config.opensrf')
-as_localhost = '-l' in options
-as_daemon = '-d' in options
-
-domain = None
-settings = None
-services = {}
-
-
 def get_pid_file(service):
+    '''
+    Return the PID file for the named service
+    '''
+
     return "%s/%s.pid" % (pid_dir, service)
 
 def do_init():
+    '''
+    Initialize the Python service environment
+    '''
+
     global domain
     global settings
 
@@ -114,6 +102,9 @@ def do_init():
 
 
 def do_start(service):
+    '''
+    Start the named Python service
+    '''
 
     pidfile = get_pid_file(service)
 
@@ -133,36 +124,48 @@ def do_start(service):
             return # parent process returns
 
         # write PID file
-        file = open(pidfile, 'w')
-        file.write(str(os.getpid()))
-        file.close()
+        pid_fd = open(pidfile, 'w')
+        pid_fd.write(str(os.getpid()))
+        pid_fd.close()
 
-    settings = services[service];
+    svc_settings = services[service]
 
-    osrf.app.Application.load(service, settings['implementation'])
+    osrf.app.Application.load(service, svc_settings['implementation'])
     osrf.app.Application.register_sysmethods()
     osrf.app.Application.application.global_init()
 
     controller = osrf.server.Controller(service)
-    controller.max_requests = settings['unix_config']['max_requests']
-    controller.max_children = settings['unix_config']['max_children']
-    controller.min_children = settings['unix_config']['min_children']
-    controller.keepalive = settings['keepalive']
+    controller.max_requests = svc_settings['unix_config']['max_requests']
+    controller.max_children = svc_settings['unix_config']['max_children']
+    controller.min_children = svc_settings['unix_config']['min_children']
+    controller.keepalive = svc_settings['keepalive']
 
     controller.run()
     os._exit(0)
 
 def do_start_all():
+    '''
+    Start all Python services listed in the OpenSRF configuration file
+    '''
+
     print "* starting all services for %s " % domain
     for service in services.keys():
         do_start(service)
 
 def do_stop_all():
+    '''
+    Stop all Python services listed in the OpenSRF configuration file
+    '''
+
     print "* stopping all services for %s " % domain
     for service in services.keys():
         do_stop(service)
 
 def do_stop(service):
+    '''
+    Stop the named Python service
+    '''
+
     pidfile = get_pid_file(service)
 
     if not os.path.exists(pidfile):
@@ -171,9 +174,9 @@ def do_stop(service):
 
     print "* stopping %s" % service
 
-    file = open(pidfile)
-    pid = file.read()
-    file.close()
+    pid_fd = open(pidfile)
+    pid = pid_fd.read()
+    pid_fd.close()
     try:
         os.kill(int(pid), signal.SIGTERM)
     except:
@@ -182,17 +185,43 @@ def do_stop(service):
 
 # -----------------------------------------------------
 
+# Parse the command line options
+ops, args = None, None
+try:
+    ops, args = getopt.getopt(sys.argv[1:], 'a:s:f:c:p:dhl')
+except getopt.GetoptError, e:
+    print '* %s' % str(e)
+    do_help()
+
+options = dict(ops)
+
+if '-a' not in options or '-f' not in options:
+    do_help()
+
+action = options['-a']
+config_file = options['-f']
+pid_dir = options['-p']
+
+service_name = options.get('-s')
+config_ctx = options.get('-c', 'config.opensrf')
+as_localhost = '-l' in options
+as_daemon = '-d' in options
+
+domain = None
+settings = None
+services = {}
+
 do_init()
 
 if action == 'start':
-    do_start(service)
+    do_start(service_name)
 
 elif action == 'stop':
-    do_stop(service)
+    do_stop(service_name)
 
 elif action == 'restart':
-    do_stop(service)
-    do_start(service)
+    do_stop(service_name)
+    do_start(service_name)
 
 elif action == 'start_all':
     do_start_all()
