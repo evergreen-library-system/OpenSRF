@@ -1,4 +1,4 @@
-import simplejson, types 
+import simplejson
 from osrf.net_obj import NetworkObject, parse_net_object
 from osrf.const import OSRF_JSON_PAYLOAD_KEY, OSRF_JSON_CLASS_KEY
 import osrf.log
@@ -14,7 +14,13 @@ _use_cjson = False
 
 class NetworkEncoder(simplejson.JSONEncoder):
     ''' Encoder used by simplejson '''
+
     def default(self, obj):
+        '''
+        Extend the default method offered by simplejson.JSONEncoder
+
+        Wraps the Python object into with OpenSRF class / payload keys
+        '''
 
         if isinstance(obj, NetworkObject):
             reg = obj.get_registry()
@@ -39,8 +45,8 @@ def encode_object(obj):
 
     if isinstance(obj, dict):
         newobj = {}
-        for k,v in obj.iteritems():
-            newobj[k] = encode_object(v)
+        for key, val in obj.iteritems():
+            newobj[key] = encode_object(val)
         return newobj
 
     elif isinstance(obj, list):
@@ -87,13 +93,14 @@ def parse_json_raw(json):
 def to_json_raw(obj):
     """Stringifies an object as JSON with no additional logic."""
     if _use_cjson:
-        return cjson.encode(json)
+        return cjson.encode(obj)
     return simplejson.dumps(obj)
 
 def __tabs(depth):
-    space = ''
-    for i in range(depth):
-        space += '   '
+    '''
+    Returns a string of spaces-not-tabs for the desired indentation level
+    '''
+    space = '    ' * depth
     return space
 
 def debug_net_object(obj, depth=1):
@@ -126,7 +133,8 @@ def debug_net_object(obj, depth=1):
 
             debug_str += str(val)
 
-            if not subobj: debug_str += '\n'
+            if not subobj:
+                debug_str += '\n'
 
     else:
         osrf.log.log_internal("Pretty-printing NetworkObject")
@@ -135,49 +143,49 @@ def debug_net_object(obj, depth=1):
 
 def pprint(json):
     """JSON pretty-printer"""
-    r = ''
-    t = 0
+    result = ''
+    tab = 0
     instring = False
     inescape = False
     done = False
     eatws = False
 
-    for c in json:
+    for char in json:
 
-        if eatws and not _use_cjson: # simpljson adds a pesky space after array and object items
-            if c == ' ': 
+        if eatws and not _use_cjson: # simplejson adds a pesky space after array and object items
+            if char == ' ': 
                 continue
 
         eatws = False
         done = False
-        if (c == '{' or c == '[') and not instring:
-            t += 1
-            r += c + '\n' + __tabs(t)
+        if (char == '{' or char == '[') and not instring:
+            tab += 1
+            result += char + '\n' + __tabs(tab)
             done = True
 
-        if (c == '}' or c == ']') and not instring:
-            t -= 1
-            r += '\n' + __tabs(t) + c
+        if (char == '}' or char == ']') and not instring:
+            tab -= 1
+            result += '\n' + __tabs(tab) + char
             done = True
 
-        if c == ',' and not instring:
-            r += c + '\n' + __tabs(t)
+        if char == ',' and not instring:
+            result += char + '\n' + __tabs(tab)
             done = True
             eatws = True
 
-        if c == ':' and not instring:
+        if char == ':' and not instring:
             eatws = True
 
-        if c == '"' and not inescape:
+        if char == '"' and not inescape:
             instring = not instring
 
         if inescape: 
             inescape = False
 
-        if c == '\\':
+        if char == '\\':
             inescape = True
 
         if not done:
-            r += c
+            result += char
 
-    return r
+    return result
