@@ -138,6 +138,7 @@ class Controller(object):
     def try_new_child(self, data):
         ''' Tries to spawn a new child to send request data to '''
 
+        osrf.log.log_debug("try_new_child: service=%s num_children=%s max_children=%s" % (self.service, self.num_children, self.max_children))
         if self.num_children < self.max_children:
             osrf.log.log_internal("spawning new child to handle data")
             child = self.spawn_child(True)
@@ -220,6 +221,7 @@ class Controller(object):
         
     def spawn_children(self):
         ''' Launches up to min_children child processes '''
+        osrf.log.log_debug("spawn_children: service=%s num_children=%s min_children=%s" % (self.service, self.num_children, self.min_children))
         while self.num_children < self.min_children:
             self.spawn_child()
 
@@ -236,7 +238,7 @@ class Controller(object):
                 self.active_list.insert(0, child)
             else:
                 self.idle_list.insert(0, child)
-            osrf.log.log_debug("spawned child %d : %d total" % (child.pid, self.num_children))
+            osrf.log.log_debug("service %s spawned child %d : %d total" % (self.service, child.pid, self.num_children))
             return child
         else:
             child.pid = os.getpid()
