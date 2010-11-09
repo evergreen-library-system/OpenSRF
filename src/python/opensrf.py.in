@@ -150,7 +150,7 @@ def do_start_all():
 
     # You can't start more than one service without daemonizing
     global as_daemon
-    as_daemon == True
+    as_daemon = True
 
     print "* starting all services for %s " % domain
     for service in services.keys():
