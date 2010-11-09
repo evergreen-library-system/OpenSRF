@@ -263,6 +263,7 @@ if test x$OSRF_INSTALL_PYTHON = xtrue; then
     AC_PYTHON_MOD([setuptools])
     AC_CONFIG_FILES([
         examples/math_client.py
+        examples/simple_text.py
         src/python/Makefile
     ])
 fi
