@@ -98,7 +98,7 @@ class System(object):
     @return 0 if child, pid if parent
     '''
     @staticmethod
-    def daemonize(parentExit=True):
+    def daemonize(parent_exit=True):
         pid = os.fork() 
         if pid == 0:
             try:
@@ -112,7 +112,7 @@ class System(object):
                 sys.stderr = open(os.devnull)
             except (OSError, ValueError):
                 pass
-        elif parentExit:
+        elif parent_exit:
             os._exit(0)
 
         return pid
