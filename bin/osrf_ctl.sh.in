@@ -156,12 +156,17 @@ stop_router() {
 	return 0;
 }
 
+# The clean way to do this would be to invoke the "start_all" action
+# on opensrf.py, but that seems to randomly fail for services. So we
+# start each one separately from a bash script instead.
 start_python() {
     [ ! $($OSRF_CONFIG | grep OSRF_PYTHON) ] && return;
     echo "Starting OpenSRF Python";
     OPT_LOCAL=""
     [ "$OSRF_HOSTNAME" = "localhost" ] && OPT_LOCAL="-l"
-    opensrf.py -d -p $OPT_PID_DIR -f $OPT_CONFIG -a start_all $OPT_LOCAL
+    for service in `opensrf.py -a list_all $OPT_LOCAL`; do
+            opensrf.py -p $OPT_PID_DIR -d -a start -s $service $OPT_LOCAL
+    done
     return 0;
 }
 

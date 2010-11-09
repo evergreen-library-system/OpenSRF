@@ -148,6 +148,13 @@ def do_start(service):
     controller.run()
     os._exit(0)
 
+def do_list_all():
+    '''
+    List all Python services listed in the OpenSRF configuration file
+    '''
+    for service in services.keys():
+        print service
+
 def do_start_all():
     '''
     Start all Python services listed in the OpenSRF configuration file
@@ -232,6 +239,9 @@ elif action == 'stop':
 elif action == 'restart':
     do_stop(service_name)
     do_start(service_name)
+
+elif action == 'list_all':
+    do_list_all()
 
 elif action == 'start_all':
     do_start_all()
