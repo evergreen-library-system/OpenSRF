@@ -113,8 +113,13 @@ def do_start(service):
         return
 
     if os.path.exists(pidfile):
-        print "* service %s already running" % service
-        return
+        try:
+            pid_fd = open(pidfile, 'r')
+            alive = os.getsid(int(pid_fd.read()))
+            print "* service %s already running" % service
+            return
+        except OSError:
+            os.remove(pidfile)
 
     print "* starting %s" % service
 
