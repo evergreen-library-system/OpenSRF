@@ -35,7 +35,7 @@ class Controller(object):
         self.service = service # service name
         self.max_requests = 0 # max child requests
         self.max_children = 0 # max num of child processes
-        self.min_childen = 0 # min num of child processes
+        self.min_children = 0 # min num of child processes
         self.num_children = 0 # current num children
         self.osrf_handle = None # xmpp handle
         self.routers = [] # list of registered routers
@@ -114,7 +114,7 @@ class Controller(object):
                 if self.try_new_child(data):
                     continue
 
-                self.wait_for_child()
+                self.try_wait_child()
 
         except KeyboardInterrupt:
             self.cleanup()
