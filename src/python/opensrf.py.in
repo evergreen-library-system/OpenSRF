@@ -148,6 +148,10 @@ def do_start_all():
     Start all Python services listed in the OpenSRF configuration file
     '''
 
+    # You can't start more than one service without daemonizing
+    global as_daemon
+    as_daemon == True
+
     print "* starting all services for %s " % domain
     for service in services.keys():
         do_start(service)
