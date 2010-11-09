@@ -140,7 +140,9 @@ sub text_split {
     my $delimiter = shift || ' ';
 
     my @split_text = split $delimiter, $text;
-    return \@split_text;
+    foreach my $string (@split_text) {
+        $conn->respond( $string );
+    }
     
     return undef;
 }
@@ -150,6 +152,7 @@ __PACKAGE__->register_method(
     api_name  => 'opensrf.simple-text.split',
     api_level => 1,
     argc      => 2,
+    stream    => 1,
     signature => {
         desc     => <<"         DESC",
 Splits a string by a given delimiter (space by default) and returns an array of the split strings
