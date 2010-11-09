@@ -73,7 +73,7 @@ def handle_client(session, message):
         if status_code == osrf.const.OSRF_STATUS_OK:
             # We have connected successfully
             osrf.log.log_debug("Successfully connected to " + session.service)
-            session.state = OSRF_APP_SESSION_CONNECTED
+            session.state = osrf.const.OSRF_APP_SESSION_CONNECTED
             return
 
         if status_code == osrf.const.OSRF_STATUS_CONTINUE:
@@ -83,12 +83,12 @@ def handle_client(session, message):
 
         if status_code == osrf.const.OSRF_STATUS_TIMEOUT:
             osrf.log.log_debug("The server did not receive a request from us in time...")
-            session.state = OSRF_APP_SESSION_DISCONNECTED
+            session.state = osrf.const.OSRF_APP_SESSION_DISCONNECTED
             return
 
         if status_code == osrf.const.OSRF_STATUS_NOTFOUND:
             osrf.log.log_error("Requested method was not found on the server: %s" % status_text)
-            session.state = OSRF_APP_SESSION_DISCONNECTED
+            session.state = osrf.const.OSRF_APP_SESSION_DISCONNECTED
             raise osrf.ex.OSRFServiceException(status_text)
 
         if status_code == osrf.const.OSRF_STATUS_INTERNALSERVERERROR:
