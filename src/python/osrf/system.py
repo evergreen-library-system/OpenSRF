@@ -101,11 +101,17 @@ class System(object):
     def daemonize(parentExit=True):
         pid = os.fork() 
         if pid == 0:
-            os.chdir('/')
-            os.setsid()
-            sys.stdin.close()
-            sys.stdout.close()
-            sys.stderr.close()
+            try:
+                os.chdir('/')
+                os.setsid()
+                sys.stdin.close()
+                sys.stdin = open(os.devnull)
+                sys.stdout.close()
+                sys.stdout = open(os.devnull)
+                sys.stderr.close()
+                sys.stderr = open(os.devnull)
+            except (OSError, ValueError):
+                pass
         elif parentExit:
             os._exit(0)
 
