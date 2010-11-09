@@ -195,12 +195,13 @@ except getopt.GetoptError, e:
 
 options = dict(ops)
 
-if '-a' not in options or '-f' not in options:
+if '-a' not in options:
     do_help()
 
 action = options['-a']
-config_file = options['-f']
-pid_dir = options['-p']
+
+config_file = options.get('-f', '@CONF_DIR@/opensrf_core.xml')
+pid_dir = options.get('-p', '@PID_DIR@/run/opensrf')
 
 service_name = options.get('-s')
 config_ctx = options.get('-c', 'config.opensrf')

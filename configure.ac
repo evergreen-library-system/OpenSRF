@@ -340,6 +340,7 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 			 src/libopensrf/Makefile
 			 src/perl/Makefile
 			 src/ports/strn_compat/Makefile
+			 src/python/opensrf.py
 			 src/router/Makefile
 			 src/srfsh/Makefile
 			 bin/opensrf-perl.pl
