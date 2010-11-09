@@ -24,7 +24,7 @@ class CacheClient(object):
             '''
         global _client
         if servers:
-            self.client = memcache.Client(server, debug=1)
+            self.client = memcache.Client(servers, debug=1)
         else:
             if not _client:
                 raise CacheException(
