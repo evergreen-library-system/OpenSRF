@@ -99,6 +99,11 @@ def to_json_raw(obj):
 def __tabs(depth):
     '''
     Returns a string of spaces-not-tabs for the desired indentation level
+
+    >>> print '"' + __tabs(0) + '"'
+    ""
+    >>> print '"' + __tabs(4) + '"'
+    "                "
     '''
     space = '    ' * depth
     return space
@@ -189,3 +194,7 @@ def pprint(json):
             result += char
 
     return result
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
