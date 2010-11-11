@@ -165,7 +165,7 @@ start_python() {
     OPT_LOCAL=""
     [ "$OSRF_HOSTNAME" = "localhost" ] && OPT_LOCAL="-l"
     for service in `opensrf.py -a list_all $OPT_LOCAL`; do
-            opensrf.py -p $OPT_PID_DIR -d -a start -s $service $OPT_LOCAL
+            opensrf.py -p $OPT_PID_DIR -f $OPT_CONFIG -d -a start -s $service $OPT_LOCAL
     done
     return 0;
 }
