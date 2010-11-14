@@ -36,6 +36,7 @@ def do_help():
 
     Options:
         -a <action>
+            list_all -- List all services
             start   -- Start a service
             stop    -- stop a service
             restart -- restart a service
@@ -53,7 +54,7 @@ def do_help():
             The OpenSRF config file context
 
         -p <PID dir>
-            The location of application PID files.  Default is /tmp
+            The location of application PID files.  Default is @PID_DIR@/run/opensrf
 
         -d 
             If set, run in daemon (background) mode.  This creates a PID 
@@ -94,12 +95,12 @@ def do_init():
     osrf.set.load(domain)
 
     settings = osrf.set.get('apps')
+    activeapps = osrf.set.get('activeapps')
 
-    for key in settings.keys():
+    for key in (set(settings.keys()) & set(activeapps['appname'])):
         svc = settings[key]
         if isinstance(svc, dict) and 'language' in svc and svc['language'] == 'python':
             services[key] = svc
-
 
 def do_start(service):
     '''
