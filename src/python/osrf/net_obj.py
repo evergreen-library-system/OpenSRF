@@ -44,7 +44,7 @@ class NetworkObject(object):
         self._data = data
         if not data: self._data = {}
         if isinstance(data, list):
-            self.import_array_data(list)
+            self.import_array_data(data)
 
     def import_array_data(self, data):
         ''' If an array-based object is created with an array
@@ -56,10 +56,8 @@ class NetworkObject(object):
 
         reg = self.get_registry()
         if reg.protocol == 'array':
-            for entry in range(len(reg.keys)):
-                if len(data) > entry:
-                    break
-                self.set_field(reg.keys[entry], data[entry])
+            for idx, key in enumerate(reg.keys):
+                self._data[key] = data[idx]
 
     def get_data(self):
         ''' Returns the full dataset for this object as a dict '''
@@ -80,7 +78,7 @@ class NetworkObject(object):
         reg = self.get_registry()
         obj = new_object_from_hint(reg.hint)
         for field in reg.keys:
-            obj.set_field(field, self.get_field(field))
+            obj._data[field] = self._data[field]
         return obj
             
 
@@ -102,8 +100,8 @@ def __make_network_accessor(cls, key):
         the field on the object whose data we are accessing ''' 
     def accessor(self, *args):
         if len(args) != 0:
-            self.set_field(key, args[0])
-        return self.get_field(key)
+            self._data[key] = args[0]
+        return self._data[key]
     setattr(cls, key, accessor)
 
 
@@ -159,11 +157,16 @@ def parse_net_object(obj):
                 obj = {}
 
                 if reg.protocol == 'array':
-                    for entry in range(len(reg.keys)):
-                        if len(sub_object) > entry:
-                            obj[reg.keys[entry]] = parse_net_object(sub_object[entry])
+                    subobj_len = len(sub_object)
+
+                    for idx, key in enumerate(reg.keys):
+                        if idx < subobj_len: 
+                            # don't attempt acces past the end of the data list
+                            obj[key] = parse_net_object(sub_object[idx])
                         else:
-                            obj[reg.keys[entry]] = None
+                            # make sure all keys are accounted for, even if there 
+                            # is no data for the key in the parsed object
+                            obj[key] = None 
                 else:
                     for key in reg.keys:
                         obj[key] = parse_net_object(sub_object.get(key))
