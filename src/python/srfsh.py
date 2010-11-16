@@ -32,8 +32,7 @@ def do_loop():
     while True:
 
         try:
-            #line = raw_input("srfsh% ")
-            line = raw_input("\033[01;32msrfsh\033[01;34m% \033[00m")
+            line = raw_input("srfsh% ")
             if not len(line): 
                 continue
             if str.lower(line) == 'exit' or str.lower(line) == 'quit': 
@@ -135,6 +134,7 @@ def handle_request(parts):
             break
         total = time.time() - start
 
+        print str(resp.content())
         otp = get_var('SRFSH_OUTPUT')
         if otp == 'pretty':
             print "\n" + osrf.json.debug_net_object(resp.content())
@@ -225,9 +225,9 @@ def setup_readline():
 
 def do_connect():
     file = os.path.join(get_var('HOME'), ".srfsh.xml")
-    print_green("Connecting to opensrf...")
+    print_stdout("Connecting to opensrf...")
     osrf.system.System.connect(config_file=file, config_context='srfsh')
-    print_red('OK\n')
+    print_stdout('OK\n')
 
 def load_plugins():
     # Load the user defined external plugins
@@ -237,7 +237,7 @@ def load_plugins():
 
     except:
         # XXX standard srfsh.xml does not yet define <plugins> element
-        print_red("No plugins defined in /srfsh/plugins/plugin\n")
+        #print_stdout("No plugins defined in /srfsh/plugins/plugin\n")
         return
 
     plugins = osrf.conf.get('plugins.plugin')
@@ -247,19 +247,19 @@ def load_plugins():
     for module in plugins:
         name = module['module']
         init = module['init']
-        print_green("Loading module %s..." % name)
+        print_stdout("Loading module %s..." % name)
 
         try:
             string = 'import %s\n%s.%s()' % (name, name, init)
             exec(string)
-            print_red('OK\n')
+            print_stdout('OK\n')
 
         except Exception, e:
             sys.stderr.write("\nError importing plugin %s, with init symbol %s: \n%s\n" % (name, init, e))
 
 def set_vars():
     if not get_var('SRFSH_OUTPUT'):
-        set_var('SRFSH_OUTPUT', 'pretty')
+        set_var('SRFSH_OUTPUT', 'raw')
 
     # XXX Do we need to differ between LANG and LC_MESSAGES?
     if not get_var('SRFSH_LOCALE'):
@@ -299,16 +299,8 @@ def __get_locale():
 
     return locale
     
-def print_green(string):
-    sys.stdout.write("\033[01;32m")
+def print_stdout(string):
     sys.stdout.write(string)
-    sys.stdout.write("\033[00m")
-    sys.stdout.flush()
-
-def print_red(string):
-    sys.stdout.write("\033[01;31m")
-    sys.stdout.write(string)
-    sys.stdout.write("\033[00m")
     sys.stdout.flush()
 
 
