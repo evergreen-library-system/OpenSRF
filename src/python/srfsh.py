@@ -134,7 +134,6 @@ def handle_request(parts):
             break
         total = time.time() - start
 
-        print str(resp.content())
         otp = get_var('SRFSH_OUTPUT')
         if otp == 'pretty':
             print "\n" + osrf.json.debug_net_object(resp.content())
