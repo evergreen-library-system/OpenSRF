@@ -146,45 +146,40 @@ register_hint('__unknown', [], 'hash')
 # Define the custom object parsing behavior 
 # -------------------------------------------------------------------
 def parse_net_object(obj):
-    
-    try:
-        hint = obj[OSRF_JSON_CLASS_KEY]
-        sub_object = obj[OSRF_JSON_PAYLOAD_KEY]
-        reg = NetworkRegistry.get_registry(hint)
 
-        obj = {}
+    if isinstance(obj, dict):
+        if OSRF_JSON_CLASS_KEY in obj and OSRF_JSON_PAYLOAD_KEY in obj:
 
-        if reg.protocol == 'array':
-            for entry in range(len(reg.keys)):
-                if len(sub_object) > entry:
-                    obj[reg.keys[entry]] = parse_net_object(sub_object[entry])
+            hint = obj[OSRF_JSON_CLASS_KEY]
+            sub_object = obj[OSRF_JSON_PAYLOAD_KEY]
+            reg = NetworkRegistry.get_registry(hint)
+            
+            if reg:
+
+                obj = {}
+
+                if reg.protocol == 'array':
+                    for entry in range(len(reg.keys)):
+                        if len(sub_object) > entry:
+                            obj[reg.keys[entry]] = parse_net_object(sub_object[entry])
+                        else:
+                            obj[reg.keys[entry]] = None
                 else:
-                    obj[reg.keys[entry]] = None
-        else:
-            for key in reg.keys:
-                obj[key] = parse_net_object(sub_object.get(key))
+                    for key in reg.keys:
+                        obj[key] = parse_net_object(sub_object.get(key))
 
-        estr = 'obj = NetworkObject.%s(obj)' % hint
-        try:
-            exec(estr)
-        except:
-            # this object has not been registered, shove it into the default container
-            obj = NetworkObject.__unknown(obj)
+                # vivicate the network object
+                estr = 'obj = NetworkObject.%s(obj)' % hint
+                exec(estr) 
+                return obj
 
-        return obj
+        # dict, but not a registered NetworObject
+        for key, value in obj.iteritems():
+            obj[key] = parse_net_object(value)
 
-    except:
-        pass
-
-    # the current object does not have a class hint
-    if isinstance(obj, list):
-        for entry in range(len(obj)):
-            obj[entry] = parse_net_object(obj[entry])
-
-    else:
-        if isinstance(obj, dict):
-            for key, value in obj.iteritems():
-                obj[key] = parse_net_object(value)
+    elif isinstance(obj, list):
+        for idx, value in enumerate(obj):
+            obj[idx] = parse_net_object(value)
 
     return obj
 
