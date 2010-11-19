@@ -7,7 +7,7 @@ srfsh.py - provides a basic shell for issuing OpenSRF requests
     - show this menu
 
   math_bench <count>
-    - runs <count> opensrf.math requests and reports the average time
+    - runs <count> opensrf.math requests and prints the average time
 
   request <service> <method> [<param1>, <param2>, ...]
     - performs an opensrf request
@@ -25,53 +25,85 @@ srfsh.py - provides a basic shell for issuing OpenSRF requests
 import os, sys, time, readline, atexit, re
 import osrf.json, osrf.system, osrf.ses, osrf.conf, osrf.log, osrf.net
 
+router_command_map = {
+    'services' : 'opensrf.router.info.class.list',
+    'service-stats' : 'opensrf.router.info.stats.class.node.all',
+    'service-nodes' : 'opensrf.router.info.stats.class.all'
+}
+
+# List of words to use for readline tab completion
+tab_complete_words = [
+    'request', 
+    'set',
+    'router',
+    'help', 
+    'exit', 
+    'quit', 
+    'opensrf.settings', 
+    'opensrf.math'
+]
+
+# add the router commands to the tab-complete list
+for rcommand in router_command_map.keys():
+    tab_complete_words.append(rcommand)
+
 # -------------------------------------------------------------------
 # main listen loop
 # -------------------------------------------------------------------
 def do_loop():
+
+    command_map = {
+        'request' : handle_request,
+        'router' : handle_router,
+        'math_bench' : handle_math_bench,
+        'help' : handle_help,
+        'set' : handle_set,
+        'get' : handle_get,
+    }
+
     while True:
 
         try:
-            line = raw_input("srfsh% ")
+            line = raw_input("srfsh# ")
+
             if not len(line): 
                 continue
+
             if str.lower(line) == 'exit' or str.lower(line) == 'quit': 
                 break
+
             parts = str.split(line)
+            command = parts.pop(0)
 
-            command = parts[0]
-        
-            if command == 'request':
-                parts.pop(0)
-                handle_request(parts)
+            if command not in command_map:
+                print "unknown command: '%s'" % command
                 continue
 
-            if command == 'math_bench':
-                parts.pop(0)
-                handle_math_bench(parts)
-                continue
+            command_map[command](parts)
 
-            if command == 'help':
-                handle_help()
-                continue
-
-            if command == 'set':
-                parts.pop(0)
-                handle_set(parts)
-
-            if command == 'get':
-                parts.pop(0)
-                handle_get(parts)
-
-
-
-        except KeyboardInterrupt:
-            print ""
-
-        except EOFError:
-            print "exiting..."
+        except EOFError: # ^-d
             sys.exit(0)
 
+        except KeyboardInterrupt: # ^-c
+            print ""
+
+        except Exception, e:
+            print e
+
+
+def handle_router(parts):
+
+    if len(parts) == 0:
+        print "usage: router <query>"
+        return
+
+    query = parts[0]
+
+    if query not in router_command_map:
+        print "router query options: %s" % ','.join(router_command_map.keys())
+        return
+
+    return handle_request(['router', router_command_map[query]])
 
 # -------------------------------------------------------------------
 # Set env variables to control behavior
@@ -94,13 +126,18 @@ def handle_get(parts):
 # -------------------------------------------------------------------
 # Prints help info
 # -------------------------------------------------------------------
-def handle_help():
+def handle_help(foo):
     print __doc__
 
 # -------------------------------------------------------------------
 # performs an opensrf request
 # -------------------------------------------------------------------
 def handle_request(parts):
+
+    if len(parts) < 2:
+        print "usage: request <service> <api_name> [<param1>, <param2>, ...]"
+        return
+
     service = parts.pop(0)
     method = parts.pop(0)
     locale = __get_locale()
@@ -136,9 +173,9 @@ def handle_request(parts):
 
         otp = get_var('SRFSH_OUTPUT')
         if otp == 'pretty':
-            print "\n" + osrf.json.debug_net_object(resp.content())
+            print "Received Data: %s\n" % osrf.json.debug_net_object(resp.content())
         else:
-            print osrf.json.pprint(osrf.json.to_json(resp.content()))
+            print "Received Data: %s\n" % osrf.json.pprint(osrf.json.to_json(resp.content()))
 
     req.cleanup()
     ses.cleanup()
@@ -193,25 +230,36 @@ def handle_math_bench(parts):
 # Defines the tab-completion handling and sets up the readline history 
 # -------------------------------------------------------------------
 def setup_readline():
+
     class SrfshCompleter(object):
+
         def __init__(self, words):
             self.words = words
             self.prefix = None
     
         def complete(self, prefix, index):
+
             if prefix != self.prefix:
+
+                self.prefix = prefix
+
                 # find all words that start with this prefix
                 self.matching_words = [
                     w for w in self.words if w.startswith(prefix)
                 ]
-                self.prefix = prefix
-                try:
-                    return self.matching_words[index]
-                except IndexError:
+
+                if len(self.matching_words) == 0:
                     return None
-    
-    words = 'request', 'help', 'exit', 'quit', 'opensrf.settings', 'opensrf.math', 'set'
-    completer = SrfshCompleter(words)
+
+                if len(self.matching_words) == 1:
+                    return self.matching_words[0]
+
+                sys.stdout.write('\n%s\nsrfsh# %s' % 
+                    (' '.join(self.matching_words), readline.get_line_buffer()))
+
+                return None
+
+    completer = SrfshCompleter(tuple(tab_complete_words))
     readline.parse_and_bind("tab: complete")
     readline.set_completer(completer.complete)
 
@@ -222,11 +270,12 @@ def setup_readline():
         pass
     atexit.register(readline.write_history_file, histfile)
 
+    readline.set_completer_delims(readline.get_completer_delims().replace('-',''))
+
+
 def do_connect():
     file = os.path.join(get_var('HOME'), ".srfsh.xml")
-    print_stdout("Connecting to opensrf...")
     osrf.system.System.connect(config_file=file, config_context='srfsh')
-    print_stdout('OK\n')
 
 def load_plugins():
     # Load the user defined external plugins
@@ -236,7 +285,7 @@ def load_plugins():
 
     except:
         # XXX standard srfsh.xml does not yet define <plugins> element
-        #print_stdout("No plugins defined in /srfsh/plugins/plugin\n")
+        #print("No plugins defined in /srfsh/plugins/plugin\n")
         return
 
     plugins = osrf.conf.get('plugins.plugin')
@@ -246,12 +295,12 @@ def load_plugins():
     for module in plugins:
         name = module['module']
         init = module['init']
-        print_stdout("Loading module %s..." % name)
+        print "Loading module %s..." % name
 
         try:
             string = 'import %s\n%s.%s()' % (name, name, init)
             exec(string)
-            print_stdout('OK\n')
+            print 'OK'
 
         except Exception, e:
             sys.stderr.write("\nError importing plugin %s, with init symbol %s: \n%s\n" % (name, init, e))
@@ -298,11 +347,6 @@ def __get_locale():
 
     return locale
     
-def print_stdout(string):
-    sys.stdout.write(string)
-    sys.stdout.flush()
-
-
 if __name__ == '__main__':
 
     # Kick it off
