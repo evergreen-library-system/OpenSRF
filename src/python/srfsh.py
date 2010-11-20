@@ -11,9 +11,14 @@ srfsh.py - provides a basic shell for issuing OpenSRF requests
 
   request <service> <method> [<param1>, <param2>, ...]
     - performs an opensrf request
+    - parameters are JSON strings
 
   router <query>
     - Queries the router.  Query options: services service-stats service-nodes
+
+  introspect <service> [<api_name_prefix>]
+    - List API calls for a service.  
+    - api_name_prefix is a bare string or JSON string.
 
   set VAR=<value>
     - sets an environment variable
@@ -52,6 +57,7 @@ tab_complete_words = [
     'help', 
     'exit', 
     'quit', 
+    'introspect',
     'opensrf.settings', 
     'opensrf.math'
 ]
@@ -69,6 +75,7 @@ def do_loop():
         'request' : handle_request,
         'router' : handle_router,
         'math_bench' : handle_math_bench,
+        'introspect' : handle_introspect,
         'help' : handle_help,
         'set' : handle_set,
         'get' : handle_get,
@@ -105,6 +112,26 @@ def do_loop():
             report("%s\n" % e)
 
     cleanup()
+
+def handle_introspect(parts):
+
+    if len(parts) == 0:
+        report("usage: introspect <service> [api_prefix]\n")
+        return
+
+    service = parts.pop(0)
+    args = [service, 'opensrf.system.method']
+
+    if len(parts) > 0:
+        api_pfx = parts[0]
+        if api_pfx[0] != '"': # json-encode if necessary
+            api_pfx = '"%s"' % api_pfx
+        args.append(api_pfx)
+    else:
+        args[1] += '.all'
+
+    return handle_request(args)
+
 
 def handle_router(parts):
 
