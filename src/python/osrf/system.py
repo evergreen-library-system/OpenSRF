@@ -62,6 +62,10 @@ class System(object):
 
         return network
 
+    @staticmethod
+    def net_disconnect():
+        network = osrf.net.get_network_handle()
+        network.disconnect()
 
     @staticmethod
     def connect(**kwargs):
