@@ -92,7 +92,7 @@ static void prefork_run( prefork_simple* forker );
 static void add_prefork_child( prefork_simple* forker, prefork_child* child );
 
 static void del_prefork_child( prefork_simple* forker, pid_t pid );
-static void check_children( prefork_simple* forker, int forever );
+static int check_children( prefork_simple* forker, int forever );
 static int  prefork_child_process_request( prefork_child*, char* data );
 static int prefork_child_init_hook( prefork_child* );
 static prefork_child* prefork_child_init( prefork_simple* forker,
@@ -718,9 +718,12 @@ static void prefork_run( prefork_simple* forker ) {
 
 		while( ! honored ) {
 
-			if( !no_recheck )
-				check_children( forker, 0 );
-			no_recheck = 0;
+            if( !no_recheck ) {
+                if(check_children( forker, 0 ) < 0) {
+                    continue; // check failed, try again
+                }
+            }
+            no_recheck = 0;
 
 			osrfLogDebug( OSRF_LOG_MARK, "Server received inbound data" );
 
@@ -800,9 +803,10 @@ static void prefork_run( prefork_simple* forker ) {
 
 			if( !honored ) {
 				osrfLogWarning( OSRF_LOG_MARK, "No children available, waiting..." );
-				check_children( forker, 1 );
-				// Tell the loop not to call check_children again, since we're calling it now
-				no_recheck = 1;
+				if( check_children( forker, 1 ) >= 0 ) {
+				    // Tell the loop not to call check_children again, since we just successfully called it
+				    no_recheck = 1;
+                }
 			}
 
 			if( child_dead )
@@ -816,14 +820,11 @@ static void prefork_run( prefork_simple* forker ) {
 }
 
 
-/* XXX Add a flag which tells select() to wait forever on children
-	in the best case, this will be faster than calling usleep(x), and
-	in the worst case it won't be slower and will do less logging...
-*/
 /**
 	@brief See if any children have become available.
 	@param forker Pointer to the prefork_simple that owns the children.
 	@param forever Boolean: true if we should wait indefinitely.
+    @return 0 or greater if successful, -1 on select error/interrupt
 
 	Call select() for all the children in the active list.  Read each active file
 	descriptor and move the corresponding child to the idle list.
@@ -831,7 +832,7 @@ static void prefork_run( prefork_simple* forker ) {
 	If @a forever is true, wait indefinitely for input.  Otherwise return immediately if
 	there are no active file descriptors.
 */
-static void check_children( prefork_simple* forker, int forever ) {
+static int check_children( prefork_simple* forker, int forever ) {
 
 	if( child_dead )
 		reap_children( forker );
@@ -842,7 +843,7 @@ static void check_children( prefork_simple* forker, int forever ) {
 		// If forever is false, then the children may all be idle, and that's okay.
 		if( forever )
 			osrfLogError( OSRF_LOG_MARK, "No active child processes to check" );
-		return;
+		return 0;
 	}
 
 	int select_ret;
@@ -885,8 +886,8 @@ static void check_children( prefork_simple* forker, int forever ) {
 		}
 	}
 
-	if( select_ret == 0 )
-		return;
+    if( select_ret <= 0 ) // we're done here
+        return select_ret;
 
 	// Check each child in the active list.
 	// If it has responded, move it to the idle list.
@@ -930,6 +931,8 @@ static void check_children( prefork_simple* forker, int forever ) {
 		}
 		cur_child = next_child;
 	} while( forker->first_child && forker->first_child != next_child );
+
+    return select_ret;
 }
 
 /**
