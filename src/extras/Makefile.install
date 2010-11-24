@@ -94,7 +94,6 @@ DEBS =  \
 	liberror-perl\
 	libexpat1-dev\
 	libfile-find-rule-perl\
-	libfreezethaw-perl\
 	libgcrypt11-dev \
 	libgdbm-dev \
 	liblog-log4perl-perl\
@@ -153,7 +152,6 @@ CENTOS = \
 	perl-Email-Send \
 	perl-Error \
 	perl-File-Find-Rule \
-	perl-FreezeThaw \
 	perl-JSON-XS \
 	perl-libwww-perl \
 	perl-Log-Log4perl \
@@ -211,7 +209,6 @@ FEDORAS = \
 	perl-devel \
 	perl-Error \
 	perl-File-Find-Rule \
-	perl-FreezeThaw \
 	perl-JSON-XS \
 	perl-libwww-perl \
 	perl-Log-Log4perl \
