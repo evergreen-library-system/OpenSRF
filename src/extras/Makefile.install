@@ -121,7 +121,8 @@ DEBS =  \
 	psmisc\
 	python-dev\
 	python-libxml2\
-	python-setuptools
+	python-setuptools\
+	zlib1g-dev
 
 CENTOS = \
 	apr-util-devel \
