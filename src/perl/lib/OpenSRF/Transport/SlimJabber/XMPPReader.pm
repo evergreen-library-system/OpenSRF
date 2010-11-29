@@ -203,12 +203,15 @@ sub wait {
     # build the select readset
     my $infile = '';
     vec($infile, $socket->fileno, 1) = 1;
-    return undef unless select($infile, undef, undef, $timeout);
+
+    my $nfound = select($infile, undef, undef, $timeout);
+    return undef if !$nfound or $nfound == -1;
 
     # now slurp the data off the socket
     my $buf;
     my $read_size = 1024;
     my $nonblock = 0;
+
     while(my $n = sysread($socket, $buf, $read_size)) {
         $self->{parser}->parse_more($buf) if $buf;
         if($n < $read_size or $self->peek_msg) {
