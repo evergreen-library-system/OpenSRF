@@ -144,7 +144,9 @@ sub run {
 
                 # when we hit equilibrium, there's no need for regular
                 # maintenance, so set wait_time to 'forever'
-                $wait_time = -1 unless $self->perform_idle_maintenance;
+                $wait_time = -1 if 
+                    !$self->perform_idle_maintenance and # no maintenance performed this time
+                    @{$self->{active_list}} == 0; # no active children 
             }
         }
     }
@@ -232,17 +234,30 @@ sub write_child {
 sub check_status {
     my($self, $block) = @_;
 
+    return unless @{$self->{active_list}};
+
     my $read_set = IO::Select->new;
     $read_set->add($_->{pipe_to_child}) for @{$self->{active_list}};
 
-    my @handles = $read_set->can_read(($block) ? undef : 0) or return;
-
-    my $pid = '';
     my @pids;
-    for my $pipe (@handles) {
-        sysread($pipe, $pid, STATUS_PIPE_DATA_SIZE) or next;
-        push(@pids, int($pid));
+
+    while (1) {
+
+        # if can_read or sysread is interrupted while bloking, go back and 
+        # wait again until we have at least 1 free child
+
+        if(my @handles = $read_set->can_read(($block) ? undef : 0)) {
+            my $pid = '';
+            for my $pipe (@handles) {
+                sysread($pipe, $pid, STATUS_PIPE_DATA_SIZE) or next;
+                push(@pids, int($pid));
+            }
+        }
+
+        last unless $block and !@pids;
     }
+
+    return unless @pids;
 
     $chatty and $logger->internal("server: ".scalar(@pids)." children reporting for duty: (@pids)");
 
@@ -276,7 +291,7 @@ sub reap_children {
     while(1) {
 
         my $pid = waitpid(-1, ($shutdown) ? 0 : WNOHANG);
-        return if $pid <= 0;
+        last if $pid <= 0;
 
         $chatty and $logger->internal("server: reaping child $pid");
 
