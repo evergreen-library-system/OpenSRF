@@ -40,6 +40,7 @@ sub new {
     $self->{routers}        = []; # list of registered routers
     $self->{active_list}    = []; # list of active children
     $self->{idle_list}      = []; # list of idle children
+    $self->{pid_map}        = {}; # map of child pid to child for cleaner access
 
     $self->{stderr_log} = $self->{stderr_log_path} . "/${service}_stderr.log" 
         if $self->{stderr_log_path};
@@ -160,6 +161,16 @@ sub run {
 # ----------------------------------------------------------------
 sub perform_idle_maintenance {
     my $self = shift;
+
+    $chatty and $logger->internal(
+        sprintf(
+            "server: %d idle, %d active, %d min_spare, %d max_spare in idle maintenance",
+            scalar(@{$self->{idle_list}}), 
+            scalar(@{$self->{active_list}}),
+            $self->{min_spare_children},
+            $self->{max_spare_children}
+        )
+    );
 
     # spawn 1 spare child per maintenance loop if necessary
     if( $self->{min_spare_children} and
@@ -295,15 +306,17 @@ sub reap_children {
 
         $chatty and $logger->internal("server: reaping child $pid");
 
-        my ($child) = grep {$_->{pid} == $pid} (@{$self->{active_list}}, @{$self->{idle_list}});
+        my $child = $self->{pid_map}->{$pid};
 
         close($child->{pipe_to_parent});
         close($child->{pipe_to_child});
-        delete $child->{$_} for keys %$child; # destroy with a vengeance
 
-        $self->{num_children}--;
         $self->{active_list} = [ grep { $_->{pid} != $pid } @{$self->{active_list}} ];
         $self->{idle_list} = [ grep { $_->{pid} != $pid } @{$self->{idle_list}} ];
+
+        $self->{num_children}--;
+        delete $self->{pid_map}->{$pid};
+        delete $child->{$_} for keys %$child; # destroy with a vengeance
     }
 
     $self->spawn_children unless $shutdown;
@@ -347,7 +360,7 @@ sub spawn_child {
 
     if($child->{pid}) { # parent process
         $self->{num_children}++;
-
+        $self->{pid_map}->{$child->{pid}} = $child;
 
         if($active) {
             push(@{$self->{active_list}}, $child);
