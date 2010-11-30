@@ -92,7 +92,11 @@ def do_init():
     else:
         domain = osrf.conf.get('domain')
 
-    osrf.set.load(domain)
+    try:
+        osrf.set.load(domain)
+    except osrf.net.XMPPNoRecipient:
+        print "* Unable to communicate with opensrf.settings.  Giving up..."
+        return
 
     settings = osrf.set.get('apps')
     activeapps = osrf.set.get('activeapps')
