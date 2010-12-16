@@ -1,4 +1,4 @@
-README for OpenSRF 1.6
+README for OpenSRF 1.6.2
 
 Installing prerequisites:
 ========================
@@ -235,7 +235,6 @@ entry for localhost, and point your local DNS resolver to dnsmasq. For example,
 on Ubuntu you can issue the following commands as root:
 
 # aptitude install dnsmasq
-# echo "webserver=/localhost/127.0.0.1/" >> /etc/dnsmasq.conf
 # /etc/init.d/dnsmasq restart
 
 Then edit /etc/resolv.conf and ensure that "nameserver 127.0.0.1" is the first
