@@ -280,6 +280,7 @@ class Srfsh(object):
         req = ses.request2(method, tuple(params))
 
         last_content = None
+        total = 0
         while True:
             resp = None
 
@@ -287,12 +288,12 @@ class Srfsh(object):
                 resp = req.recv(timeout=self.timeout)
             except osrf.net.XMPPNoRecipient:
                 self.report("Unable to communicate with %s\n" % service)
-                total = 0
                 break
+
+            total = time.time() - start
 
             if not resp: break
 
-            total = time.time() - start
             content = resp.content()
 
             if content is not None:
