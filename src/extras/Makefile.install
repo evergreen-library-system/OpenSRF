@@ -362,7 +362,7 @@ install_buildutils:
 
 # Install libmemcached from the official project source
 install_libmemcached:
-	if [ ! -d $(LIBMEMCACHED).tar.gz ]; then wget $(LIBMEMCACHED_HOST)/$(LIBMEMCACHED).tar.gz; fi;
+	if [ ! -f $(LIBMEMCACHED).tar.gz ]; then wget $(LIBMEMCACHED_HOST)/$(LIBMEMCACHED).tar.gz; fi;
 	tar xzf $(LIBMEMCACHED).tar.gz
 	cd $(LIBMEMCACHED) && ./configure && make && make install
 
