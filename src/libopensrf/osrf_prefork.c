@@ -797,12 +797,13 @@ static void prefork_run( prefork_simple* forker ) {
 							honored = 1;
 						}
 					}
-			} else {
-				osrfLogWarning( OSRF_LOG_MARK, "Could not launch a new child as %d children "
-                    "were already running; consider increasing max_children for this "
-                    "application higher than %d in the OpenSRF configuration if this "
-                    "message occurs frequently",
-                    forker->current_num_children, forker->max_children );
+                } else {
+                    osrfLogWarning( OSRF_LOG_MARK, "Could not launch a new child as %d children "
+                        "were already running; consider increasing max_children for this "
+                        "application higher than %d in the OpenSRF configuration if this "
+                        "message occurs frequently",
+                        forker->current_num_children, forker->max_children );
+                }
             }
 
 			if( !honored ) {
