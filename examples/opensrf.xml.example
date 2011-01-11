@@ -87,7 +87,7 @@ vim:et:ts=2:sw=2:
         <!-- Module the implements this application -->
         <implementation>OpenSRF::Application::Persist</implementation>
 
-        <!-- max stateful requests before a session automatically disconnects a client -->
+        <!-- max stateful REQUEST requests before a session automatically disconnects a client -->
         <max_requests>97</max_requests>
 
         <!-- this will disable the stderr output log for this service -->
@@ -136,7 +136,6 @@ vim:et:ts=2:sw=2:
         <stateless>1</stateless>
         <language>c</language>
         <implementation>osrf_math.so</implementation>
-        <max_requests>97</max_requests>
         <unix_config>
           <unix_sock>opensrf.math_unix.sock</unix_sock>
           <unix_pid>opensrf.math_unix.pid</unix_pid>
@@ -154,7 +153,6 @@ vim:et:ts=2:sw=2:
         <stateless>1</stateless>
         <language>c</language>
         <implementation>osrf_dbmath.so</implementation>
-        <max_requests>99</max_requests>
         <unix_config>
           <max_requests>1000</max_requests>
           <unix_log>opensrf.dbmath_unix.log</unix_log>
