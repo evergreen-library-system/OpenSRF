@@ -129,8 +129,9 @@ sub run {
                 $self->write_child($self->spawn_child(1), $msg);
 
             } else {
-
-                $logger->warn("server: no children available, waiting...");
+                $logger->warn("server: no children available, waiting... consider increasing " .
+                    "max_children for this application higher than $self->{max_children} ".
+                    "in the OpenSRF configuration if this message occurs frequently");
                 $self->check_status(1); # block until child is available
 
                 my $child = pop(@{$self->{idle_list}});
