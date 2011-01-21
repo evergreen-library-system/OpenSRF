@@ -1035,8 +1035,10 @@ int osrfMethodVerifyContext( osrfMethodContext* ctx )
 	// Log the call, with the method and parameters
 	char* params_str = jsonObjectToJSON( ctx->params );
 	if( params_str ) {
-		osrfLogInfo( OSRF_LOG_MARK, "CALL:\t%s %s - %s",
-			 ctx->session->remote_service, ctx->method->name, params_str );
+        // params_str will at minimum be "[]"
+        params_str[strlen(params_str) - 1] = '\0'; // drop the trailing ']'
+		osrfLogInfo( OSRF_LOG_MARK, "CALL: %s %s %s",
+			 ctx->session->remote_service, ctx->method->name, params_str + 1);
 		free( params_str );
 	}
 	return 0;

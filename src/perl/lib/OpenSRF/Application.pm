@@ -127,7 +127,7 @@ sub handler {
         my @p = $app_msg->params;
 		my $method_name = $app_msg->method;
 		my $method_proto = $session->last_message_api_level;
-		$log->info("CALL: $method_name [". (@p ? join(', ',@p) : '') ."]");
+		$log->info("CALL: ".$session->service." $method_name ". (@p ? join(', ',@p) : ''));
 
 		my $coderef = $app->method_lookup( $method_name, $method_proto, 1, 1 );
 
