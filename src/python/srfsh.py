@@ -222,7 +222,7 @@ class Srfsh(object):
             self.report("router query options: %s\n" % ','.join(self.router_command_map.keys()))
             return
 
-        return handle_request(['router', self.router_command_map[query]])
+        return self.handle_request(['router', self.router_command_map[query]])
 
     def handle_set(self, parts):
         ''' Set env variables to control srfsh behavior. '''
