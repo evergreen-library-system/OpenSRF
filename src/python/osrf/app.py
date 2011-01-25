@@ -43,7 +43,7 @@ class Method(object):
 class Application(object):
     ''' Base class for OpenSRF applications.  Provides static methods
         for loading and registering applications as well as common 
-        applicatoin methods. '''
+        application methods. '''
 
     # global application handle
     application = None
