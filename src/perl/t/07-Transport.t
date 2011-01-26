@@ -1,6 +1,6 @@
 #!perl -T
 
-use Test::More tests => 10;
+use Test::More tests => 9;
 
 BEGIN {
 	use_ok( 'OpenSRF::Transport' );
