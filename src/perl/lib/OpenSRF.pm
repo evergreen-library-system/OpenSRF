@@ -18,14 +18,14 @@ Version 2.0.0
 
 =cut
 
-our $VERSION = "2.0.0";
+our $VERSION = "2.00";
 
 =head1 METHODS
 
 =head2 AUTOLOAD
 
 Traps methods calls for methods that have not been defined so they
-don't propogate up the class hierarchy.
+don't propagate up the class hierarchy.
 
 =cut
 
