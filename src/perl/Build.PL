@@ -1,7 +1,7 @@
 use Module::Build;
 
 my $build = Module::Build->new( module_name => 'OpenSRF',
-                                license => 'perl',
+                                license => 'gpl',
                                 requires => { 'Cache::Memcached' => 0,
                                               'Data::Dumper'     => 0,
                                               'DateTime'         => 0,
