@@ -24,13 +24,13 @@ timejson_SOURCES = timejson.c
 timejson_LDADD = @top_builddir@/src/libopensrf/libopensrf.la
 
 osrf_dbmath_la_SOURCES = osrf_dbmath.c 
-osrf_dbmath_la_LDFLAGS = $(AM_LDFLAGS) -module
+osrf_dbmath_la_LDFLAGS = $(AM_LDFLAGS) -module -version-info 2:0:2
 osrf_dbmath_la_LIBADD = @top_builddir@/src/libopensrf/libopensrf.la
 
 osrf_math_la_SOURCES = osrf_math.c
-osrf_math_la_LDFLAGS = $(AM_LDFLAGS) -module
+osrf_math_la_LDFLAGS = $(AM_LDFLAGS) -module -version-info 2:0:2
 osrf_math_la_LIBADD =  @top_builddir@/src/libopensrf/libopensrf.la
 
 osrf_version_la_SOURCES = osrf_version.c 
-osrf_version_la_LDFLAGS = $(AM_LDFLAGS) -module
+osrf_version_la_LDFLAGS = $(AM_LDFLAGS) -module -version-info 2:0:2
 osrf_version_la_LIBADD = @top_builddir@/src/libopensrf/libopensrf.la
