@@ -22,6 +22,7 @@ use OpenSRF::Transport::PeerHandle;
 use OpenSRF::Utils::SettingsClient;
 use OpenSRF::Utils::Logger qw($logger);
 use OpenSRF::Transport::SlimJabber::Client;
+use Encode;
 use POSIX qw/:sys_wait_h :errno_h/;
 use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);
 use IO::Select;
@@ -235,8 +236,8 @@ sub build_osrf_handle {
 # ----------------------------------------------------------------
 sub write_child {
     my($self, $child, $msg) = @_;
-    my $xml = $msg->to_xml;
-    syswrite($child->{pipe_to_child}, $xml);
+    my $xml = decode_utf8($msg->to_xml);
+    syswrite($child->{pipe_to_child}, encode_utf8($xml));
 }
 
 # ----------------------------------------------------------------
