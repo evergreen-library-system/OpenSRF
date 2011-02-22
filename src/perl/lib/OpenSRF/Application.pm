@@ -743,4 +743,22 @@ sub make_stream_atomic {
 	return \@results;
 }
 
+__PACKAGE__->register_method(
+	method => 'sleep_method',
+	argc => 1,
+	api_name => 'opensrf.system.sleep',
+	signature => {
+		desc => q/Causes the backend process to sleep for the specified amount of time/,
+        params => [ {desc => q/Number of seconds to sleep;  defaults to 1/, type => 'number'} ],
+		return => { desc => q/The number of seconds slept/, type => 'number' }
+	}
+);
+
+sub sleep_method {
+	my($self, $client, $secs) = @_;
+    $secs ||= 1;
+    CORE::sleep($secs);
+    return $secs;
+}
+
 1;
