@@ -20,6 +20,7 @@ Well-tested values for <osname> include:
   * "debian-lenny" for Debian 5.0
   * "ubuntu-hardy" for Ubuntu 8.04
   * "ubuntu-karmic" for Ubuntu 9.10
+  * "fedora14" for Fedora 14
 
 Less-tested values for <osname> include:
   * "centos" for CentOS 5 and Red Hat Enterprise Linux 5
