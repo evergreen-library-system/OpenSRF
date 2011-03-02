@@ -25,6 +25,7 @@ use OpenSRF::Transport::SlimJabber::Client;
 use Encode;
 use POSIX qw/:sys_wait_h :errno_h/;
 use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);
+use Time::HiRes qw/usleep/;
 use IO::Select;
 use Socket;
 our $chatty = 1; # disable for production
@@ -42,6 +43,7 @@ sub new {
     $self->{active_list}    = []; # list of active children
     $self->{idle_list}      = []; # list of idle children
     $self->{pid_map}        = {}; # map of child pid to child for cleaner access
+    $self->{sig_pipe}       = 0;  # true if last syswrite failed
 
     $self->{stderr_log} = $self->{stderr_log_path} . "/${service}_stderr.log" 
         if $self->{stderr_log_path};
@@ -236,8 +238,22 @@ sub build_osrf_handle {
 # ----------------------------------------------------------------
 sub write_child {
     my($self, $child, $msg) = @_;
-    my $xml = decode_utf8($msg->to_xml);
-    syswrite($child->{pipe_to_child}, encode_utf8($xml));
+    my $xml = encode_utf8(decode_utf8($msg->to_xml));
+
+    for (0..2) {
+
+        $self->{sig_pipe} = 0;
+        local $SIG{'PIPE'} = sub { $self->{sig_pipe} = 1; };
+
+        # send message to child data pipe
+        syswrite($child->{pipe_to_child}, $xml);
+
+        last unless $self->{sig_pipe};
+        $logger->error("server: got SIGPIPE writing to $child, retrying...");
+        usleep(50000); # 50 msec
+    }
+
+    $logger->error("server: unable to send request message to child $child") if $self->{sig_pipe};
 }
 
 # ----------------------------------------------------------------
@@ -474,7 +490,7 @@ use OpenSRF::Transport::SlimJabber::XMPPMessage;
 use OpenSRF::Utils::Logger qw($logger);
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);
-use Time::HiRes qw(time);
+use Time::HiRes qw(time usleep);
 use POSIX qw/:sys_wait_h :errno_h/;
 
 use overload '""' => sub { return '[' . shift()->{pid} . ']'; };
@@ -485,6 +501,7 @@ sub new {
     $self->{pid} = 0; # my process ID
     $self->{parent} = $parent; # Controller parent process
     $self->{num_requests} = 0; # total serviced requests
+    $self->{sig_pipe} = 0;  # true if last syswrite failed
     return $self;
 }
 
@@ -630,10 +647,23 @@ sub keepalive_loop {
 # ----------------------------------------------------------------
 sub send_status {
     my $self = shift;
-    syswrite(
-        $self->{pipe_to_parent},
-        sprintf("%*s", OpenSRF::Server::STATUS_PIPE_DATA_SIZE, $self->{pid})
-    );
+
+    for (0..2) {
+
+        $self->{sig_pipe} = 0;
+        local $SIG{'PIPE'} = sub { $self->{sig_pipe} = 1; };
+
+        syswrite(
+            $self->{pipe_to_parent},
+            sprintf("%*s", OpenSRF::Server::STATUS_PIPE_DATA_SIZE, $self->{pid})
+        );
+
+        last unless $self->{sig_pipe};
+        $logger->error("server: $self got SIGPIPE writing status to parent, retrying...");
+        usleep(50000); # 50 msec
+    }
+
+    $logger->error("server: $self unable to send status to parent") if $self->{sig_pipe};
 }
 
 
