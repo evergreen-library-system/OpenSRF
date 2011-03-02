@@ -206,7 +206,7 @@ class Srfsh(object):
         else:
             args[1] += '.all'
 
-        return handle_request(args)
+        return self.handle_request(args)
 
 
     def handle_router(self, parts):
@@ -288,6 +288,9 @@ class Srfsh(object):
                 resp = req.recv(timeout=self.timeout)
             except osrf.net.XMPPNoRecipient:
                 self.report("Unable to communicate with %s\n" % service)
+                break
+            except osrf.ex.OSRFServiceException, e:
+                self.report("Server exception occurred: %s" % e)
                 break
 
             total = time.time() - start
