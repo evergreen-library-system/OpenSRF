@@ -1,4 +1,4 @@
-README for OpenSRF
+README for OpenSRF 2.0.0 RC2
 
 Installing prerequisites:
 ========================
@@ -16,23 +16,23 @@ aptitude install make
 make -f src/extras/Makefile.install <osname>
 
 Well-tested values for <osname> include:
-  * "debian-etch" for Debian 4.0
   * "debian-lenny" for Debian 5.0
+  * "debian-squeeze" for Debian 6.0.0
   * "ubuntu-hardy" for Ubuntu 8.04
   * "ubuntu-karmic" for Ubuntu 9.10
   * "fedora14" for Fedora 14
 
 Less-tested values for <osname> include:
-  * "centos" for CentOS 5 and Red Hat Enterprise Linux 5
-  * "gentoo" for Gentoo
+  * "centos" for CentOS 5
+  * "rhel" for Red Hat Enterprise Linux 5
 
 Patches and suggestions for improvement from users of these distributions,
 or others, are welcome!
 
 When the prerequisite installer reaches the Perl module stage, you may 
 be prompted for configuration of Comprehensive Perl Archive Network (CPAN)
-on your mserver. You can just press <return> for all of the prompts, except
-for the country configuration.
+on your server. You can generally accept the defaults by pressing <return>
+for all of the prompts, except for the country configuration.
 
 Note: If you are installing this using a copy of the source code that was
 checked out directly from the OpenSRF Subversion repository rather
