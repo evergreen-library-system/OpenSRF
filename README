@@ -80,7 +80,6 @@ configure command:
 
 # useradd -m -s /bin/bash opensrf
 # echo "export PATH=\$PATH:/<PREFIX>/bin" >> /home/opensrf/.bashrc
-# echo "export PERL5LIB=/openils/lib/perl5:\$PERL5LIB" >> /home/opensrf/.bashrc
 # passwd opensrf
 
 Define your public and private OpenSRF domains:
