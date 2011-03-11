@@ -20,16 +20,16 @@ make -f src/extras/Makefile.install <osname>
 
 Well-tested values for <osname> include:
 
-  * "debian-lenny" for Debian 5.0
-  * "debian-squeeze" for Debian 6.0.0
-  * "ubuntu-hardy" for Ubuntu 8.04
-  * "ubuntu-karmic" for Ubuntu 9.10
-  * "fedora14" for Fedora 14
+  * `debian-lenny` for Debian 5.0
+  * `debian-squeeze` for Debian 6.0.0
+  * `ubuntu-hardy` for Ubuntu 8.04
+  * `ubuntu-karmic` for Ubuntu 9.10
+  * `fedora14` for Fedora 14
 
 Less-tested values for <osname> include:
 
-  * "centos" for CentOS 5
-  * "rhel" for Red Hat Enterprise Linux 5
+  * `centos` for CentOS 5
+  * `rhel` for Red Hat Enterprise Linux 5
 
 Patches and suggestions for improvement from users of these distributions,
 or others, are welcome!
@@ -49,12 +49,12 @@ See "Developer instructions" at the bottom of the file.
 Configuration and compilation instructions:
 -------------------------------------------
 
-Use the "configure" command to configure OpenSRF, and the "make" command to
+Use the `configure` command to configure OpenSRF, and the `make` command to
 build OpenSRF. The default installation prefix (PREFIX) for OpenSRF is
-"/opensrf/".
+`/opensrf/`.
 
-If you are building OpenSRF for Evergreen, pass the --prefix and --sysconfdir
-options as follows:
+If you are building OpenSRF for Evergreen, pass the `--prefix` and
+`--sysconfdir` options as follows:
 
 ---------------------------------------------------------------------------
 ./configure --prefix=/openils --sysconfdir=/openils/conf
@@ -62,8 +62,8 @@ make
 ---------------------------------------------------------------------------
 
 By default, OpenSRF includes C, Perl, and JavaScript support.
-You can add the "--enable-python" option to the configure command
-to build Python support, and "--enable-java" for Java support.
+You can add the `--enable-python` option to the configure command
+to build Python support, and `--enable-java` for Java support.
 
 Installation instructions:
 --------------------------
@@ -84,8 +84,8 @@ Create and set up the opensrf Unix user environment:
 
 This user is used to start and stop all OpenSRF processes, and must own all
 files contained in the PREFIX directory hierarchy. Issue the following
-commands as root to create the "opensrf" user and set up its environment,
-substituting <PREFIX> with the value you passed to --prefix in your
+commands as root to create the `opensrf` user and set up its environment,
+substituting <PREFIX> with the value you passed to `--prefix` in your
 configure command:
 
 ---------------------------------------------------------------------------
@@ -99,12 +99,12 @@ Define your public and private OpenSRF domains:
 
 For security purposes, OpenSRF uses Jabber domains to separate services
 into public and private realms. Throughout these instructions, we will use
-the example domains "public.localhost" and "private.localhost". 
+the example domains `public.localhost` and `private.localhost`. 
 
 On a single-server system, the easiest way to define public and private
-domains is to define separate hostnames by adding entries to the
-/etc/hosts file. Here are entries that you could make to a stock /etc/hosts
-file for our example domains:
+domains is to define separate hostnames by adding entries to the `/etc/hosts`
+file. Here are entries that you could make to a stock `/etc/hosts` file for our
+example domains:
 
 ---------------------------------------------------------------------------
 127.0.1.2	public.localhost	public
@@ -114,8 +114,8 @@ file for our example domains:
 Adjust the system dynamic library path:
 ---------------------------------------
 
-Add <PREFIX>/lib/ to the system's dynamic library path, and then run "ldconfig"
-as root.
+Add `<PREFIX>/lib/` to the system's dynamic library path, and then run
+`ldconfig` as root.
 
 On Debian and Ubuntu systems, run the following commands as root:
 
@@ -124,15 +124,16 @@ On Debian and Ubuntu systems, run the following commands as root:
 # ldconfig
 ---------------------------------------------------------------------------
 
-On most other systems, you can add these entries to a /etc/ld.so.conf, or create
-a file within the /etc/ld.so.conf.d/ directory, and then run "ldconfig" as root.
+On most other systems, you can add these entries to `/etc/ld.so.conf`, or
+create a file within the `/etc/ld.so.conf.d/` directory, and then run
+`ldconfig` as root.
 
 Configure the ejabberd server:
 ------------------------------
 
 OpenSRF requires an XMPP (Jabber) server. For performance reasons, ejabberd is
 the Jabber server of choice for the OpenSRF project. In most cases, you only
-have to make a few changes to the default ejabberd.cfg file to make ejabberd
+have to make a few changes to the default `ejabberd.cfg` file to make ejabberd
 work for OpenSRF. 
 
 1. Stop ejabberd before making any changes to its configuration by issuing the
@@ -142,19 +143,19 @@ following command as root:
 # /etc/init.d/ejabberd stop
 ---------------------------------------------------------------------------
 +
-2. Open /etc/ejabberd/ejabberd.cfg and make the following
+2. Open `/etc/ejabberd/ejabberd.cfg` and make the following
 changes:
-  a. Define your public and private domains in the "hosts" directive. For
+  a. Define your public and private domains in the `hosts` directive. For
    example:
 +
 ---------------------------------------------------------------------------
 {hosts, ["private.localhost", "public.localhost"]}
 ---------------------------------------------------------------------------
 +
-  b. Comment out the "mod_offline" directive
-  c. Increase the "max_user_sessions" value to 1000
-  d. Change all "max_stanza_size" values to 200000
-  e. Change all "maxrate" values to 500000 
+  b. Comment out the `mod_offlinex` directive
+  c. Increase the `max_user_sessions` value to 1000
+  d. Change all `max_stanza_size` values to 200000
+  e. Change all `maxrate` values to 500000 
 +
 3. Restart the ejabberd server to make the changes take effect:
 ---------------------------------------------------------------------------
@@ -166,9 +167,9 @@ Create the OpenSRF Jabber users:
 
 On each domain, you need two Jabber users to manage the OpenSRF communications:
 
-  * a "router" user, to whom all requests to connect to an OpenSRF service
-    will be routed; this Jabber user must be named "router"
-  * an "opensrf" user, which clients use to connect to OpenSRF services; this
+  * a `router` user, to whom all requests to connect to an OpenSRF service
+    will be routed; this Jabber user must be named `router`
+  * an `opensrf` user, which clients use to connect to OpenSRF services; this
     user can be named anything you like
 
 Create the Jabber users by issuing the following commands as root. Substitute
@@ -185,49 +186,45 @@ Update the OpenSRF configuration files:
 ---------------------------------------
 
 There are two critical files that you must update to make OpenSRF work.
-"SYSCONFDIR" is "/opensrf/etc" by default, or the value that you passed to
---sysconfdir during the configuration phase:
+SYSCONFDIR is `/opensrf/etc` by default, or the value that you passed to
+`--sysconfdir` during the configuration phase:
 
-  * SYSCONFDIR/opensrf.xml - this file lists the services that this
+  * `SYSCONFDIR/opensrf.xml` - this file lists the services that this
     OpenSRF installation supports; if you create a new OpenSRF service,
     you need to add it to this file.
-      * The <hosts> element at the bottom of the file lists the services
+      * The `<hosts>` element at the bottom of the file lists the services
         that should be started for each hostname. You can force the system
-        to use "localhost", so in most cases you will leave this section
+        to use `localhost`, so in most cases you will leave this section
         as-is.
-      * You must alter the <dbfile> element value for the "opensrf.persist"
-        service to point to a directory to which the opensrf user can write.
-        Note that the override in the <hosts> section takes precedence over
-        the general service definition value.
     
-  * SYSCONFDIR/opensrf_core.xml - this file lists the Jabber connection
+  * `SYSCONFDIR/opensrf_core.xml` - this file lists the Jabber connection
     information that will be used for the system, as well as determining
     logging verbosity and defining which services will be exposed on the
     HTTP gateway. There are four username/password pairs to update in this
     file:
-      1. <config><opensrf> = use the private Jabber "opensrf" user
-      2. <config><gateway> = use the public Jabber "opensrf" user
-      3. <config><routers><router> = use the public Jabber "router" user
-      4. <config><routers><router> = use the private Jabber "router" user
+      1. `<config><opensrf>` = use the private Jabber `opensrf` user
+      2. `<config><gateway>` = use the public Jabber `opensrf` user
+      3. `<config><routers><router>` = use the public Jabber `router` user
+      4. `<config><routers><router>` = use the private Jabber `router` user
 
-You should also create a .srfsh.xml file in the home directory of each user
+You should also create a `.srfsh.xml` file in the home directory of each user
 that you want to enable to use the srfsh to communicate with OpenSRF services.
 
-Copy <SYSCONFDIR>/srfsh.xml.example to ~/.srfsh.xml and update the password 
-to match the one for your Jabber "opensrf" user with the private.localhost 
+Copy `SYSCONFDIR/srfsh.xml.example` to `~/.srfsh.xml` and update the password 
+to match the one for your Jabber `opensrf` user with the private.localhost 
 domain.
 
 Starting and stopping OpenSRF services:
 ---------------------------------------
 
-To start all OpenSRF services with a hostname of "localhost", issue the
+To start all OpenSRF services with a hostname of `localhost`, issue the
 following command as the opensrf user:
 
 ---------------------------------------------------------------------------
 $ osrf_ctl.sh -l -a start_all
 ---------------------------------------------------------------------------
 
-To stop all OpenSRF services with a hostname of "localhost", issue the
+To stop all OpenSRF services with a hostname of `localhost`, issue the
 following command as the opensrf user:
 
 [source,bash]
@@ -238,7 +235,7 @@ $ osrf_ctl.sh -l -a stop_all
 Testing the default OpenSRF services:
 -------------------------------------
 
-By default, OpenSRF ships with an opensrf.math service that performs basic
+By default, OpenSRF ships with an `opensrf.math` service that performs basic
 calculations involving two integers. Once you have started the OpenSRF
 services, start srfsh and issue the following request:
 
@@ -246,16 +243,16 @@ services, start srfsh and issue the following request:
 srfsh# request opensrf.math add 2,2
 ---------------------------------------------------------------------------
 
-You should receive the value "4".
+You should receive the value `4`.
 
 Troubleshooting note for Python users:
 --------------------------------------
 
 If you are running a Python client and trying to connect to OpenSRF running on
 localhost rather than a hostname that can be resolved via DNS, you will
-probably receive exceptions about "dns.resolver.NXDOMAIN". If this happens,
-you need to install the dnsmasq package, configure it to serve up a DNS
-entry for localhost, and point your local DNS resolver to dnsmasq. For example,
+probably receive exceptions about `dns.resolver.NXDOMAIN`. If this happens,
+you need to install the `dnsmasq` package, configure it to serve up a DNS
+entry for localhost, and point your local DNS resolver to `dnsmasq`. For example,
 on Ubuntu you can issue the following commands as root:
 
 ---------------------------------------------------------------------------
@@ -263,17 +260,18 @@ on Ubuntu you can issue the following commands as root:
 # /etc/init.d/dnsmasq restart
 ---------------------------------------------------------------------------
 
-Then edit /etc/resolv.conf and ensure that "nameserver 127.0.0.1" is the first
-entry in the file.
+Then edit `/etc/resolv.conf` and ensure that `nameserver 127.0.0.1` is the
+first entry in the file.
 
 Developer instructions:
 -----------------------
 
 Developers working directly with the source code from the Subversion
 repository will also need to install some extra packages and perform
-one more step before they can proceed with the "./configure" step.
+one more step before they can proceed with the `./configure` step.
 
 Install the following packages:
+
   * autoconf
   * automake
   * libtool
