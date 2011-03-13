@@ -28,20 +28,19 @@ OpenSRF.XHRequest = function(osrf_msg, args) {
     this.message = osrf_msg;
     this.args = args;
     try {
-	    this.xreq =  new XMLHttpRequest();
+        this.xreq =  new XMLHttpRequest();
     } catch(e) {
-	    try { 
-		    this.xreq = new ActiveXObject("Msxml2.XMLHTTP"); 
-	    } catch (e2) {
-			this.xreq = new ActiveXObject("Microsoft.XMLHTTP"); 
-	    }
+        try { 
+            this.xreq = new ActiveXObject("Msxml2.XMLHTTP"); 
+        } catch (e2) {
+            this.xreq = new ActiveXObject("Microsoft.XMLHTTP"); 
+        }
     }
-
-}
+};
 
 OpenSRF.XHRequest.prototype.send = function() {
     var xhr_req = this;
-    var xreq = this.xreq
+    var xreq = this.xreq;
     
     if(this.args.timeout) {
         /* this is a standard blocking (non-multipart) call */
@@ -49,21 +48,21 @@ OpenSRF.XHRequest.prototype.send = function() {
 
     } else {
 
-	/* Only Firefox supports multipart calls, but Safari / Chrome include
+    /* Only Firefox supports multipart calls, but Safari / Chrome include
            "Mozilla" in their user agent strings... sigh */
         if(!navigator.userAgent.match(/mozilla/i) || navigator.userAgent.match(/webkit/i) || navigator.userAgent.match(/msie/i)) {
             /* standard asynchronous call */
             xreq.onreadystatechange = function() {
                 if(xreq.readyState == 4)
                     xhr_req.core_handler();
-            }
+            };
             xreq.open('POST', OSRF_HTTP_TRANSLATOR, true);
 
         } else {
 
             /* asynchronous multipart call */
             xreq.multipart = true;
-            xreq.onload = function(evt) {xhr_req.core_handler();}
+            xreq.onload = function(evt) {xhr_req.core_handler();};
             xreq.open('POST', OSRF_HTTP_TRANSLATOR, true);
             xreq.setRequestHeader(OSRF_HTTP_HEADER_MULTIPART, 'true');
 
@@ -72,25 +71,26 @@ OpenSRF.XHRequest.prototype.send = function() {
             xreq.onreadystatechange = function() {
                 if(xreq.readyState == 4 && xreq.status >= 400)
                     xhr_req.transport_error_handler();
-            }
+            };
         }
     }
 
     xreq.setRequestHeader('Content-Type', OSRF_POST_CONTENT_TYPE);
     xreq.setRequestHeader(OSRF_HTTP_HEADER_THREAD, this.args.thread);
-    if(this.args.rcpt)
+    if(this.args.rcpt) {
         xreq.setRequestHeader(OSRF_HTTP_HEADER_TO, this.args.rcpt);
-    else
+    } else {
         xreq.setRequestHeader(OSRF_HTTP_HEADER_SERVICE, this.args.rcpt_service);
+    }
 
     var post = 'osrf-msg=' + encodeURIComponent(js2JSON([this.message.serialize()]));
     xreq.send(post);
 
     if(this.args.timeout) /* this was a blocking call, manually run the handler */
-        this.core_handler()
+        this.core_handler();
 
     return this;
-}
+};
 
 OpenSRF.XHRequest.prototype.core_handler = function() {
     sender = this.xreq.getResponseHeader(OSRF_HTTP_HEADER_FROM);
@@ -110,7 +110,7 @@ OpenSRF.XHRequest.prototype.core_handler = function() {
             onmethoderror : this.method_error_handler()
         }
     );
-}
+};
 
 
 OpenSRF.XHRequest.prototype.method_error_handler = function() {
@@ -120,14 +120,16 @@ OpenSRF.XHRequest.prototype.method_error_handler = function() {
             xhr.args.onmethoderror(req, status, status_text);
         if(xhr.args.onerror)  
             xhr.args.onerror(xhr.message, xhr.args.rcpt || xhr.args.rcpt_service, xhr.args.thread);
-    }
-}
+    };
+};
 
 OpenSRF.XHRequest.prototype.transport_error_handler = function() {
-    if(this.args.ontransporterror) 
+    if(this.args.ontransporterror) {
         this.args.ontransporterror(this.xreq);
-    if(this.args.onerror) 
+    }
+    if(this.args.onerror) {
         this.args.onerror(this.message, this.args.rcpt || this.args.rcpt_service, this.args.thread);
-}
+    }
+};
 
 
