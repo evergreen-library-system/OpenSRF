@@ -157,6 +157,7 @@ sub listen {
             # keep trying to deliver the message until we succeed
 
             my $socket = IO::Socket::UNIX->new( Peer => $sock  );
+            binmode $socket, ':utf8';
 
             unless($socket and $socket->connected) {
                 $logger->error("$app inbound: unable to connect to inbound socket $sock: $!");

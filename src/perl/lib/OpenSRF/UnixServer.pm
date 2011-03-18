@@ -67,6 +67,7 @@ sub process_request {
 
 	my $self = shift;
 	my $data; my $d;
+	binmode STDIN, ':utf8';
 	while( $d = <STDIN> ) { $data .= $d; }
 
 	my $orig = $0;
