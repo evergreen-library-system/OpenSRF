@@ -145,7 +145,14 @@ class Application(object):
         )
         
         Application.register_method(
-            api_name = 'opensrf.system.introspect',
+            api_name = 'opensrf.system.method',
+            method = 'sysmethod_introspect',
+            argc = 0,
+            stream = True
+        )
+
+        Application.register_method(
+            api_name = 'opensrf.system.method.all',
             method = 'sysmethod_introspect',
             argc = 0,
             stream = True
