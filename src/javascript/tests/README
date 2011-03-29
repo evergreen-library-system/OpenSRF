@@ -1,0 +1,31 @@
+Running JavaScript tests
+========================
+
+These tests have been created using the
+http://dojotoolkit.org/reference-guide/util/doh.html[Dojo Objective Harness
+(DOH)] testing framework.
+
+To run these tests from the command line:
+
+  1. Download and extract a Dojo Toolkit source tarball:
++
+--------------------------------------------------------------------------------
+wget http://download.dojotoolkit.org/release-1.6.0/dojo-release-1.6.0-src.tar.gz
+tar xzf dojo-release-1.6.0-src.tar.gz
+------------------------------------------------------------------------------
++
+  2. Copy the OpenSRF JavaScript directory into the Dojo source tree and move
+     the 'DojoSRF.js' file into place:
++
+------------------------------------------------------------------------------
+cp -r src/javascript dojo-release-1.6.0-src/opensrf
+mv dojo-release-1.6.0-src/opensrf/DojoSRF.js dojo-release-1.6.0-src/.
+------------------------------------------------------------------------------
++
+  3. Run the tests from the Dojo 'util/doh' directory, specifying the OpenSRF
+     test module:
++
+------------------------------------------------------------------------------
+cd dojo-release-1.6.0-src/util/doh
+sh runner.sh testModule=opensrf.tests.module
+------------------------------------------------------------------------------
