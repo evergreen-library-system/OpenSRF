@@ -6,6 +6,16 @@ doh.register("JSONTests", [
     function test_version() {
         doh.assertTrue(JSON_version() == 'wrapper');
     },
+    function test_decodeJS() {
+        doh.assertTrue(decodeJS(0) === 0);
+        doh.assertTrue(decodeJS(null) === null);
+        doh.assertTrue(decodeJS("") === "");
+    },
+    function test_encodeJS() {
+        doh.assertTrue(encodeJS(0) === 0);
+        doh.assertTrue(encodeJS(null) === null);
+        doh.assertTrue(encodeJS("") === "");
+    },
     function test_js2JSON() {
         // Solo nulls and booleans are stringified XXX
         doh.assertTrue(js2JSON(null) === "null");
@@ -43,6 +53,27 @@ doh.register("JSONTests", [
         doh.assertTrue(js2JSONRaw([0,"foo",null,"true",true]) === '[0,"foo",null,"true",true]');
         // Order of object attributes is not guaranteed
         doh.assertTrue(js2JSONRaw({"foo":{"one":null,"two":2}}) == '{"foo":{"two":2,"one":null}}');
+    },
+    function test_JSON2jsRaw() {
+        // Standalone quoted nulls and booleans are converted to primitives
+        doh.assertTrue(JSON2jsRaw(null) === null);
+        doh.assertTrue(JSON2jsRaw("null") === null);
+        doh.assertTrue(JSON2jsRaw(true) === true);
+        doh.assertTrue(JSON2jsRaw("true") === true);
+        doh.assertTrue(JSON2jsRaw(false) === false);
+        doh.assertTrue(JSON2jsRaw("false") === false);
+        // Zero is zero and only zero
+        doh.assertTrue(JSON2jsRaw(0) === 0);
+        // Empty string
+        doh.assertTrue(JSON2jsRaw('""') === "");
+        // String
+        doh.assertTrue(JSON2jsRaw('"foo"') == "foo");
+        // Array; access an index
+        doh.assertTrue(JSON2jsRaw('[0,1,2,3,4,5]')[1] == 1);
+        // Object; access a key
+        doh.assertTrue(JSON2jsRaw('{"foo":"bar"}').foo == "bar");
+        doh.assertTrue(JSON2jsRaw('{"foo":{"two":2,"one":null}}').foo.one === null);
+        doh.assertTrue(JSON2jsRaw('{"foo":{"two":2,"one":"null"}}').foo.one === "null");
     },
     function test_JSON2js() {
         // Standalone quoted nulls and booleans are converted to primitives
