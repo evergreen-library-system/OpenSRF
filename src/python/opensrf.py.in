@@ -25,6 +25,7 @@ Provides an environment for managing OpenSRF services written in Python
 
 import sys, getopt, os, signal
 import osrf.system, osrf.server, osrf.app, osrf.set, osrf.json
+import dns.resolver
 
 def do_help():
     '''
@@ -83,9 +84,16 @@ def do_init():
     global domain
     global settings
 
-    # connect to the OpenSRF network
-    osrf.system.System.net_connect(
-        config_file = config_file, config_context = config_ctx)
+    try:
+        # connect to the OpenSRF network
+        osrf.system.System.net_connect(
+            config_file = config_file, config_context = config_ctx)
+    except dns.resolver.NXDOMAIN:
+        dnsfail = """
+ERROR: Could not initialize the OpenSRF Python environment. A DNS query
+failed to resolve the network address of the XMPP server.
+"""
+        sys.exit(dnsfail)
 
     if as_localhost:
         domain = 'localhost'
