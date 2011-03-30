@@ -197,7 +197,9 @@ stop_python() {
     [ -e $PID_OSRF_PYTHON ] && rm $PID_OSRF_PYTHON;
     OPT_LOCAL=""
     [ "$OSRF_HOSTNAME" = "localhost" ] && OPT_LOCAL="-l"
+    set +e # Ignore errors for NXDOMAIN
     opensrf.py -p $OPT_PID_DIR -f $OPT_CONFIG -a stop_all $OPT_LOCAL
+    set -e # Errors matter again
     sleep 1;
     return 0;
 }
