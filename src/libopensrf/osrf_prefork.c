@@ -735,7 +735,7 @@ static void prefork_run( prefork_simple* forker ) {
 			// physical memory, and the one least likely to have to be swapped in.
 			while( forker->idle_list ) {
 
-				osrfLogInfo( OSRF_LOG_MARK, "Looking for idle child" );
+				osrfLogDebug( OSRF_LOG_MARK, "Looking for idle child" );
 				// Grab the prefork_child at the head of the idle list
 				cur_child = forker->idle_list;
 				forker->idle_list = cur_child->next;
