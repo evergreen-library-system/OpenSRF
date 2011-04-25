@@ -43,7 +43,7 @@ doh.register("JSONTests", [
     },
     function test_js2JSON_objects_ordered() {
         // Order of object attributes is not guaranteed
-        doh.assertTrue(js2JSON({"foo":{"one":null,"two":2}}) == '{"foo":{"one":null,"two":2}}');
+        doh.assertTrue(js2JSON({"foo":{"one":[null,"two",2]}}) == '{"foo":{"one":[null,"two",2]}}');
     },
     function test_js2JSONRaw_strict() {
         // Solo nulls and booleans are stringified XXX
@@ -72,7 +72,7 @@ doh.register("JSONTests", [
     },
     function test_js2JSONRaw_objects_ordered() {
         // Order of object attributes is not guaranteed
-        doh.assertTrue(js2JSONRaw({"foo":{"one":null,"two":2}}) == '{"foo":{"one":null,"two":2}}');
+        doh.assertTrue(js2JSONRaw({"foo":{"one":[null,"two",2]}}) == '{"foo":{"one":[null,"two",2]}}');
     },
     function test_JSON2jsRaw_strict() {
         // Standalone quoted nulls and booleans are converted to primitives
