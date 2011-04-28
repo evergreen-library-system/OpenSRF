@@ -90,12 +90,12 @@ function osrfMethod(hash) {
     this.hash = hash;
     this._encodehash = true;
 }
-osrfMethod.prototype.method = function() {
+osrfMethod.prototype.method = function(d) {
     if(arguments.length == 1) 
         this.hash.method = d; 
     return this.hash.method; 
 };
-osrfMethod.prototype.params = function() {
+osrfMethod.prototype.params = function(d) {
     if(arguments.length == 1) 
         this.hash.params = d; 
     return this.hash.params; 
@@ -114,12 +114,12 @@ function osrfMethodException(hash) {
     this.hash = hash;
     this._encodehash = true;
 }
-osrfMethodException.prototype.status = function() {
+osrfMethodException.prototype.status = function(d) {
     if(arguments.length == 1) 
         this.hash.status = d; 
     return this.hash.status; 
 };
-osrfMethodException.prototype.statusCode = function() {
+osrfMethodException.prototype.statusCode = function(d) {
     if(arguments.length == 1) 
         this.hash.statusCode = d; 
     return this.hash.statusCode; 
@@ -128,12 +128,12 @@ function osrfConnectStatus(hash) {
     this.hash = hash;
     this._encodehash = true;
 }
-osrfConnectStatus.prototype.status = function() {
+osrfConnectStatus.prototype.status = function(d) {
     if(arguments.length == 1) 
         this.hash.status = d; 
     return this.hash.status; 
 };
-osrfConnectStatus.prototype.statusCode = function() {
+osrfConnectStatus.prototype.statusCode = function(d) {
     if(arguments.length == 1) 
         this.hash.statusCode = d; 
     return this.hash.statusCode; 
@@ -142,17 +142,17 @@ function osrfResult(hash) {
     this.hash = hash;
     this._encodehash = true;
 }
-osrfResult.prototype.status = function() {
+osrfResult.prototype.status = function(d) {
     if(arguments.length == 1) 
         this.hash.status = d; 
     return this.hash.status; 
 };
-osrfResult.prototype.statusCode = function() {
+osrfResult.prototype.statusCode = function(d) {
     if(arguments.length == 1) 
         this.hash.statusCode = d; 
     return this.hash.statusCode; 
 };
-osrfResult.prototype.content = function() {
+osrfResult.prototype.content = function(d) {
     if(arguments.length == 1) 
         this.hash.content = d; 
     return this.hash.content; 
@@ -161,12 +161,12 @@ function osrfServerError(hash) {
     this.hash = hash;
     this._encodehash = true;
 }
-osrfServerError.prototype.status = function() {
+osrfServerError.prototype.status = function(d) {
     if(arguments.length == 1) 
         this.hash.status = d; 
     return this.hash.status; 
 };
-osrfServerError.prototype.statusCode = function() {
+osrfServerError.prototype.statusCode = function(d) {
     if(arguments.length == 1) 
         this.hash.statusCode = d; 
     return this.hash.statusCode; 
@@ -175,12 +175,12 @@ function osrfContinueStatus(hash) {
     this.hash = hash;
     this._encodehash = true;
 }
-osrfContinueStatus.prototype.status = function() {
+osrfContinueStatus.prototype.status = function(d) {
     if(arguments.length == 1) 
         this.hash.status = d; 
     return this.hash.status; 
 };
-osrfContinueStatus.prototype.statusCode = function() {
+osrfContinueStatus.prototype.statusCode = function(d) {
     if(arguments.length == 1) 
         this.hash.statusCode = d; 
     return this.hash.statusCode; 
