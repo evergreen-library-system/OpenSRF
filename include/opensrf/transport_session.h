@@ -35,8 +35,26 @@ extern "C" {
 /** Note whether the login information should be sent as plaintext or as a hash digest. */
 enum TRANSPORT_AUTH_TYPE { AUTH_PLAIN, AUTH_DIGEST };
 
-struct jabber_state_machine_struct;
+
+// ---------------------------------------------------------------------------------
+// Jabber state machine.  This is how we know where we are in the Jabber
+// conversation.
+// ---------------------------------------------------------------------------------
+struct jabber_state_machine_struct {
+	int connected;
+	int connecting;
+	int in_message;
+	int in_message_body;
+	int in_thread;
+	int in_subject;
+	int in_error;
+	int in_message_error;
+	int in_iq;
+	int in_presence;
+	int in_status;
+};
 typedef struct jabber_state_machine_struct jabber_machine;
+
 
 /**
 	@brief Collection of things for managing a Jabber session.
