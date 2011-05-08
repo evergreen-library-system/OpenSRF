@@ -19,24 +19,6 @@
 #define JABBER_STATUS_BUFSIZE    16  /**< buffer size for status code */
 
 // ---------------------------------------------------------------------------------
-// Jabber state machine.  This is how we know where we are in the Jabber
-// conversation.
-// ---------------------------------------------------------------------------------
-struct jabber_state_machine_struct {
-	int connected;
-	int connecting;
-	int in_message;
-	int in_message_body;
-	int in_thread;
-	int in_subject;
-	int in_error;
-	int in_message_error;
-	int in_iq;
-	int in_presence;
-	int in_status;
-};
-
-// ---------------------------------------------------------------------------------
 // Callback for handling the startElement event.  Much of the jabber logic occurs
 // in this and the characterHandler callbacks.
 // Here we check for the various top level jabber elements: body, iq, etc.
