@@ -81,6 +81,7 @@ DEBS =  \
 	autoconf\
 	automake\
 	build-essential\
+	check\
 	ejabberd\
 	less\
 	libapache2-mod-perl2\

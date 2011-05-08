@@ -294,6 +294,15 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	AC_SUBST(memcached_CFLAGS)
 	AC_SUBST(memcached_LIBS)
 
+    # Check Unit test framework
+    PKG_CHECK_MODULES([CHECK], [check >= 0.9.0], [enable_tests=yes],
+                      [enable_tests=no])
+    AM_CONDITIONAL(CHECK_TESTS, test x$enable_tests = xyes)
+
+    if test "x$enable_tests" = "xno"; then
+      AC_MSG_WARN(Check unit testing framwork not found.)
+    fi
+
 	#-----------------------------
 	# Checks for header files.
 	#-----------------------------
@@ -312,6 +321,7 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	AC_TYPE_SIZE_T
 	AC_HEADER_TIME
 	AC_STRUCT_TM
+    AM_PROG_CC_C_O
 
 	#----------------------------------
 	# Checks for library functions.
@@ -343,6 +353,7 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 			 src/python/opensrf.py
 			 src/router/Makefile
 			 src/srfsh/Makefile
+             tests/Makefile
 			 bin/opensrf-perl.pl
 			 bin/osrf_config
 			 bin/osrf_ctl.sh])

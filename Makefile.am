@@ -115,7 +115,7 @@ opensrfinclude_HEADERS = $(OSRFINC)/log.h \
 	src/gateway/apachetools.h
 endif
 
-SUBDIRS = src
+SUBDIRS = src tests
 
 jserver:
 	make -s -C src jserver
