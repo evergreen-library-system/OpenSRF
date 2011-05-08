@@ -183,6 +183,8 @@ CENTOS_PERL = \
 FEDORAS = \
 	autoconf \
 	automake \
+	check \
+	check-devel \
 	ejabberd \
 	expat-devel \
 	gcc \
