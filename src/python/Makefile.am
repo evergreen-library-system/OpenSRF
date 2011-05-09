@@ -2,6 +2,9 @@
 
 DISTCLEANFILES = Makefile.in Makefile
 
+check:
+	nosetests --with-coverage --cover-package=osrf
+
 all-local:
 	@echo $@
 	python @srcdir@/setup.py build

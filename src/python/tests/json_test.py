@@ -2,34 +2,7 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import osrf.json, osrf.net_obj, unittest
-
-class TestObject(object):
-    def __init__(self):
-        self.int = 1
-        self.string = "two"
-        self.array = [1,2,3,4]
-        self.dict = {'foo': 'bar', 'key': 'value'}
-        self.true = True
-        self.false = False
-        self.null = None
-
-class CheckNetworkEncoder(unittest.TestCase):
-    """Tests the NetworkEncoder JSON encoding extension"""
-
-    def setUp(self):
-        osrf.net_obj.register_hint('osrfMessage', ['threadTrace', 'locale', 'type', 'payload'], 'hash')
-        self.testo = TestObject()
-        self.ne = osrf.json.NetworkEncoder()
-
-    def test_connect(self):
-        test_json = self.ne.default(
-            osrf.net_obj.NetworkObject.osrfMessage({
-                    'threadTrace' : 0,
-                    'type' : "CONNECT"
-                } 
-            )
-        )
-        self.assertEqual(test_json, {'__p': {'threadTrace': 0, 'type': 'CONNECT'}, '__c': 'osrfMessage'})
+from testobj import TestObject
 
 class CheckObjectToJSON(unittest.TestCase):
     """Tests the osrf.json.to_json() method that converts Python objects into JSON"""

@@ -176,7 +176,7 @@ def parse_net_object(obj):
                 exec(estr) 
                 return obj
 
-        # dict, but not a registered NetworObject
+        # dict, but not a registered NetworkObject
         for key, value in obj.iteritems():
             obj[key] = parse_net_object(value)
 
