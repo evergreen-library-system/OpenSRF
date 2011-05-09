@@ -1,8 +1,11 @@
+"""
+Unit tests for the osrf.net_obj module
+"""
+
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import osrf.json, osrf.net_obj, unittest
-from testobj import TestObject
 
 class CheckNetworkEncoder(unittest.TestCase):
     """Tests the NetworkEncoder JSON encoding extension"""
