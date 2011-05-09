@@ -7,6 +7,17 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import osrf.json, osrf.net_obj, unittest
 
+class TestObject(object):
+    """Test object with basic JSON structures"""
+    def __init__(self):
+        self.int = 1
+        self.string = "two"
+        self.array = [1,2,3,4]
+        self.dict = {'foo': 'bar', 'key': 'value'}
+        self.true = True
+        self.false = False
+        self.null = None
+
 class CheckNetworkEncoder(unittest.TestCase):
     """Tests the NetworkEncoder JSON encoding extension"""
 
