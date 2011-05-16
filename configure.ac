@@ -20,10 +20,15 @@
 #-------------------------------
 
 export PATH=${PATH}:/usr/sbin
-m4_include([version.m4])
 AC_PREREQ(2.59)
+
+# Get our version number from one file
+m4_include([version.m4])
+
+# Version number gets turned into @PACKAGE_VERSION@
 AC_INIT([OpenSRF],m4_defn([VERSION_NUMBER]),[open-ils-dev@list.georgialibraries.org])
 AM_INIT_AUTOMAKE([OpenSRF], m4_defn([VERSION_NUMBER]))
+
 AC_REVISION($Revision: 0.1 $)
 AC_CONFIG_SRCDIR([configure.ac])
 AC_PREFIX_DEFAULT([/opensrf])
