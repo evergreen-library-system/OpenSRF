@@ -16,6 +16,7 @@ EXTRA_DIST = @srcdir@/apachetools.c @srcdir@/apachetools.h @srcdir@/osrf_json_ga
 
 AM_CFLAGS = -D_LARGEFILE64_SOURCE -Wall -I@abs_top_srcdir@/include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS)
 AM_LDFLAGS = -L$(LIBDIR) -L@top_builddir@/src/libopensrf
+AP_LIBEXECDIR = `$(APXS2) -q LIBEXECDIR`
 
 DISTCLEANFILES = Makefile.in Makefile
 
@@ -27,8 +28,9 @@ install-exec-local:
 	fi
 	$(APXS2) -c $(DEF_LDLIBS) $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_json_gateway.c apachetools.c apachetools.h libopensrf.so
 	$(APXS2) -c $(DEF_LDLIBS) $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_http_translator.c apachetools.c apachetools.h libopensrf.so
-	$(APXS2) -i -a @srcdir@/osrf_json_gateway.la
-	$(APXS2) -i -a @srcdir@/osrf_http_translator.la
+	$(MKDIR_P) $(DESTDIR)$(AP_LIBEXECDIR)
+	$(APXS2) -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) -a @srcdir@/osrf_json_gateway.la
+	$(APXS2) -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) -a @srcdir@/osrf_http_translator.la
 
 clean-local:
 	rm -f @srcdir@/osrf_http_translator.la @srcdir@/osrf_http_translator.lo @srcdir@/osrf_http_translator.slo @srcdir@/osrf_json_gateway.la @srcdir@/osrf_json_gateway.lo @srcdir@/osrf_json_gateway.slo

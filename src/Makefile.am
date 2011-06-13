@@ -57,11 +57,11 @@ endif
 SUBDIRS = $(MAYBE_CORE) $(MAYBE_PY) $(MAYBE_JA)
 
 install-exec-local:
-	$(MKDIR_P) $(VAR)
-	$(MKDIR_P) $(PID)
-	$(MKDIR_P) $(LOG)
-	$(MKDIR_P) $(SOCK)
-	$(MKDIR_P) $(jsdir)
+	$(MKDIR_P) $(DESTDIR)$(VAR)
+	$(MKDIR_P) $(DESTDIR)$(PID)
+	$(MKDIR_P) $(DESTDIR)$(LOG)
+	$(MKDIR_P) $(DESTDIR)$(SOCK)
+	$(MKDIR_P) $(DESTDIR)$(jsdir)
 
 install-exec-hook:
 	if [ "$(MAYBE_CORE)" ]; then \
@@ -72,7 +72,7 @@ install-exec-hook:
 			rm "$(DESTDIR)@sysconfdir@/$${f}.bak" ; \
 		done; \
 	fi
-	cp -r @srcdir@/javascript/* $(jsdir)/
+	cp -r @srcdir@/javascript/* $(DESTDIR)$(jsdir)/
 
 uninstall-hook:
 	rm -f @includedir@/opensrf/apachetools.h
