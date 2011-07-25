@@ -11,7 +11,7 @@ all-local:
 # ------------------------------------------------------------------------------
 install-data-local:	
 	@echo $@
-	python @srcdir@/setup.py install
+	python @srcdir@/setup.py install --root $(DESTDIR)///
 
 distclean-local:
 	rm -f @builddir@/OpenSRF.egg-info/PKG-INFO
