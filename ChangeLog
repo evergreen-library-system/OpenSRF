@@ -1,1 +1,725 @@
-#ChangeLog
+Changelog for 2.0.1
+===================
+
+2011-08-19  Dan Scott <dan@coffeecode.net>
+
+	* README: Add a 0 to max_stanza_size in README instructions
+	
+	Yes, that should be 2000000, not 200000 for max_stanza_size.
+	Symptoms included "Text of error message received from Jabber: XML
+	stanza is too big" in error logs and crashing OpenSRF processes.  For reference,
+	http://list.georgialibraries.org/pipermail/open-ils-dev/2011-August/007494.html
+
+	Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+2011-07-25  Ben Webb <bjwebb67@googlemail.com>
+
+	* src/python/Makefile.am: LP 799718: Pass the DESTDIR variable to
+	setup.py This allows python modules to be built when creating packages.
+	
+	Per comment from Dan Scott on the LP bug:
+	http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap03.html#tag_03_266
+	says "Multiple successive slashes are considered to be the same as
+	one slash." so in theory "--root=$(DESTDIR)/" should be just as safe
+	as "--root=$(DESTDIR)///", but why not go the distance and use 3
+	slashes to avoid any possibility of some oddball POSIX
+	implementation that treats 2 slashes differently for some reason? 
+
+	Signed-off-by: Ben Webb <bjwebb67@googlemail.com> 
+	Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+2011-06-13  Ben Webb <bjwebb67@googlemail.com>
+
+	* Respect DESTDIR during the build process
+	
+	Replace instances of make with the generic $(MAKE) Add $(DESTDIR) to
+	paths it is currently missing from Manually specify the apxs2
+	install location so that DESTDIR can be prepended Attempt to create
+	the apache directory if it does not exist 
+
+	Signed-off-by: Ben Webb <bjwebb67@googlemail.com> 
+	Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+Changelog for 2.0.0 final release
+=================================
+
+2011-05-08  dbs
+
+	* src/extras/Makefile.install: Add Check dependencies for Fedora
+	  
+	  Required to run "make check" for the C unit tests
+	  previously added by Kevin Beswick.
+	  
+	  Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+	* Makefile.am, configure.ac, src/extras/Makefile.install, tests: Add a C unit
+	  testing framework and tests for OpenSRF
+	  
+	  The unit testing framework is "Check" - http://check.sourceforge.net/
+	  
+	  These tests can be executed by running 'make check' after you
+	  configure and compile the OpenSRF code.
+	  
+	  To run them, you must have the 'check' package installed.
+	  
+	  Author: Kevin Beswick <kevinbeswick00@gmail.com>
+	  Signed-off-by: Dan Scott <dan@coffeecode.net>
+	  Signed-off-by: Kevin Beswick <kevinbeswick00@gmail.com>
+
+	* include/opensrf/transport_session.h, src/libopensrf/transport_session.c: move
+	  jabber_state_machine_struct into header to keep 'make check' happy
+
+2011-04-28  erickson
+
+	* src/javascript/opensrf.js: Patch from Kevin Beswick to support set operations on
+	  certain opensrf message fields. note, this does not currently affect behavior,
+	  since values for messages are initially set from parsing JSON without using the
+	  access/mutators for setting values.
+
+2011-04-25  dbs
+
+	* src/javascript/tests/testJSON_v1.js: Sidestep JSON object ordering in unit tests
+	  
+	  Depending on the JS engine and version of Dojo, the order
+	  of attributes in JSON objects may change (as is explicitly
+	  allowed by the JSON spec). To avoid false test failures,
+	  only use one attribute in the object.
+
+2011-04-21  erickson
+
+	* src/libopensrf/osrf_prefork.c: change proc managament debug message from Info to
+	  Debug
+
+2011-04-12  erickson
+
+	* examples/opensrf-rsyslog.conf: additional settings in sample rsyslog config:
+	  disable EscapeControlCharactersOnReceive
+
+2011-03-30  dbs
+
+	* bin/osrf_ctl.sh.in, src/python/opensrf.py.in: Handle the common NXDOMAIN problem
+	  with Python a bit more gracefully
+	  
+	  Rather than dumping a nasty full stacktrace to the command line, we
+	  print a hopefully helpful pointer to the actual problem in plain
+	  English.
+	  
+	  Also, rather than stopping everything if a "stop_all" command was
+	  issued, skip the error status in osrf_ctl.sh for the Python bit
+	  and carry on shutting down the other services. A bit more convenient
+	  if you want to have Python enabled but don't necessarily need it
+	  running.
+
+2011-03-29  dbs
+
+	* src/javascript/tests/testJSON_v1.js: Make javascript unit tests more granular to
+	  ease tracking down errors
+	  
+	  Noticed a failure when running with Rhino 1.7RC2 that wasn't happening
+	  with version of Rhino packaged in shrinksafe.jar, and it was a bit
+	  tedious narrowing down which test was actually failing. Breaking up
+	  the tests into smaller sets will make this process easier and might invite
+	  the submission of other tests to target areas that are not yet covered.
+
+	* src/javascript/tests/testJSON_v1.js: A few more tests for JSON_v1.js
+	  
+	  We're not really touching the interesting parts of encodeJS/decodeJS
+	  yet, but at least we get to open the door a crack.
+
+	* src/javascript/tests: Add DOH-based unit test harness for OpenSRF JavaScript
+	  
+	  The Dojo Objective Harness enables us to run unit tests from the command
+	  line or within a browser. Running tests from a command line makes it easier
+	  to fold into the continuous integration server. Included in this commit
+	  is a small README for setting up command-line testing and a sample set
+	  of unit tests that exercise parts of JSON_v1.js.
+
+	* src/python/osrf/app.py: Give Python services introspection methods matching C
+	  and Perl
+	  
+	  Perl and C services offer "opensrf.system.method" and
+	  "opensrf.system.method.all" methods for accessing service
+	  information. Renaming Python's methods to match at least
+	  enables srfsh to access this information, even if it does
+	  still need to be taught to provide that information in a
+	  consistent manner.
+
+2011-03-27  dbs
+
+	* bin/osrf_ctl.sh.in: Improved PID file handling in osrf_ctl.sh
+	  
+	  Joseph Lewis <joehms22@gmail.com> submitted a patch to address
+	  https://bugs.launchpad.net/evergreen/+bug/741088 ("osrf_ctl.sh Doesn't check if
+	  process is actually running")
+	  
+	  As of this patch, when start_perl, start_c, or start_python are started and
+	  existing PID files are found for those processes, instead of assuming that the
+	  processes are actually running, osrf-ctl.sh now has the intelligence to check
+	  the process list to see if there is a matching process. If no running process
+	  is found, then the old PID file is removed and the start command is issued.
+	  
+	  Two additional actions have been added, "smart_clear" and "clear_pid".
+	  
+	  "smart_clear" checks the PID files against the running processes and removes
+	  PID files where no running process is found. This is effectively invoked
+	  under the covers when start_* is invoked and a PID file is found.
+	  
+	  "clear_pid" deletes all PID files without checking to see if there are any
+	  running processes. In most cases, it should only be invoked as part of an
+	  automated boot sequence.
+	  
+	  Developer's Certificate of Origin 1.1
+	  
+	  By making a contribution to this project, I certify that:
+	  
+	  (a) The contribution was created in whole or in part by me and I
+	  have the right to submit it under the open source license
+	  indicated in the file; or
+	  
+	  (b) The contribution is based upon previous work that, to the best
+	  of my knowledge, is covered under an appropriate open source
+	  license and I have the right under that license to submit that
+	  work with modifications, whether created in whole or in part
+	  by me, under the same open source license (unless I am
+	  permitted to submit under a different license), as indicated
+	  in the file; or
+	  
+	  (c) The contribution was provided directly to me by some other
+	  person who certified (a), (b) or (c) and I have not modified
+	  it.
+	  
+	  (d) I understand and agree that this project and the contribution
+	  are public and that a record of the contribution (including all
+	  personal information I submit with it, including my sign-off) is
+	  maintained indefinitely and may be redistributed consistent with
+	  this project or the open source license(s) involved.
+	  
+	  Signed-off-by: Joseph Lewis <joehms22@gmail.com>
+
+2011-03-13  dbs
+
+	* src/javascript/DojoSRF.js, src/javascript/JSON_v0.js, src/javascript/JSON_v1.js,
+	  src/javascript/opensrf.js, src/javascript/opensrf_xhr.js,
+	  src/javascript/opensrf_xmpp.js: Run OpenSRF JavaScript through jslint for a
+	  light cleanup
+	  
+	  Mostly just semicolons, and shifting a bit of code around to reduce
+	  usage of functions/classes before they've been defined. Staying away
+	  from the === / !== operators for null/undefined/0/''/true/false for
+	  now.
+
+2011-03-11  dbs
+
+	* README: Forward-port AsciiDoc version of README from 2.0.0-rc2
+
+Change log from 2.0.0-rc1 to 2.0.0-rc2
+========================================
+
+2011-03-02  erickson
+
+	* src/python/srfsh.py: bug fix with srfsh.py introspection; better
+	  handling/reporting of service exceptions
+
+	* src/perl/lib/OpenSRF/Server.pm: consistent w/ sigpipe handling in osrf 1.6,
+	  provide a warning and retry mechanism for syswrites that fail as a result of
+	  sigpipe
+
+Change log from 2.0.0-beta1 to 2.0.0-rc1
+========================================
+
+2011-02-22  dbs
+
+	* examples/opensrf.xml.example: Remove max_requests config stanza from C language
+	  implementations in example config
+	  
+	  Only Perl implementations support the max_requests stanza, so let's not confuse
+	  matters with an unused element.
+
+	* examples/opensrf-rsyslog.conf: added sample rsyslog opensrf configuration file
+
+	* src/python/osrf/app.py: Trivial typo fix (also tests OpenSRF buildbot)
+
+	* README: Remove extraneous line for dnsmasq / Python
+
+	* src/libopensrf/osrf_prefork.c: Get that brace back in the right place
+	  
+	  Unbreak the build. Argh.
+
+	* src/libopensrf/osrf_prefork.c, src/perl/lib/OpenSRF/Server.pm: Add hints to
+	  increase max_children config variable if we're hitting the maximum
+	  
+	  Already added this hint to the Python implementation, now propagating to
+	  C and Perl.
+
+	* src/python/osrf/server.py: Clean up Python server implementation, guided by
+	  pylint
+	  
+	  Add some docstrings, keep line lengths at 80 or less (MORE
+	  WHITESPACE!), remove some dead code, and add a hint to check
+	  max_children config value if we're bumping up against the
+	  limit.
+
+	* src/perl/lib/OpenSRF/Application.pm: on second thought, removing debug sleep
+	  method, which is (more than most) a DOS waiting to happen.
+
+	* src/c-apps/Makefile.am: Apply libtools versioning to OpenSRF c-apps as well
+	  
+	  We apply a -version-info argument of 2:0:2, meaning:
+	  * interface = 2: interface '2' of this library
+	  * revision = 0: first implementation of interface '2'
+	  * age = 2: this library can be linked with executables going back
+	  two interface versions
+	  
+	  See http://sourceware.org/autobook/autobook/autobook_91.html for more
+	  information on the -version-info argument.
+
+	* src/libopensrf/Makefile.am: Prepare for version 2.0.0 with versioning for 2.0.0
+	  
+	  Use the libtool -version-info option to provide an explicit version
+	  for the libopensrf.so library. Introducing versioned libraries will
+	  give us the ability to force recompiles of linked applications when
+	  binary compatibility has been broken.
+
+	* src/perl/lib/OpenSRF/Application.pm: added opensrf.system.sleep method; takes 1
+	  param (seconds); useful for debugging child process management
+
+	* src/perl/lib/OpenSRF/Server.pm: Resolve encoding problem found by attempting to
+	  register patrons with Unicode names
+	  
+	  Symptoms were:
+	  
+	  1. a gateway.log entry showing http_translator receiving an XMPP error message
+	  2. a corresponding osrfsys.log entry "server: died with error Wide character in
+	  syswrite at /usr/local/share/perl5/OpenSRF/Server.pm line 239"
+	  
+	  Per normal Perl Unicode handling practices, decoding input and encoding output
+	  using the Encode module and decode_utf8() / encode_utf8() appears to resolve
+	  the problem.
+
+2011-01-31  dbs
+
+	* Makefile.am: Whitespace consistency (tabs for Makefiles I guess)
+
+	* src/perl/lib/OpenSRF.pm: Use an Exporter-approved version number (only one
+	  decimal place)
+
+	* src/perl/Build.PL: Correct copy/paste error in Build.PL metadata
+	  
+	  OpenSRF uses GPL v2 or later, not the Perl license.
+
+2011-01-28  dbs
+
+	* src/perl/t/08-Server.t, src/perl/t/08-UnixServer.t: OpenSRF::UnixServer doesn't
+	  live here any more
+	  
+	  This test was still succeeding on hosts that had installed
+	  previous versions of OpenSRF, but failed on a shiny new
+	  test instance.
+
+2011-01-26  dbs
+
+	* src/perl/t/07-Transport.t: Set the correct number of expected tests so that we
+	  don't fail 100% of the time
+	  
+	  I guess we haven't run "make test" here since r2024 - heh.
+
+2011-01-21  erickson
+
+	* src/libopensrf/osrf_application.c, src/perl/lib/OpenSRF/Application.pm: make the
+	  api CALL log line consistent across Perl and C and make it something that can be
+	  pasted directly into srfsh
+
+	* src/python/srfsh.py: repaired call to handle_request for router query; cannot
+	  survive without the self.
+
+2010-12-20  erickson
+
+	* src/python/srfsh.py: repaired bug in total request time calc, particularly when
+	  a request returns no response
+
+2010-12-20  dbs
+
+	* src/extras/Makefile.install: Straighten out -f / -d flag confusion in
+	  libmemcached prerequisite
+	  
+	  There are two different styles of checking for previously downloaded
+	  tarballs in this Makefile; the libmemcached entry combined them both
+	  with unfortunate results.
+
+2010-12-20  erickson
+
+	* src/python/srfsh.py: Python srfsh enhancements
+	  
+	  * Srfsh plugins can now insert new commands and add words to the tab
+	  completion word bank.
+	  * Addded support reading script files
+	  * Added support for service open/close (connect/disconnect) for stateful
+	  connections
+	  * Moved to class-based srfsh module for easier state maintenance
+	  * More doc strings
+
+2010-12-13  erickson
+
+	* src/perl/lib/OpenSRF/Application.pm: on second thought, removing debug sleep
+	  method, which is (more than most) a DOS waiting to happen.
+
+	* src/python/osrf/server.py: improved select/read/write fault tolerance; cleaner
+	  and more efficient child process idle/active list management; improved logging
+
+2010-12-01  dbs
+
+	* README: Apply patch for dnsmasq documentation
+	  
+	  Thanks to Michael Giarlo <leftwing@alumni.rutgers.edu> for
+	  providing this correction to the dnsmasq configuration line!
+
+2010-11-30  erickson
+
+	* src/python/opensrf.py.in: fail gracefully when opensrf.settings is not up and
+	  running
+
+2010-11-29  erickson
+
+	* src/perl/lib/OpenSRF/Server.pm: don't clean up child attributes until we're done
+	  with them; added pid map hash for easy/quick access to child via pid
+
+	* src/perl/lib/OpenSRF/Server.pm: add fault tolerance (e.g. recover from
+	  interrupted select/sysread); always perform idle maintenance when there are any
+	  active child processes; exit check status early when no active processes exist
+
+	* src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm: avoid calling sysread
+	  when select exited from interruption.
+
+	* src/perl/lib/OpenSRF/Application.pm: added opensrf.system.sleep method; takes 1
+	  param (seconds); useful for debugging child process management
+
+2010-11-29  dbs
+
+	* src/extras/Makefile.install: Lenny needs zlib1g-dev package to install
+	  XML::LibXML and others
+	  
+	  Per https://rt.cpan.org/Public/Bug/Display.html?id=51439; also,
+	  libmemcached failed to configure and build without this.
+
+2010-11-24  gmc
+
+	* src/extras/Makefile.install, src/perl/Build.PL: no longer need FreezeThaw
+	  
+	  Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+2010-11-22  erickson
+
+	* src/libopensrf/osrf_prefork.c: in the rare case the select() is interrupted
+	  while waiting on child statuses, exit early to prevent read()'s on invalid file
+	  handles and allow the calling code to loop back around and try again
+
+2010-11-20  erickson
+
+	* src/python/srfsh.py: added support for introspect operation
+
+	* src/Makefile.am: install srfsh.py when --enable-python is set
+
+	* src/python/srfsh.py: added support for paging through 'less' (like C); added
+	  'router' query docs; added separate env vars for pretty printing json and for
+	  print network object keys; explicit opensrf disconnect on exit
+
+	* src/python/osrf/system.py: added network disconnect func
+
+2010-11-19  erickson
+
+	* src/python/srfsh.py: added 'router' command for router class info queries;
+	  improved redline tab completion; more changes for consistency with C version;
+	  general cleanup
+
+2010-11-16  erickson
+
+	* src/python/osrf/net_obj.py: repaired logic in the as-yet-unused
+	  import_array_data; use the more efficient enumerate func; capture array length
+	  outside of loop for efficiency; avoid calls to set/get_field and access _data
+	  directly inside of the NetworkObject class for faster accessor/mutator's
+
+	* src/python/srfsh.py: removed debug print statement
+
+	* src/python/osrf/net_obj.py: rely on logic, not failure through try/catch, to
+	  determine of an object is a registered network object; if an object is
+	  unregistered, do not treat it as an __unknown network object (which obfuscates
+	  and provides no value).
+
+	* src/python/srfsh.py: killed the terminal colors in srfsh.py output. They are
+	  cute and all, but are likely the cause of readline oddities/artifacts (and kind
+	  of distracting). Default to raw (json) output for consistency
+
+Change log for 2.0.0-beta1
+==========================
+
+2010-11-15  dbs
+
+	* src/perl/lib/OpenSRF.pm: Bump version number for 2.0 branch
+
+2010-11-15  dbs
+
+	* .: Create rel_2_0 branch for next major OpenSRF release
+
+2010-11-14  dbs
+
+	* Limit list of Python services to those within the domain-specific activeapps
+	  section
+	  
+	  Fix up help with correct default PID directory and document list_all action
+
+2010-11-11  dbs
+
+	* If an alternate config file is pointed to in osrf_ctl.sh, respect it
+	  
+	  In a previous edit, I accidentally removed the config file option
+	  from the start_python command, which would break if anything other
+	  than the configured default config file was specified as an option to
+	  osrf_ctl.sh. This makes opensrf.py once again respect the authority
+	  of osrf_ctl.sh.
+
+	* Use the same PID directory as the opensrf-perl.pl and opensrf.py scripts
+	  
+	  The default PID directories for the opensrf-perl.pl and opensrf.py scripts
+	  was /openils/var/run/opensrf (assuming a prefix of '/openils'), while the
+	  default PID directory for osrf_ctl.sh was /openils/var/run. This complicated
+	  matters when trying to restart individual Python or Perl services, as without
+	  passing an explicit PID directory argument the restart command from the
+	  language-specific script would check for a PID in a different PID directory,
+	  find none, and end up running a second copy of the service instead of
+	  restarting the existing service.
+	  
+	  The change groups all PIDs in the 'run/opensrf' subdirectory to avoid any
+	  PID file conflicts (as unlikely as that might be) if OpenSRF is installed
+	  in the default location - so rather than /var/local/run/*.pid, one will
+	  be able to look at /var/local/run/opensrf/*.pid
+
+2010-11-10  dbs
+
+	* Add the sanity-saving step of a munged PERL5LIB to the README
+	  
+	  Thanks for the nudge from Thomas Berezanksy!
+
+	* Commit some unit tests for Python osrf.json module
+	  
+	  Recommendation: add *_test.py scripts that mirror each
+	  osrf.* module in src/python/tests. Boo-yah.
+
+2010-11-09  dbs
+
+	* osrf.json clean up
+	  
+	  * Use the right variable name in to_json_raw()
+	  * PEP8 compliance for variable naming
+	  * Add docstrings
+	  * Simpler __tabs() implementation
+
+	* A solution for starting all Python services: make sh do the work
+
+	* Enhanced do_start() implementation in Python management script
+	  
+	  Unclean shutdowns and fork() misery can create PID files that have
+	  no actual process behind them. Instead of just trusting the PID file, check
+	  for the running PID; if the process is not running, then remove the PID file
+	  and actually start the service.
+
+	* Assign, don't test equality (thanks berick)
+
+	* Make start_all automatically daemonize services
+
+	* Give opensrf.py reasonable defaults for options
+	  
+	  Rather than:
+	  opensrf.py -l -d -f /openils/conf/opensrf_core.xml -p /openils/var/run/ -a
+	  start_all
+	  
+	  you can now use:
+	  opensrf.py -l -d -a start_all
+	  
+	  Isn't that better? Note that we put the PIDs into PID_DIR/run/opensrf/
+	  so that if/when OpenSRF is installed outside of the /openils/ prefix,
+	  the names of the processes won't conflict with any other application PIDs.
+	  Unlikely, but you never know.
+
+	* Try not to stomp on global variable names and built-ins, add docstrings
+
+	* Typos: s/wait_for_child/try_wait_child/ and s/min_childen/min_children/
+
+	* Typo: Pass in the array of servers to the memcached client if we have one
+
+	* Reference constants properly
+
+	* Make pylint happier with PEP8-compliant argument name
+
+	* Fix daemonize problem that surfaced in start_all
+	  
+	  Thanks to Michael Giarlo for reporting the problem, Bill Erickson
+	  for pointing the way to the solution, and http://bugs.python.org/issue5313
+	  for providing me with more context for the problem & solution.
+
+	* More debuggery for the spawning of child processes
+
+	* Minutes and months were reversed in Python logging timestamps
+
+	* Add a Python and curl example of invoking the Perl simpletext services
+
+	* Add a streaming version of the split() method in simpletext example
+
+2010-11-08  dbs
+
+	* Make opensrf-perl.pl handle missing configuration for services more gracefully
+	  
+	  As we might want to ship configuration files with commented out sections,
+	  this will alert the user that a service was listed in the hosts section
+	  but the configuration for that service could not be found.
+
+2010-11-05  erickson
+
+	* Patch from Michael Giarlo to integrate python service control into osrf_ctl.sh.
+	  
+	  I made the following additional changes:
+	  
+	  1. copy opensrf.py into the BIN dir during install when --enable-python is used.
+	  
+	  2. osrf_ctl.sh will not attempt to control python services when python is not
+	  enabled for opensrf.
+
+	* patch from Michael Giarlo for better sanity checking during settings file
+	  reading in python (avoid #comment's)
+
+	* added osrf.apps to installed pachages (thanks for the tip, dbs). bumped version
+	  in prep for 2.0
+
+	* socket_bundle typo patch from Jason Stephenson
+	  
+	  Further discussion and DCO:
+	  
+	  http://libmail.georgialibraries.org/pipermail/open-ils-dev/2010-November/006476.html
+
+2010-10-26  erickson
+
+	* consistent w/ the C libs, only log server message processing duration at INFO.
+	  log server response processing duration at debug and w/ slighly different
+	  wording. let the processing duration log message act as the indication of a
+	  successfully handled message to reduce logging
+
+2010-10-25  erickson
+
+	* log message processing duration at INFO level, instead of DEBUG, consistent with
+	  the C libs
+
+2010-10-14  scottmk
+
+	* Plug a minor memory leak that could occur when we opened a TCP connection
+	  to a server. In practice this meant whenever we opened a Jabber session.
+	  
+	  We call getaddrinfo() to get a dynamically allocated linked list of
+	  addresses for a given server name. Then we traverse the list, looking
+	  for one that accepts streaming connections over IPV4, in order to get
+	  an IP address.
+	  
+	  At the end, we call freeaddrinfo() to free the linked list.
+	  
+	  Previously we would pass to freeaddrinfo() a pointer, not to the
+	  head of the list, but to the node that we used for getting an IP
+	  address. Prior nodes, if any, would leak.
+	  
+	  Also: added calls to freeaddrinfo() in the case of early returns, to
+	  avoid leaking the list in the event of an error.
+	  
+	  M src/libopensrf/socket_bundle.c
+
+2010-10-12  erickson
+
+	* implemented an optional per-service stderr log for capturing miscellaneous
+	  stderr output from services, similar to the old-style _unix.log files, since
+	  there are often useful warnings and error messages that never bubble up to
+	  syslog. for clarity, the files now use _stderr as a suffix instead of _unix.
+	  stderr logs are enabled by default. included opensrf.xml example of how to
+	  disable it for a given service
+
+	* when we add xhr responses onto the end of the queue, stash the original session
+	  as well, otherwise we're attempting to ask a session questions about requests
+	  it's not tracking
+
+2010-10-07  erickson
+
+	* in json encoder, replace 2 sub calls w/ 1 hash lookup in heavily called code
+	  path. we lose some abstraction, but it's probably worth it here
+
+2010-09-28  dbs
+
+	* Work around a Net::Domain bug that can result in fqdn's like
+	  foo.example.com,bar.com
+	  
+	  The bug manifested when trying to run autogen.sh, with the output:
+	  Updating fieldmapper
+	  No Response from settings server...going to sleep
+	  
+	  This was because SettingsParser was generating invalid XPath and consquently
+	  errors in the opensrf.settings service; with no response, the attempt to run
+	  autogen.sh would die.
+	  
+	  This workaround splits the fqdn on commas and tries each possible domain in
+	  the server setting XPath. Long term we either need to wait for Net::Domain
+	  bug #60729 (https://rt.cpan.org/Public/Bug/Display.html?id=60729) to be
+	  resolved, or consider alternatives.
+
+2010-09-28  miker
+
+	* return the trace-augmented message as written to the log
+
+2010-09-13  erickson
+
+	* removing vestigial references to Inbound.pm, which no longer exists in the
+	  repository. this also removes get/set_listener, which were never taken advantage
+	  of and are no longer of use since the listener is thoroughly hard-coded into the
+	  opensrf stack now
+
+2010-09-09  dbs
+
+	* Bump trunk version number for OpenSRF up to 1.8.0; better than 1.4.0.
+	  
+	  perlmodstyle says "A correct CPAN version number is a floating point
+	  number with at least 2 digits after the decimal." so we're not in
+	  compliance in any case. Oh well.
+
+2010-09-05  dbs
+
+	* Update the manifest for Perl modules to avoid build warnings
+	  
+	  r2016 removed two Perl modules,
+	  src/perl/lib/OpenSRF/Transport/SlimJabber/Inbound.pm
+	  and src/perl/lib/OpenSRF/UnixServer.pm, and the build gets upset because the
+	  manifest suggests they're missing. But no, we know where they are, and we
+	  don't expect them to come back.
+
+2010-09-01  erickson
+
+	* added support for reading ContinueStatus opensrf messages in the JS opensrf lib
+
+2010-09-01  gmc
+
+	* updated mailing address of the FSF
+
+	* remove executable bit from module files that don't need it
+	  
+	  Small nit to pick for Debianization.
+
+2010-09-01  erickson
+
+	* Replace Net::Server with local pre-forking server
+	  
+	  Support max/min children and max/min spare children
+	  For more, see
+	  http://libmail.georgialibraries.org/pipermail/open-ils-dev/2010-May/006068.html
+
+2010-08-31  gmc
+
+	* remove ntp and ntpdate dependencies
+	  
+	  Not used by OpenSRF; these are legacies of
+	  Evergreen dependencies at the time OpenSRF was
+	  split off. Quite likely a bunch of deps in
+	  Makefile.install aren't needed by OpenSRF
+	  proper.
+	  
