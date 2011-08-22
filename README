@@ -23,8 +23,8 @@ Well-tested values for <osname> include:
   * `debian-lenny` for Debian 5.0
   * `debian-squeeze` for Debian 6.0.0
   * `ubuntu-hardy` for Ubuntu 8.04
-  * `ubuntu-karmic` for Ubuntu 9.10
-  * `fedora14` for Fedora 14
+  * `ubuntu-lucid` for Ubuntu 10.04
+  * `fedora15` for Fedora 15
 
 Less-tested values for <osname> include:
 
