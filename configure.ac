@@ -273,6 +273,14 @@ if test x$OSRF_INSTALL_PYTHON = xtrue; then
         src/python/Makefile
     ])
 fi
+# Check Unit test framework
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.0], [enable_tests=yes],
+                  [enable_tests=no])
+AM_CONDITIONAL(CHECK_TESTS, test x$enable_tests = xyes)
+
+if test "x$enable_tests" = "xno"; then
+  AC_MSG_WARN(Check unit testing framweork not found.)
+fi
 
 if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	#--------------------------------
@@ -299,15 +307,6 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	PKG_CHECK_MODULES(memcached, libmemcached >= 0.8.0)
 	AC_SUBST(memcached_CFLAGS)
 	AC_SUBST(memcached_LIBS)
-
-    # Check Unit test framework
-    PKG_CHECK_MODULES([CHECK], [check >= 0.9.0], [enable_tests=yes],
-                      [enable_tests=no])
-    AM_CONDITIONAL(CHECK_TESTS, test x$enable_tests = xyes)
-
-    if test "x$enable_tests" = "xno"; then
-      AC_MSG_WARN(Check unit testing framwork not found.)
-    fi
 
 	#-----------------------------
 	# Checks for header files.
