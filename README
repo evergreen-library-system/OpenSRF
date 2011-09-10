@@ -152,7 +152,7 @@ changes:
 {hosts, ["private.localhost", "public.localhost"]}
 ---------------------------------------------------------------------------
 +
-  b. Comment out the `mod_offlinex` directive
+  b. Comment out the `mod_offline` directive
   c. Increase the `max_user_sessions` value to 1000
   d. Change all `max_stanza_size` values to 2000000
   e. Change all `maxrate` values to 500000 
