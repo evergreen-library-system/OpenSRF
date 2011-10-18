@@ -41,6 +41,9 @@ vim:et:ts=2:sw=2:
         this should match one of the <name> of the private router above -->
     <router_name>router</router_name>
 
+    <!-- Log a warning when an outbound message reaches this size in bytes -->
+    <msg_size_warn>1800000</msg_size_warn>
+
     <!-- log file settings ======================================  -->
     <!-- log to a local file -->
     <logfile>LOCALSTATEDIR/log/osrfsys.log</logfile>

@@ -109,7 +109,15 @@ sub send {
     my $msg = OpenSRF::Transport::SlimJabber::XMPPMessage->new(@_);
     $msg->osrf_xid($logger->get_osrf_xid);
     $msg->from($self->xmpp_id);
-    $self->reader->send($msg->to_xml);
+    my $xml = $msg->to_xml;
+    { 
+        use bytes; 
+        my $len = length($xml);
+        if ($len >= $self->{msg_size_warn}) {
+            $logger->warn("Sending large message of $len bytes to " . $msg->to)
+        }
+    }
+    $self->reader->send($xml);
 }
 
 =head2 initialize
@@ -127,6 +135,8 @@ sub initialize {
 	my $password	= $self->params->{password};
 
 	my $conf = OpenSRF::Utils::Config->current;
+
+    $self->{msg_size_warn} = $conf->bootstrap->msg_size_warn || 1800000;
 
 	my $tail = "_$$";
 	$tail = "" if !$conf->bootstrap->router_name and $username eq "router";
