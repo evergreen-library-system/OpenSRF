@@ -589,10 +589,20 @@ sub wait_for_request {
     while(1) {
         # Start out blocking, when data is available, read it all
 
+        my $sig_pipe = 0;
+        local $SIG{'PIPE'} = sub { $sig_pipe = 1 };
+
         my $buf = '';
         my $n = sysread($self->{pipe_to_parent}, $buf, $read_size);
 
         unless(defined $n) {
+
+            if ($sig_pipe) {
+                $logger->info("server: $self got SIGPIPE reading data from parent, retrying...");
+                usleep(50000); # 50 msec
+                next;
+            }
+
             $logger->error("server: error reading data pipe: $!") unless EAGAIN == $!; 
             last;
         }
