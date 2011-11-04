@@ -92,6 +92,7 @@ configure command:
 # useradd -m -s /bin/bash opensrf
 # echo "export PATH=\$PATH:/<PREFIX>/bin" >> /home/opensrf/.bashrc
 # passwd opensrf
+# chown -R opensrf:opensrf /<PREFIX>
 ---------------------------------------------------------------------------
 
 Define your public and private OpenSRF domains:
