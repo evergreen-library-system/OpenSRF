@@ -125,7 +125,7 @@ sub do_start {
 
     if(grep { $_ eq $service } @hosted_services) {
         return unless do_daemon($service);
-        OpenSRF::System->run_service($service);
+        OpenSRF::System->run_service($service, $opt_pid_dir);
     }
 
     msg("$service is not configured to run on $hostname");

@@ -24,7 +24,7 @@ use OpenSRF::Utils::Logger qw($logger);
 use OpenSRF::Transport::SlimJabber::Client;
 use Encode;
 use POSIX qw/:sys_wait_h :errno_h/;
-use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);
+use Fcntl qw(:flock F_GETFL F_SETFL O_NONBLOCK);
 use Time::HiRes qw/usleep/;
 use IO::Select;
 use Socket;
@@ -47,6 +47,9 @@ sub new {
 
     $self->{stderr_log} = $self->{stderr_log_path} . "/${service}_stderr.log" 
         if $self->{stderr_log_path};
+
+    $self->{lock_file} = 
+        sprintf("%s/%s_$$.lock", $self->{lock_file_path}, $self->{service});
 
     $self->{min_spare_children} ||= 0;
 
@@ -82,9 +85,18 @@ sub cleanup {
     # clean up our dead children
     $self->reap_children(1);
 
+    # clean up the lock file
+    close($self->{lock_file_handle});
+    unlink($self->{lock_file});
+
     exit(0) unless $no_exit;
 }
 
+sub open_lock_file {
+    my $self = shift;
+    open($self->{lock_file_handle}, '>>', $self->{lock_file})
+        or die "server: cannot open lock file ".$self->{lock_file} ." : $!\n";
+}
 
 # ----------------------------------------------------------------
 # Waits on the jabber socket for inbound data from the router.
@@ -102,6 +114,7 @@ sub run {
     $self->spawn_children;
     $self->build_osrf_handle;
     $self->register_routers;
+    $self->open_lock_file;
     my $wait_time = 1;
 
     # main server loop
@@ -240,6 +253,9 @@ sub write_child {
     my($self, $child, $msg) = @_;
     my $xml = encode_utf8(decode_utf8($msg->to_xml));
 
+    flock($self->{lock_file_handle}, LOCK_EX) or 
+        $logger->error("server: cannot flock : $!");
+
     for (0..2) {
 
         $self->{sig_pipe} = 0;
@@ -252,6 +268,9 @@ sub write_child {
         $logger->error("server: got SIGPIPE writing to $child, retrying...");
         usleep(50000); # 50 msec
     }
+
+    flock($self->{lock_file_handle}, LOCK_UN) or 
+        $logger->error("server: cannot de-flock : $!");
 
     $logger->error("server: unable to send request message to child $child") if $self->{sig_pipe};
 }
@@ -489,7 +508,7 @@ use OpenSRF::Transport::PeerHandle;
 use OpenSRF::Transport::SlimJabber::XMPPMessage;
 use OpenSRF::Utils::Logger qw($logger);
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
-use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);
+use Fcntl qw(:flock F_GETFL F_SETFL O_NONBLOCK);
 use Time::HiRes qw(time usleep);
 use POSIX qw/:sys_wait_h :errno_h/;
 
@@ -518,11 +537,26 @@ sub set_block {
     fcntl($fh, F_SETFL, $flags);
 }
 
+sub open_lock_file {
+    my $self = shift;
+
+    # close our copy of the parent's lock file since we won't be using it
+    close($self->{parent}->{lock_file_handle}) 
+        if $self->{parent}->{lock_file_handle};
+
+    my $fname = $self->{parent}->{lock_file};
+    unless (open($self->{lock_file_handle}, '>>', $fname)) {
+        $logger->error("server: child cannot open lock file $fname : $!");
+        die "server: child cannot open lock file $fname : $!\n";
+    }
+}
+
 # ----------------------------------------------------------------
 # Connects to Jabber and runs the application child_init
 # ----------------------------------------------------------------
 sub init {
     my $self = shift;
+    $self->open_lock_file;
     my $service = $self->{parent}->{service};
     $0 = "OpenSRF Drone [$service]";
     OpenSRF::Transport::PeerHandle->construct($service);
@@ -585,10 +619,30 @@ sub wait_for_request {
     my $data = '';
     my $read_size = 1024;
     my $nonblock = 0;
+    my $read_pipe = $self->{pipe_to_parent};
+
+    # wait for some data to start arriving
+    my $read_set = IO::Select->new;
+    $read_set->add($read_pipe);
+
+    while (1) {
+        # if can_read is interrupted while blocking, 
+        # go back and wait again until it it succeeds.
+        last if $read_set->can_read;
+    }
+
+    # Parent has started sending data to us.
+    # Wait for the parent to write all data to the pipe.  Then, immediately release 
+    # the lock so the parent can start writing data to other child processes.  
+    # Note: there is no danger of a subsequent message coming from the parent on 
+    # the same pipe, since this child is now marked as active.
+    flock($self->{lock_file_handle}, LOCK_EX) or $logger->error("server: cannot flock : $!");
+    flock($self->{lock_file_handle}, LOCK_UN) or $logger->error("server: cannot de-flock : $!");
+
+    # we have all data now so all reads can be done in non-blocking mode
+    $self->set_nonblock($read_pipe);
 
     while(1) {
-        # Start out blocking, when data is available, read it all
-
         my $sig_pipe = 0;
         local $SIG{'PIPE'} = sub { $sig_pipe = 1 };
 
@@ -612,12 +666,10 @@ sub wait_for_request {
         $data .= $buf;
 
         last if $n < $read_size; # done reading all data
-
-        $self->set_nonblock($self->{pipe_to_parent}) unless $nonblock;
-        $nonblock = 1;
     }
 
-    $self->set_block($self->{pipe_to_parent}) if $nonblock;
+    # return to blocking mode
+    $self->set_block($self->{pipe_to_parent});
     return $data;
 }
 
