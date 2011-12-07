@@ -4,7 +4,7 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (lenny/squeeze), Ubuntu (hardy/lucid)
+# Currently supports Debian (lenny/squeeze), Ubuntu (hardy/lucid/precise)
 # Working towards support of CentOS 5 / RHEL 5 and Fedora.
 # Installs Perl prereqs, libjs with Perl wrapper
 #
@@ -16,6 +16,8 @@
 # 	make -f Makefile.install ubuntu-hardy
 # 	- or -
 # 	make -f Makefile.install ubuntu-lucid
+# 	- or -
+# 	make -f Makefile.install ubuntu-precise
 # 	- or -
 # 	make -f Makefile.install centos
 # 	- or -
@@ -258,6 +260,13 @@ EXTRA_DEBS_UBUNTU_LUCID = \
 	libxml-libxml-perl \
 	libxml-libxslt-perl
 
+EXTRA_DEBS_UBUNTU_PRECISE = \
+	libmemcached-dev\
+	libxml-libxml-perl \
+	libxml-libxslt-perl \
+	ncurses-dev \
+	libreadline-dev
+
 # generic CPAN modules:
 #   * DateTime::Format::ISO8601 is packaged by both Debian Lenny and Ubuntu Intrepid
 #   * JSON::XS is packaged by both Debian Lenny and Ubuntu Intrepid
@@ -295,8 +304,10 @@ rhel: centos
 
 ubuntu-hardy: generic_ubuntu install_cpan_xml hardy
 ubuntu-lucid: generic_ubuntu lucid
+ubuntu-precise: generic_ubuntu precise
 hardy: install_cpan install_libmemcached 
 lucid: install_extra_debs install_extra_debs_lucid
+precise: install_extra_debs install_extra_debs_precise
 generic_ubuntu: install_debs debian_sys_config
 
 # - COMMON TARGETS ---------------------------------------------------------
@@ -415,6 +426,9 @@ install_extra_debs_squeeze: install_extra_debs
 # Install even more packaged dependencies on modern distros
 install_extra_debs_lucid:
 	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_LUCID)
+
+install_extra_debs_precise:
+	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_PRECISE)
 
 # Fedora
 install_fedora_rpms:
