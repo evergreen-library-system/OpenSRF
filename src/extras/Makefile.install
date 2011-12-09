@@ -101,6 +101,7 @@ DEBS =  \
 	libgdbm-dev \
 	liblog-log4perl-perl\
 	libmodule-build-perl\
+	libnet-dns-perl\
 	libnet-jabber-perl\
 	libperl-dev\
 	libreadline5-dev\
@@ -161,6 +162,7 @@ CENTOS = \
 	perl-Log-Log4perl \
 	perl-Memcached-libmemcached \
 	perl-Module-Build \
+	perl-Net-DNS \
 	perl-Net-Server \
 	perl-Template-Toolkit \
 	perl-Test-Pod \
@@ -219,6 +221,7 @@ FEDORAS = \
 	perl-libwww-perl \
 	perl-Log-Log4perl \
 	perl-Module-Build \
+	perl-Net-DNS \
 	perl-Net-Jabber \
 	perl-Net-Server \
 	perl-RPC-XML \
