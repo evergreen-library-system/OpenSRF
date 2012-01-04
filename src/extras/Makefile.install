@@ -23,7 +23,7 @@
 # 	- or -
 # 	make -f Makefile.install rhel
 # 	- or -
-# 	make -f Makefile.install fedora14
+# 	make -f Makefile.install fedora
 #
 # Notes:
 #
@@ -301,7 +301,7 @@ lenny: install_extra_debs
 squeeze: install_extra_debs_squeeze
 generic_debian: install_debs debian_sys_config
 
-fedora14: install_fedora_rpms
+fedora: install_fedora_rpms
 
 rhel: centos
 
