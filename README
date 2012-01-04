@@ -1,8 +1,27 @@
-README for OpenSRF 2.0.0
-============================
+README for OpenSRF 2.0.2
+========================
 
-Installing prerequisites:
--------------------------
+Preamble: referenced user accounts
+----------------------------------
+
+In subsequent sections, we will refer to a number of different accounts, as
+follows:
+
+  * Linux user accounts:
+    ** The *user* Linux account is the account that you use to log onto the
+       Linux system as a regular user.
+    ** The *root* Linux account is an account that has system administrator
+       privileges. On Debian and Fedora you can switch to this account from
+       your *user* account by issuing the `su -` command and entering the
+       password for the *root* account when prompted. On Ubuntu you can switch
+       to this account from your *user* account using the `sudo su -` command
+       and entering the password for your *user* account when prompted.
+    ** The *opensrf* Linux account is an account that you will create as part
+       of installing OpenSRF. You can switch to this account from the *root*
+       account by issuing the `su - opensrf` command.
+
+Installing prerequisites
+------------------------
 
 OpenSRF has a number of prerequisite packages that must be installed
 before you can successfully configure, compile, and install OpenSRF.
@@ -25,7 +44,7 @@ Well-tested values for <osname> include:
   * `ubuntu-hardy` for Ubuntu 8.04
   * `ubuntu-lucid` for Ubuntu 10.04
   * `ubuntu-precise` for Ubuntu 12.04
-  * `fedora15` for Fedora 15
+  * `fedora` for Fedora 16
 
 Less-tested values for <osname> include:
 
@@ -40,22 +59,40 @@ be prompted for configuration of Comprehensive Perl Archive Network (CPAN)
 on your server. You can generally accept the defaults by pressing <return>
 for all of the prompts, except for the country configuration.
 
-[NOTE]
-If you are installing this using a copy of the source code that was
-checked out directly from the OpenSRF git repository rather
-than from a downloaded release of the source code, there are a few
-additional prerequisite tools and steps that you will need to follow.
-See "Developer instructions" at the bottom of the file.
+Preamble: Developer instructions
+--------------------------------
 
-Configuration and compilation instructions:
--------------------------------------------
+[NOTE]
+Skip this section if you are using an official release tarball downloaded
+from http://evergreen-ils.org/downloads
+
+Developers working directly with the source code from the Git repository,
+rather than an official release tarball, must install some extra packages
+and perform one step before they can proceed with the `./configure` step.
+
+As the *root* Linux account, install the following packages:
+
+  * autoconf
+  * automake
+  * libtool
+
+As the *user* Linux account, issue the following command in the OpenSRF
+source directory to generate the configure script and Makefiles:
+
+[source, bash]
+------------------------------------------------------------------------------
+./autogen.sh
+------------------------------------------------------------------------------
+
+Configuration and compilation instructions
+------------------------------------------
 
 Use the `configure` command to configure OpenSRF, and the `make` command to
 build OpenSRF. The default installation prefix (PREFIX) for OpenSRF is
 `/opensrf/`.
 
-If you are building OpenSRF for Evergreen, pass the `--prefix` and
-`--sysconfdir` options as follows:
+If you are building OpenSRF for Evergreen, issue the following commands as
+the *user* Linux account to configure and build OpenSRF:
 
 ---------------------------------------------------------------------------
 ./configure --prefix=/openils --sysconfdir=/openils/conf
@@ -64,40 +101,39 @@ make
 
 By default, OpenSRF includes C, Perl, and JavaScript support.
 You can add the `--enable-python` option to the configure command
-to build Python support, and `--enable-java` for Java support.
+to build Python support and `--enable-java` for Java support.
 
-Installation instructions:
---------------------------
+Installation instructions
+-------------------------
 
-Once you have configured and compiled OpenSRF, issue the following
-command as the root user to install OpenSRF:
-
+1. Once you have configured and compiled OpenSRF, issue the following
+   command as the *root* Linux account to install OpenSRF:
++
+[source, bash]
 ---------------------------------------------------------------------------
 make install
 ---------------------------------------------------------------------------
 
-This will install OpenSRF in the prefix directory that you specified in the
-configuration step. This will also install example configuration files that
-you can use as templates for your own configuration files.
-
-Create and set up the opensrf Unix user environment:
-----------------------------------------------------
+Create and set up the opensrf Unix user environment
+---------------------------------------------------
 
 This user is used to start and stop all OpenSRF processes, and must own all
 files contained in the PREFIX directory hierarchy. Issue the following
-commands as root to create the `opensrf` user and set up its environment,
-substituting <PREFIX> with the value you passed to `--prefix` in your
-configure command:
+commands as the *root* Linux account to create the `opensrf` user and set up
+its environment, substituting <PREFIX> with the value you passed to `--prefix`
+in your configure command:
 
+.Creating the `opensrf` user
+[source, bash]
 ---------------------------------------------------------------------------
-# useradd -m -s /bin/bash opensrf
-# echo "export PATH=\$PATH:/<PREFIX>/bin" >> /home/opensrf/.bashrc
-# passwd opensrf
-# chown -R opensrf:opensrf /<PREFIX>
+useradd -m -s /bin/bash opensrf
+echo "export PATH=\$PATH:/<PREFIX>/bin" >> /home/opensrf/.bashrc
+passwd opensrf
+chown -R opensrf:opensrf /<PREFIX>
 ---------------------------------------------------------------------------
 
-Define your public and private OpenSRF domains:
------------------------------------------------
+Define your public and private OpenSRF domains
+----------------------------------------------
 
 For security purposes, OpenSRF uses Jabber domains to separate services
 into public and private realms. Throughout these instructions, we will use
@@ -105,33 +141,37 @@ the example domains `public.localhost` and `private.localhost`.
 
 On a single-server system, the easiest way to define public and private
 domains is to define separate hostnames by adding entries to the `/etc/hosts`
-file. Here are entries that you could make to a stock `/etc/hosts` file for our
+file. Here are entries that you could add to a stock `/etc/hosts` file for our
 example domains:
 
+.Example added entries for `/etc/hosts`
 ---------------------------------------------------------------------------
 127.0.1.2	public.localhost	public
 127.0.1.3	private.localhost	private
 ---------------------------------------------------------------------------
 
-Adjust the system dynamic library path:
----------------------------------------
+Adjust the system dynamic library path
+--------------------------------------
 
 Add `<PREFIX>/lib/` to the system's dynamic library path, and then run
-`ldconfig` as root.
+`ldconfig` as the *root* Linux account.
 
-On Debian and Ubuntu systems, run the following commands as root:
+On Debian, Ubuntu, and Fedora systems, run the following commands as the *root*
+Linux account:
 
+.Adjusting the system dynamic library path
+[source, bash]
 ---------------------------------------------------------------------------
-# echo <PREFIX>/lib > /etc/ld.so.conf.d/opensrf.conf
-# ldconfig
+echo <PREFIX>/lib > /etc/ld.so.conf.d/opensrf.conf
+ldconfig
 ---------------------------------------------------------------------------
 
 On most other systems, you can add these entries to `/etc/ld.so.conf`, or
 create a file within the `/etc/ld.so.conf.d/` directory, and then run
-`ldconfig` as root.
+`ldconfig` as the *root* Linux account.
 
-Configure the ejabberd server:
-------------------------------
+Configure the ejabberd server
+-----------------------------
 
 OpenSRF requires an XMPP (Jabber) server. For performance reasons, ejabberd is
 the Jabber server of choice for the OpenSRF project. In most cases, you only
@@ -139,10 +179,18 @@ have to make a few changes to the default `ejabberd.cfg` file to make ejabberd
 work for OpenSRF. 
 
 1. Stop ejabberd before making any changes to its configuration by issuing the
-following command as root:
+   following command as the *root* Linux account:
 +
+.(Debian / Ubuntu) Stopping ejabberd
+[source, bash]
 ---------------------------------------------------------------------------
-# /etc/init.d/ejabberd stop
+/etc/init.d/ejabberd stop
+---------------------------------------------------------------------------
++
+.(Fedora) Stopping ejabberd
+[source, bash]
+---------------------------------------------------------------------------
+systemctl stop ejabberd.service
 ---------------------------------------------------------------------------
 +
 2. Open `/etc/ejabberd/ejabberd.cfg` and make the following
@@ -160,12 +208,21 @@ changes:
   e. Change all `maxrate` values to 500000 
 +
 3. Restart the ejabberd server to make the changes take effect:
++
+.(Debian / Ubuntu) Starting ejabberd
+[source, bash]
 ---------------------------------------------------------------------------
-# /etc/init.d/ejabberd start
+/etc/init.d/ejabberd start
+---------------------------------------------------------------------------
++
+.(Fedora) Starting ejabberd
+[source, bash]
+---------------------------------------------------------------------------
+systemctl start ejabberd.service
 ---------------------------------------------------------------------------
 
-Create the OpenSRF Jabber users:
---------------------------------
+Create the OpenSRF Jabber users
+-------------------------------
 
 On each domain, you need two Jabber users to manage the OpenSRF communications:
 
@@ -174,22 +231,25 @@ On each domain, you need two Jabber users to manage the OpenSRF communications:
   * an `opensrf` user, which clients use to connect to OpenSRF services; this
     user can be named anything you like
 
-Create the Jabber users by issuing the following commands as root. Substitute
-<password> for your chosen passwords for each user respectively:
+Create the Jabber users by issuing the following commands as the *root* Linux
+account. Substitute `<password>` for your chosen passwords for each user
+respectively:
 
+.Creating the OpenSRF Jabber users
+[source, bash]
 ---------------------------------------------------------------------------
-# ejabberdctl register router private.localhost <password>
-# ejabberdctl register opensrf private.localhost <password>
-# ejabberdctl register router public.localhost <password>
-# ejabberdctl register opensrf public.localhost <password>
+ejabberdctl register router private.localhost <password>
+ejabberdctl register opensrf private.localhost <password>
+ejabberdctl register router public.localhost <password>
+ejabberdctl register opensrf public.localhost <password>
 ---------------------------------------------------------------------------
 
-Update the OpenSRF configuration files:
----------------------------------------
+Update the OpenSRF configuration files
+--------------------------------------
 
 There are two critical files that you must update to make OpenSRF work.
 SYSCONFDIR is `/opensrf/etc` by default, or the value that you passed to
-`--sysconfdir` during the configuration phase:
+`--sysconfdir` during the configuration phase.
 
   * `SYSCONFDIR/opensrf.xml` - this file lists the services that this
     OpenSRF installation supports; if you create a new OpenSRF service,
@@ -213,80 +273,74 @@ You should also create a `.srfsh.xml` file in the home directory of each user
 that you want to enable to use the srfsh to communicate with OpenSRF services.
 
 Copy `SYSCONFDIR/srfsh.xml.example` to `~/.srfsh.xml` and update the password 
-to match the one for your Jabber `opensrf` user with the private.localhost 
+to match the one for your Jabber `opensrf` user with the `private.localhost`
 domain.
 
-Starting and stopping OpenSRF services:
----------------------------------------
+Starting and stopping OpenSRF services
+--------------------------------------
 
 To start all OpenSRF services with a hostname of `localhost`, issue the
-following command as the opensrf user:
+following command as the *opensrf* Linux account:
 
+[source, bash]
 ---------------------------------------------------------------------------
-$ osrf_ctl.sh -l -a start_all
+osrf_ctl.sh -l -a start_all
 ---------------------------------------------------------------------------
 
 To stop all OpenSRF services with a hostname of `localhost`, issue the
-following command as the opensrf user:
+following command as the *opensrf* Linux account:
 
 [source,bash]
 ---------------------------------------------------------------------------
-$ osrf_ctl.sh -l -a stop_all
+osrf_ctl.sh -l -a stop_all
 ---------------------------------------------------------------------------
 
-Testing the default OpenSRF services:
--------------------------------------
+Testing the default OpenSRF services
+------------------------------------
 
 By default, OpenSRF ships with an `opensrf.math` service that performs basic
 calculations involving two integers. Once you have started the OpenSRF
-services, start srfsh and issue the following request:
+services, test the services as follows:
 
+1. Start the `srfsh` interactive OpenSRF shell by issuing the following
+   command as the *opensrf* Linux account:
++
+.Starting the `srfsh` interactive OpenSRF shell
+[source,bash]
+---------------------------------------------------------------------------
+srfsh
+---------------------------------------------------------------------------
++
+2. Issue the following request to test the `opensrf.math` service:
++
 ---------------------------------------------------------------------------
 srfsh# request opensrf.math add 2,2
 ---------------------------------------------------------------------------
-
++
 You should receive the value `4`.
 
-Troubleshooting note for Python users:
---------------------------------------
+Troubleshooting note for Python users
+-------------------------------------
 
 If you are running a Python client and trying to connect to OpenSRF running on
 localhost rather than a hostname that can be resolved via DNS, you will
 probably receive exceptions about `dns.resolver.NXDOMAIN`. If this happens,
 you need to install the `dnsmasq` package, configure it to serve up a DNS
 entry for localhost, and point your local DNS resolver to `dnsmasq`. For example,
-on Ubuntu you can issue the following commands as root:
+on Ubuntu you can issue the following commands as the *root* Linux account:
 
+.(Debian / Ubuntu) Installing and starting `dnsmasq`
+[source, bash]
 ---------------------------------------------------------------------------
-# aptitude install dnsmasq
-# /etc/init.d/dnsmasq restart
+aptitude install dnsmasq
+/etc/init.d/dnsmasq restart
 ---------------------------------------------------------------------------
 
 Then edit `/etc/resolv.conf` and ensure that `nameserver 127.0.0.1` is the
 first entry in the file.
 
-Developer instructions:
------------------------
-
-Developers working directly with the source code from the git
-repository will also need to install some extra packages and perform
-one more step before they can proceed with the `./configure` step.
-
-Install the following packages:
-
-  * autoconf
-  * automake
-  * libtool
-
-Run the following command in the source directory to generate the configure
-script and Makefiles:
-
----------------------------------------------------------------------------
-$ ./autogen.sh 
----------------------------------------------------------------------------
-
-Getting help:
--------------
+Getting help
+------------
 
 Need help installing or using OpenSRF? Join the mailing lists at
 http://evergreen-ils.org/listserv.php or contact us on the Freenode
