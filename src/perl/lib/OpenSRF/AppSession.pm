@@ -22,6 +22,13 @@ our %EXPORT_TAGS = ( state => [ qw/CONNECTING INIT_CONNECTED CONNECTED DISCONNEC
 
 my $logger = "OpenSRF::Utils::Logger";
 my $_last_locale = 'en-US';
+our $current_ingress = 'opensrf';
+
+sub ingress {
+    my ($class, $ingress) = @_;
+    $current_ingress = $ingress if $ingress;
+    return $current_ingress;
+}
 
 our %_CACHE;
 our @_RESEND_QUEUE;
@@ -499,6 +506,8 @@ sub send {
 
         my $locale = $self->session_locale;
 		$msg->sender_locale($locale) if ($locale);
+
+		$msg->sender_ingress($current_ingress);
 	
 		push @doc, $msg;
 

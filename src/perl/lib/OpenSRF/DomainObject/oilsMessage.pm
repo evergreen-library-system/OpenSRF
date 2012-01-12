@@ -102,6 +102,24 @@ sub sender_locale {
 	return $self->{locale};
 }
 
+=head2 OpenSRF::DomainObject::oilsMessage->sender_ingress( [$ingress] );
+
+=over 4
+
+Sets or gets the current message ingress.  Useful for telling the
+server how you entered the opensrf network.
+
+=back
+
+=cut
+
+sub sender_ingress {
+	my $self = shift;
+	my $val = shift;
+	$self->{ingress} = $val if $val;
+	return $self->{ingress};
+}
+
 =head2 OpenSRF::DomainObject::oilsMessage->threadTrace( [$new_threadTrace] );
 
 =over 4
@@ -180,10 +198,11 @@ sub handler {
 
 	my $mtype = $self->type;
 	my $locale = $self->sender_locale || '';
+	my $ingress = $self->sender_ingress || '';
 	my $api_level = $self->api_level || 1;
 	my $tT = $self->threadTrace;
 
-    $log->debug("Message locale is $locale", DEBUG);
+    $log->debug("Message locale is $locale; ingress = $ingress", DEBUG);
 
 	$session->last_message_type($mtype);
 	$session->last_message_api_level($api_level);
