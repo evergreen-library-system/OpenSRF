@@ -43,6 +43,8 @@ def handle_message(session, message):
     osrf.log.log_internal("handle_message(): processing message of "
         "type %s" % message.type())
 
+    osrf.ses.Session.ingress(message.ingress())
+
     if isinstance(session, osrf.ses.ClientSession):
         handle_client(session, message)
     else:

@@ -25,7 +25,7 @@ import random, os, time, threading
 # -----------------------------------------------------------------------
 # Go ahead and register the common network objects
 # -----------------------------------------------------------------------
-osrf.net_obj.register_hint('osrfMessage', ['threadTrace', 'locale', 'type', 'payload'], 'hash')
+osrf.net_obj.register_hint('osrfMessage', ['threadTrace', 'locale', 'type', 'payload', 'ingress'], 'hash')
 osrf.net_obj.register_hint('osrfMethod', ['method', 'params'], 'hash')
 osrf.net_obj.register_hint('osrfResult', ['status', 'statusCode', 'content'], 'hash')
 osrf.net_obj.register_hint('osrfConnectStatus', ['status', 'statusCode'], 'hash')
@@ -37,6 +37,7 @@ class Session(object):
 
     ''' Global cache of in-service sessions '''
     session_cache = {}
+    current_ingress = 'opensrf';
 
     def __init__(self):
         # by default, we're connected to no one
@@ -52,6 +53,12 @@ class Session(object):
             return Session.session_cache[thread]
         return ServerSession(thread)
 
+    @staticmethod
+    def ingress(ingress):
+        if ingress:
+            Session.current_ingress = ingress
+        return Session.current_ingress
+
     def set_remote_id(self, remoteid):
         self.remote_id = remoteid
         osrf.log.log_internal("Setting request remote ID to %s" % self.remote_id)
@@ -66,6 +73,9 @@ class Session(object):
         """Sends an OpenSRF message"""
         if not isinstance(omessages, list):
             omessages = [omessages]
+
+        for msg in omessages:
+            msg.ingress(Session.current_ingress);
             
         net_msg = osrf.net.NetworkMessage(
             recipient      = self.remote_id,
