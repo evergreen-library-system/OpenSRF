@@ -7,6 +7,8 @@
 #include "opensrf/osrf_app_session.h"
 #include "opensrf/osrf_stack.h"
 
+static char* current_ingress = NULL;
+
 struct osrf_app_request_struct {
 	/** The controlling session. */
 	struct osrf_app_session_struct* session;
@@ -370,6 +372,26 @@ char* osrf_app_session_set_locale( osrfAppSession* session, const char* locale )
 }
 
 /**
+	@brief Install a copy of a ingress string as the new default.
+	@param session Pointer to the new strdup'ed default_ingress
+	@param ingress The ingress string to be copied and installed.
+*/
+char* osrfAppSessionSetIngress(const char* ingress) {
+	if (!ingress) return NULL;
+    if(current_ingress) 
+        free(current_ingress);
+    return current_ingress = strdup(ingress);
+}
+
+/**
+    @brief Returns the current ingress value
+    @return A pointer to the installed copy of the ingress string 
+*/
+const char* osrfAppSessionGetIngress() {
+    return current_ingress;
+}
+
+/**
 	@brief Find the osrfAppSession for a given session id.
 	@param session_id The session id to look for.
 	@return Pointer to the corresponding osrfAppSession if found, or NULL if not.
@@ -688,6 +710,10 @@ static int osrfAppSessionMakeLocaleRequest(
 	} else if (session->session_locale) {
 		osrf_message_set_locale(req_msg, session->session_locale);
 	}
+
+	if (!current_ingress)
+		osrfAppSessionSetIngress("opensrf");
+	osrfMessageSetIngress(req_msg, current_ingress);
 
 	if(params) {
 		osrf_message_set_params(req_msg, params);

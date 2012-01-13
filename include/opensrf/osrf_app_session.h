@@ -105,6 +105,11 @@ osrfAppSession* osrf_app_server_session_init(
 
 char* osrf_app_session_set_locale( osrfAppSession*, const char* );
 
+/* ingress used by all sessions until replaced */
+char* osrfAppSessionSetIngress( const char* );
+
+const char* osrfAppSessionGetIngress();
+
 osrfAppSession* osrf_app_session_find_session( const char* session_id );
 
 /* DEPRECATED; use osrfAppSessionSendRequest() instead. */

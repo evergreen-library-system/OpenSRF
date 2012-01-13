@@ -92,10 +92,15 @@ struct osrf_message_struct {
 
 	/** Magical LOCALE hint. */
 	char* sender_locale;
+
+	/** Magical ingress hint. */
+	char* sender_ingress;
 };
 typedef struct osrf_message_struct osrfMessage;
 
 const char* osrf_message_set_locale( osrfMessage* msg, const char* locale );
+
+const char* osrfMessageSetIngress( osrfMessage* msg, const char* ingress );
 
 const char* osrf_message_set_default_locale( const char* locale );
 

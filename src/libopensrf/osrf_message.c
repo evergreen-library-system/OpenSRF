@@ -42,6 +42,7 @@ osrfMessage* osrf_message_init( enum M_TYPE type, int thread_trace, int protocol
 	msg->_result_content        = NULL;
 	msg->method_name            = NULL;
 	msg->sender_locale          = NULL;
+	msg->sender_ingress         = NULL;
 
 	return msg;
 }
@@ -80,6 +81,25 @@ const char* osrf_message_set_locale( osrfMessage* msg, const char* locale ) {
 	if( msg->sender_locale )
 		free( msg->sender_locale );
 	return msg->sender_locale = strdup( locale );
+}
+
+/**
+	@brief Set the ingress for a specified osrfMessage.
+	@param msg Pointer to the osrfMessage.
+	@param ingress Pointer to the ingress string to be installed in the osrfMessage.
+	@return Pointer to the new ingress string for the osrfMessage, or NULL if either
+		parameter is NULL.
+
+	If no ingress is specified for an osrfMessage, we use the default ingress.
+
+	Used for a REQUEST message.
+*/
+const char* osrfMessageSetIngress( osrfMessage* msg, const char* ingress ) {
+	if( msg == NULL || ingress == NULL )
+		return NULL;
+	if( msg->sender_ingress )
+		free( msg->sender_ingress );
+	return msg->sender_ingress = strdup( ingress );
 }
 
 /**
@@ -287,6 +307,9 @@ void osrfMessageFree( osrfMessage* msg ) {
 	if( msg->sender_locale != NULL )
 		free(msg->sender_locale);
 
+	if( msg->sender_ingress != NULL )
+		free(msg->sender_ingress);
+
 	if( msg->_params != NULL )
 		jsonObjectFree(msg->_params);
 
@@ -361,6 +384,7 @@ char* osrf_message_serialize(const osrfMessage* msg) {
 	The resulting jsonObject is a JSON_HASH with a classname of "osrfMessage", and the following keys:
 	- "threadTrace"
 	- "locale"
+	- "ingress"
 	- "type"
 	- "payload" (only for STATUS, REQUEST, and RESULT messages)
 
@@ -397,6 +421,9 @@ jsonObject* osrfMessageToJSON( const osrfMessage* msg ) {
 	} else {
 		jsonObjectSetKey(json, "locale", jsonNewObject(default_locale));
 	}
+
+	if (msg->sender_ingress != NULL) 
+		jsonObjectSetKey(json, "ingress", jsonNewObject(msg->sender_ingress));
 
 	switch(msg->m_type) {
 
@@ -620,6 +647,11 @@ static osrfMessage* deserialize_one_message( const jsonObject* obj ) {
 			free( current_locale );
 			current_locale = NULL;
 		}
+	}
+
+	tmp = jsonObjectGetKeyConst(obj, "ingress");
+	if (tmp) {
+		osrfMessageSetIngress(msg, jsonObjectGetString(tmp));
 	}
 
 	tmp = jsonObjectGetKeyConst( obj, "payload" );

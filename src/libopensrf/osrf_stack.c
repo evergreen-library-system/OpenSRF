@@ -149,6 +149,10 @@ struct osrf_app_session_struct* osrf_stack_transport_handler( transport_message*
 			}
 		}
 
+		// grab the ingress value from the first message.
+		// they will all be the same
+		if (i == 0) osrfAppSessionSetIngress(arr[i]->sender_ingress);
+
 		if( session->type == OSRF_SESSION_CLIENT )
 			_do_client( session, arr[i] );
 		else
