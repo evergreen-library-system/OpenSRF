@@ -129,6 +129,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	}
 
 	osrfLogSetAppname("osrf_json_gw");
+	osrfAppSessionSetIngress("gateway-v1");
 
 	char* osrf_locale   = NULL;
 	char* param_locale  = NULL;  /* locale for this call */

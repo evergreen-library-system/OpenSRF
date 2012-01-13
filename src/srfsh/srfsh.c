@@ -140,6 +140,7 @@ int main( int argc, char* argv[] ) {
 	load_history();
 
 	client = osrfSystemGetTransportClient();
+	osrfAppSessionSetIngress("srfsh");
 	
 	// Disable special treatment for tabs by readline
 	// (by default they invoke command completion, which

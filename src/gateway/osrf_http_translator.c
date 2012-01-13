@@ -23,6 +23,7 @@
 #define JSON_CONTENT_TYPE "text/plain"
 #define MAX_MSGS_PER_PACKET 256
 #define CACHE_TIME 300
+#define TRANSLATOR_INGRESS "translator-v1"
 
 #define OSRF_HTTP_HEADER_TO "X-OpenSRF-to"
 #define OSRF_HTTP_HEADER_XID "X-OpenSRF-xid"
@@ -240,35 +241,24 @@ static int osrfHttpTranslatorSetTo(osrfHttpTranslator* trans) {
 }
 
 /**
- * Parses the request body and logs any REQUEST messages to the activity log
+ * Parses the request body, logs any REQUEST messages to the activity log, 
+ * stamps the translator ingress on each message, and returns the updated 
+ * messages as a JSON string.
  */
-static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
-    const osrfMessage* msg;
+static char* osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
+    osrfMessage* msg;
     osrfMessage* msgList[MAX_MSGS_PER_PACKET];
     int numMsgs = osrf_message_deserialize(trans->body, msgList, MAX_MSGS_PER_PACKET);
     osrfLogDebug(OSRF_LOG_MARK, "parsed %d opensrf messages in this packet", numMsgs);
 
     if(numMsgs == 0)
-        return 0;
-
-    if(numMsgs == 1) {
-        msg = msgList[0];
-        if(msg->m_type == CONNECT) {
-            trans->connectOnly = 1;
-            trans->connecting = 1;
-            return 1;
-        }
-        if(msg->m_type == DISCONNECT) {
-            trans->disconnectOnly = 1;
-            trans->disconnecting = 1;
-            return 1;
-        }
-    }
+        return NULL;
 
     // log request messages to the activity log
     int i;
     for(i = 0; i < numMsgs; i++) {
         msg = msgList[i];
+        osrfMessageSetIngress(msg, TRANSLATOR_INGRESS);
 
         switch(msg->m_type) {
 
@@ -297,10 +287,14 @@ static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
 
             case CONNECT:
                 trans->connecting = 1;
+                if (numMsgs == 1) 
+                    trans->connectOnly = 1;
                 break;
 
             case DISCONNECT:
                 trans->disconnecting = 1;
+                if (numMsgs == 1) 
+                    trans->disconnectOnly = 1;
                 break;
 
             case RESULT:
@@ -318,7 +312,7 @@ static int osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
         }
     }
 
-    return 1;
+    return osrfMessageSerializeBatch(msgList, numMsgs);
 }
 
 static int osrfHttpTranslatorCheckStatus(osrfHttpTranslator* trans, transport_message* msg) {
@@ -395,7 +389,8 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
     if(!osrfHttpTranslatorSetTo(trans))
         return HTTP_BAD_REQUEST;
 
-    if(!osrfHttpTranslatorParseRequest(trans))
+    char* jsonBody = osrfHttpTranslatorParseRequest(trans);
+    if (NULL == jsonBody)
         return HTTP_BAD_REQUEST;
 
     while(client_recv(trans->handle, 0))
@@ -403,10 +398,11 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
 
     // send the message to the recipient
     transport_message* tmsg = message_init(
-        trans->body, NULL, trans->thread, trans->recipient, NULL);
+        jsonBody, NULL, trans->thread, trans->recipient, NULL);
     message_set_osrf_xid(tmsg, osrfLogGetXid());
     client_send_message(trans->handle, tmsg);
     message_free(tmsg); 
+    free(jsonBody);
 
     if(trans->disconnectOnly) {
         osrfLogDebug(OSRF_LOG_MARK, "exiting early on disconnect");
@@ -523,6 +519,7 @@ static int handler(request_rec *r) {
 	r->allowed |= (AP_METHOD_BIT << M_POST);
 
 	osrfLogSetAppname("osrf_http_translator");
+	osrfAppSessionSetIngress(TRANSLATOR_INGRESS);
     testConnection(r);
 
 	osrfLogMkXid();
