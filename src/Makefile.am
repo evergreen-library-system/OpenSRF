@@ -36,7 +36,7 @@ endif
 if INSTALLJAVASCRIPT
 MAYBE_JAVASCRIPT = javascript
 jsdir = $(prefix)/lib/javascript
-js_SCRIPTS = javascript/DojoSRF.js javascript/JSON_v0.js javascript/JSON_v1.js javascript/md5.js javascript/opensrf.js javascript/opensrf_xhr.js javascript/opensrf_xmpp.js
+js_SCRIPTS = javascript/DojoSRF.js javascript/JSON_v1.js javascript/md5.js javascript/opensrf.js javascript/opensrf_xhr.js javascript/opensrf_xmpp.js
 endif
 
 if BUILDCORE
