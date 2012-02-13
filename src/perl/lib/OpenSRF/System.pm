@@ -99,8 +99,7 @@ sub run_service {
         min_children =>  $getval->(unix_config => 'min_children') || 1,
         min_spare_children =>  $getval->(unix_config => 'min_spare_children'),
         max_spare_children =>  $getval->(unix_config => 'max_spare_children'),
-        stderr_log_path => $stderr_path,
-        lock_file_path => $pid_dir
+        stderr_log_path => $stderr_path
     );
 
     while(1) {
