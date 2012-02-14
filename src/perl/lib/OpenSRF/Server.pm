@@ -587,13 +587,13 @@ sub run {
 sub wait_for_request {
     my $self = shift;
 
-    my $data = '';
-    my $buf_size = 4096;
-    my $nonblock = 0;
+    my $data = ''; # final request data
+    my $buf_size = 4096; # default linux pipe_buf (atomic window, not total size)
     my $read_pipe = $self->{pipe_to_parent};
-    my $data_size;
-    my $total_read;
-    my $first_read = 1;
+    my $bytes_needed; # size of the data we are about to receive
+    my $bytes_recvd; # number of bytes read so far
+    my $first_read = 1; # true for first loop iteration
+    my $read_error;
 
     while (1) {
 
@@ -611,39 +611,45 @@ sub wait_for_request {
         $self->set_nonblock($read_pipe);
 
         while (1) {
-            # pull as much data from the pipe as possible
+            # read all of the available data
 
             my $buf = '';
-            my $bytes_read = sysread($self->{pipe_to_parent}, $buf, $buf_size);
+            my $nbytes = sysread($self->{pipe_to_parent}, $buf, $buf_size);
 
-            unless(defined $bytes_read) {
-                $logger->error("server: error reading data pipe: $!") unless EAGAIN == $!;
+            unless(defined $nbytes) {
+                if ($! != EAGAIN) {
+                    $logger->error("server: error reading data from parent: $!.  ".
+                        "bytes_needed=$bytes_needed; bytes_recvd=$bytes_recvd; data=$data");
+                    $read_error = 1;
+                }
                 last;
             }
 
-            last if $bytes_read <= 0; # no more data available for reading
+            last if $nbytes <= 0; # no more data available for reading
 
-            $total_read += $bytes_read;
+            $bytes_recvd += $nbytes;
             $data .= $buf;
         }
 
-        # we've read all the data currently available on the pipe.
-        # let's see if we're done.
+        $self->set_block($self->{pipe_to_parent});
+        return undef if $read_error;
 
+        # extract the data size and remove the header from the final data
         if ($first_read) {
-            # extract the data size and remove the size header
             my $wps_size = OpenSRF::Server::WRITE_PIPE_DATA_SIZE;
-            $data_size = int(substr($data, 0, $wps_size)) + $wps_size;
+            $bytes_needed = int(substr($data, 0, $wps_size)) + $wps_size;
             $data = substr($data, $wps_size);
             $first_read = 0;
         }
 
-        $self->set_block($self->{pipe_to_parent});
 
-        if ($total_read == $data_size) {
+        if ($bytes_recvd == $bytes_needed) {
             # we've read all the data. Nothing left to do
             last;
         }
+
+        $logger->info("server: child process read all available pipe data.  ".
+            "waiting for more data from parent.  bytes_needed=$bytes_needed; bytes_recvd=$bytes_recvd");
     }
 
     return $data;
