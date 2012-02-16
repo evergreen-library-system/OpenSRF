@@ -270,15 +270,16 @@ sub check_status {
 
     return unless @{$self->{active_list}};
 
-    my $read_set = IO::Select->new;
-    $read_set->add($_->{pipe_to_child}) for @{$self->{active_list}};
-
     my @pids;
 
     while (1) {
 
         # if can_read or sysread is interrupted while bloking, go back and 
         # wait again until we have at least 1 free child
+
+        # refresh the read_set handles in case we lost a child in the previous iteration
+        my $read_set = IO::Select->new;
+        $read_set->add($_->{pipe_to_child}) for @{$self->{active_list}};
 
         if(my @handles = $read_set->can_read(($block) ? undef : 0)) {
             my $pid = '';
