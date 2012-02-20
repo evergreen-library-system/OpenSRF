@@ -5,6 +5,7 @@ use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);
 use Time::HiRes qw/time/;
 use OpenSRF::Transport::SlimJabber::XMPPMessage;
 use OpenSRF::Utils::Logger qw/$logger/;
+use OpenSRF::EX;
 
 # -----------------------------------------------------------
 # Connect, disconnect, and authentication messsage templates
@@ -211,15 +212,25 @@ sub wait {
     my $buf;
     my $read_size = 1024;
     my $nonblock = 0;
+    my $nbytes;
+    my $first_read = 1;
 
-    while(my $n = sysread($socket, $buf, $read_size)) {
+    while($nbytes = sysread($socket, $buf, $read_size)) {
         $self->{parser}->parse_more($buf) if $buf;
-        if($n < $read_size or $self->peek_msg) {
+        if($nbytes < $read_size or $self->peek_msg) {
             set_block($socket) if $nonblock;
             last;
         }
         set_nonblock($socket) unless $nonblock;
         $nonblock = 1;
+        $first_read = 0;
+    }
+
+    if ($nbytes == 0 and $first_read) {
+        # if the first read on an active socket is 0 bytes, 
+        # the socket has been disconnected from the remote end. 
+        $logger->error("Disconnected from Jabber server");
+        throw OpenSRF::EX::Jabber("Disconnected from Jabber server");
     }
 
     return $self->next_msg;
