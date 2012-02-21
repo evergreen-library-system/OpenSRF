@@ -42,7 +42,7 @@ for all of the prompts, except for the country configuration.
 
 [NOTE]
 If you are installing this using a copy of the source code that was
-checked out directly from the OpenSRF Subversion repository rather
+checked out directly from the OpenSRF git repository rather
 than from a downloaded release of the source code, there are a few
 additional prerequisite tools and steps that you will need to follow.
 See "Developer instructions" at the bottom of the file.
@@ -268,7 +268,7 @@ first entry in the file.
 Developer instructions:
 -----------------------
 
-Developers working directly with the source code from the Subversion
+Developers working directly with the source code from the git
 repository will also need to install some extra packages and perform
 one more step before they can proceed with the `./configure` step.
 
