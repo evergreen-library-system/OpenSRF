@@ -2,31 +2,22 @@
 # Utility script for fetching the OpenSRF Java dependencies
 # ----------------------------------------------------------------
 
-. deps.inc
-STAX=stax-api-1.0.1.jar
-WSTX=wstx-lgpl-3.2.1.jar
-MEMCACHE=java_memcached-release_1.5.1.jar
-JSON=json.zip
+MEMCACHE=java_memcached-release_2.0.1.jar
+MEMCACHE_URL=http://img.whalin.com/memcached/jdk6/standard/$MEMCACHE
+JSON_URL=https://github.com/douglascrockford/JSON-java/zipball/master
 JSON_ZIP=json.zip
-
-STAX_URL=http://woodstox.codehaus.org/$STAX
-WSTX_URL=http://woodstox.codehaus.org/3.2.1/$WSTX
-MEMCACHE_URL=http://img.whalin.com/memcached/jdk5/standard/$MEMCACHE
-JSON_URL=http://www.json.org/java/$JSON
-
-JAVAC="javac -J-Xmx256m"
-JAVA="java -Xmx256m"
+JSON_JAR=json.jar
 
 mkdir -p deps
-if [ ! -f deps/$STAX ]; then wget $STAX_URL -O deps/$STAX; fi 
-if [ ! -f deps/$WSTX ]; then wget $WSTX_URL -O deps/$WSTX; fi
 if [ ! -f deps/$MEMCACHE ]; then wget $MEMCACHE_URL -O deps/$MEMCACHE; fi
-if [ ! -f deps/$JSON ]; then 
-    mkdir -p deps 
+if [ ! -f deps/$JSON_JAR ]; then 
     cd deps 
-    wget "$JSON_URL"
-    unzip $JSON && $JAVAC org/json/*.java; 
-    jar cf json.jar org
+    wget "$JSON_URL" -O $JSON_ZIP
+    unzip $JSON_ZIP
+    mkdir -p org/json/
+    cp douglascrockford*/*.java org/json/
+    javac org/json/*.java
+    jar cf $JSON_JAR org/json/*.class
 fi
 
 
@@ -38,3 +29,9 @@ else
     echo "example: INSTALLDIR=/path/to/java $0"
     echo ""
 fi
+
+echo ""
+echo "To compile OpenSRF java:"
+echo ""
+echo "CLASSPATH=deps/$MEMCACHE:deps/$JSON_JAR javac org/opensrf/*.java org/opensrf/net/xmpp/*.java org/opensrf/util/*.java org/opensrf/test/*.java"
+echo ""

@@ -12,8 +12,6 @@ import java.io.InputStream;
 import org.opensrf.util.JSONWriter;
 import org.opensrf.util.JSONReader;
 
-import com.ctc.wstx.stax.WstxInputFactory;
-
 /**
  * Flattens an XML file into a properties map.  Values are stored as JSON strings or arrays.
  * An array is created if more than one value resides at the same key.
@@ -57,8 +55,7 @@ public class XMLFlattener {
      */
     public Map read() throws javax.xml.stream.XMLStreamException {
 
-        //XMLInputFactory factory = XMLInputFactory.newInstance();
-        XMLInputFactory factory = new com.ctc.wstx.stax.WstxInputFactory();
+        XMLInputFactory factory = XMLInputFactory.newInstance();
 
         /** disable as many unused features as possible to speed up the parsing */
         factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, Boolean.TRUE);

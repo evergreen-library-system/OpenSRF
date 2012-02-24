@@ -9,8 +9,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.Date;
 import org.opensrf.util.Logger;
 
-import com.ctc.wstx.stax.WstxInputFactory;
-
 /**
  * Slim XMPP Stream reader.  This reader only understands enough XMPP
  * to handle logins and recv messages.  It's implemented as a StAX parser.
@@ -162,8 +160,7 @@ public class XMPPReader implements Runnable {
 
         try {
 
-            //XMLInputFactory factory = XMLInputFactory.newInstance();
-            XMLInputFactory factory = new com.ctc.wstx.stax.WstxInputFactory();
+            XMLInputFactory factory = XMLInputFactory.newInstance();
 
             /** disable as many unused features as possible to speed up the parsing */
             factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, Boolean.FALSE);
