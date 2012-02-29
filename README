@@ -249,8 +249,8 @@ Update the OpenSRF configuration files
 
 About the OpenSRF configuration files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-There are two critical files that you must update to make OpenSRF work.
-SYSCONFDIR is `/opensrf/etc` by default, or the value that you passed to
+There are several configuration files that you must update to make OpenSRF
+work. SYSCONFDIR is `/opensrf/etc` by default, or the value that you passed to
 `--sysconfdir` during the configuration phase.
 
   * `SYSCONFDIR/opensrf.xml` - this file lists the services that this
@@ -266,6 +266,9 @@ SYSCONFDIR is `/opensrf/etc` by default, or the value that you passed to
     logging verbosity and defining which services will be exposed on the
     HTTP gateway.
 
+  * `~/.srfsh.xml` - this file gives a Linux account the ability to use
+    the `srfsh` interpreter to communicate with OpenSRF services.
+
 Updating the OpenSRF configuration files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   1. As the *opensrf* Linux account, copy the example configuration files
@@ -275,7 +278,7 @@ Updating the OpenSRF configuration files
 [source,bash]
 ---------------------------------------------------------------------------
 cd SYSCONFDIR
-cp opensrf_core.xml.example opensrf_core.xml.example
+cp opensrf_core.xml.example opensrf_core.xml
 cp opensrf.xml.example opensrf.xml
 ---------------------------------------------------------------------------
 +
