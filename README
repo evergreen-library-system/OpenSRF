@@ -247,6 +247,8 @@ ejabberdctl register opensrf public.localhost <password>
 Update the OpenSRF configuration files
 --------------------------------------
 
+About the OpenSRF configuration files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 There are two critical files that you must update to make OpenSRF work.
 SYSCONFDIR is `/opensrf/etc` by default, or the value that you passed to
 `--sysconfdir` during the configuration phase.
@@ -254,27 +256,43 @@ SYSCONFDIR is `/opensrf/etc` by default, or the value that you passed to
   * `SYSCONFDIR/opensrf.xml` - this file lists the services that this
     OpenSRF installation supports; if you create a new OpenSRF service,
     you need to add it to this file.
-      * The `<hosts>` element at the bottom of the file lists the services
-        that should be started for each hostname. You can force the system
-        to use `localhost`, so in most cases you will leave this section
-        as-is.
+      ** The `<hosts>` element at the bottom of the file lists the services
+         that should be started for each hostname. You can force the system
+         to use `localhost`, so in most cases you will leave this section
+         as-is.
     
   * `SYSCONFDIR/opensrf_core.xml` - this file lists the Jabber connection
     information that will be used for the system, as well as determining
     logging verbosity and defining which services will be exposed on the
-    HTTP gateway. There are four username/password pairs to update in this
-    file:
-      1. `<config><opensrf>` = use the private Jabber `opensrf` user
-      2. `<config><gateway>` = use the public Jabber `opensrf` user
-      3. `<config><routers><router>` = use the public Jabber `router` user
-      4. `<config><routers><router>` = use the private Jabber `router` user
+    HTTP gateway.
 
-You should also create a `.srfsh.xml` file in the home directory of each user
-that you want to enable to use the srfsh to communicate with OpenSRF services.
+Updating the OpenSRF configuration files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  1. As the *opensrf* Linux account, copy the example configuration files
+     to create your locally customizable OpenSRF configuration files:
++
+.Copying the example OpenSRF configuration files
+[source,bash]
+---------------------------------------------------------------------------
+cd SYSCONFDIR
+cp opensrf_core.xml.example opensrf_core.xml.example
+cp opensrf.xml.example opensrf.xml
+---------------------------------------------------------------------------
++
+  2. Edit the `SYSCONFDIR/opensrf_core.xml` file to update the four username
+     / password pairs to match the Jabber user accounts you just created:
 
-Copy `SYSCONFDIR/srfsh.xml.example` to `~/.srfsh.xml` and update the password 
-to match the one for your Jabber `opensrf` user with the `private.localhost`
-domain.
+    a. `<config><opensrf>` = use the private Jabber `opensrf` user
+    b. `<config><gateway>` = use the public Jabber `opensrf` user
+    c. `<config><routers><router>` = use the public Jabber `router` user
+    d. `<config><routers><router>` = use the private Jabber `router` user
+  3. Create a `.srfsh.xml` file in the home directory of each user
+     that you want to use `srfsh` to communicate with OpenSRF services. For
+     example, to enable the *opensrf* Linux account to use `srfsh`:
+    a. `cp SYSCONFDIR/srfsh.xml.example ~/.srfsh.xml`
+    b. Open `~/.srfsh.xml` in your text editor of choice and update the
+       password to match the password you set for the Jabber `opensrf` user
+       at the `private.localhost` domain.
 
 Starting and stopping OpenSRF services
 --------------------------------------
