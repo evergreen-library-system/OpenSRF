@@ -299,7 +299,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 			}
 		}
 
-		osrfLogActivity( OSRF_LOG_MARK, act->buf );
+		osrfLogActivity( OSRF_LOG_MARK, "%s", act->buf );
 		buffer_free(act);
 		/* ----------------------------------------------------------------- */
 
