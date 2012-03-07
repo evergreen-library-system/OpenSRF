@@ -31,7 +31,7 @@ sub do_validate {
     my @validator_names = sort keys %$validators;
     my $additionals = ();
 
-    my $submodulename, $submodule;
+    my ($submodulename, $submodule);
     while($return->{valid} && ($submodulename = shift @validator_names)) {
         $submodule = $validators->{$submodulename};
         my $implementation = $submodule->{implementation};
