@@ -1,1 +1,556 @@
+Changelog for 2.1.0
+===================
+ 
+commit f470b55b86fd59f31dd142d8cb55fe812265892e
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Mon Feb 20 14:40:30 2012 -0500
+
+    Detect remote disconnect in Perl XMPP reader
+    
+    When the jabber server severs the connection, it leaves the Perl libs
+    with a socket that perpetually appears ready for reading, but always
+    returns 0 bytes.  This produces a loop in the client code.  This change
+    detects this situation, logs an error, and throws an exception.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+13    2    src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
+
+commit 974d3a0dd4ddd134033b16bcd9e2fde34302ffd5
+Author: Dan Wells <dbw2@calvin.edu>
+Date:   Tue Mar 6 15:08:33 2012 -0500
+
+    Protect gateway from format-string crashes in data
+    
+    As a common security measure, printf-style formatting codes are
+    not allowed to be directly interpreted from a writable segment.
+    The gateway code currently has the following function call:
+    
+    osrfLogActivity( OSRF_LOG_MARK, act->buf );
+    
+    This is a variadic function which expects the 'act->buf' position
+    to contain a format string and any trailing arguments to be the
+    values passed to the formatter.  Since act->buf is the value of
+    what we passed in, some data inadvertantly contains format strings,
+    and since it is a writable segment, the program crashes.  Here is
+    an example of a crash-causing call:
+    
+    http://localhost/osrf-gateway-v1?service=test&method=test&param=%22%251n%22
+    
+    The param is interpreted as "%1n" and abruptly fails.
+    
+    The simple solution is to include a formatter so that our param gets
+    demoted to being mere data, i.e.:
+    
+    osrfLogActivity( OSRF_LOG_MARK, "%s", act->buf );
+    
+    Signed-off-by: Dan Wells <dbw2@calvin.edu>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1    1    src/gateway/osrf_json_gateway.c
+
+commit fd92a859e2ba3eeeaafe4904cd04973eb8cd572b
+Author: Thomas Berezansky <tsbere@mvlc.org>
+Date:   Wed Mar 7 16:42:21 2012 -0500
+
+    Stop warning about missing parentheses...
+    
+    ...by adding them.
+    
+    Signed-off-by: Thomas Berezansky <tsbere@mvlc.org>
+
+1    1    src/perl/lib/OpenSRF/Application/Validator.pm
+
+commit 8cfa0ae50935176a1574e8f233c8d4d88442c0ad
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Thu Feb 16 17:31:29 2012 -0500
+
+    Refresh child file handles on status read
+    
+    If a child process dies while the parent is attempting to read status
+    information from the child, the pipe connecting the two will be cleaned
+    up.  The parent mustn't attempt to read from the dead pipe or it will
+    result in a bad file descriptor error, culminating in a high-cpu
+    infinite loop on the parent (Listener) process.
+    
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Thomas Berezansky <tsbere@mvlc.org>
+    Signed-off-by: Jason Stephenson <jstephenson@mvlc.org>
+
+4    3    src/perl/lib/OpenSRF/Server.pm
+
+commit 37606bf64f2829258cc612e730782e081e2ac6bb
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Fri Jan 13 10:57:59 2012 -0500
+
+    Python libs for OpenSRF ingress tracking
+    
+    osrf.ses.Session.ingress(ingress)
+    
+    This also set the "srfsh" ingress value for srfsh.py.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+11    1    src/python/osrf/ses.py
+2    0    src/python/osrf/stack.py
+1    0    src/python/srfsh.py
+
+commit 26c31a9d5728adbd884a1369034caff41471130b
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Fri Jan 13 09:35:18 2012 -0500
+
+    Set OpenSRF ingress value for srfsh/gateways
+    
+    Sets the "srfsh", "gateway-v1", and "translator-v1" ingress values
+    accordingly.
+    
+    For the translater, it's necessary to stamp the unpacked messages with
+    the updated ingress, then re-serialize before sending the messages along.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+18    21    src/gateway/osrf_http_translator.c
+1    0    src/gateway/osrf_json_gateway.c
+1    0    src/srfsh/srfsh.c
+
+commit 7ec92808fea116ead923e475ad5242a54b688798
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Fri Jan 13 09:15:05 2012 -0500
+
+    C libs for OpenSRF ingress tracking
+    
+    osrfAppSessionSetIngress(<ingress>);
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+5    0    include/opensrf/osrf_app_session.h
+5    0    include/opensrf/osrf_message.h
+26    0    src/libopensrf/osrf_app_session.c
+32    0    src/libopensrf/osrf_message.c
+4    0    src/libopensrf/osrf_stack.c
+
+commit b12de37f9480c68b1c8b033da18c3cc0d0ebc8f0
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Thu Jan 12 16:36:16 2012 -0500
+
+    Perl libs for OpenSRF ingress tracking
+    
+    Ingress is a free-form text value which represents the entry point for
+    the client into the opensrf network.  The value is passed within opensrf
+    messages, similar to "locale".  Clients should specify the ingress
+    before any opensrf communication occurs.
+    
+    OpenSRF::AppSession->ingress($ingress);
+    
+    Stock values include the following:
+    
+    opensrf (default)
+    srfsh
+    translator-v1
+    gateway-v1
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+9    0    src/perl/lib/OpenSRF/AppSession.pm
+20    1    src/perl/lib/OpenSRF/DomainObject/oilsMessage.pm
+2    0    src/perl/lib/OpenSRF/Transport.pm
+
+commit 67d4d5de8656128f32b20f4c04dbf81a1028e929
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Wed Feb 29 10:48:38 2012 -0500
+
+    Copy opensrf_core.xml.example to a clean opensrf_core.xml file
+    
+    Ben Shum with the assist again.
+    
+    Also, add ~/.srfsh.xml to the definition list of interesting OpenSRF
+    configuration files.
+
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+6    3    README
+
+commit 68025993b01cc95f66a0ca723841e1abb406709f
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Wed Feb 29 10:42:58 2012 -0500
+
+    Include explicit instructions to copy the opensrf config files
+    
+    Also noted by the sharp-eyed Ben Shum, we didn't tell people to actually
+    copy opensrf.xml.example / opensrf_core.xml.example, which could lead to
+    failure.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+35    17    README
+
+commit 75f27021d4b45eebbf52a89a35f96e775f92a207
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Wed Feb 29 10:27:36 2012 -0500
+
+    Update max_user_sessions suggestion to 10000 to match wiki
+    
+    Ben Shum noticed that the README still specified 1000 for
+    max_user_sessions in the ejabberd.cfg file, whereas current larger
+    OpenSRF systems with many services may blow past that limit. Update to
+    match the current wiki specification of 10000.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1    1    README
+
+commit 61fdb582dc918a1003351ff25842a23aaff24f71
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Wed Jan 4 15:21:36 2012 -0500
+
+    Remove reference to Fedora specific version in prereq installer
+    
+    Fedora changes every 6 months, so it's probably silly to have a make
+    target of "fedora14" when that is no longer supported by the Fedora
+    project itself. As Fedora has packaged all of the OpenSRF dependencies
+    (thanks, Ben Webb!), in theory it should be supported by the latest
+    releases of Fedora in the future... as long as we don't introduce any
+    dependencies on deprecated versions of packages.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+2    2    src/extras/Makefile.install
+
+commit ba6d4c7cc2988dafb6ca8de2d1f2f93194dcf3b3
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Wed Jan 4 15:17:48 2012 -0500
+
+    Update README to match Evergreen's format
+    
+    Reference the various accounts in use consistently.
+    
+    Correct reference to "fedora" target in Makefile.install.
+    
+    Put the developer preamble up front.
+    
+    Provide more Fedora examples.
+    
+    Do not include leading "#" and "$" in bash examples, to make it easier
+    for people to copy and paste.
+    
+    Include source highlighting instructions and titles for example
+    commands.
+
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+152    98    README
+
+commit cc7a12f74a9ce4555d5abd8989dfab43290fb41c
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Fri Feb 24 16:28:27 2012 -0500
+
+    Java dependencies update
+    
+    As of Java 6, XML Stax parsing is natively supported.  This change
+    removes the external Stax dependencies and updates how the JSON libs are
+    fetched (in deps.sh), which now come from github.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+17    20    src/java/deps.sh
+1    4    src/java/org/opensrf/net/xmpp/XMPPReader.java
+1    4    src/java/org/opensrf/util/XMLFlattener.java
+
+commit 07b2eff0a7dfc492afd8e67788eae159c5ab96b7
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Tue Feb 21 09:55:57 2012 -0500
+
+    We're not in Subversion anymore, Dorothy
+    
+    We're in git now, make the README reflect that accordingly. Thanks to
+    Warren Layton for the tip!
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+2    2    README
+
+commit aeeb4acdc8695a640021dbc6902ab3279652583d
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Tue Feb 14 09:10:58 2012 -0500
+
+    Perl parent/child write improvements
+    
+    * Updated variable names for clarity
+    * Added more inline comments
+    * Added additional error logging
+    * For severe read errors, allow the child to gracefully skip the request
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Jason Stephenson <jstephenson@mvlc.org>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+25    19    src/perl/lib/OpenSRF/Server.pm
+
+commit 08ee4f993fe773e37233b139961cbcdae2fe93b8
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Mon Feb 13 16:53:59 2012 -0500
+
+    Perl pipe reading overhaul : data size header
+    
+    The lockfile mechanism for preventing premature end of reads on child
+    processes suffers from one serious flaw:  if the data to write exceeds
+    the pipe buffer size, the parent will block on syswrite and the service
+    will lock up.  It's also not as effecient (for the normal case) as the
+    code was without the lockfile, becasue the writes and reads are
+    serialized.
+    
+    This commit replaces the lockfile mechanism with a protocol header in
+    the data.  The first X (currently 12) bytes of data written to the child
+    process will contain the full length of the data to be written (minus
+    the header size).  The child now reads the data in parallel with the parent as
+    data is available.  If the child reads all available data (in the pipe)
+    but not all of the expected data, the child will go back into a select()
+    wait pending more data from the parent.  The process continues until all
+    data is read.
+    
+    This same mechanism is already used to commicate status info from child
+    processes to the parent.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Jason Stephenson <jstephenson@mvlc.org>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+49    73    src/perl/lib/OpenSRF/Server.pm
+1    2    src/perl/lib/OpenSRF/System.pm
+
+commit 04558f38c1c1d314acb978a37193dacb4a6eba31
+Author: Lebbeous Fogle-Weekley <lebbeous@esilibrary.com>
+Date:   Fri Jan 27 09:05:07 2012 -0500
+
+    JSON_v0 has been superseded, and it has insidious bugs anyway.
+    
+    For example, you cannot round-trip this through JSON2js() and js2JSON()
+    in IE8: http://paste.lisp.org/display/127338
+    
+    This will make Evergreen's build fail until the change specified in
+    LP #922609 is applied.
+    
+    Signed-off-by: Lebbeous Fogle-Weekley <lebbeous@esilibrary.com>
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+
+1    1    src/Makefile.am
+0    135    src/javascript/JSON_v0.js
+ delete mode 100644 src/javascript/JSON_v0.js
+
+commit 89f41c82798dbac56716fdd5beeb6c0de3e4ce2e
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Mon Nov 7 17:30:44 2011 -0500
+
+    Sync parent/child write/read with lock file
+    
+    Wrap parent writes to child socket and initial child reads of the
+    socket in file lock (via flock()) to prevent rare race condition
+    where child process reads to the end of the data before the parent
+    has written all bytes.
+    
+    This create a new lock file on the system, which resides in the same
+    directory as the pid files.  The lock file is created and destroyed by
+    the opensrf perl mods at service start up and shutdown.
+    
+    See also https://bugs.launchpad.net/opensrf/+bug/883155
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1    1    bin/opensrf-perl.pl.in
+60    8    src/perl/lib/OpenSRF/Server.pm
+3    2    src/perl/lib/OpenSRF/System.pm
+
+commit 3d089bdfd067676f99807f7cb2014e122c4dbf72
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Mon Dec 12 13:09:13 2011 -0500
+
+    Update Perl OpenSRF build and tests for O:A:Validator
+    
+    Kickstarted by wanting to bring OpenSRF::Application::Validator into the
+    MANIFEST and testing coverage, I noticed a few other files that needed
+    to be added to the MANIFEST as well. This gets us closer to acceptable
+    according to "./Build distcheck"
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1    0    src/perl/Build.PL
+22    0    src/perl/MANIFEST
+6    1    src/perl/t/01-Application.t
+
+commit 5e1fbcc1c8ae2f969dbeac93fe1da80c008ca42b
+Author: Thomas Berezansky <tsbere@mvlc.org>
+Date:   Fri Dec 9 15:19:12 2011 -0500
+
+    OpenSRF Validator Service
+    
+    Add a new Validator service, and EmailAddress validators.
+    
+    The service runs a chain of one or more validators, each one being fed the
+    normalized output of the previous one.
+    
+    The return from each validator should be a hash of valid (0 or 1), the new
+    normalized output (the untouched input if invalid or nothing needed to be
+    changed), and if invalid an error string. Optionally, a validator can also
+    include an "additionals" hash of extra information to be included in the
+    final response.
+    
+    The complete list of validators included is:
+    
+    OpenSRF::Application::Validator::Base
+        The base validator. Always returns valid.
+    OpenSRF::Application::Validator::Invalid
+        Always returns invalid for testing purposes.
+    OpenSRF::Application::Validator::EmailAddress::Regex
+        Does a very basic regular expression check on email addresses.
+    OpenSRF::Application::Validator::EmailAddress::DNS
+        Uses Net::DNS to look up the domain on an email address
+    
+    Signed-off-by: Thomas Berezansky <tsbere@mvlc.org>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+40    0    examples/opensrf.xml.example
+3    0    src/extras/Makefile.install
+50    0    src/perl/lib/OpenSRF/Application/Validator.pm
+12    0    src/perl/lib/OpenSRF/Application/Validator/Base.pm
+96    0    src/perl/lib/OpenSRF/Application/Validator/EmailAddress/DNS.pm
+23    0    src/perl/lib/OpenSRF/Application/Validator/EmailAddress/Regex.pm
+16    0    src/perl/lib/OpenSRF/Application/Validator/Invalid.pm
+ create mode 100644 src/perl/lib/OpenSRF/Application/Validator.pm
+ create mode 100644 src/perl/lib/OpenSRF/Application/Validator/Base.pm
+ create mode 100644 src/perl/lib/OpenSRF/Application/Validator/EmailAddress/DNS.pm
+ create mode 100644 src/perl/lib/OpenSRF/Application/Validator/EmailAddress/Regex.pm
+ create mode 100644 src/perl/lib/OpenSRF/Application/Validator/Invalid.pm
+
+commit b6b64deb16ed3f005d64f99365b0220a82d72431
+Author: Jason Stephenson <jstephenson@mvlc.org>
+Date:   Wed Dec 7 15:08:42 2011 -0500
+
+    Support installation for Ubuntu 12.04 Precise Pangolin.
+    
+    Update the README to include Precise Pangolin as a supported release.
+    
+    Update src/extras/Makefile.install to install two new debs required on
+    Ubuntu 12.04 alpha1.
+    
+    Signed-off-by: Jason Stephenson <jstephenson@mvlc.org>
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+
+1    0    README
+15    1    src/extras/Makefile.install
+
+commit 3a4ae77be13349fae180fdc81bcc23e5a93032b4
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Fri Nov 4 09:42:50 2011 -0400
+
+    Add explicit chown command to README
+    
+    Warren Layton noticed that there was no explicit command to change the
+    ownership of the files in the /<PREFIX> directory to be owned by
+    "opensrf", although there was a statement that the files needed to be
+    owned by "opensrf". To reduce the chance of failure, add the explicit
+    command.
+    
+    TODO (for a willing volunteer): teach the installer to change the
+    ownership at the time the files are installed!
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1    0    README
+
+commit a7be31f137ccf6e2f4522c9a4c690a23b5636db8
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Fri Oct 28 11:33:24 2011 -0400
+
+    Add SIGPIPE retry handling to child data sysread
+    
+    Similar to the SIGPIPE retry logic wrapped around the parent process'
+    syswrite call (for sending data to a child process), protect the child's
+    sysread call (as it reads data from the parent).  In pre-2.0, the
+    sysread step was handled by Net::Server, but now we need to protect it
+    ourselves.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+10    0    src/perl/lib/OpenSRF/Server.pm
+
+commit 40a753b10a3db58baa9179d75a76df1266589ea1
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Wed Oct 19 11:39:41 2011 -0400
+
+    LP878284: stop_osrf action should stop, not start, Perl
+    
+    As reported by Vicent Mas <uvemas@gmail.com> to the Evergreen
+    developer's mailing list:
+    
+    """
+    It seems I've found a small bug in the
+    /openils/bin/osrf_ctl.sh script. The line for the osrf_stop action is:
+    
+    "stop_osrf") stop_python; stop_c; start_perl;;
+    
+    but should be:
+    
+    "stop_osrf") stop_python; stop_c; stop_perl;;
+    """
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1    1    bin/osrf_ctl.sh.in
+
+commit 07b5a335656be741353ab70c1d4717dacdbebc1b
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Tue Oct 18 09:17:10 2011 -0400
+
+    Warn when sending very large messages
+    
+    Depending on configuration, messages of a certain size sent through a
+    Jabber server will cause the jabber server to disconnect the client.
+    This change allows admins to configure a message size warning threshold.
+    When a message meets or exceeds the size threshold, a warning is issued
+    to the logs with the message size (in bytes) and the message recipient.
+    It does not prevent the message from being delivered.  It's purely
+    informational.
+    
+    Use 1 800 000 as the default threhold.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+3    0    examples/opensrf_core.xml.example
+11    1    src/perl/lib/OpenSRF/Transport/SlimJabber/Client.pm
+
+commit ffb8bb73a2f505cfda9d8b97fab1f82aa3fb7097
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Sat Sep 10 12:22:08 2011 -0400
+
+    Fix README typo: 'mod_offlinex'
+    
+    mod_offline is not that x-treme.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1    1    README
+
+commit 0725d1ddced0f16c351a5953f5fd3c14714cda1a
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Thu Aug 25 11:41:19 2011 -0400
+
+    Don't define a variable inside a conditional block
+    
+    ./configure --disable-core --enable-javascript was dying with an error
+    due to CHECK_TESTS not being defined; move it outside the conditional
+    block so that we can ensure that it is defined as either yes or no.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+8    9    configure.ac
 #ChangeLog
