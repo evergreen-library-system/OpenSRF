@@ -226,7 +226,7 @@ sub wait {
         $first_read = 0;
     }
 
-    if ($nbytes == 0 and $first_read) {
+    if ($first_read and defined $nbytes and $nbytes == 0) {
         # if the first read on an active socket is 0 bytes, 
         # the socket has been disconnected from the remote end. 
         $logger->error("Disconnected from Jabber server");
