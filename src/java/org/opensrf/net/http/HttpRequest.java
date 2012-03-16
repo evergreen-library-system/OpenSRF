@@ -8,23 +8,41 @@ import java.net.HttpURLConnection;
 
 public abstract class HttpRequest {
 
+    /** OpenSRF service. */
     protected String service;
+    /** OpenSRF method. */
     protected Method method;
+    /** Connection to server. */
     protected HttpURLConnection urlConn;
+    /** Connection manager. */
     protected HttpConnection httpConn;
-    protected HttpRequestHandler handler;
+
+    /** 
+     * List of responses.
+     *
+     * Responses are not kept after being passed to onResponse .
+     */
     protected List<Object> responseList;
-    protected Exception failure;
-    protected boolean failed;
+
+    /** True if all responses data has been read and delivered */
     protected boolean complete;
 
+    // use a no-op handler by default
+    protected HttpRequestHandler handler = new HttpRequestHandler() {};
+
     public HttpRequest() {
-        failed = false;
         complete = false;
         handler = null;
         urlConn = null;
     }
 
+    /**
+     * Constructor.
+     *
+     * @param conn Connection 
+     * @param service The OpenSRF service.
+     * @param method The method to send to the server.
+     */
     public HttpRequest(HttpConnection conn, String service, Method method) {
         this();
         this.httpConn = conn;
@@ -32,8 +50,14 @@ public abstract class HttpRequest {
         this.method = method;
     }
 
+    /**
+     * Send a request asynchronously (via threads).
+     *
+     * @param handler Manages responses
+     */
     public void sendAsync(final HttpRequestHandler handler) {
-        this.handler = handler;
+        if (handler != null) 
+            this.handler = handler;
         httpConn.manageAsyncRequest(this);
     }
 
@@ -48,19 +72,24 @@ public abstract class HttpRequest {
     }
     
     protected Object nextResponse() {
-        if (complete || failed) return null;
+        if (complete || responseList == null) 
+            return null;
         if (responseList.size() > 0)
             return responseList.remove(0);
         return null;
     }
 
-    public Exception getFailure() {
-        return failure;
-    }
+    /**
+     * Send a request to the server.
+     */
+    public abstract GatewayRequest send() throws java.io.IOException;
 
-    public abstract HttpRequest send();
-
-    public abstract Object recv();
+    /**
+     * Receive one response from the server.
+     *
+     * @return The response object
+     */
+    public abstract Object recv() throws java.io.IOException;
 }
 
 

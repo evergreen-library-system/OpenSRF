@@ -29,12 +29,17 @@ public class HttpConnection {
         url = new URL(fullUrl);
     }
 
+    /** 
+     * Maximun number of threads allowed to communicate with the server.
+     */
     public int getMaxThreads() {
         return maxThreads;
     }
 
     /** 
-     * Set the maximum number of actively communicating threads allowed 
+     * Set the maximum number of actively communicating (async) threads allowed.
+     *
+     * This has no effect on synchronous communication.
      */
     public void setMaxThreads(int max) {
         maxThreads = max;
@@ -66,19 +71,22 @@ public class HttpConnection {
          //thread if necessary, then pass the result to the handler
         Runnable r = new Runnable() {
             public void run() {
-
                 Object response;
-                request.send();
 
-                while ((response = request.recv()) != null) {
-                    if (request.handler != null) 
+                try {
+                    request.send();
+                    while ((response = request.recv()) != null)
                         request.handler.onResponse(request, response);
-                }
 
-                if (request.handler != null)
                     request.handler.onComplete(request);
 
-                activeThreads--;
+                } catch (Exception ex) {
+                    request.handler.onError(request, ex);
+
+                } finally {
+                    // server communication has completed
+                    activeThreads--;
+                }
 
                 if (activeThreads < maxThreads) {
                     try {
