@@ -28,74 +28,75 @@ public class GatewayRequest extends HttpRequest {
         readComplete = false;
     }
 
-    public GatewayRequest send() {
-        try {
+    public GatewayRequest send() throws java.io.IOException {
+        String postData = compilePostData(service, method);
 
-            String postData = compilePostData(service, method);
+        urlConn = (HttpURLConnection) httpConn.url.openConnection();
+        urlConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded"); 
+        urlConn.setDoInput(true);
+        urlConn.setDoOutput(true);
 
-            urlConn = (HttpURLConnection) httpConn.url.openConnection();
-            urlConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded"); 
-            urlConn.setDoInput(true);
-            urlConn.setDoOutput(true);
-
-            OutputStreamWriter wr = new OutputStreamWriter(urlConn.getOutputStream());
-            wr.write(postData);
-            wr.flush();
-            wr.close();
-
-        } catch (java.io.IOException ex) {
-            failed = true;
-            failure = ex;
-        }
+        OutputStreamWriter wr = new OutputStreamWriter(urlConn.getOutputStream());
+        wr.write(postData);
+        wr.flush();
+        wr.close();
 
         return this;
     }
 
-    public Object recv() {
+    public Object recv() throws java.io.IOException {
 
-        if (readComplete) 
-            return nextResponse();
-
-        try {
-
-            InputStream netStream = new BufferedInputStream(urlConn.getInputStream());
-            StringBuffer readBuf = new StringBuffer();
-
-            int bytesRead = 0;
-            byte[] buffer = new byte[1024];
-
-            while ((bytesRead = netStream.read(buffer)) != -1) {
-                readBuf.append(new String(buffer, 0, bytesRead));
-            }
-            
-            netStream.close();
-            urlConn = null;
-
-            Map<String,?> result = null;
-
-            try {
-                result = (Map<String, ?>) new JSONReader(readBuf.toString()).readObject();
-            } catch (org.opensrf.util.JSONException ex) {
-                ex.printStackTrace();
-                return null;
-            }
-
-            String status = result.get("status").toString(); 
-            if (!"200".equals(status)) {
-                failed = true;
-                // failure = <some new exception>
-            }
-
-             // gateway always returns a wrapper array with the full results set
-             responseList = (List) result.get("payload"); 
-
-        } catch (java.io.IOException ex) { 
-            failed = true;
-            failure = ex;
+        if (!readComplete) {
+            readResponses();
+            readComplete = true;
         }
 
-        readComplete = true;
-        return nextResponse();
+        Object response = nextResponse();
+        if (response == null) 
+            complete = true;
+
+        return response;
+    }
+
+    /**
+     * Reads responses from network and populdates responseList. 
+     */
+    private void readResponses() throws java.io.IOException {
+
+        InputStream netStream = new BufferedInputStream(urlConn.getInputStream());
+        StringBuffer readBuf = new StringBuffer();
+
+        int bytesRead = 0;
+        byte[] buffer = new byte[1024];
+
+        while ((bytesRead = netStream.read(buffer)) != -1) 
+            readBuf.append(new String(buffer, 0, bytesRead));
+        
+        netStream.close();
+        urlConn = null;
+
+        // parse the JSON response
+        Map<String,?> result = null;
+
+        try {
+            result = (Map<String, ?>) new JSONReader(readBuf.toString()).readObject();
+
+        } catch (org.opensrf.util.JSONException ex) {
+            // if this happens, something is wrong
+            Logger.error("Gateway returned bad data " + ex.getStackTrace());
+            return;
+        }
+
+        // extract the gateway status value
+        String status = result.get("status").toString(); 
+
+        if (!"200".equals(status)) {
+            return;
+            // throw some new exception
+        }
+
+        // gateway always returns a wrapper array with the full results set
+        responseList = (List) result.get("payload"); 
     }
 
     private String compilePostData(String service, Method method) {
@@ -116,10 +117,15 @@ public class GatewayRequest extends HttpRequest {
         }
 
         try {
+
             // not using URLEncoder because it replaces ' ' with '+'.
             uri = new URI("http", "", null, postData.toString(), null);
+
         } catch (java.net.URISyntaxException ex) {
-            ex.printStackTrace(); 
+
+            // if this happens, something is wrong
+            Logger.error("Error compiling POST data " + ex.getStackTrace());
+            return null;
         }
 
         return uri.getRawQuery();

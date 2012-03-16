@@ -1,5 +1,6 @@
 package org.opensrf.net.http;
 
+import org.opensrf.util.*;
 import java.util.List;
 
 /*
@@ -9,8 +10,6 @@ public abstract class HttpRequestHandler {
 
     /**
      * Called when all responses have been received.
-     *
-     * If discardResponses() returns true, will be passed null.
      */
     public void onComplete(HttpRequest request) {
     }
@@ -21,5 +20,9 @@ public abstract class HttpRequestHandler {
      * @param payload the value returned from the server.
      */
     public void onResponse(HttpRequest request, Object response) {
+    }
+
+    public void onError(HttpRequest request, Exception ex) {
+        Logger.error("HttpRequest Error: " + ex.getStackTrace());
     }
 }
