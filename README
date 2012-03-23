@@ -199,7 +199,7 @@ changes:
    example:
 +
 ---------------------------------------------------------------------------
-{hosts, ["private.localhost", "public.localhost"]}
+{hosts, ["localhost", "private.localhost", "public.localhost"]}.
 ---------------------------------------------------------------------------
 +
   b. Comment out the `mod_offline` directive
