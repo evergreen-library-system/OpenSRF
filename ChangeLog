@@ -1,5 +1,26 @@
 Changelog for 2.1.0
 ===================
+
+commit 0ed34101e67dc04292f906945dd5752c73985412
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Fri Mar 23 13:05:31 2012 -0400
+
+    Add trailing period, "localhost" to ejabberd.cfg example
+    
+    Thanks to Yamil Suarez for noticing a discrepancy between the older wiki
+    instructions and the README.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+commit cf4d4798c5949abaf6bc9a4c3a62bf9a6533977b
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Wed Mar 14 11:38:18 2012 -0400
+
+    Prevent undef warnings on perl socket read nbytes test
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
  
 commit f470b55b86fd59f31dd142d8cb55fe812265892e
 Author: Bill Erickson <berick@esilibrary.com>
