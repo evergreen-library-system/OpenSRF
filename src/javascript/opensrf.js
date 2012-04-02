@@ -388,11 +388,43 @@ OpenSRF.Stack = function() {
 // global inbound message queue
 OpenSRF.Stack.queue = [];
 
+// XXX testing
+function log(msg) {
+    try {
+        dump(msg + '\n'); // xulrunner
+    } catch(E) {
+        console.log(msg);
+    }
+}
+
 OpenSRF.Stack.push = function(net_msg, callbacks) {
     var ses = OpenSRF.Session.find_session(net_msg.thread); 
     if(!ses) return;
     ses.remote_id = net_msg.from;
-    osrf_msgs = JSON2js(net_msg.body);
+    osrf_msgs = [];
+
+    try {
+        osrf_msgs = JSON2js(net_msg.body);
+
+    } catch(E) {
+        log('Error parsing OpenSRF message body as JSON: ' + net_msg.body + '\n' + E);
+
+        /** UGH
+          * For unknown reasons, the Content-Type header will occasionally
+          * be included in the XHR.responseText for multipart/mixed messages.
+          * When this happens, strip the header and newlines from the message
+          * body and re-parse.
+          */
+        net_msg.body = net_msg.body.replace(/^.*\n\n/, '');
+        log('Cleaning up and retrying...');
+
+        try {
+            osrf_msgs = JSON2js(net_msg.body);
+        } catch(E2) {
+            log('Unable to clean up message, giving up: ' + net_msg.body);
+            return;
+        }
+    }
 
     // push the latest responses onto the end of the inbound message queue
     for(var i = 0; i < osrf_msgs.length; i++)
