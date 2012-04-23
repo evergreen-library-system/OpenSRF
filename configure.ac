@@ -32,7 +32,6 @@ AM_INIT_AUTOMAKE([OpenSRF], m4_defn([VERSION_NUMBER]))
 AC_REVISION($Revision: 0.1 $)
 AC_CONFIG_SRCDIR([configure.ac])
 AC_PREFIX_DEFAULT([/opensrf])
-AC_CONFIG_MACRO_DIR([m4])
 
 # Enable $prefix to resolve to a reasonable value in substitutions in
 # scripts if no explict value was passed in to configure
