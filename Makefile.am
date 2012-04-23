@@ -32,8 +32,6 @@ export LOG                      = @localstatedir@/log/opensrf
 export srcdir                   = @srcdir@
 opensrfincludedir               = @includedir@/opensrf
 
-ACLOCAL_AMFLAGS = -I m4
-
 AM_CFLAGS = $(DEF_CFLAGS)
 
 DISTCLEANFILES = Makefile.in Makefile aclocal.m4 config.guess config.log config.sub config.status configure depcomp install-sh ltmain.sh missing
