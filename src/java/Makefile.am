@@ -1,9 +1,12 @@
 DISTCLEANFILES = Makefile.in Makefile
 
+MEMCACHE=java_memcached-release_2.0.1.jar
+JSON=json.jar
+
 JAVAC=javac -J-Xmx256m
 JAVA=java -Xmx256m 
 JAVA_LIBDIR = .lib
-JAVA_LIBS = .:$(OSRF_JAVA_DEPSDIR)/$(WSTX):$(OSRF_JAVA_DEPSDIR)/$(STAX):$(OSRF_JAVA_DEPSDIR)/$(MEMCACHE):$(OSRF_JAVA_DEPSDIR)/$(JSON)
+JAVA_LIBS = .:$(OSRF_JAVA_DEPSDIR)/$(MEMCACHE):$(OSRF_JAVA_DEPSDIR)/$(JSON)
 JAVA_SRC = \
 	org/opensrf/net/xmpp/*.java \
 	org/opensrf/util/*.java \
@@ -15,8 +18,6 @@ JAVA_SRC = \
 all-local:	verify_deps dirs jar
 
 verify_deps:
-	@if [ ! -e "$(OSRF_JAVA_DEPSDIR)/$(WSTX)" ]; then echo -e "\nmissing dependency $(WSTX)!\n" && exit 1; fi
-	@if [ ! -e "$(OSRF_JAVA_DEPSDIR)/$(STAX)" ]; then echo -e "\nmissing dependency $(STAX)!\n" && exit 1; fi
 	@if [ ! -e "$(OSRF_JAVA_DEPSDIR)/$(MEMCACHE)" ]; then echo -e "\nmissing dependency $(MEMCACHE)!\n" && exit 1; fi
 	@if [ ! -e "$(OSRF_JAVA_DEPSDIR)/$(JSON)" ]; then echo -e "\nmissing dependency $(JSON)!\n" && exit 1; fi
 
