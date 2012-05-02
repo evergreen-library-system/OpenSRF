@@ -81,7 +81,7 @@ source directory to generate the configure script and Makefiles:
 
 [source, bash]
 ------------------------------------------------------------------------------
-autoreconf -f -i
+autoreconf -i
 ------------------------------------------------------------------------------
 
 Configuration and compilation instructions
