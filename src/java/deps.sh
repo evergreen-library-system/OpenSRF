@@ -33,5 +33,5 @@ fi
 echo ""
 echo "To compile OpenSRF java:"
 echo ""
-echo "CLASSPATH=deps/$MEMCACHE:deps/$JSON_JAR javac org/opensrf/*.java org/opensrf/net/xmpp/*.java org/opensrf/util/*.java org/opensrf/test/*.java"
+echo "CLASSPATH=deps/$MEMCACHE:deps/$JSON_JAR:. javac org/opensrf/*.java org/opensrf/net/xmpp/*.java org/opensrf/util/*.java org/opensrf/test/*.java"
 echo ""
