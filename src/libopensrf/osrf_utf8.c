@@ -346,7 +346,7 @@ typedef enum {
 */
 int buffer_append_utf8( growing_buffer* buf, const char* string ) {
 	utf8_state state = S_BEGIN;
-	unsigned long utf8_char;
+	unsigned long utf8_char = 0;
 	const unsigned char* s = (unsigned char *) string;
 	int i = 0;
 	int rc = 0;
