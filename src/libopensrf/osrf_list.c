@@ -103,7 +103,7 @@ int osrfListPushFirst( osrfList* list, void* item ) {
 	calling code.
 */
 void* osrfListSet( osrfList* list, void* item, unsigned int position ) {
-	if(!list || position < 0) return NULL;
+	if(!list) return NULL;
 
 	int newsize = list->arrsize;
 
@@ -144,7 +144,7 @@ void* osrfListSet( osrfList* list, void* item, unsigned int position ) {
 	If either parameter is invalid, the return value is NULL.
 */
 void* osrfListGetIndex( const osrfList* list, unsigned int position ) {
-	if(!list || position >= list->size || position < 0) return NULL;
+	if(!list || position >= list->size) return NULL;
 	return list->arrlist[position];
 }
 
@@ -226,7 +226,7 @@ void osrfListSwap( osrfList* one, osrfList* two ) {
 	shift other pointers down to fill in the hole left by the removal.
 */
 void* osrfListRemove( osrfList* list, unsigned int position ) {
-	if(!list || position >= list->size || position < 0) return NULL;
+	if(!list || position >= list->size) return NULL;
 
 	void* olditem = list->arrlist[position];
 	list->arrlist[position] = NULL;
@@ -249,7 +249,7 @@ void* osrfListRemove( osrfList* list, unsigned int position ) {
 	to which the pointer points, even if an item-freeing function has been designated.
 */
 void* osrfListExtract( osrfList* list, unsigned int position ) {
-	if(!list || position >= list->size || position < 0) return NULL;
+	if(!list || position >= list->size) return NULL;
 
 	void* olditem = list->arrlist[position];
 	list->arrlist[position] = NULL;
