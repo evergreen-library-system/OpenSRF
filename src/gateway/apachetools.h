@@ -50,6 +50,10 @@ int apacheDebug( char* msg, ... );
  */
 int apacheError( char* msg, ... );
 
+/* Set headers for Cross Origin Resource Sharing requests
+   as per W3 standard http://www.w3.org/TR/cors/ */
+int crossOriginHeaders(request_rec* r, osrfStringArray* allowedOrigins)
+
 /*
  * Creates an apache table* of cookie name / value pairs 
  */

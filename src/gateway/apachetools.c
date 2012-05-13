@@ -170,6 +170,37 @@ int apacheError( char* msg, ... ) {
 	return HTTP_INTERNAL_SERVER_ERROR; 
 }
 
+int crossOriginHeaders(request_rec* r, osrfStringArray* allowedOrigins) {
+	const char *origin = apr_table_get(r->headers_in, "Origin");
+	if (!origin)
+		return 0;
+
+	int found = 0;
+	int i;
+	for ( i = 0; i < allowedOrigins->size; i++ ) {
+		const char* allowedOrigin = osrfStringArrayGetString(allowedOrigins, i);
+		if ( !strcmp(origin, allowed_origin) || !strcmp("*", allowedOrigin) ) {
+			found = 1;
+			break;
+		}      	
+	}
+
+	if (!found)
+		return 0;
+
+	/* allow CORS response to be cached for 24 hours */
+	apr_table_set(r->headers_out, "Access-Control-Max-Age", "86400");
+	apr_table_set(r->headers_out, "Access-Control-Allow-Credentials", "true");
+	apr_table_set(r->headers_out, "Access-Control-Allow-Origin", origin);
+	apr_table_set(r->headers_out, "Access-Control-Allow-Methods", "POST,OPTIONS");
+	apr_table_set(r->headers_out, "Access-Control-Allow-Headers", OSRF_HTTP_ALL_HEADERS);
+
+	osrfLogInfo(OSRF_LOG_MARK, "Set cross-origin headers for request from %s", origin);
+
+	return 1;
+}
+
+
 
 /* taken more or less directly from O'Reillly - Writing Apache Modules in Perl and C */
 /* needs updating...
