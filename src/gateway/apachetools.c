@@ -184,7 +184,6 @@ int crossOriginHeaders(request_rec* r, osrfStringArray* allowedOrigins) {
 	int i;
 	for ( i = 0; i < allowedOrigins->size; i++ ) {
 		const char* allowedOrigin = osrfStringArrayGetString(allowedOrigins, i);
-		osrfLogInfo(OSRF_LOG_MARK, "%s = %s", host, allowedOrigin);
 		if ( !strcmp(host, allowedOrigin) || !strcmp("*", allowedOrigin) ) {
 			found = 1;
 			break;
