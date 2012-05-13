@@ -175,11 +175,17 @@ int crossOriginHeaders(request_rec* r, osrfStringArray* allowedOrigins) {
 	if (!origin)
 		return 0;
 
+	/* remove scheme from address */
+	char *host = origin;
+	if ( !strncmp(origin, "http://", 7) )
+		host = origin + 7;
+
 	int found = 0;
 	int i;
 	for ( i = 0; i < allowedOrigins->size; i++ ) {
 		const char* allowedOrigin = osrfStringArrayGetString(allowedOrigins, i);
-		if ( !strcmp(origin, allowed_origin) || !strcmp("*", allowedOrigin) ) {
+		osrfLogInfo(OSRF_LOG_MARK, "%s = %s", host, allowedOrigin);
+		if ( !strcmp(host, allowedOrigin) || !strcmp("*", allowedOrigin) ) {
 			found = 1;
 			break;
 		}      	
