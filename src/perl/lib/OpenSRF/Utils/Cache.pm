@@ -94,9 +94,6 @@ sub new {
 	$self->{persist} = $persist || 0;
 	$self->{memcache} = Cache::Memcached->new( { servers => $servers } ); 
 	if(!$self->{memcache}) {
-        open(CACHEFOO, '>', '/tmp/cached');
-        print CACHEFOO "De nada\n";
-        close(CACHEFOO);
 		throw OpenSRF::EX::PANIC ("Unable to create a new memcache object for $cache_type");
 	}
 
