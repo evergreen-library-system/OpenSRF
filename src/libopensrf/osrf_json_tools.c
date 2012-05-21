@@ -123,7 +123,7 @@ jsonObject* jsonObjectDecodeClass( const jsonObject* obj ) {
 	jsonObject* newObj			 = NULL; 
 	const jsonObject* classObj	 = NULL;
 	const jsonObject* payloadObj = NULL;
-	int i;
+	unsigned int i;
 
 	if( obj->type == JSON_HASH ) {
 
@@ -206,7 +206,7 @@ static jsonObject* _jsonObjectEncodeClass( const jsonObject* obj, int ignoreClas
 	} else if( obj->type == JSON_ARRAY ) {
 
 		newObj = jsonNewObjectType(JSON_ARRAY);
-		int i;
+		unsigned int i;
 		for( i = 0; i != obj->size; i++ ) {
 			jsonObjectSetIndex( newObj, i, 
 				_jsonObjectEncodeClass(jsonObjectGetIndex( obj, i ), 0 ));

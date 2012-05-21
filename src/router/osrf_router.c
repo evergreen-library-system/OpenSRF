@@ -797,7 +797,7 @@ static void osrfRouterHandleAppRequest( osrfRouter* router, const transport_mess
 	const osrfMessage* omsg = NULL;
 
 	// Process each osrfMessage
-	int i;
+	unsigned int i;
 	for( i = 0; i < router->message_list->size; ++i ) {
 
 		omsg = osrfListGetIndex( router->message_list, i );

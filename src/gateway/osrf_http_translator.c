@@ -451,7 +451,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
 
             if(trans->complete || trans->connectOnly) {
                 growing_buffer* buf = buffer_init(128);
-                int i;
+                unsigned int i;
                 OSRF_BUFFER_ADD(buf, osrfListGetIndex(trans->messages, 0));
                 for(i = 1; i < trans->messages->size; i++) {
                     buffer_chomp(buf); // chomp off the closing array bracket
