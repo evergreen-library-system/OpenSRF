@@ -109,6 +109,9 @@ sub new {
 
 sub put_cache {
 	my($self, $key, $value, $expiretime ) = @_;
+
+	$key = _clean_cache_key($key);
+
 	return undef unless( defined $key and defined $value );
 
 	$value = OpenSRF::Utils::JSON->perl2JSON($value);
@@ -155,6 +158,7 @@ sub put_cache {
 
 sub delete_cache {
 	my( $self, $key ) = @_;
+	$key = _clean_cache_key($key);
 	if(!$key) { return undef; }
 	if($self->{persist}){ _load_methods(); }
 	$self->{memcache}->delete($key);
@@ -171,6 +175,8 @@ sub delete_cache {
 
 sub get_cache {
 	my($self, $key ) = @_;
+
+	$key = _clean_cache_key($key);
 
 	my $val = $self->{memcache}->get( $key );
 	return OpenSRF::Utils::JSON->JSON2perl($val) if defined($val);
@@ -248,10 +254,29 @@ sub _load_methods {
 }
 
 
+=head2 _clean_cache_key
 
+Try to make the requested cache key conform to memcached's requirements. Per
+https://github.com/memcached/memcached/blob/master/doc/protocol.txt:
 
+"""
+Data stored by memcached is identified with the help of a key. A key
+is a text string which should uniquely identify the data for clients
+that are interested in storing and retrieving it.  Currently the
+length limit of a key is set at 250 characters (of course, normally
+clients wouldn't need to use such long keys); the key must not include
+control characters or whitespace.
+"""
 
+=cut
 
+sub _clean_cache_key {
+    my $key = shift;
+
+    $key =~ s{(\p{Cntrl}|\s)}{}g;
+
+    return $key;
+}
 
 1;
 
