@@ -123,20 +123,6 @@ esac],
 AM_CONDITIONAL([BUILDPYTHON], [test x$OSRF_INSTALL_PYTHON = xtrue])
 AC_SUBST([OSRF_INSTALL_PYTHON])
 
-# enable chopchop, the basic XMPP server
-
-AC_ARG_ENABLE([chopchop],
-[  --enable-chopchop    build and install chopchop, a basic XMPP server],
-[case "${enableval}" in
-    yes) OSRF_INSTALL_CHOPCHOP=true ;;
-    no) OSRF_INSTALL_CHOPCHOP=false ;; 
-  *) AC_MSG_ERROR([please choose another value for --enable-chopchop (supported values are yes or no)]) ;;
-esac],
-[OSRF_INSTALL_CHOPCHOP=false])
-
-AM_CONDITIONAL([BUILDCHOPCHOP], [test x$OSRF_INSTALL_CHOPCHOP = xtrue])
-AC_SUBST([OSRF_INSTALL_CHOPCHOP])
-
 # enable debug?
 
 AC_ARG_ENABLE(debug,
@@ -350,7 +336,6 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 			 examples/multisession-test.pl
 			 src/c-apps/Makefile
 			 src/gateway/Makefile
-			 src/jserver/Makefile
 			 src/libopensrf/Makefile
 			 src/perl/Makefile
 			 src/ports/strn_compat/Makefile
@@ -379,12 +364,6 @@ if test "$OSRF_INSTALL_PYTHON" = "true" ; then
         AC_MSG_RESULT([OSRF install Python support?     yes])
 else
         AC_MSG_RESULT([OSRF install Python support?     no])
-fi
-
-if test "$OSRF_INSTALL_CHOPCHOP" = "true" ; then
-        AC_MSG_RESULT([OSRF install chopchop?           yes])
-else
-        AC_MSG_RESULT([OSRF install chopchop?           no])
 fi
 
         AC_MSG_RESULT(Installation directory prefix:   ${prefix})

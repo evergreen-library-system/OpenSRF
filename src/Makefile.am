@@ -50,10 +50,6 @@ bin_SCRIPTS = @top_srcdir@/bin/osrf_config @top_srcdir@/bin/osrf_ctl.sh
 dist_sysconf_DATA = @top_srcdir@/examples/opensrf.xml.example @top_srcdir@/examples/opensrf_core.xml.example @top_srcdir@/examples/srfsh.xml.example 
 endif
 
-if BUILDCHOPCHOP
-MAYBE_CHOPCHOP = jserver
-endif
-
 SUBDIRS = $(MAYBE_CORE) $(MAYBE_PY) $(MAYBE_JA)
 
 install-exec-local:
