@@ -110,9 +110,11 @@ sub new {
 sub put_cache {
 	my($self, $key, $value, $expiretime ) = @_;
 
+	return undef unless( defined $key and defined $value );
+
 	$key = _clean_cache_key($key);
 
-	return undef unless( defined $key and defined $value );
+	return undef if( $key eq '' ); # no zero-length keys
 
 	$value = OpenSRF::Utils::JSON->perl2JSON($value);
 
@@ -158,8 +160,9 @@ sub put_cache {
 
 sub delete_cache {
 	my( $self, $key ) = @_;
+	return undef unless defined $key;
 	$key = _clean_cache_key($key);
-	if(!$key) { return undef; }
+	return undef if $key eq ''; # no zero-length keys
 	if($self->{persist}){ _load_methods(); }
 	$self->{memcache}->delete($key);
 	if( $self->{persist} ) {
@@ -176,7 +179,11 @@ sub delete_cache {
 sub get_cache {
 	my($self, $key ) = @_;
 
+	return undef unless defined $key;
+
 	$key = _clean_cache_key($key);
+
+	return undef if $key eq ''; # no zero-length keys
 
 	my $val = $self->{memcache}->get( $key );
 	return OpenSRF::Utils::JSON->JSON2perl($val) if defined($val);
