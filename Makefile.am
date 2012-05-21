@@ -115,12 +115,6 @@ endif
 
 SUBDIRS = src tests
 
-jserver:
-	$(MAKE) -s -C src jserver
-
-jserver-install:
-	$(MAKE) -s -C src jserver-install
-
 distclean-local:
 	rm -rf ./autom4te.cache
 	rm -rf ./m4

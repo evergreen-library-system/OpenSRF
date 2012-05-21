@@ -68,19 +68,6 @@ vim:et:ts=2:sw=2:
 
   </opensrf>
 
-  <!-- Update this if you use ChopChop -->
-  <chopchop>
-    <!-- Our jabber server -->
-    <domain>private.localhost</domain>
-    <port>5222</port>
-    <!-- used when multiple servers need to communicate -->
-    <s2sport>5269</s2sport>
-    <secret>secret</secret>
-    <listen_address>10.0.0.3</listen_address>
-    <loglevel>3</loglevel>
-    <logfile>LOCALSTATEDIR/log/osrfsys.log</logfile>
-  </chopchop>
-
   <!-- The section between <gateway>...</gateway> is a standard OpenSRF C stack config file -->
   <gateway>
 
