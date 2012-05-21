@@ -160,7 +160,7 @@ int osrfStringArrayContains(
 */
 void osrfStringArrayRemove( osrfStringArray* arr, const char* tstr ) {
 	if(!(arr && tstr)) return;
-	int i;
+	unsigned int i;
     char* str;
 	int removed = 0;  // boolean
 

@@ -77,7 +77,7 @@ int osrfListPush( osrfList* list, void* item ) {
 */
 int osrfListPushFirst( osrfList* list, void* item ) {
 	if(!(list && item)) return -1;
-	int i;
+	unsigned int i;
 	for( i = 0; i < list->size; i++ )
 		if(!list->arrlist[i]) break;
 	osrfListSet( list, item, i );
