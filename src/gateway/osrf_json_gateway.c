@@ -30,6 +30,7 @@ char* osrf_json_default_locale = "en-US";
 char* osrf_json_gateway_config_file = NULL;
 int bootstrapped = 0;
 int numserved = 0;
+osrfStringArray* allowedOrigins = NULL;
 
 static const char* osrf_json_gateway_set_default_locale(cmd_parms *parms,
 		void *config, const char *arg) {
@@ -87,6 +88,9 @@ static void osrf_json_gateway_child_init(apr_pool_t *p, server_rec *s) {
 		return;
 	}
 
+	allowedOrigins = osrfNewStringArray(4);
+	osrfConfigGetValueList(NULL, allowedOrigins, "/cross_origin/origin");
+
 	bootstrapped = 1;
 	osrfLogInfo(OSRF_LOG_MARK, "Bootstrapping gateway child for requests");
 
@@ -101,6 +105,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	/* make sure we're needed first thing*/
 	if (strcmp(r->handler, MODULE_NAME )) return DECLINED;
 
+	crossOriginHeaders(r, allowedOrigins);
 
 	osrf_json_gateway_dir_config* dir_conf =
 		ap_get_module_config(r->per_dir_config, &osrf_json_gateway_module);

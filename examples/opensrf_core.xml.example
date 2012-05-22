@@ -95,6 +95,14 @@ vim:et:ts=2:sw=2:
     <logfile>LOCALSTATEDIR/log/gateway.log</logfile>
     <loglevel>3</loglevel>
 
+    <!-- cross origin HTTP settings http://en.wikipedia.org/wiki/Cross-origin_resource_sharing -->
+    <cross_origin>
+        <!-- specify individual hosts -->
+        <!-- <origin>example.com</origin> -->
+        <!-- ...or use the * wildcard to match all -->
+        <!-- <origin>*</origin> -->
+    </cross_origin>
+
   </gateway>
 
   <!-- ======================================================================================== -->
