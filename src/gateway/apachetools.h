@@ -20,6 +20,7 @@ extern "C" {
 #endif
 
 #define APACHE_TOOLS_MAX_POST_SIZE 10485760 /* 10 MB */
+#define OSRF_HTTP_ALL_HEADERS "X-OpenSRF-to,X-OpenSRF-xid,X-OpenSRF-from,X-OpenSRF-thread,X-OpenSRF-timeout,X-OpenSRF-service,X-OpenSRF-multipart"
 
 
 /* parses apache URL params (GET and POST).  
@@ -49,6 +50,10 @@ int apacheDebug( char* msg, ... );
 /* Writes to stderr, flushe stderr, and returns HTTP_INTERNAL_SERVER_ERROR; 
  */
 int apacheError( char* msg, ... );
+
+/* Set headers for Cross Origin Resource Sharing requests
+   as per W3 standard http://www.w3.org/TR/cors/ */
+int crossOriginHeaders(request_rec* r, osrfStringArray* allowedOrigins);
 
 /*
  * Creates an apache table* of cookie name / value pairs 
