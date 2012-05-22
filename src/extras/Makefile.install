@@ -76,6 +76,7 @@ DEBS =  \
 	python-dev\
 	python-libxml2\
 	python-setuptools\
+	tar\
 	zlib1g-dev
 
 FEDORAS = \
@@ -136,7 +137,8 @@ FEDORAS = \
 	python-memcached \
 	python-setuptools \
 	python-simplejson \
-	readline-devel
+	readline-devel \
+	tar
 
 DEB_APACHE_MODS = \
 	ssl
