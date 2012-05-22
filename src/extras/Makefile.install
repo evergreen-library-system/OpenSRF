@@ -4,75 +4,27 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (lenny/squeeze), Ubuntu (hardy/lucid/precise)
-# Working towards support of CentOS 5 / RHEL 5 and Fedora.
+# Currently supports Debian (squeeze), Ubuntu (lucid/precise)
+# and Fedora (16).
+#
 # Installs Perl prereqs, libjs with Perl wrapper
 #
 # usage:
-# 	make -f Makefile.install debian-lenny
-# 	- or -
 # 	make -f Makefile.install debian-squeeze
-# 	- or -
-# 	make -f Makefile.install ubuntu-hardy
 # 	- or -
 # 	make -f Makefile.install ubuntu-lucid
 # 	- or -
 # 	make -f Makefile.install ubuntu-precise
 # 	- or -
-# 	make -f Makefile.install centos
-# 	- or -
-# 	make -f Makefile.install rhel
-# 	- or -
 # 	make -f Makefile.install fedora
-#
-# Notes:
-#
-# 	This makefile has been tested much more with Ubuntu and Debian than
-#   CentOS, Fedora, or RHEL.
 #
 # ---------------------------------------------------------------------
 
 # Make any assumptions about the shell being used explicit
 SHELL=/bin/bash 
 
-# XXX
-# Gentoo needs explicit versions on many of these packages
-# to simulate a "blessed" set of packages
-
 # 64 or 32 bit os?
 LBITS=$(shell getconf LONG_BIT)
-
-# ejabberd is not packaged on CentOS/RHEL, so we have to
-# download the installable package from the source
-EJABBERD_VER=2.1.2
-EJABBERD_PKG=ejabberd-2.1.2-linux-x86-installer.bin
-EJABBERD_PKG_x64=ejabberd-2.1.2-linux-x86_64-installer.bin
-EJABBERD_HOST=http://www.process-one.net/downloads/ejabberd
-
-# Centos and Redhat will require the rpmforge repository mostly for memcache and perl modules
-RPMFORGE_PKG_x64=rpmforge-release-0.5.1-1.el5.rf.x86_64.rpm
-RPMFORGE_PKG=rpmforge-release-0.5.1-1.el5.rf.i386.rpm
-RPMFORGE_HOST=http://packages.sw.be/rpmforge-release
-
-# need newer libtool, autoconf, and automake on centos
-AUTOCONF_HOST=http://ftp.gnu.org/gnu/autoconf
-AUTOCONF_PKG=autoconf-2.65
-LIBTOOL_HOST=http://ftp.gnu.org/gnu/libtool
-LIBTOOL_PKG=libtool-2.2.6b
-AUTOMAKE_HOST=http://ftp.gnu.org/gnu/automake
-AUTOMAKE_PKG=automake-1.11
-
-# libmemcached is only packaged on newer distros
-LIBMEMCACHED=libmemcached-0.40
-LIBMEMCACHED_HOST=http://download.tangent.org
-
-# XML::LibXSLT fails due to old libxslt
-XSLT=libxslt-1.1.22
-XSLT_HOST=ftp://ftp.gnome.org/pub/GNOME/sources/libxslt/1.1
-
-# libxslt depends on a newer version of libxml2:
-XML2=libxml2-2.6.30
-XML2_HOST=ftp://ftp.gnome.org/pub/GNOME/sources/libxml2/2.6
 
 APT_TOOL=aptitude -yq
 
@@ -125,64 +77,6 @@ DEBS =  \
 	python-libxml2\
 	python-setuptools\
 	zlib1g-dev
-
-CENTOS = \
-	apr-util-devel \
-	autoconf \
-	automake \
-	gcc \
-	gcc-c++ \
-	gdbm-devel \
-	httpd-devel \
-	less \
-	libmemcache-devel \
-	libtool \
-	libxml2-devel \
-	libxslt-devel \
-	make \
-	memcached \
-	mod_perl \
-	mod_ssl \
-	ncurses \
-	ncurses-devel \
-	perl-Cache-Memcached \
-	perl-Class-DBI-AbstractSearch \
-	perl-Class-DBI-SQLite \
-	perl-DateTime \
-	perl-DateTime-Format-ISO8601 \
-	perl-DateTime-Format-Mail \
-	perl-DateTime-Set \
-	perl-DateTime-TimeZone \
-	perl-DBI \
-	perl-Email-Send \
-	perl-Error \
-	perl-File-Find-Rule \
-	perl-JSON-XS \
-	perl-libwww-perl \
-	perl-Log-Log4perl \
-	perl-Memcached-libmemcached \
-	perl-Module-Build \
-	perl-Net-DNS \
-	perl-Net-Server \
-	perl-Template-Toolkit \
-	perl-Test-Pod \
-	perl-Tie-IxHash \
-	perl-UNIVERSAL-require \
-	perl-Unix-Syslog \
-	perl-XML-Parser \
-	psmisc \
-	python-devel \
-	python-setuptools\
-	readline-devel \
-	wget
-
-CENTOS_PERL = \
-	Net::Jabber \
-	Net::XMPP \
-	RPC::XML \
-	XML::LibXML \
-	XML::LibXSLT \
-	XML::Simple
 
 FEDORAS = \
 	autoconf \
@@ -270,137 +164,23 @@ EXTRA_DEBS_UBUNTU_PRECISE = \
 	ncurses-dev \
 	libreadline-dev
 
-# generic CPAN modules:
-#   * DateTime::Format::ISO8601 is packaged by both Debian Lenny and Ubuntu Intrepid
-#   * JSON::XS is packaged by both Debian Lenny and Ubuntu Intrepid
-#   * libnet-server-perl 0.97 is packaged on Debian Lenny and Ubuntu Intrepid
-#     - is there a specific need for 0.90?
-CPAN_MODULES = \
-	DateTime::Format::ISO8601 \
-	RHANDOM/Net-Server-0.90.tar.gz \
-	JSON::XS
-
-#   libxml-libxml-perl on Debian Lenny and Ubuntu Intrepid is 1.66, which
-#   has broken namespace handling. so we still need to install these from
-#   CPAN. *sigh*
-CPAN_MODULES_XML = \
-	XML::LibXML \
-	XML::LibXSLT
-
 # ----------------------------------------------------------------------------
 
 all: 
 	@echo "please specify an OS" && exit 0
 
 
-centos: install_rpmforge install_centos_rpms install_ejabberd install_buildutils install_libmemcached install_libxml2 install_libxslt install_centos_perl create_ld_local
-
-debian-lenny: generic_debian install_cpan_xml lenny install_libmemcached
 debian-squeeze: generic_debian squeeze
-lenny: install_extra_debs
 squeeze: install_extra_debs_squeeze
 generic_debian: install_debs debian_sys_config
 
 fedora: install_fedora_rpms
 
-rhel: centos
-
-ubuntu-hardy: generic_ubuntu install_cpan_xml hardy
 ubuntu-lucid: generic_ubuntu lucid
 ubuntu-precise: generic_ubuntu precise
-hardy: install_cpan install_libmemcached 
 lucid: install_extra_debs install_extra_debs_lucid
 precise: install_extra_debs install_extra_debs_precise
 generic_ubuntu: install_debs debian_sys_config
-
-# - COMMON TARGETS ---------------------------------------------------------
-
-# Install the CPAN modules
-install_cpan: 
-	for m in $(CPAN_MODULES); do perl -MCPAN -e "install \"$$m\";"; done
-
-# Install CPAN modules that need to be forced
-install_cpan_force: 
-	for m in $(CPAN_MODULES_FORCE); do perl -MCPAN -e "CPAN::Shell->force(qw#install $$m#);"; done
-
-# Install the CPAN XML modules
-install_cpan_xml: 
-	for m in $(CPAN_MODULES_XML); do perl -MCPAN -e "install \"$$m\";"; done
-
-# Install ejabberd from official project installer binary
-install_ejabberd:
-	if [ $(LBITS) -eq 64 ]; then \
-		if [ ! -f $(EJABBERD_PKG_x64).gz ]; then \
-			wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG_x64).gz; \
-		fi; \
-		gunzip $(EJABBERD_PKG_x64).gz; \
-		chmod u+x $(EJABBERD_PKG_x64); \
-		./$(EJABBERD_PKG_x64) --mode unattended --prefix /opt/ejabberd --adminpw opensrf ; \
-	fi;
-	if [ $(LBITS) -eq 32 ]; then \
-		if [ ! -f $(EJABBERD_PKG).gz ]; then \
-			wget $(EJABBERD_HOST)/$(EJABBERD_VER)/$(EJABBERD_PKG).gz; \
-		fi; \
-		gunzip $(EJABBERD_PKG).gz; \
-		chmod u+x $(EJABBERD_PKG); \
-		./$(EJABBERD_PKG) --mode unattended --prefix /opt/ejabberd --adminpw opensrf ; \
-	fi;
-
-# Install rpmforge for redhat and centos
-install_rpmforge:
-	if [ $(LBITS) -eq 64 ]; then \
-		if [ ! -f $(RPMFORGE_PKG_x64) ]; then \
-			wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG_x64) ; \
-			yum -y remove subversion*i386 ; \
-		fi; \
-		rpm -Uvh --force ./$(RPMFORGE_PKG_x64) ; \
-	fi;
-	if [ $(LBITS) -eq 32 ]; then \
-		if [ ! -f $(RPMFORGE_PKG) ]; then \
-			wget $(RPMFORGE_HOST)/$(RPMFORGE_PKG) ; \
-		fi; \
-		rpm -Uvh --force ./$(RPMFORGE_PKG) ; \
-	fi;
-	yum update -y
-
-# Install automake, autoconf, and libtool
-install_buildutils:
-	if [ ! -f $(LIBTOOL_PKG).tar.gz ]; then wget $(LIBTOOL_HOST)/$(LIBTOOL_PKG).tar.gz; fi;
-	tar zxf $(LIBTOOL_PKG).tar.gz
-	cd $(LIBTOOL_PKG) && ./configure --prefix=/usr && make && make install
-
-	if [ ! -f $(AUTOCONF_PKG).tar.gz ]; then wget $(AUTOCONF_HOST)/$(AUTOCONF_PKG).tar.gz; fi;
-	tar zxf $(AUTOCONF_PKG).tar.gz
-	cd $(AUTOCONF_PKG) && ./configure --prefix=/usr && make && make install
-	
-	if [ ! -f $(AUTOMAKE_PKG).tar.gz ]; then wget $(AUTOMAKE_HOST)/$(AUTOMAKE_PKG).tar.gz; fi;
-	tar zxf $(AUTOMAKE_PKG).tar.gz
-	cd $(AUTOMAKE_PKG) && ./configure --prefix=/usr && make && make install
-
-# Install libmemcached from the official project source
-install_libmemcached:
-	if [ ! -f $(LIBMEMCACHED).tar.gz ]; then wget $(LIBMEMCACHED_HOST)/$(LIBMEMCACHED).tar.gz; fi;
-	tar xzf $(LIBMEMCACHED).tar.gz
-	cd $(LIBMEMCACHED) && ./configure && make && make install
-
-# Install a newer version of libxslt
-install_libxslt:    
-	if [ ! -d $(XSLT) ]; then wget $(XSLT_HOST)/$(XSLT).tar.gz; fi;
-	tar xzf $(XSLT).tar.gz
-	cd $(XSLT) && ./configure --with-libxml-prefix=/usr/local && make && make install
-
-# Install a newer version of libxml2
-install_libxml2:    
-	if [ ! -d $(XML2) ]; then wget $(XML2_HOST)/$(XML2).tar.gz; fi;
-	tar xzf $(XML2).tar.gz
-	cd $(XML2) && ./configure && make && make install
-
-clean:
-	make -C $(LIBJS_PERL) clean
-	make -C $(XML2) clean
-	make -C $(XSLT) clean
-	make -f Makefile.ref -C js/src/ clean
-
 
 # ------------------------------------------------------------------
 # - DEBIAN ---------------------------------------------------------
@@ -436,25 +216,5 @@ install_extra_debs_precise:
 # Fedora
 install_fedora_rpms:
 	yum -y install $(FEDORAS)
-
-# CENTOS
-install_centos_rpms:
-	yum -y install $(CENTOS)
-	yum -y update
-
-install_centos_perl:
-	for m in $(CENTOS_PERL_FORCE); do perl -MCPAN -e "CPAN::Shell->force(qw#install $$m#);"; done
-	for m in $(CENTOS_PERL); do perl -MCPAN -e "install \"$$m\";"; done
-	for m in $(CENTOS_PERL_VERSION); do perl -MCPAN -e "CPAN::Shell->install \"$$m\";"; done
-	for m in $(CENTOS_PERL_NOTEST); do perl -MCPAN -e "CPAN::Shell->notest('install', \"$$m\";"; done
-	for m in $(CENTOS_PERL_LOCAL); do LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib perl -MCPAN -e "install \"$$m\";"; done
-
-# We need to add /usr/local/lib to the ldconfig list of directories on CentOS,
-# if it is not already there
-create_ld_local:
-	if [ "$$(ldconfig -v 2> /dev/null | grep '^/usr/local/lib' | wc -l)" -eq 0 ]; then \
-		echo '/usr/local/lib' > /etc/ld.so.conf.d/local.conf; \
-		ldconfig; \
-	fi;
 
 # vim:noet:sw=4:ts=4:

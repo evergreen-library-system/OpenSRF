@@ -1,5 +1,5 @@
-README for OpenSRF 2.0.2
-========================
+Installing OpenSRF
+==================
 
 Preamble: referenced user accounts
 ----------------------------------
@@ -39,17 +39,11 @@ make -f src/extras/Makefile.install <osname>
 
 Well-tested values for <osname> include:
 
-  * `debian-lenny` for Debian 5.0
-  * `debian-squeeze` for Debian 6.0.0
+  * `debian-squeeze` for Debian 6.0
   * `ubuntu-hardy` for Ubuntu 8.04
   * `ubuntu-lucid` for Ubuntu 10.04
   * `ubuntu-precise` for Ubuntu 12.04
   * `fedora` for Fedora 16
-
-Less-tested values for <osname> include:
-
-  * `centos` for CentOS 5
-  * `rhel` for Red Hat Enterprise Linux 5
 
 Patches and suggestions for improvement from users of these distributions,
 or others, are welcome!
