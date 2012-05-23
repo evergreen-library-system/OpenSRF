@@ -1,0 +1,219 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+use OpenSRF::System;
+use OpenSRF::AppSession;
+use OpenSRF::EX qw(:try);
+
+# Sane-ish default
+my $opt_osrf_config = '/openils/conf/opensrf_core.xml';
+
+# For storing the list of supposedly active services
+my @services;
+# For storing our list of routers to check
+my @routers;
+
+GetOptions(
+    'osrf-config=s' => \$opt_osrf_config,
+);
+
+# If we can't bootstrap then something is horribly wrong!
+# Probably "ejabberd isn't running"
+try {
+    OpenSRF::System->bootstrap_client(config_file => $opt_osrf_config);
+} otherwise {
+    print "Bootstrap failed\n";
+    exit 2;
+};
+
+# This gets the list of supposedly active services
+sub prep_service_list {
+    # Using settings directly, as I don't know how to ask with pre-existing classes
+    my $session = OpenSRF::AppSession->create('opensrf.settings');
+    try {
+        $session->connect;
+    } otherwise {
+        print "Settings Connect Failed\n";
+        exit 2;
+    };
+    # This xpath is "Find every instace of an appname node under an activeapps node, anywhere"
+    # It should grab every app configured to run on any drone
+    # If your config contains apps that are not run on real drones you will get errors ;)
+    my $req = $session->request('opensrf.settings.xpath.get', '//activeapps/appname');
+    my $list = $req->recv;
+
+    if(UNIVERSAL::isa($list,"Error")) {
+        print "Active Apps List Failed\n";
+        exit 2;
+    }
+
+    $req->finish;
+    # Quick and dirty de-dupe
+    my %u_list = map { ($_ => 1) } @{$list->content};
+    # And save for later
+    @services = keys(%u_list);
+
+    $session->finish;
+    $session->disconnect;
+}
+
+# This gets the list of supposedly active routers
+# This relies on the bootstrap being accurate in that regard
+sub prep_routers_list {
+    # First, we grab our (hopefully) cached config
+    my $config = OpenSRF::Utils::Config->current;
+    # Loop over it quick
+    foreach(@{$config->bootstrap->routers}) {
+        # And make entries for each router
+        my $router = {};
+        $router->{name} = $_->{name};
+        $router->{domain} = $_->{domain};
+        # If we don't have a services list assume all active ones (aka, private router)
+        $router->{services} = \@services unless $_->{services};
+        # Otherwise, make note of what we are supposed to be running (aka, public router)
+        $router->{services} = $_->{services}->{service} if $_->{services};
+        # And tack it onto the list
+        push @routers, $router;
+    }
+}
+
+# This does the actual checking of routers/services
+sub check_routers {
+    # Shortcut
+    my $conf = OpenSRF::Utils::Config->current;
+    foreach my $router (@routers) {
+        # HACK WARNING - This changes the router we will be querying
+        # This basically edits the cached bootstrap file. This is not guaranteed to keep working.
+        # This does NOT change what domain we are querying from
+        $conf->bootstrap->router_name($router->{name});
+        $conf->bootstrap->domain($router->{domain});
+        # Assume things failed unless they didn't.
+        my $failed = 1;
+        # First, check the router to see what it claims to have active services-wise
+        my $session = OpenSRF::AppSession->create('router');
+        try {
+            $failed = 0 if $session->connect;
+        } otherwise {
+            $failed = 1;
+        };
+        if($session->state != $session->CONNECTED || $failed) {
+            $router->{online} = 0;
+            next;
+        }
+        # Yay router commands! This should give us all services with at least one listener
+        my $req = $session->request('opensrf.router.info.class.list');
+        my $class_list = $req->recv;
+        $req->finish;
+
+        if(UNIVERSAL::isa($class_list,"Error")) {
+            $session->finish;
+            $session->disconnect;
+            $router->{online} = 0;
+            next;
+        }
+
+        # If we got an answer then this router is online!
+        $router->{online} = 1;
+        # Counters and storage for services checks
+        $router->{checked} = 0;
+        $router->{pass} = 0;
+        $router->{failed} = [];
+        # Quick reference of what the router told us it has
+        my %online_services = map { ($_ => 1) } @{$class_list->content};
+        foreach my $service (@{$router->{services}}) {
+            # This skips services not in the active list. Mainly for routers with explicit lists (aka, public routers) that not all may be configured to run.
+            next unless grep { $service eq $_ } @services;
+            # Assume we did not pass until proven otherwise
+            my $passed = 0;
+            $router->{checked} += 1;
+            if($online_services{$service}) {
+                # Check the service, even if a listener is registered it may be dead
+                my $session2 = OpenSRF::AppSession->create($service);
+                try {
+                    $session2->connect;
+                };
+                if($session2->state == $session2->CONNECTED) {
+                    # To my knowledge, EVERY service should have atomic echo available
+                    my $req2 = $session2->request('opensrf.system.echo.atomic','Test');
+                    my $testresult = $req2->recv;
+                    if(!UNIVERSAL::isa($testresult,"Error")) {
+                        # If we got back what we passed in the service is working! Ish. Not a flawless test.
+                        $passed = 1 if @{$testresult->content}[0] eq 'Test';
+                    }
+                    $req2->finish;
+                    $session2->finish;
+                    $session2->disconnect;
+                }
+            }
+            if($passed) {
+                # Looks like it works, make note!
+                $router->{pass} += 1;
+            } else {
+                # Doesn't work! Save for later reporting.
+                push @{$router->{failed}}, $service;
+            }
+        }
+        $session->finish;
+        $session->disconnect;        
+    }
+}
+
+# This outputs the result for Nagios
+sub output_result {
+    # Counters/storage
+    my $checked_services = 0;
+    my $up_services = 0;
+    my @down_services;
+    my @down_routers;
+    # Assume all is good until proven otherwise
+    my $retcode = 0;
+    foreach my $router (@routers) {
+        # If the router isn't online then we don't need to look at services - We didn't check any!
+        if(!$router->{online}) {
+            push @down_routers, $router->{domain};
+            next;
+        }
+        # Otherwise increment our counters as needed
+        $checked_services += $router->{checked};
+        $up_services += $router->{pass};
+        foreach (@{$router->{failed}}) {
+            # Keep track of any down services for reporting in a minute
+            push @down_services, $router->{domain} . ':' . $_;
+        }
+    }
+    if(@down_routers) {
+        # Down routers are really bad. Chances are there will only ever be one here (public), but join with commas anyway.
+        print "Router(s) Offline: " . join(', ', @down_routers) . "\n";
+        $retcode = 2;
+    } elsif ($checked_services != $up_services) {
+        # Non-responsive services are also really bad
+        print "Service(s) not responding\n";
+        $retcode = 2;
+    } else {
+        # But if we have nothing then things are good!
+        print "Routers/Services OK\n";
+    }
+    # If there are down services then spit them out as additional information.
+    print "$_\n" foreach (@down_services);
+    # And return our response code
+    exit $retcode;
+}
+
+# CHEAT - We need SettingsClient to have cached stuff
+try {
+    OpenSRF::Utils::SettingsClient->new()->config_value('none');
+} otherwise {
+    print "Settings Fetch Failed\n";
+    exit 2;
+};
+# And run all of the above functions
+prep_service_list();
+prep_routers_list();
+check_routers();
+output_result();
+
+# This code should NEVER run, as the only way out of output_result is an exit statement
+print "What? I shouldn't have reached here.";
+exit 3;
