@@ -1,0 +1,89 @@
+Release notes for OpenSRF 2.1.0
+===============================
+
+Supported platforms
+-------------------
+The following Linux distributions are supported:
+
+  * Debian 6 (Squeeze)
+  * Fedora 16, 17
+  * Ubuntu 10.04 LTS (Karmic Koala), 12.04 LTS (Precise Pangolin)
+
+The following platforms are *no longer* supported:
+
+  * CentOS 5
+  * Debian 5 (Lenny)
+  * Fedora 14 and 15
+  * RHEL 5
+
+New features
+------------
+
+OpenSRF Validator service (`opensrf.validator`)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The new `opensrf.validator` service offers a home for common validation
+routines. It includes two validators for email addresses:
+
+  * OpenSRF::Application::Validator::EmailAddress::Regex - validates an email
+    address using a basic regular expression
+  * OpenSRF::Application::Validator::EmailAddress::DNS - validates the domain
+    of an email address
+
+Ingress tracking
+~~~~~~~~~~~~~~~~
+To provide more granular logging of OpenSRF activity, the 'ingress' (or 'entry
+point') for an OpenSRF client can now be tracked. The default value of the
+`ingress` property is `opensrf`, but other likely values include `srfsh`,
+`translator-v1`, and `gateway-v1`.
+
+Java HTTP gateway client
+~~~~~~~~~~~~~~~~~~~~~~~~
+Support has been added to the Java OpenSRF libraries for communicating with the
+OpenSRF HTTP gateway via the `org.opensrf.net.http` package.
+
+Example Nagios plugin
+~~~~~~~~~~~~~~~~~~~~~
+An example Nagios plugin that checks every defined service for a brick for a
+response has been added at `examples/nagios/check_osrf_services`.
+
+Log warnings for large XMPP messages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+As ejabberd disconnects clients when sending very large messages, write a log
+message when the XMPP message will exceed the default threshold of 1,800,000
+bytes. This threshold can be modified via the `<msg_size_warn>` element in
+the `opensrf_core.xml` configuration file.
+
+Documentation improvements
+--------------------------
+The `INSTALL` file in the root directory is now the canonical guide to
+installing and configuring OpenSRF.
+
+Build improvements
+------------------
+The source directory is now bootstrapped via the standard `autoreconf -i`
+autotools command, rather than the old `autogen.sh` command.
+
+Dependencies for OpenSRF's Java libraries have been updated to reflect modern
+Java.
+
+The `DESTDIR` variable is respected at build time to better support distribution
+packaging efforts.
+ 
+Testing
+-------
+The new `make check` target will run all unit tests across C, Perl, and Python.
+
+Unit tests
+~~~~~~~~~~
+Various unit tests have been added to Python
+
+Continuous integration support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+An example configuration file for the http://buildbot.net/[Buildbot] continuous
+integration server can be found in `examples/buildbot.cfg`. The most current
+version of this file will always be found in the `master` branch of the OpenSRF
+git repository.
+
+The build steps configure and compile the code using the default arguments to
+`configure`, as well as running the unit tests for C, Perl, and Python, and
+running `pylint` against the Python source code.
