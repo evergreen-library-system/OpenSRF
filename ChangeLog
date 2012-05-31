@@ -1,6 +1,442 @@
 Changelog for 2.1.0
 ===================
 
+commit 3eb7c54a734369a7bffc4a3c30bef2e65573be52
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Sun May 27 22:52:23 2012 -0400
+
+    2.1.0 release notes
+    
+    A summary of some of the highlights of the new release, for
+    functionality that has been added and deleted. Does not address bug
+    fixes such as the much more robust Perl child handling; perhaps
+    we should focus on those as well?
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+89	0	doc/RELEASE_NOTES.txt
+ create mode 100644 doc/RELEASE_NOTES.txt
+
+commit cdd0816c624ff0843ee5ab201346521ae91f474a
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Wed May 30 22:33:17 2012 -0400
+
+    Bump version numbers to help with library compatibility
+    
+    By bumping the OpenSRF version numbers for Perl libs, Python libraries,
+    and the libtool versioning for the libopensrf library, projects that
+    build on OpenSRF will be able to flag the minimum required version and
+    bail out early if an older version of OpenSRF has been installed.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+2	2	src/libopensrf/Makefile.am
+1	1	src/perl/lib/OpenSRF.pm
+1	1	src/python/setup.py
+1	1	version.m4
+
+commit ee2c79929aa63ff8d6749da7d10c15ab967d9fd5
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Tue May 22 16:45:33 2012 -0400
+
+    Add "tar" to base prereqs to appease autotools
+    
+    On a minimal install of Fedora 17, I was running into the perplexing
+    error message whilst running 'autoreconf -i':
+    
+    libtoolize: can not copy `/usr/share/libtool/config/ltmain.sh' to `./'
+    
+    This was confusing because a manual copy would, in fact, copy the file
+    just fine.
+    
+    http://lists.gnu.org/archive/html/libtool/2009-07/msg00030.html finally
+    lead to enlightenment: autotools uses "tar" to copy files, not "cp".
+    Thus, to avoid similar head-scratching install problems in the future,
+    add "tar" to the base prerequisites for building OpenSRF (both to the
+    DEBs list and the RPMs list).
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+3	1	src/extras/Makefile.install
+
+commit 788a396a2b380c5950c09368f85e8d4a79ec2ca8
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Tue May 22 02:26:04 2012 -0400
+
+    Update OS support in README / Makefile.install
+    
+    Kick Debian Lenny, Ubuntu Hardy, and RHEL 5 / CentOS 5 to the curb.
+    
+    Also change the name of the README to the more generic & instructive
+    "Installing OpenSRF" rather than "README for OpenSRF #.#.#".
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+    
+    Conflicts:
+    
+    	README
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+3	9	README
+3	243	src/extras/Makefile.install
+
+commit 3dd57f268b8b5d39f85139e4c4e5246bd9e2cda5
+Author: Thomas Berezansky <tsbere@mvlc.org>
+Date:   Wed May 23 10:13:41 2012 -0400
+
+    Nagios Example Plugin for monitoring services
+    
+    Does not check that all drones in a brick are fully up, just that the
+    entire brick will respond to each service, even if only one drone happens
+    to be running the listener properly (and said listener is responding).
+    
+    Signed-off-by: Thomas Berezansky <tsbere@mvlc.org>
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+219	0	examples/nagios/check_osrf_services
+ create mode 100755 examples/nagios/check_osrf_services
+
+commit e7431d6fa114c35d3dc5b430fbb4bdae99edaa88
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Mon Apr 2 14:55:56 2012 -0400
+
+    Detect and repair multipart/mixed message delivery errors
+    
+    For unknown reasons, the Content-Type header will occasionally be
+    included in the XHR.responseText for multipart/mixed messages.  When
+    this happens, strip the header and newlines from the message body and
+    re-parse.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+33	1	src/javascript/opensrf.js
+
+commit 832f166b38acc9c68c9c1fcea1432d2ca881316b
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Mon May 21 17:29:05 2012 -0400
+
+    fix up index/position type for calls of various osrfList* functions
+    
+    osrfListSet, osrfListRemove, osrfListGetIndex, and osrfListExtract
+    all expect unsigned ints for the index/position parameter.
+    
+    src/jserver is ignored by this commit as its removal is pending.
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+1	1	src/gateway/osrf_http_translator.c
+2	2	src/libopensrf/osrf_json_tools.c
+1	1	src/libopensrf/osrf_list.c
+1	1	src/libopensrf/string_array.c
+1	1	src/router/osrf_router.c
+
+commit bdc4cfe354051e4132d6ffa2da3e0942acb3f780
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Sat May 5 01:58:22 2012 -0400
+
+    Remove comparisons that can never evaluate to true
+    
+    Using clang as the compiler results in 4 warnings like the following:
+    
+    osrf_list.c:106:23: warning: comparison of unsigned expression < 0 is
+    always false [-Wtautological-compare]
+            if(!list || position < 0) return NULL;
+                        ~~~~~~~~ ^ ~
+    
+    (Explanation: "position" is an unsigned int; thus the comparison to < 0
+    can never evaluate to true).
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+4	4	src/libopensrf/osrf_list.c
+
+commit 3aabf1932f93bc6e1e6693001734a1f1bcdbdce0
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Sat May 5 01:32:25 2012 -0400
+
+    LP954059: Silence uninitialized var warning
+    
+    Compiling osrf_utf8.c generates the following warning:
+    
+    osrf_utf8.c:510:29: warning: utf8_char may be used uninitialized in this
+    function [-Wuninitialized]
+    
+    So... initialize utf8_char when we declare it, and make the compiler
+    happy.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+1	1	src/libopensrf/osrf_utf8.c
+
+commit 4fe1fdc7d4561e04212444786fd61d95eae69eb0
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Mon May 21 17:02:34 2012 -0400
+
+    LP# 953299 - defend against null and zero-length cache keys
+    
+    Ignore undefined and zero-length (after key normalization) cache
+    keys.
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+9	2	src/perl/lib/OpenSRF/Utils/Cache.pm
+
+commit 3e97b0f69be04957eefa149d06e05111f3ad4291
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Mon May 21 12:18:41 2012 -0400
+
+    LP# 953299 - Prevent get/set of invalid cache keys
+    
+    Clients of OpenSRF::Utils::Cache occasionally request cache keys that
+    contain invalid characters (a particular case is ISBNs that contain
+    spaces), so strip those out of incoming get/set requests to avoid ugly
+    memcached errors.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+25	0	src/perl/lib/OpenSRF/Utils/Cache.pm
+3	1	src/perl/t/09-Utils-Cache.t
+
+commit c6cf4d9b6530f5b8b6bdf95c26db9986656fcce8
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Mon May 21 12:41:25 2012 -0400
+
+    .gitignore - ignore more built stuff in fewer lines
+    
+    Use the power of glob to catch more built files that we want to ignore,
+    while simplifying the .gitignore file significantly.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+23	108	.gitignore
+
+commit 2c0fb3a9f6aeea9c93846c573ced8d235ec03c7c
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Mon May 21 11:48:26 2012 -0400
+
+    Revert inadvertently introduced debugging code
+    
+    In commit 91b8790c, several debugging lines were accidentally committed
+    to the OpenSRF caching utility. Revert that change.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+0	3	src/perl/lib/OpenSRF/Utils/Cache.pm
+
+commit f6d38086a42cd6a60d7ed45461d99076cf4d9e5e
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Tue May 1 22:11:00 2012 -0400
+
+    Minor cleanups to Java dependency build process
+    
+    While configure.ac still hardcodes the expected location of the Java
+    dependencies (JSON and Memcached classes), we can clean up some of the
+    lower-level challenges with the Java build.
+    
+    * StAX and WSTX were rolled into the core Java environment long ago,
+      so there's no need to download them and even less need to verify
+      that the downloaded version exist.
+    * The Memcached class is now up to 2.0.1, per deps.sh, but the deps.inc
+      file was pointing at 1.5.1.
+    * Speaking of the deps.inc file, nothing seems to use it; delete it.
+    * The Makefile was dying because the variables for the Memcached and
+      JSON classes weren't defined. Define those at the top of the Makefile.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+4	3	src/java/Makefile.am
+0	5	src/java/deps.inc
+ delete mode 100644 src/java/deps.inc
+
+commit d9487c42a1e3432be9fa3da9b2fad2b42d24a645
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Tue May 1 22:08:23 2012 -0400
+
+    Clean up root directory: INSTALL, .gitignore, autoreconf
+    
+    * Update the README to avoid running autoreconf with the "-f" flag.
+    * Make the INSTALL file a symbolic link to the README to avoid
+      creating a generic INSTALL file each time autoreconf is run.
+    * Add a .gitignore file that ignores all of the built files.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+181	0	.gitignore
+1	0	INSTALL
+1	1	README
+ create mode 100644 .gitignore
+ create mode 120000 INSTALL
+
+commit c4c2d62cdf47ee7e5d02fac44cce5515a77c362c
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Tue May 1 21:31:38 2012 -0400
+
+    Change Java deps.sh to include . in CLASSPATH
+    
+    Following the directions given by running deps.sh was a little bit
+    frustrating; we need to work in some documentation on how to use the
+    Java bits of OpenSRF - and perhaps look at a more standard option like
+    maven for dependencies.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+1	1	src/java/deps.sh
+
+commit d7d8923e98a91c070668a529957d7ee7033529a7
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Fri Mar 16 09:56:13 2012 -0400
+
+    Java Gateway interface improved exception handling
+    
+    Handle any exceptions that should not reasonably occur in normal
+    operation under the covers.  Bubble the rest up.  Update test code with
+    examples.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+57	51	src/java/org/opensrf/net/http/GatewayRequest.java
+16	8	src/java/org/opensrf/net/http/HttpConnection.java
+41	12	src/java/org/opensrf/net/http/HttpRequest.java
+5	2	src/java/org/opensrf/net/http/HttpRequestHandler.java
+50	30	src/java/org/opensrf/test/TestGateway.java
+
+commit ad253eb0d67098b69c71141061563b1802f33f97
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Thu Mar 15 17:26:16 2012 -0400
+
+    Java gateway interface test class
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+58	0	src/java/org/opensrf/test/TestGateway.java
+ create mode 100644 src/java/org/opensrf/test/TestGateway.java
+
+commit 5b5e28f16be77d9b23a98579d10173103dd907ed
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Mon Feb 27 18:05:07 2012 -0500
+
+    Java HTTP gateway interface
+    
+    Supports sync and async requests.  Async requests support onResponse,
+    onComplete, and onError handlers.
+    
+    Supports a max-threads value to limit the number of activately
+    communicating threads over any connection.  When max-threads is reached,
+    requests are queued and delivered as soon as there is room.
+    
+    Note that since this is talking to the OpenSRF gateway and not the
+    translater, responses are simply collected and passed one at a time to
+    onResponse.  They are not streamed.  The goal of supporting onResponse
+    is to provide the same client API for both the gateway and translator.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+129	0	src/java/org/opensrf/net/http/GatewayRequest.java
+97	0	src/java/org/opensrf/net/http/HttpConnection.java
+66	0	src/java/org/opensrf/net/http/HttpRequest.java
+25	0	src/java/org/opensrf/net/http/HttpRequestHandler.java
+ create mode 100644 src/java/org/opensrf/net/http/GatewayRequest.java
+ create mode 100644 src/java/org/opensrf/net/http/HttpConnection.java
+ create mode 100644 src/java/org/opensrf/net/http/HttpRequest.java
+ create mode 100644 src/java/org/opensrf/net/http/HttpRequestHandler.java
+
+commit 85830ce301654e2dfefcd186a2bd63bd3785a967
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Mon Apr 23 14:17:35 2012 -0400
+
+    Remove GNU default INSTALL file
+    
+    GNU autotools generate an INSTALL file that is generic and which
+    conflicts with the instructions given in the README. Installation is
+    already hard enough without conflicting instructions, so delete the
+    INSTALL file.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+0	237	INSTALL
+ delete mode 100644 INSTALL
+
+commit bc36b120e78f9fa995856a144b9054e2a0ab1f3e
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Mon Apr 23 14:13:37 2012 -0400
+
+    autotools - do not explicitly include m4 directory
+    
+    Some versions of autotools complain bitterly if an m4 include directory
+    is specified that does not exist.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+0	2	Makefile.am
+0	1	configure.ac
+
+commit 2bdd580e2bcc6660b073b6853dc1544d5c68a6fd
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Mon Apr 23 13:45:14 2012 -0400
+
+    Name the bootstrapping steps in buildbot
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+10	6	examples/buildbot.cfg
+
+commit f21b0a5aa647e7303cc0d6d3fb70cadf0e8fc812
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Mon Apr 23 13:16:25 2012 -0400
+
+    Fix buildbot configuration
+    
+    Need to define our tests before they're called; also, can't blindly
+    invoke a step out of the proper scope. Duh.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+    
+    Conflicts:
+    
+    	examples/buildbot.cfg
+
+55	18	examples/buildbot.cfg
+
+commit 4d58c3d24b65f96e0648e37a3f4da82051a58917
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Mon Apr 23 12:52:57 2012 -0400
+
+    Switch to autoreconf instead of autogen.sh
+    
+    Update the buildbot config accordingly to avoid erroneous errors of
+    erroneosity.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1	1	README
+0	43	autogen.sh
+12	4	examples/buildbot.cfg
+ delete mode 100755 autogen.sh
+
+commit 5849a119bd363b152b41ed7a39c787f009412572
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Mon Apr 2 16:48:15 2012 -0400
+
+    Bump version numbers for 2.1.0-RC1 release
+    
+    Also update the ChangeLog with relevant entries.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+21	0	ChangeLog
+1	1	src/perl/lib/OpenSRF.pm
+1	1	version.m4
+
 commit 0ed34101e67dc04292f906945dd5752c73985412
 Author: Dan Scott <dscott@laurentian.ca>
 Date:   Fri Mar 23 13:05:31 2012 -0400
@@ -12,6 +448,8 @@ Date:   Fri Mar 23 13:05:31 2012 -0400
     
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
+1	1	README
+
 commit cf4d4798c5949abaf6bc9a4c3a62bf9a6533977b
 Author: Bill Erickson <berick@esilibrary.com>
 Date:   Wed Mar 14 11:38:18 2012 -0400
@@ -21,7 +459,21 @@ Date:   Wed Mar 14 11:38:18 2012 -0400
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
     Signed-off-by: Dan Scott <dan@coffeecode.net>
 
- 
+1	1	src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
+
+commit fff96812ff55cc50374d5a16e7c803fac2c2f2a5
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Sun Mar 11 11:22:14 2012 -0400
+
+    Prepare 2.1.0-alpha1 for release
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+555	0	ChangeLog
+2	2	README
+2	2	src/perl/lib/OpenSRF.pm
+1	1	version.m4
+
 commit f470b55b86fd59f31dd142d8cb55fe812265892e
 Author: Bill Erickson <berick@esilibrary.com>
 Date:   Mon Feb 20 14:40:30 2012 -0500
@@ -36,7 +488,7 @@ Date:   Mon Feb 20 14:40:30 2012 -0500
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-13    2    src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
+13	2	src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
 
 commit 974d3a0dd4ddd134033b16bcd9e2fde34302ffd5
 Author: Dan Wells <dbw2@calvin.edu>
@@ -69,7 +521,7 @@ Date:   Tue Mar 6 15:08:33 2012 -0500
     Signed-off-by: Dan Wells <dbw2@calvin.edu>
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-1    1    src/gateway/osrf_json_gateway.c
+1	1	src/gateway/osrf_json_gateway.c
 
 commit fd92a859e2ba3eeeaafe4904cd04973eb8cd572b
 Author: Thomas Berezansky <tsbere@mvlc.org>
@@ -81,7 +533,7 @@ Date:   Wed Mar 7 16:42:21 2012 -0500
     
     Signed-off-by: Thomas Berezansky <tsbere@mvlc.org>
 
-1    1    src/perl/lib/OpenSRF/Application/Validator.pm
+1	1	src/perl/lib/OpenSRF/Application/Validator.pm
 
 commit 8cfa0ae50935176a1574e8f233c8d4d88442c0ad
 Author: Bill Erickson <berick@esilibrary.com>
@@ -95,12 +547,11 @@ Date:   Thu Feb 16 17:31:29 2012 -0500
     result in a bad file descriptor error, culminating in a high-cpu
     infinite loop on the parent (Listener) process.
     
-    
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
     Signed-off-by: Thomas Berezansky <tsbere@mvlc.org>
     Signed-off-by: Jason Stephenson <jstephenson@mvlc.org>
 
-4    3    src/perl/lib/OpenSRF/Server.pm
+4	3	src/perl/lib/OpenSRF/Server.pm
 
 commit 37606bf64f2829258cc612e730782e081e2ac6bb
 Author: Bill Erickson <berick@esilibrary.com>
@@ -115,9 +566,9 @@ Date:   Fri Jan 13 10:57:59 2012 -0500
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
     Signed-off-by: Mike Rylander <mrylander@gmail.com>
 
-11    1    src/python/osrf/ses.py
-2    0    src/python/osrf/stack.py
-1    0    src/python/srfsh.py
+11	1	src/python/osrf/ses.py
+2	0	src/python/osrf/stack.py
+1	0	src/python/srfsh.py
 
 commit 26c31a9d5728adbd884a1369034caff41471130b
 Author: Bill Erickson <berick@esilibrary.com>
@@ -134,9 +585,9 @@ Date:   Fri Jan 13 09:35:18 2012 -0500
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
     Signed-off-by: Mike Rylander <mrylander@gmail.com>
 
-18    21    src/gateway/osrf_http_translator.c
-1    0    src/gateway/osrf_json_gateway.c
-1    0    src/srfsh/srfsh.c
+18	21	src/gateway/osrf_http_translator.c
+1	0	src/gateway/osrf_json_gateway.c
+1	0	src/srfsh/srfsh.c
 
 commit 7ec92808fea116ead923e475ad5242a54b688798
 Author: Bill Erickson <berick@esilibrary.com>
@@ -149,11 +600,11 @@ Date:   Fri Jan 13 09:15:05 2012 -0500
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
     Signed-off-by: Mike Rylander <mrylander@gmail.com>
 
-5    0    include/opensrf/osrf_app_session.h
-5    0    include/opensrf/osrf_message.h
-26    0    src/libopensrf/osrf_app_session.c
-32    0    src/libopensrf/osrf_message.c
-4    0    src/libopensrf/osrf_stack.c
+5	0	include/opensrf/osrf_app_session.h
+5	0	include/opensrf/osrf_message.h
+26	0	src/libopensrf/osrf_app_session.c
+32	0	src/libopensrf/osrf_message.c
+4	0	src/libopensrf/osrf_stack.c
 
 commit b12de37f9480c68b1c8b033da18c3cc0d0ebc8f0
 Author: Bill Erickson <berick@esilibrary.com>
@@ -178,9 +629,9 @@ Date:   Thu Jan 12 16:36:16 2012 -0500
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
     Signed-off-by: Mike Rylander <mrylander@gmail.com>
 
-9    0    src/perl/lib/OpenSRF/AppSession.pm
-20    1    src/perl/lib/OpenSRF/DomainObject/oilsMessage.pm
-2    0    src/perl/lib/OpenSRF/Transport.pm
+9	0	src/perl/lib/OpenSRF/AppSession.pm
+20	1	src/perl/lib/OpenSRF/DomainObject/oilsMessage.pm
+2	0	src/perl/lib/OpenSRF/Transport.pm
 
 commit 67d4d5de8656128f32b20f4c04dbf81a1028e929
 Author: Dan Scott <dscott@laurentian.ca>
@@ -192,10 +643,10 @@ Date:   Wed Feb 29 10:48:38 2012 -0500
     
     Also, add ~/.srfsh.xml to the definition list of interesting OpenSRF
     configuration files.
-
+    
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-6    3    README
+6	3	README
 
 commit 68025993b01cc95f66a0ca723841e1abb406709f
 Author: Dan Scott <dscott@laurentian.ca>
@@ -209,7 +660,7 @@ Date:   Wed Feb 29 10:42:58 2012 -0500
     
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-35    17    README
+35	17	README
 
 commit 75f27021d4b45eebbf52a89a35f96e775f92a207
 Author: Dan Scott <dscott@laurentian.ca>
@@ -224,7 +675,7 @@ Date:   Wed Feb 29 10:27:36 2012 -0500
     
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-1    1    README
+1	1	README
 
 commit 61fdb582dc918a1003351ff25842a23aaff24f71
 Author: Dan Scott <dscott@laurentian.ca>
@@ -241,7 +692,7 @@ Date:   Wed Jan 4 15:21:36 2012 -0500
     
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-2    2    src/extras/Makefile.install
+2	2	src/extras/Makefile.install
 
 commit ba6d4c7cc2988dafb6ca8de2d1f2f93194dcf3b3
 Author: Dan Scott <dscott@laurentian.ca>
@@ -262,10 +713,10 @@ Date:   Wed Jan 4 15:17:48 2012 -0500
     
     Include source highlighting instructions and titles for example
     commands.
-
+    
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-152    98    README
+152	98	README
 
 commit cc7a12f74a9ce4555d5abd8989dfab43290fb41c
 Author: Bill Erickson <berick@esilibrary.com>
@@ -280,9 +731,9 @@ Date:   Fri Feb 24 16:28:27 2012 -0500
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-17    20    src/java/deps.sh
-1    4    src/java/org/opensrf/net/xmpp/XMPPReader.java
-1    4    src/java/org/opensrf/util/XMLFlattener.java
+17	20	src/java/deps.sh
+1	4	src/java/org/opensrf/net/xmpp/XMPPReader.java
+1	4	src/java/org/opensrf/util/XMLFlattener.java
 
 commit 07b2eff0a7dfc492afd8e67788eae159c5ab96b7
 Author: Dan Scott <dscott@laurentian.ca>
@@ -295,7 +746,7 @@ Date:   Tue Feb 21 09:55:57 2012 -0500
     
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-2    2    README
+2	2	README
 
 commit aeeb4acdc8695a640021dbc6902ab3279652583d
 Author: Bill Erickson <berick@esilibrary.com>
@@ -312,7 +763,7 @@ Date:   Tue Feb 14 09:10:58 2012 -0500
     Signed-off-by: Jason Stephenson <jstephenson@mvlc.org>
     Signed-off-by: Mike Rylander <mrylander@gmail.com>
 
-25    19    src/perl/lib/OpenSRF/Server.pm
+25	19	src/perl/lib/OpenSRF/Server.pm
 
 commit 08ee4f993fe773e37233b139961cbcdae2fe93b8
 Author: Bill Erickson <berick@esilibrary.com>
@@ -343,8 +794,8 @@ Date:   Mon Feb 13 16:53:59 2012 -0500
     Signed-off-by: Jason Stephenson <jstephenson@mvlc.org>
     Signed-off-by: Mike Rylander <mrylander@gmail.com>
 
-49    73    src/perl/lib/OpenSRF/Server.pm
-1    2    src/perl/lib/OpenSRF/System.pm
+49	73	src/perl/lib/OpenSRF/Server.pm
+1	2	src/perl/lib/OpenSRF/System.pm
 
 commit 04558f38c1c1d314acb978a37193dacb4a6eba31
 Author: Lebbeous Fogle-Weekley <lebbeous@esilibrary.com>
@@ -361,8 +812,8 @@ Date:   Fri Jan 27 09:05:07 2012 -0500
     Signed-off-by: Lebbeous Fogle-Weekley <lebbeous@esilibrary.com>
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
 
-1    1    src/Makefile.am
-0    135    src/javascript/JSON_v0.js
+1	1	src/Makefile.am
+0	135	src/javascript/JSON_v0.js
  delete mode 100644 src/javascript/JSON_v0.js
 
 commit 89f41c82798dbac56716fdd5beeb6c0de3e4ce2e
@@ -385,9 +836,9 @@ Date:   Mon Nov 7 17:30:44 2011 -0500
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-1    1    bin/opensrf-perl.pl.in
-60    8    src/perl/lib/OpenSRF/Server.pm
-3    2    src/perl/lib/OpenSRF/System.pm
+1	1	bin/opensrf-perl.pl.in
+60	8	src/perl/lib/OpenSRF/Server.pm
+3	2	src/perl/lib/OpenSRF/System.pm
 
 commit 3d089bdfd067676f99807f7cb2014e122c4dbf72
 Author: Dan Scott <dscott@laurentian.ca>
@@ -402,9 +853,9 @@ Date:   Mon Dec 12 13:09:13 2011 -0500
     
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-1    0    src/perl/Build.PL
-22    0    src/perl/MANIFEST
-6    1    src/perl/t/01-Application.t
+1	0	src/perl/Build.PL
+22	0	src/perl/MANIFEST
+6	1	src/perl/t/01-Application.t
 
 commit 5e1fbcc1c8ae2f969dbeac93fe1da80c008ca42b
 Author: Thomas Berezansky <tsbere@mvlc.org>
@@ -437,13 +888,13 @@ Date:   Fri Dec 9 15:19:12 2011 -0500
     Signed-off-by: Thomas Berezansky <tsbere@mvlc.org>
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-40    0    examples/opensrf.xml.example
-3    0    src/extras/Makefile.install
-50    0    src/perl/lib/OpenSRF/Application/Validator.pm
-12    0    src/perl/lib/OpenSRF/Application/Validator/Base.pm
-96    0    src/perl/lib/OpenSRF/Application/Validator/EmailAddress/DNS.pm
-23    0    src/perl/lib/OpenSRF/Application/Validator/EmailAddress/Regex.pm
-16    0    src/perl/lib/OpenSRF/Application/Validator/Invalid.pm
+40	0	examples/opensrf.xml.example
+3	0	src/extras/Makefile.install
+50	0	src/perl/lib/OpenSRF/Application/Validator.pm
+12	0	src/perl/lib/OpenSRF/Application/Validator/Base.pm
+96	0	src/perl/lib/OpenSRF/Application/Validator/EmailAddress/DNS.pm
+23	0	src/perl/lib/OpenSRF/Application/Validator/EmailAddress/Regex.pm
+16	0	src/perl/lib/OpenSRF/Application/Validator/Invalid.pm
  create mode 100644 src/perl/lib/OpenSRF/Application/Validator.pm
  create mode 100644 src/perl/lib/OpenSRF/Application/Validator/Base.pm
  create mode 100644 src/perl/lib/OpenSRF/Application/Validator/EmailAddress/DNS.pm
@@ -464,8 +915,8 @@ Date:   Wed Dec 7 15:08:42 2011 -0500
     Signed-off-by: Jason Stephenson <jstephenson@mvlc.org>
     Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
 
-1    0    README
-15    1    src/extras/Makefile.install
+1	0	README
+15	1	src/extras/Makefile.install
 
 commit 3a4ae77be13349fae180fdc81bcc23e5a93032b4
 Author: Dan Scott <dscott@laurentian.ca>
@@ -484,7 +935,7 @@ Date:   Fri Nov 4 09:42:50 2011 -0400
     
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-1    0    README
+1	0	README
 
 commit a7be31f137ccf6e2f4522c9a4c690a23b5636db8
 Author: Bill Erickson <berick@esilibrary.com>
@@ -501,7 +952,7 @@ Date:   Fri Oct 28 11:33:24 2011 -0400
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
     Signed-off-by: Galen Charlton <gmc@esilibrary.com>
 
-10    0    src/perl/lib/OpenSRF/Server.pm
+10	0	src/perl/lib/OpenSRF/Server.pm
 
 commit 40a753b10a3db58baa9179d75a76df1266589ea1
 Author: Dan Scott <dscott@laurentian.ca>
@@ -525,7 +976,7 @@ Date:   Wed Oct 19 11:39:41 2011 -0400
     
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-1    1    bin/osrf_ctl.sh.in
+1	1	bin/osrf_ctl.sh.in
 
 commit 07b5a335656be741353ab70c1d4717dacdbebc1b
 Author: Bill Erickson <berick@esilibrary.com>
@@ -546,8 +997,8 @@ Date:   Tue Oct 18 09:17:10 2011 -0400
     Signed-off-by: Bill Erickson <berick@esilibrary.com>
     Signed-off-by: Galen Charlton <gmc@esilibrary.com>
 
-3    0    examples/opensrf_core.xml.example
-11    1    src/perl/lib/OpenSRF/Transport/SlimJabber/Client.pm
+3	0	examples/opensrf_core.xml.example
+11	1	src/perl/lib/OpenSRF/Transport/SlimJabber/Client.pm
 
 commit ffb8bb73a2f505cfda9d8b97fab1f82aa3fb7097
 Author: Dan Scott <dscott@laurentian.ca>
@@ -559,7 +1010,7 @@ Date:   Sat Sep 10 12:22:08 2011 -0400
     
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-1    1    README
+1	1	README
 
 commit 0725d1ddced0f16c351a5953f5fd3c14714cda1a
 Author: Dan Scott <dan@coffeecode.net>
@@ -573,5 +1024,316 @@ Date:   Thu Aug 25 11:41:19 2011 -0400
     
     Signed-off-by: Dan Scott <dscott@laurentian.ca>
 
-8    9    configure.ac
-#ChangeLog
+8	9	configure.ac
+
+commit b24e90f1a1b1f2309ca3cdf0728cdd54f7822597
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Mon Aug 22 09:49:45 2011 -0400
+
+    Make distro targets in README match Makefile.install
+    
+    Swap ubuntu-karmic for ubuntu-lucid and pull fedora14 as it is really
+    close to end of life.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+2	2	README
+
+commit 7b3de495c337468e5c3fed68795a9dfa9eb12609
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Fri Aug 19 09:45:16 2011 -0400
+
+    Add a 0 to max_stanza_size in README instructions
+    
+    Yes, that should be 2000000, not 200000 for max_stanza_size. Symptoms
+    included "Text of error message received from Jabber: XML stanza is too
+    big" in error logs and crashing OpenSRF processes.
+    
+    For reference,
+    http://list.georgialibraries.org/pipermail/open-ils-dev/2011-August/007494.html
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1	1	README
+
+commit f9648c10fb745f366d0181b96bb60a3a79bb972a
+Author: Ben Webb <bjwebb67@googlemail.com>
+Date:   Mon Jul 25 21:40:40 2011 +0100
+
+    LP 799718: Pass the DESTDIR variable to setup.py
+    
+    This allows python modules to be built when creating packages.
+    
+    Per comment from Dan Scott on the LP bug:
+    
+    http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap03.html#tag_03_266
+    says "Multiple successive slashes are considered to be the same as one
+    slash." so in theory "--root=$(DESTDIR)/" should be just as safe as
+    "--root=$(DESTDIR)///", but why not go the distance and use 3 slashes to
+    avoid any possibility of some oddball POSIX implementation that treats 2
+    slashes differently for some reason?
+    
+    Signed-off-by: Ben Webb <bjwebb67@googlemail.com>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1	1	src/python/Makefile.am
+
+commit ba3ca0546553e756af81c921f7ceb50738e76aa7
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Wed Jul 6 10:49:04 2011 -0400
+
+    Change "Scheduler" to "SingleBranchScheduler" per 0.8.4
+    
+    In buildbot 0.8.4, the Scheduler becomes a SingleBranchScheduler to make
+    way for other kinds of Schedulers: see
+    http://buildbot.net/buildbot/docs/current/SingleBranchScheduler.html
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+8	8	examples/buildbot.cfg
+
+commit b2d3c5a55617aa4fa21fa6a98d381ceca1489447
+Author: Ben Webb <bjwebb67@googlemail.com>
+Date:   Mon Jun 13 13:29:36 2011 +0100
+
+    Respect DESTDIR during the build process
+    
+    Replace instances of make with the generic $(MAKE)
+    Add $(DESTDIR) to paths it is currently missing from
+    Manually specify the apxs2 install location so that DESTDIR can be prepended
+    Attempt to create the apache directory if it does not exist
+    
+    Signed-off-by: Ben Webb <bjwebb67@googlemail.com>
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+2	2	Makefile.am
+6	6	src/Makefile.am
+4	2	src/gateway/Makefile.am
+1	1	src/perl/Makefile.am
+
+commit 91b8790cc785036b2d48a10df3d8b8c2632f1f23
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Wed May 25 00:02:33 2011 -0400
+
+    Move the buildbot workdirs to a non-volatile directory
+    
+    /tmp/ is a good directory for throwing temporary things,
+    but not so good for things you want to keep around for a relatively
+    long time. Especially on Ubuntu, which has a default policy of
+    deleting files in /tmp/ on reboot - meaning that the git repos
+    that form the basis of the repository have all of their files
+    wiped - greatly confusing the buildbot, which tries to run
+    'git reset --head' in an empty directory and fails miserably
+    in that situation.
+    
+    So - ensure that WORKDIR is set to something that exists and
+    which will exist for the duration of your CI server, and you'll
+    be all right.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+7	2	examples/buildbot.cfg
+3	0	src/perl/lib/OpenSRF/Utils/Cache.pm
+
+commit b9a3ff2ca433f0863cae8e0bf6d5dc213450a534
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Wed May 18 14:38:19 2011 -0400
+
+    Turn on email and IRC notification about build breaks
+    
+    Buildbot can notify us when a build breaks via email and IRC.
+    
+    Now that everything is green on testing.evergreen-ils.org, let's
+    turn that capability on. As configured, we should only be notified
+    when a build goes from success to failure, the first time; and
+    then again, when a build goes from failure to success.
+    
+    Email notification should go to "interested users" - all of the
+    email addresses in the collected signed-off-by / author tags in
+    the commits for a given build.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+20	6	examples/buildbot.cfg
+
+commit 4e7f49aded2368f656c36518ad937f0918d4cc23
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Wed May 18 10:23:18 2011 -0400
+
+    Teach Perl Makefile to build Build for every target
+    
+    With the previous Perl Makefile.am, running "make check" before
+    running "make all" would fail on the Perl directory because it
+    assumed that Build would have been created from Build.PL. Factoring out
+    the build of Build from Build.PL and making that a prereq of the
+    pertinent targets avoids that problem on a clean checkout of the
+    OpenSRF source.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+7	5	src/perl/Makefile.am
+
+commit 58e75cc909158e7ddadd39f22c633f711f31a1b4
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Mon May 16 18:11:59 2011 -0400
+
+    Specify explicit branches for each builder, lazy-style
+    
+    SVNPoller was able to rely on change filters to look at every
+    commit to the repository and hand them off to the scheduler
+    accordingly; GitPoller, however, looks at one branch per
+    poller, so we need to instantiate one poller per branch of
+    interest. This gives us an opportunity to refactor our approach
+    to be more programmatic.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+20	16	examples/buildbot.cfg
+
+commit 47d4ebfc5f1c8d0ccb126eda20e3cb69dd885211
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Mon May 16 16:01:37 2011 -0400
+
+    Comment on why we're pulling in version.m4
+    
+    Commenting code is helpful, I've been told that it is the best
+    way to reduce bugs in a project. To that end, make the connection
+    between VERSION_NUMBER and PACKAGE_VERSION in configure.ac
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+6	1	configure.ac
+
+commit 19431b88f288f785b840887e4f663af5a5f0edbe
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Mon May 16 15:08:04 2011 -0400
+
+    Define version number in one place
+    
+    Adding the version.m4 macro defines VERSION_NUMBER for us in
+    one place so that we can simplify package releases (and fix
+    'osrf_config --version' output so that it does not always
+    tell us 'trunk').
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+3	2	configure.ac
+1	0	version.m4
+ create mode 100644 version.m4
+
+commit f3cdc028e6ffcc794db3d53e6d29206f91ad05cb
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Mon May 16 14:52:40 2011 -0400
+
+    Typo fix: deprecasted -> deprecated
+    
+    It's an annoying typo, and it helps test out the buildbot
+    configuration...
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1	1	src/libopensrf/osrf_app_session.c
+
+commit a537043af9e607e8cd7976e2464dc773f64e897a
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Sun May 15 17:38:46 2011 -0400
+
+    Remove 'branches' reference in Buildbot branches test
+    
+    We can just check for the branch directly now that we are
+    in git. Some things really are simpler with git!
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+3	3	examples/buildbot.cfg
+
+commit 3a439d12874170d4b947e498694e8b9d2ec6d01c
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Sun May 15 16:23:32 2011 -0400
+
+    Add a workdir for each GitPoller source repository
+    
+    Not 100% sure, but with two GitPollers using the same working
+    directory, I suspect that there was a conflict between the
+    underlying repos as to which commit was the newest. Give
+    each of them an explicit working directory in the attempt
+    to avoid this.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+8	6	examples/buildbot.cfg
+
+commit a408589d648c5960798e571d9cb3518ea176a696
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Sun May 15 15:25:33 2011 -0400
+
+    Teach Buildbot to poll the new git repos
+    
+    We're now using GitPoller to check for commits to the branches
+    of interest in Evergreen and OpenSRF on the default interval
+    of 10 minutes.
+    
+    Also, some syntax cleanups following the last refactoring.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+45	53	examples/buildbot.cfg
+
+commit d5143074012ec71b443c4eaa5d074b8d91468de8
+Author: dbs <dbs@9efc2488-bf62-4759-914b-345cdb29e865>
+Date:   Mon May 9 17:10:19 2011 +0000
+
+    Inline TestObject for net_obj_test.py as well
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+    
+    
+    git-svn-id: svn://svn.open-ils.org/OpenSRF/trunk@2246 9efc2488-bf62-4759-914b-345cdb29e865
+
+11	0	src/python/tests/net_obj_test.py
+
+commit 9cb591294f7cee0b406261df1bd30792908c7018
+Author: dbs <dbs@9efc2488-bf62-4759-914b-345cdb29e865>
+Date:   Mon May 9 13:53:30 2011 +0000
+
+    Fix unit tests for Python in a twistd instance
+    
+    twistd could not find testobj; just inline it.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+    
+    
+    git-svn-id: svn://svn.open-ils.org/OpenSRF/trunk@2245 9efc2488-bf62-4759-914b-345cdb29e865
+
+15	1	src/python/tests/json_test.py
+4	1	src/python/tests/net_obj_test.py
+0	11	src/python/tests/testobj.py
+ delete mode 100644 src/python/tests/testobj.py
+
+commit 5b68d6827f2ea4cee385df7b5ec8a42d7e7cb2a9
+Author: dbs <dbs@9efc2488-bf62-4759-914b-345cdb29e865>
+Date:   Mon May 9 05:19:51 2011 +0000
+
+    Add Python unit testing and coverage report to "make check"
+    
+    If --enable-python is included in the arguments to configure, "make check"
+    runs all Python unit tests using nosetests and generates a testing coverage
+    report for all Python code.
+    
+    The original json_test.py is factored out to provide a separate file for
+    testing osrf.net_obj vs. osrf.json vs. osrf.*, when we eventually get there.
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+    
+    
+    git-svn-id: svn://svn.open-ils.org/OpenSRF/trunk@2244 9efc2488-bf62-4759-914b-345cdb29e865
+
+3	0	src/python/Makefile.am
+1	1	src/python/osrf/net_obj.py
+1	28	src/python/tests/json_test.py
+61	0	src/python/tests/net_obj_test.py
+30	0	src/python/tests/test_coverage.py
+11	0	src/python/tests/testobj.py
+ create mode 100644 src/python/tests/net_obj_test.py
+ create mode 100644 src/python/tests/test_coverage.py
+ create mode 100644 src/python/tests/testobj.py
