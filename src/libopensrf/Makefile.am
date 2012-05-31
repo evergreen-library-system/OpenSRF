@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2010 Equinox Software, Inc., and others
+# Copyright (C) 2008-2012 Equinox Software, Inc., and others
 # Kevin Beswick <kevinbeswick00@gmail.com>
 #
 # This program is free software; you can redistribute it and/or
@@ -112,4 +112,4 @@ libopensrf_la_DEPENDENCIES = libosrf_json.la
 libopensrf_la_LIBADD = $(memcached_LIBS)
 
 libopensrf_la_SOURCES = $(TARGS) $(TARGS_HEADS) $(JSON_TARGS) $(JSON_TARGS_HEADS)
-libopensrf_la_LDFLAGS = -version-info 2:0:0
+libopensrf_la_LDFLAGS = -version-info 3:0:0

@@ -14,7 +14,7 @@ OpenSRF - Top level class for OpenSRF perl modules.
 
 =head1 VERSION
 
-Version 2.1.0-RC1
+Version 2.1.0
 
 =cut
 
