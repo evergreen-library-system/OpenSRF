@@ -40,7 +40,6 @@ make -f src/extras/Makefile.install <osname>
 Well-tested values for <osname> include:
 
   * `debian-squeeze` for Debian 6.0
-  * `ubuntu-hardy` for Ubuntu 8.04
   * `ubuntu-lucid` for Ubuntu 10.04
   * `ubuntu-precise` for Ubuntu 12.04
   * `fedora` for Fedora 16
