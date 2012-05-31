@@ -66,17 +66,6 @@ autotools command, rather than the old `autogen.sh` command.
 Dependencies for OpenSRF's Java libraries have been updated to reflect modern
 Java.
 
-The `DESTDIR` variable is respected at build time to better support distribution
-packaging efforts.
- 
-Testing
--------
-The new `make check` target will run all unit tests across C, Perl, and Python.
-
-Unit tests
-~~~~~~~~~~
-Various unit tests have been added to Python
-
 Continuous integration support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 An example configuration file for the http://buildbot.net/[Buildbot] continuous
