@@ -4,12 +4,14 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (squeeze), Ubuntu (lucid/precise)
+# Currently supports Debian (wheezy/squeeze), Ubuntu (lucid/precise)
 # and Fedora (16).
 #
 # Installs Perl prereqs, libjs with Perl wrapper
 #
 # usage:
+# 	make -f Makefile.install debian-wheezy
+# 	- or -
 # 	make -f Makefile.install debian-squeeze
 # 	- or -
 # 	make -f Makefile.install ubuntu-lucid
@@ -154,6 +156,13 @@ EXTRA_DEBS_SQUEEZE = \
 	libxml-libxml-perl \
 	libxml-libxslt-perl
 
+EXTRA_DEBS_WHEEZY = \
+	libmemcached-dev \
+	libmemcached-tools \
+	libxml-libxml-perl \
+	libxml-libxslt-perl \
+	libncurses5-dev
+
 EXTRA_DEBS_UBUNTU_LUCID = \
 	libmemcached-dev\
 	libxml-libxml-perl \
@@ -171,7 +180,9 @@ all:
 	@echo "please specify an OS" && exit 0
 
 
+debian-wheezy: generic_debian wheezy
 debian-squeeze: generic_debian squeeze
+wheezy: install_extra_debs_wheezy
 squeeze: install_extra_debs_squeeze
 generic_debian: install_debs debian_sys_config
 
@@ -203,6 +214,9 @@ install_debs:
 # Install the debian-specific dependencies for more modern distros
 install_extra_debs:
 	$(APT_TOOL) install $(EXTRA_DEBS)
+
+install_extra_debs_wheezy: install_extra_debs
+	$(APT_TOOL) install $(EXTRA_DEBS_WHEEZY)
 
 install_extra_debs_squeeze: install_extra_debs
 	$(APT_TOOL) install $(EXTRA_DEBS_SQUEEZE)
