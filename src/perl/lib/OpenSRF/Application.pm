@@ -146,7 +146,7 @@ sub handler {
 			if ($redact_params) {
 				$logdata .= "**PARAMS REDACTED**";
 			} else {
-				$logdata .= join(', ',@p);
+				$logdata .= join(', ', map { (defined $_) ? $_ : '' } @p);
 			}
 		}
 		$log->info($logdata);
