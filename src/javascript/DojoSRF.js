@@ -10,6 +10,7 @@ if(!dojo._hasResource['DojoSRF']){
     dojo.require('opensrf.JSON_v1', true);
     dojo.require('opensrf.opensrf', true);
     dojo.require('opensrf.opensrf_xhr', true);
+    dojo.require('opensrf.opensrf_ws', true);
 
     OpenSRF.session_cache = {};
     OpenSRF.CachedClientSession = function ( app ) {

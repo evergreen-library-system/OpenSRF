@@ -21,6 +21,7 @@ var OSRF_APP_SESSION_DISCONNECTED = 2;
 /* types of transport layers */
 var OSRF_TRANSPORT_TYPE_XHR = 1;
 var OSRF_TRANSPORT_TYPE_XMPP = 2;
+var OSRF_TRANSPORT_TYPE_WS = 3;
 
 /* message types */
 var OSRF_MESSAGE_TYPE_REQUEST = 'REQUEST';
@@ -205,7 +206,10 @@ OpenSRF.Session = function() {
     this.state = OSRF_APP_SESSION_DISCONNECTED;
 };
 
-OpenSRF.Session.transport = OSRF_TRANSPORT_TYPE_XHR; /* default to XHR */
+OpenSRF.Session.transport = OSRF_TRANSPORT_TYPE_WS;
+if (true || typeof WebSocket == 'undefined')
+    OpenSRF.Session.transport = OSRF_TRANSPORT_TYPE_XHR;
+
 OpenSRF.Session.cache = {};
 OpenSRF.Session.find_session = function(thread_trace) {
     return OpenSRF.Session.cache[thread_trace];
@@ -217,6 +221,8 @@ OpenSRF.Session.prototype.cleanup = function() {
 OpenSRF.Session.prototype.send = function(osrf_msg, args) {
     args = (args) ? args : {};
     switch(OpenSRF.Session.transport) {
+        case OSRF_TRANSPORT_TYPE_WS:
+            return this.send_ws(osrf_msg, args);
         case OSRF_TRANSPORT_TYPE_XHR:
             return this.send_xhr(osrf_msg, args);
         case OSRF_TRANSPORT_TYPE_XMPP:
@@ -231,8 +237,22 @@ OpenSRF.Session.prototype.send_xhr = function(osrf_msg, args) {
     new OpenSRF.XHRequest(osrf_msg, args).send();
 };
 
+OpenSRF.Session.prototype.send_ws = function(osrf_msg, args) {
+    args.session = this;
+    if (this.websocket) {
+        this.websocket.args = args; // callbacks
+        this.websocket.send(osrf_msg);
+    } else {
+        this.websocket = new OpenSRF.WSRequest(
+            this, args, function(wsreq) {
+                wsreq.send(osrf_msg);
+            }
+        );
+    }
+};
+
 OpenSRF.Session.prototype.send_xmpp = function(osrf_msg, args) {
-    alert('xmpp transport not yet implemented');
+    alert('xmpp transport not implemented');
 };
 
 
@@ -254,15 +274,21 @@ OpenSRF.ClientSession.prototype.connect = function(args) {
     args = (args) ? args : {};
     this.remote_id = null;
 
-    if(args.onconnect)
+    if (this.state == OSRF_APP_SESSION_CONNECTED) {
+        if (args.onconnect) args.onconnect();
+        return true;
+    }
+
+    if(args.onconnect) {
         this.onconnect = args.onconnect;
 
-    /* if no handler is provided, make this a synchronous call */
-    if(!this.onconnect) 
+    } else {
+        /* if no handler is provided, make this a synchronous call */
         this.timeout = (args.timeout) ? args.timeout : 5;
+    }
 
     message = new osrfMessage({
-        'threadTrace' : this.reqid, 
+        'threadTrace' : this.last_id++, 
         'type' : OSRF_MESSAGE_TYPE_CONNECT
     });
 
@@ -270,17 +296,28 @@ OpenSRF.ClientSession.prototype.connect = function(args) {
 
     if(this.onconnect || this.state == OSRF_APP_SESSION_CONNECTED)
         return true;
+
     return false;
 };
 
 OpenSRF.ClientSession.prototype.disconnect = function(args) {
-    this.send(
-        new osrfMessage({
-            'threadTrace' : this.reqid, 
-            'type' : OSRF_MESSAGE_TYPE_DISCONNECT
-        })
-    );
+
+    if (this.state == OSRF_APP_SESSION_CONNECTED) {
+        this.send(
+            new osrfMessage({
+                'threadTrace' : this.last_id++,
+                'type' : OSRF_MESSAGE_TYPE_DISCONNECT
+            })
+        );
+    }
+
     this.remote_id = null;
+    this.state = OSRF_APP_SESSION_DISCONNECTED;
+
+    if (this.websocket) {
+        this.websocket.close();
+        delete this.websocket;
+    }
 };
 
 
@@ -397,9 +434,10 @@ function log(msg) {
     }
 }
 
-OpenSRF.Stack.push = function(net_msg, callbacks) {
-    var ses = OpenSRF.Session.find_session(net_msg.thread); 
-    if(!ses) return;
+// ses may be passed to us by the network handler
+OpenSRF.Stack.push = function(net_msg, callbacks, ses) {
+    if (!ses) ses = OpenSRF.Session.find_session(net_msg.thread); 
+    if (!ses) return;
     ses.remote_id = net_msg.from;
     osrf_msgs = [];
 
