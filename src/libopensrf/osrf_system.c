@@ -26,6 +26,7 @@
 static void report_child_status( pid_t pid, int status );
 struct child_node;
 typedef struct child_node ChildNode;
+osrfStringArray* log_protect_arr = NULL;
 
 /**
 	@brief Represents a child process.
@@ -540,6 +541,11 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 			osrfConfigSetDefaultConfig(cfg);
 		else
 			return 0;   /* Can't load configuration?  Bail out */
+
+		// fetch list of configured log redaction marker strings
+		log_protect_arr = osrfNewStringArray(8);
+		osrfConfig* cfg_shared = osrfConfigInit(config_file, "shared");
+		osrfConfigGetValueList( cfg_shared, log_protect_arr, "/log_protect/match_string" );
 	}
 
 	char* log_file      = osrfConfigGetValue( NULL, "/logfile");

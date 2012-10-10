@@ -5,6 +5,7 @@
 #include <opensrf/osrf_json.h>
 #include <opensrf/osrf_json_xml.h>
 #include <opensrf/osrf_legacy_json.h>
+#include <opensrf/string_array.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
@@ -289,14 +290,28 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		growing_buffer* act = buffer_init(128);
 		buffer_fadd(act, "[%s] [%s] [%s] %s %s", r->connection->remote_ip,
 			authtoken, osrf_locale, service, method );
+
 		const char* str; int i = 0;
-		while( (str = osrfStringArrayGetString(mparams, i++)) ) {
-			if( i == 1 ) {
-				OSRF_BUFFER_ADD(act, " ");
-				OSRF_BUFFER_ADD(act, str);
-			} else {
-				OSRF_BUFFER_ADD(act, ", ");
-				OSRF_BUFFER_ADD(act, str);
+		int redact_params = 0;
+		while( (str = osrfStringArrayGetString(log_protect_arr, i++)) ) {
+			//osrfLogInternal(OSRF_LOG_MARK, "Checking for log protection [%s]", str);
+			if(!strncmp(method, str, strlen(str))) {
+				redact_params = 1;
+				break;
+			}
+		}
+		if(redact_params) {
+			OSRF_BUFFER_ADD(act, " **PARAMS REDACTED**");
+		} else {
+			i = 0;
+			while( (str = osrfStringArrayGetString(mparams, i++)) ) {
+				if( i == 1 ) {
+					OSRF_BUFFER_ADD(act, " ");
+					OSRF_BUFFER_ADD(act, str);
+				} else {
+					OSRF_BUFFER_ADD(act, ", ");
+					OSRF_BUFFER_ADD(act, str);
+				}
 			}
 		}
 
