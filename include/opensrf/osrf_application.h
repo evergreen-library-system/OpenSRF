@@ -35,6 +35,7 @@
 #include <opensrf/log.h>
 #include <opensrf/osrf_app_session.h>
 #include <opensrf/osrf_hash.h>
+#include <opensrf/string_array.h>
 
 #include <opensrf/osrf_json.h>
 #include <stdio.h>

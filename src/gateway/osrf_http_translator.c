@@ -8,6 +8,7 @@
 #include <opensrf/osrfConfig.h>
 #include <opensrf/osrf_json.h>
 #include <opensrf/osrf_cache.h>
+#include <opensrf/string_array.h>
 
 #define MODULE_NAME "osrf_http_translator_module"
 #define OSRF_TRANSLATOR_CONFIG_FILE "OSRFTranslatorConfig"
@@ -265,20 +266,34 @@ static char* osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
             case REQUEST: {
                 const jsonObject* params = msg->_params;
                 growing_buffer* act = buffer_init(128);	
+                char* method = msg->method_name;
                 buffer_fadd(act, "[%s] [%s] %s %s", trans->remoteHost, "",
-                    trans->service, msg->method_name);
+                    trans->service, method);
 
                 const jsonObject* obj = NULL;
                 int i = 0;
-                char* str; 
-                while((obj = jsonObjectGetIndex(params, i++))) {
-                    str = jsonObjectToJSON(obj);
-                    if( i == 1 )
-                        OSRF_BUFFER_ADD(act, " ");
-                    else 
-                        OSRF_BUFFER_ADD(act, ", ");
-                    OSRF_BUFFER_ADD(act, str);
-                    free(str);
+                const char* str;
+                int redactParams = 0;
+                while( (str = osrfStringArrayGetString(log_protect_arr, i++)) ) {
+                    //osrfLogInternal(OSRF_LOG_MARK, "Checking for log protection [%s]", str);
+                    if(!strncmp(method, str, strlen(str))) {
+                        redactParams = 1;
+                        break;
+                    }
+                }
+                if(redactParams) {
+                    OSRF_BUFFER_ADD(act, " **PARAMS REDACTED**");
+                } else {
+                    i = 0;
+                    while((obj = jsonObjectGetIndex(params, i++))) {
+                        str = jsonObjectToJSON(obj);
+                        if( i == 1 )
+                            OSRF_BUFFER_ADD(act, " ");
+                        else
+                            OSRF_BUFFER_ADD(act, ", ");
+                        OSRF_BUFFER_ADD(act, str);
+                        free(str);
+                    }
                 }
                 osrfLogActivity(OSRF_LOG_MARK, "%s", act->buf);
                 buffer_free(act);

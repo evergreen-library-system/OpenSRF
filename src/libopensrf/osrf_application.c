@@ -1035,11 +1035,30 @@ int osrfMethodVerifyContext( osrfMethodContext* ctx )
 	// Log the call, with the method and parameters
 	char* params_str = jsonObjectToJSON( ctx->params );
 	if( params_str ) {
-        // params_str will at minimum be "[]"
-        params_str[strlen(params_str) - 1] = '\0'; // drop the trailing ']'
-		osrfLogInfo( OSRF_LOG_MARK, "CALL: %s %s %s",
-			 ctx->session->remote_service, ctx->method->name, params_str + 1);
+		// params_str will at minimum be "[]"
+		int i = 0;
+		const char* str;
+		char* method = ctx->method->name;
+		int redact_params = 0;
+		while( (str = osrfStringArrayGetString(log_protect_arr, i++)) ) {
+			//osrfLogInternal(OSRF_LOG_MARK, "Checking for log protection [%s]", str);
+			if(!strncmp(method, str, strlen(str))) {
+				redact_params = 1;
+				break;
+			}
+		}
+
+		char* params_logged;
+		if(redact_params) {
+			params_logged = strdup("**PARAMS REDACTED**");
+		} else {
+			params_str[strlen(params_str) - 1] = '\0'; // drop the trailing ']'
+			params_logged = strdup(params_str + 1);
+		}
 		free( params_str );
+		osrfLogInfo( OSRF_LOG_MARK, "CALL: %s %s %s",
+			ctx->session->remote_service, ctx->method->name, params_logged);
+		free( params_logged );
 	}
 	return 0;
 }

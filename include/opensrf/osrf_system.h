@@ -37,6 +37,8 @@ void osrfSystemIgnoreTransportClient();
 
 int osrfSystemInitCache(void);
 
+extern osrfStringArray* log_protect_arr;
+
 #ifdef __cplusplus
 }
 #endif

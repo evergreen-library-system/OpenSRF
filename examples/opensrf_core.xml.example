@@ -159,4 +159,16 @@ vim:et:ts=2:sw=2:
 
   <!-- ======================================================================================== -->
 
+  <shared>
+    <!-- Any methods which match any of these match_string node values will
+         have their params redacted from lower-level input logging.
+         Adjust these examples as needed. -->
+    <!--
+    <log_protect>
+      <match_string>open-ils.auth_proxy.login</match_string>
+      <match_string>open-ils.some_service.some_method</match_string>
+    </log_protect>
+    -->
+  </shared>
+
 </config>
