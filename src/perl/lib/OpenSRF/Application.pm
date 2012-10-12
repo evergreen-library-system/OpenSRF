@@ -22,6 +22,7 @@ $log = 'OpenSRF::Utils::Logger';
 
 our $in_request = 0;
 our @pending_requests;
+our $shared_conf;
 
 sub package {
 	my $self = shift;
@@ -127,7 +128,26 @@ sub handler {
         my @p = $app_msg->params;
 		my $method_name = $app_msg->method;
 		my $method_proto = $session->last_message_api_level;
-		$log->info("CALL: ".$session->service." $method_name ". (@p ? join(', ',@p) : ''));
+
+		# By default, we log all method params at the info level
+		# Here we are consult our shared portion of the config file
+		# to look for any exceptions to this behavior
+		my $logdata = "CALL: ".$session->service." $method_name ";
+		my $redact_params = 0;
+		if (@p) {
+			foreach my $match_string (@{$shared_conf->shared->log_protect}) {
+				if ($method_name =~ /^$match_string/) {
+					$redact_params = 1;
+					last;
+				}
+			}
+			if ($redact_params) {
+				$logdata .= "**PARAMS REDACTED**";
+			} else {
+				$logdata .= join(', ',@p);
+			}
+		}
+		$log->info($logdata);
 
 		my $coderef = $app->method_lookup( $method_name, $method_proto, 1, 1 );
 
