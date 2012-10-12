@@ -28,6 +28,8 @@ sub new {
 
 	$self->_sub_builder('__id');
 	# Hard-code this to match old bootstrap.conf section name
+	# This hardcoded value is later overridden if the config is loaded
+	# with the 'base_path' option
 	$self->__id('bootstrap');
 
 	my $bootstrap = shift;
@@ -135,9 +137,6 @@ XML elements are pushed into arrays and added as an array reference to
 the hash. Scalar values have whitespace trimmed from the left and
 right sides.
 
-Child elements of C<< <config> >> other than C<< <opensrf> >> are
-currently ignored by this module.
-
 =head1 EXAMPLE
 
 Given an OpenSRF configuration file named F<opensrf_core.xml> with the
@@ -174,12 +173,29 @@ section of C<$config_obj>; for example:
 
 =head1 NOTES
 
-For compatibility with a previous version of OpenSRF configuration
-files, the F</config/opensrf/> section has a hardcoded name of
-B<bootstrap>. However, future iterations of this module may extend the
-ability of the module to parse the entire OpenSRF configuration file
-and provide sections named after the sibling elements of
-C</config/opensrf>.
+For compatibility with previous versions of the OpenSRF configuration
+files, the C<load()> method by default loads the C</config/opensrf>
+section with the hardcoded name of B<bootstrap>.
+
+However, it is possible to load child elements of C<< <config> >> other
+than C<< <opensrf> >> by supplying a C<base_path> argument which specifies
+the node you wish to begin loading from (in XPath notation). Doing so
+will also replace the hardcoded C<bootstrap> name with the node name of
+the last member of the given path.  For example:
+
+  my $config_obj = OpenSRF::Utils::Config->load(
+      config_file => '/config/file.cnf'
+      base_path => '/config/shared'
+  );
+
+  my $attrs_href = $config_obj->shared();
+
+While it may be possible to load the entire file in this fashion (by
+specifying an empty C<base_path>), doing so will break compatibility with
+existing code which expects to find a C<bootstrap> member. Future
+iterations of this module may extend its ability to parse the entire
+OpenSRF configuration file in one pass while providing multiple base
+sections named after the sibling elements of C</config/opensrf>.
 
 Hashrefs of sections can be returned by calling a method of the object
 of the same name as the section.  They can be set by passing a hashref
@@ -242,7 +258,11 @@ sub _load {
 	delete $$self{config_file};
 	return undef unless ($self->FILE);
 
-	$self->load_config();
+	my %load_args;
+	if (exists $$self{base_path}) { # blank != non-existent for this setting
+		$load_args{base_path} = $$self{base_path};
+	}
+	$self->load_config(%load_args);
 	$self->load_env();
 	$self->mangle_dirs();
 	$self->mangle_logs();
@@ -250,6 +270,7 @@ sub _load {
 	$OpenSRF::Utils::ConfigCache = $self unless $self->nocache;
 	delete $$self{nocache};
 	delete $$self{force};
+	delete $$self{base_path};
 	return $self;
 }
 
@@ -315,6 +336,7 @@ sub mangle_dirs {
 sub load_config {
 	my $self = shift;
 	my $parser = XML::LibXML->new();
+	my %args = @_;
 
 	# Hash of config values
 	my %bootstrap;
@@ -327,9 +349,16 @@ sub load_config {
 		die "Could not open ".$self->FILE.": $!\n";
 	}
 
+	# For backwards compatibility, we default to /config/opensrf
+	my $base_path;
+	if (exists $args{base_path}) { # allow for empty to import entire file
+		$base_path = $args{base_path};
+	} else {
+		$base_path = '/config/opensrf';
+	}
 	# Return an XML::LibXML::NodeList object matching all child elements
-	# of <config><opensrf>...
-	my $osrf_cfg = $config->findnodes('/config/opensrf/child::*');
+	# of $base_path...
+	my $osrf_cfg = $config->findnodes("$base_path/child::*");
 
 	# Iterate through the nodes to pull out key=>value pairs of config settings
 	foreach my $node ($osrf_cfg->get_nodelist()) {
@@ -354,6 +383,13 @@ sub load_config {
 	}
 
 	my $section = $self->section_pkg->new(\%bootstrap);
+	# if the Config was loaded with a 'base_path' option, overwrite the
+	# hardcoded 'bootstrap' name with something more reasonable
+	if (exists $$self{base_path}) { # blank != non-existent for this setting
+		# name root node to reflect last member of base_path, or default to root
+		my $root = (split('/', $$self{base_path}))[-1] || 'root';
+		$section->__id($root);
+	}
 	my $sub_name = $section->SECTION;
 	$self->_sub_builder($sub_name);
 	$self->$sub_name($section);

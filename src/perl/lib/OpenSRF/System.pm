@@ -84,6 +84,15 @@ sub run_service {
     OpenSRF::Application->application_implementation->initialize()
         if (OpenSRF::Application->application_implementation->can('initialize'));
 
+    # Read in a shared portion of the config file
+    # for later use in log parameter redaction
+    $OpenSRF::Application::shared_conf = OpenSRF::Utils::Config->load(
+        'config_file' => OpenSRF::Utils::Config->current->FILE,
+        'nocache' => 1,
+        'force' => 1,
+        'base_path' => '/config/shared'
+    );
+
     # kill the temp connection
     OpenSRF::Transport::PeerHandle->retrieve->disconnect;
     
