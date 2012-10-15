@@ -57,8 +57,9 @@ my $isclient;  # true if we control the osrf_xid
 
 # load up our config options
 sub set_config {
+    my $force = shift;
 
-    return if defined $config;
+    return if defined $config and !$force;
 
     $config = OpenSRF::Utils::Config->current;
     if( !defined($config) ) {

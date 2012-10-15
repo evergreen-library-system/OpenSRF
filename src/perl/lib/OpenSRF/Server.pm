@@ -43,6 +43,7 @@ sub new {
     $self->{routers}        = []; # list of registered routers
     $self->{active_list}    = []; # list of active children
     $self->{idle_list}      = []; # list of idle children
+    $self->{sighup_pending} = [];
     $self->{pid_map}        = {}; # map of child pid to child for cleaner access
     $self->{sig_pipe}       = 0;  # true if last syswrite failed
 
@@ -87,6 +88,35 @@ sub cleanup {
 }
 
 # ----------------------------------------------------------------
+# SIGHUP handler.  Kill all idle children.  Copy list of active
+# children into sighup_pending list for later cleanup.
+# ----------------------------------------------------------------
+sub handle_sighup {
+    my $self = shift;
+    $logger->info("server: caught SIGHUP; reloading children");
+
+    # reload the opensrf config
+    # note: calling ::Config->load() results in ever-growing
+    # package names, which eventually causes an exception
+	OpenSRF::Utils::Config->current->_load(
+        force => 1,
+        config_file => OpenSRF::Utils::Config->current->FILE
+    );
+
+    # force-reload the logger config
+    OpenSRF::Utils::Logger::set_config(1);
+
+    # copy active list into pending list for later cleanup
+    $self->{sighup_pending} = [ @{$self->{active_list}} ];
+
+    # idle_list will be modified as children are reaped.
+    my @idle = @{$self->{idle_list}};
+
+    # idle children are the reaper's plaything
+    $self->kill_child($_) for @idle;
+}
+
+# ----------------------------------------------------------------
 # Waits on the jabber socket for inbound data from the router.
 # Each new message is passed off to a child process for handling.
 # At regular intervals, wake up for min/max spare child maintenance
@@ -98,6 +128,7 @@ sub run {
 
     $SIG{$_} = sub { $self->cleanup; } for (qw/INT TERM QUIT/);
     $SIG{CHLD} = sub { $self->reap_children(); };
+    $SIG{HUP} = sub { $self->handle_sighup(); };
 
     $self->spawn_children;
     $self->build_osrf_handle;
@@ -313,6 +344,27 @@ sub check_status {
     $chatty and $logger->internal(sprintf(
         "server: %d idle and %d active children after status update",
             scalar(@{$self->{idle_list}}), scalar(@{$self->{active_list}})));
+
+    # some children just went from active to idle. let's see 
+    # if any of them need to be killed from a previous sighup.
+
+    for my $child (@{$self->{sighup_pending}}) {
+        if (grep {$_ == $child->{pid}} @pids) {
+
+            $chatty and $logger->internal(
+                "server: killing previously-active ".
+                "child after receiving SIGHUP: $child");
+
+            # remove the pending child
+            $self->{sighup_pending} = [
+                grep {$_->{pid} != $child->{pid}} 
+                    @{$self->{sighup_pending}}
+            ];
+
+            # kill the pending child
+            $self->kill_child($child)
+        }
+    }
 }
 
 # ----------------------------------------------------------------
@@ -348,7 +400,6 @@ sub reap_children {
     $chatty and $logger->internal(sprintf(
         "server: %d idle and %d active children after reap_children",
             scalar(@{$self->{idle_list}}), scalar(@{$self->{active_list}})));
-
 }
 
 # ----------------------------------------------------------------
