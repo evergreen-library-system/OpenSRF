@@ -98,7 +98,7 @@ sub handle_sighup {
     # reload the opensrf config
     # note: calling ::Config->load() results in ever-growing
     # package names, which eventually causes an exception
-	OpenSRF::Utils::Config->current->_load(
+    OpenSRF::Utils::Config->current->_load(
         force => 1,
         config_file => OpenSRF::Utils::Config->current->FILE
     );
@@ -124,7 +124,7 @@ sub handle_sighup {
 sub run {
     my $self = shift;
 
-	$logger->set_service($self->{service});
+    $logger->set_service($self->{service});
 
     $SIG{$_} = sub { $self->cleanup; } for (qw/INT TERM QUIT/);
     $SIG{CHLD} = sub { $self->reap_children(); };
@@ -525,7 +525,7 @@ sub unregister_routers {
     my $self = shift;
     return unless $self->{osrf_handle}->tcp_connected;
 
-	for my $router (@{$self->{routers}}) {
+    for my $router (@{$self->{routers}}) {
         $logger->info("server: disconnecting from router $router");
         $self->{osrf_handle}->send(
             to => $router,
@@ -583,8 +583,8 @@ sub init {
     my $service = $self->{parent}->{service};
     $0 = "OpenSRF Drone [$service]";
     OpenSRF::Transport::PeerHandle->construct($service);
-	OpenSRF::Application->application_implementation->child_init
-		if (OpenSRF::Application->application_implementation->can('child_init'));
+    OpenSRF::Application->application_implementation->child_init
+        if (OpenSRF::Application->application_implementation->can('child_init'));
 }
 
 # ----------------------------------------------------------------
@@ -629,8 +629,8 @@ sub run {
 
     $chatty and $logger->internal("server: child process shutting down after reaching max_requests");
 
-	OpenSRF::Application->application_implementation->child_exit
-		if (OpenSRF::Application->application_implementation->can('child_exit'));
+    OpenSRF::Application->application_implementation->child_exit
+        if (OpenSRF::Application->application_implementation->can('child_exit'));
 }
 
 # ----------------------------------------------------------------
