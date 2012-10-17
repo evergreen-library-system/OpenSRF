@@ -109,6 +109,12 @@ sub set_config {
     }
 
 	my $client = OpenSRF::Utils::Config->current->bootstrap->client();
+
+	if ($ENV{OSRF_LOG_CLIENT} or $ENV{MOD_PERL}) {
+		$isclient = 1;
+		return;
+	}
+
 	if (!$client) {
 		$isclient = 0;
 		return;
