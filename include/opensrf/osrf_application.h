@@ -57,42 +57,8 @@ extern "C" {
 */
 
 /** This macro verifies that methods receive the correct parameters */
-#define _OSRF_METHOD_VERIFY_CONTEXT(d) \
-	if(!d) return -1; \
-	if(!d->session) { \
-		 osrfLogError( OSRF_LOG_MARK, "Session is NULL in app request" ); \
-		 return -1; \
-	} \
-	if(!d->method) { \
-		osrfLogError( OSRF_LOG_MARK, "Method is NULL in app request" ); \
-		return -1; \
-	} \
-	if(d->method->argc) { \
-		if(!d->params) { \
-			osrfLogError( OSRF_LOG_MARK, "Params is NULL in app request %s", d->method->name ); \
-			return -1; \
-		} \
-		if( d->params->type != JSON_ARRAY ) { \
-			osrfLogError( OSRF_LOG_MARK, "'params' is not a JSON array for method %s", \
-				d->method->name); \
-			return -1; } \
-	} \
-	if( !d->method->name ) { \
-		osrfLogError( OSRF_LOG_MARK, "Method name is NULL"); return -1; \
-	}
-
-#ifdef OSRF_LOG_PARAMS
-#define OSRF_METHOD_VERIFY_CONTEXT(d) \
-	_OSRF_METHOD_VERIFY_CONTEXT(d); \
-	char* __j = jsonObjectToJSON(d->params); \
-	if(__j) { \
-		osrfLogInfo( OSRF_LOG_MARK, "CALL:\t%s %s - %s", d->session->remote_service, \
-				d->method->name, __j);\
-		free(__j); \
-	}
-#else
-#define OSRF_METHOD_VERIFY_CONTEXT(d) _OSRF_METHOD_VERIFY_CONTEXT(d);
-#endif
+/** TODO: deprecate me, since I no longer server a purpose */
+#define OSRF_METHOD_VERIFY_CONTEXT(d) osrfMethodVerifyContext(d)
 
 /**
 	@name Method options
