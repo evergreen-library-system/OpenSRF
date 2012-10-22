@@ -33,7 +33,7 @@ using the Makefile.install prerequisite installer, substituting your
 operating system identifier for <osname> below:
 
 ---------------------------------------------------------------------------
-aptitude install make
+apt-get install make
 make -f src/extras/Makefile.install <osname>
 ---------------------------------------------------------------------------
 
