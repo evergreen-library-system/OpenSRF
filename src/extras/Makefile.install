@@ -26,7 +26,7 @@ SHELL=/bin/bash
 # 64 or 32 bit os?
 LBITS=$(shell getconf LONG_BIT)
 
-APT_TOOL=aptitude -yq
+APT_TOOL=apt-get -yq
 
 # Debian dependencies
 DEBS =  \
