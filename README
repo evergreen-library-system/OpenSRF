@@ -26,7 +26,7 @@ Installing prerequisites
 OpenSRF has a number of prerequisite packages that must be installed
 before you can successfully configure, compile, and install OpenSRF.
 On Debian and Ubuntu, the easiest way to install these prerequisites
-is to use the Makefile.install prerequisite installer for Evergreen.
+is to use the Makefile.install prerequisite installer.
 
 Issue the following commands as the root user to install prerequisites
 using the Makefile.install prerequisite installer, substituting your
@@ -42,7 +42,7 @@ Well-tested values for <osname> include:
   * `debian-squeeze` for Debian 6.0
   * `ubuntu-lucid` for Ubuntu 10.04
   * `ubuntu-precise` for Ubuntu 12.04
-  * `fedora` for Fedora 16
+  * `fedora` for Fedora 17 and later
 
 Patches and suggestions for improvement from users of these distributions,
 or others, are welcome!
