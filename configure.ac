@@ -136,7 +136,7 @@ AM_CONDITIONAL(DEBUG, test x$debug = xtrue)
  
 # path to the directory containing the java dependency jar files (included if java installs)
 if test $OSRF_INSTALL_JAVA; then
-	AC_SUBST([OSRF_JAVA_DEPSDIR], [/opt/java])
+	AC_SUBST([OSRF_JAVA_DEPSDIR], [deps])
     AC_CONFIG_FILES([src/java/Makefile])
 fi
 
