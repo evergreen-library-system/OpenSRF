@@ -1,4 +1,4 @@
-Release notes for OpenSRF 2.1.0
+Release notes for OpenSRF 2.1.1
 ===============================
 
 Supported platforms
@@ -16,8 +16,17 @@ The following platforms are *no longer* supported:
   * Fedora 14 and 15
   * RHEL 5
 
-New features
-------------
+Changes in 2.1.1
+----------------
+
+Input log redaction
+~~~~~~~~~~~~~~~~~~~
+To avoid exposing potentially sensitive information, Perl and C services will
+not log the parameters of methods matching a set of left-anchored string values
+configured in `opensrf_core.xml`.
+
+New features in 2.1.0
+----------------------
 
 OpenSRF Validator service (`opensrf.validator`)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
