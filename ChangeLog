@@ -1,5 +1,185 @@
-ChangeLog for OpenSRF 2.1.0
-===========================
+ChangeLog
+=========
+
+OpenSRF 2.1.1
+-------------
+
+commit e93c7c932b144aac2633fe5d058f298a29909f02
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Tue Oct 30 23:34:04 2012 -0400
+
+    Release notes for 2.1.1: input log redaction
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+12	3	doc/RELEASE_NOTES.txt
+
+commit fd367d0a978cd85d2726a1ea2bd0412abf57fb12
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Tue Oct 30 23:27:34 2012 -0400
+
+    Purge the wildly out-of-date Roadmap document
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+0	51	doc/Roadmap.txt
+ delete mode 100644 doc/Roadmap.txt
+
+commit 97a520bce382c8806ad1772f98e1e9169a2297b9
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Tue Nov 6 12:32:48 2012 -0500
+
+    Bump libopensrf version-info revision and age
+    
+    The log redaction functionality changed the source files (thus 'age'
+    gets bumped) and is backwards-compatible (thus 'revision' gets bumped)
+    but maintains the same interface (thus 'current' stays the same).
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1	1	src/libopensrf/Makefile.am
+
+commit b81a8c2ada734fe8c47e758c681e2bb952f29c39
+Author: Dan Wells <dbw2@calvin.edu>
+Date:   Wed Oct 31 10:21:14 2012 -0400
+
+    Protect against empty/invalid log_protect sections
+    
+    Connectivity would fail if the log_protect section of opensrf_core.xml
+    was empty, or contained only comments, as it does in the default
+    example. Add a simple guard against this potential problem.  This fix
+    will also protect against cases where the 'log_protect' section
+    contains text rather than separate configuration elements.
+    
+    Credit to Dan Scott for finding the bug and working out how to fix it.
+    
+    Signed-off-by: Dan Wells <dbw2@calvin.edu>
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+6	4	src/perl/lib/OpenSRF/Application.pm
+
+commit a2a286ef7fbf70e695ab23289fe9f131a9037922
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Wed Oct 17 15:57:14 2012 -0400
+
+    Consolidate duplicate osrfMethodVerifyContext handler
+    
+    Log redaction was not occuring in some cases because the code was using
+    the OSRF_METHOD_VERIFY_CONTEXT macro instead of the similarly named
+    function which does the same thing.  This change points the macro at the
+    function so that all code uses the same underlying code.
+    
+    Note this change turns on CALL param logging unconditionally, whereas
+    users of the macro would previously have been able to avoid CALL logging
+    via the OSRF_LOG_PARAMS variable.  In practice, little code uses the
+    macro and all code enables OSRF_LOG_PARAMS.  If we need to add this
+    control back, it can be added directly to osrfMethodVerifyContext().
+    For now, it's one less env variable we need to define.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+2	36	include/opensrf/osrf_application.h
+
+commit 157ad5d6553b29585afd4b2180db91e2d13b5961
+Author: Dan Wells <dbw2@calvin.edu>
+Date:   Fri Oct 12 09:45:35 2012 -0400
+
+    Log redaction for sensitive input values, Perl side
+    
+    This commit attempts to do the same as the C log redaction fix,
+    but now at the Perl level.  The Perl configuration code was a
+    little more crufty than the C side, so an additional feature was
+    added to Config.pm to support the new 'shared' section.  At some
+    point we should consider a ground-up rewrite of Config.pm, as the
+    code seems to suffer some from its INI file roots.
+    
+    Signed-off-by: Dan Wells <dbw2@calvin.edu>
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+3	3	examples/opensrf_core.xml.example
+21	1	src/perl/lib/OpenSRF/Application.pm
+9	0	src/perl/lib/OpenSRF/System.pm
+48	12	src/perl/lib/OpenSRF/Utils/Config.pm
+
+commit fe9617eda262cc3a3890d068e938ef0ffb99d07a
+Author: Dan Wells <dbw2@calvin.edu>
+Date:   Wed Oct 10 17:28:07 2012 -0400
+
+    Log redaction for sensitive input values, C side
+    
+    Some service/methods deal with sensitive information (passwords,
+    financial, etc.).  All input values (e.g. gateway method params)
+    are currently logged in the activity log regardless of your log
+    level.  This commit will allow you to redact the params of any
+    method which matches a configurable set of left-anchored string
+    values.
+    
+    This commit adds the initial config, and covers redaction of method
+    parameters sent through the gateway, the translator, and more general
+    OpenSRF C applications.
+    
+    Signed-off-by: Dan Wells <dbw2@calvin.edu>
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+12	0	examples/opensrf_core.xml.example
+1	0	include/opensrf/osrf_application.h
+2	0	include/opensrf/osrf_system.h
+25	10	src/gateway/osrf_http_translator.c
+22	7	src/gateway/osrf_json_gateway.c
+23	4	src/libopensrf/osrf_application.c
+6	0	src/libopensrf/osrf_system.c
+
+commit cd24bb1c94c95027310f63909b692e4dbb05507f
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Mon Oct 22 11:50:21 2012 -0400
+
+    Use apt-get instead of aptitude on Debian / Ubuntu
+    
+    Reports from the field state that aptitude is not installed by default on
+    Ubuntu any longer; thus go with the sure thing.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+1	1	README
+1	1	src/extras/Makefile.install
+
+commit 20a115a421c56b56968accc27b63da7656a70ee8
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Mon Oct 22 11:53:24 2012 -0400
+
+    Remove the reference to Evergreen in the README
+    
+    Stephen Wills reported problems installing Evergreen because of missing
+    dependencies, and reading the OpenSRF README shows that it refers to the
+    Evergreen prerequisite installer in a confusing way that might lead to
+    users using only the Evergreen Makefile.install, rather than using the
+    OpenSRF Makefile.install.
+    
+    In addition, Fedora 16 is going to be out of support soon, and Fedora 17
+    and 18 are well-tested targets now.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+2	2	README
+
+commit 83dd58abfca26418f8bdaecb73dbd2c177cc0093
+Author: Jason Stephenson <jstephenson@mvlc.org>
+Date:   Tue Nov 6 09:16:18 2012 -0500
+
+    Fix installation on Ubuntu Precise.
+    
+    Remove libreadline5-dev and replace with libreadline-dev for Ubuntu
+    and Debian.  This installs libreadline6, but everything still works
+    since there's nothing version specific in our use of libreadline.
+    
+    Signed-off-by: Jason Stephenson <jstephenson@mvlc.org>
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+2	3	src/extras/Makefile.install
+
+OpenSRF 2.1.0
+-------------
 
 commit 79694c390e0350a199be409ceadb19945ddf2b5c
 Author: Dan Scott <dan@coffeecode.net>
