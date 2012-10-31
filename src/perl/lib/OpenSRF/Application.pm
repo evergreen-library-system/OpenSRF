@@ -135,10 +135,12 @@ sub handler {
 		my $logdata = "CALL: ".$session->service." $method_name ";
 		my $redact_params = 0;
 		if (@p) {
-			foreach my $match_string (@{$shared_conf->shared->log_protect}) {
-				if ($method_name =~ /^$match_string/) {
-					$redact_params = 1;
-					last;
+			if (ref($shared_conf->shared->log_protect) eq 'ARRAY') {
+				foreach my $match_string (@{$shared_conf->shared->log_protect}) {
+					if ($method_name =~ /^$match_string/) {
+						$redact_params = 1;
+						last;
+					}
 				}
 			}
 			if ($redact_params) {
