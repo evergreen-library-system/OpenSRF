@@ -78,7 +78,7 @@ public class Config {
      */
     public String getString(String path) throws ConfigException {
         try {
-            return (String) get(path);
+            return get(path).toString();
         } catch(Exception e) {
             throw new 
                 ConfigException("No config string found at " + path);
