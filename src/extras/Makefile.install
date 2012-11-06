@@ -56,7 +56,7 @@ DEBS =  \
 	libnet-dns-perl\
 	libnet-jabber-perl\
 	libperl-dev\
-	libreadline5-dev\
+	libreadline-dev\
 	librpc-xml-perl\
 	libtemplate-perl\
 	libtest-pod-perl\
@@ -163,8 +163,7 @@ EXTRA_DEBS_UBUNTU_PRECISE = \
 	libmemcached-dev\
 	libxml-libxml-perl \
 	libxml-libxslt-perl \
-	ncurses-dev \
-	libreadline-dev
+	ncurses-dev
 
 # ----------------------------------------------------------------------------
 
