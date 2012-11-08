@@ -13,92 +13,153 @@
  * GNU General Public License for more details.
  * ----------------------------------------------------------------------- */
 
-var WS_PATH = '/osrf-websocket';
+// opensrf defaults
+var WEBSOCKET_URL_PATH = '/osrf-websocket-translator';
+var WEBSOCKET_PORT = 7680;
+var WEBSOCKET_PORT_SSL = 7682;
 
-/**
- * onopen is required. no data can be sent 
- * until the async connection dance completes.
- */
-OpenSRF.WSRequest = function(session, args, onopen) {
-    this.session = session;
-    this.args = args;
 
-    var proto = location.protocol == 'https' ? 'wss' : 'ws';
+// Create the websocket and connect to the server
+// args.onopen is required
+// if args.default is true, use the default connection
+OpenSRF.WebSocketConnection = function(args, handlers) {
+    args = args || {};
+    this.handlers = handlers;
 
-    var path = proto + '://' + location.host + 
-        WS_PATH + '?service=' + this.session.service;
+    var secure = (args.ssl || location.protocol == 'https');
+    var path = args.path || WEBSOCKET_URL_PATH;
+    var port = args.port || (secure ? WEBSOCKET_PORT_SSL : WEBSOCKET_PORT);
+    var host = args.host || location.host;
+    var proto = (secure) ? 'wss' : 'ws';
+    this.path = proto + '://' + host + ':' + port + path;
 
-    try {
-        this.ws = new WebSocket(path);
-    } catch(e) {
-        throw new Error("WebSocket() not supported in this browser " + e);
-    }
-
-    var self = this;
-
-    this.ws.onopen = function(evt) {
-        onopen(self);
-    }
-
-    this.ws.onmessage = function(evt) {
-        self.core_handler(evt.data);
-    }
-
-    this.ws.onerror = function(evt) {
-        self.transport_error_handler(evt.data);
-    }
-
-    this.ws.onclose = function(evt) {
-    }
+    this.setupSocket();
+    OpenSRF.WebSocketConnection.pool[args.name] = this;
 };
 
-OpenSRF.WSRequest.prototype.send = function(message) {
-    //console.log('sending: ' + js2JSON([message.serialize()]));
-    this.last_message = message;
-    this.ws.send(js2JSON([message.serialize()]));
-    return this;
-};
+// global pool of connection objects; name => connection map
+OpenSRF.WebSocketConnection.pool = {};
 
-OpenSRF.WSRequest.prototype.close = function() {
-    try { this.ws.close(); } catch(e) {}
+OpenSRF.WebSocketConnection.defaultConnection = function() {
+    return OpenSRF.WebSocketConnection.pool['default'];
 }
 
-OpenSRF.WSRequest.prototype.core_handler = function(json) {
-    //console.log('received: ' + json);
+/**
+ * create a new WebSocket.  useful for new connections or 
+ * applying a new socket to an existing connection (whose 
+ * socket was disconnected)
+ */
+OpenSRF.WebSocketConnection.prototype.setupSocket = function() {
 
+    try {
+        this.socket = new WebSocket(this.path);
+    } catch(e) {
+        throw new Error("WebSocket() not supported in this browser: " + e);
+    }
+
+    this.socket.onopen = this.handlers.onopen;
+    this.socket.onmessage = this.handlers.onmessage;
+    this.socket.onerror = this.handlers.onerror;
+    this.socket.onclose = this.handlers.onclose;
+};
+
+/** default onmessage handler: push the message up the opensrf stack */
+OpenSRF.WebSocketConnection.default_onmessage = function(evt) {
+    console.log('receiving: ' + evt.data);
+    var msg = JSON2js(evt.data);
     OpenSRF.Stack.push(
-        new OpenSRF.NetMessage(null, null, '', json),
-        {
-            onresponse : this.args.onresponse,
-            oncomplete : this.args.oncomplete,
-            onerror : this.args.onerror,
-            onmethoderror : this.method_error_handler()
-        },
-        this.args.session
+        new OpenSRF.NetMessage(
+            null, null, msg.thread, null, msg.osrf_msg)
     );
 };
 
+/** default error handler */
+OpenSRF.WebSocketConnection.default_onerror = function(evt) {
+    throw new Error("WebSocket Error " + evt + ' : ' + evt.data);
+};
 
-OpenSRF.WSRequest.prototype.method_error_handler = function() {
+
+/** shut it down */
+OpenSRF.WebSocketConnection.prototype.destroy = function() {
+    this.socket.close();
+    delete OpenSRF.WebSocketConnection.pool[this.name];
+};
+
+/**
+ * Creates the request object, but does not connect or send anything
+ * until the first call to send().
+ */
+OpenSRF.WebSocketRequest = function(session, onopen, connectionArgs) {
+    this.session = session;
+    this.onopen = onopen;
+    this.setupConnection(connectionArgs || {});
+}
+
+OpenSRF.WebSocketRequest.prototype.setupConnection = function(args) {
     var self = this;
-    return function(req, status, status_text) {
-        if(self.args.onmethoderror) 
-            self.args.onmethoderror(req, status, status_text);
 
-        if(self.args.onerror)  {
-            self.args.onerror(
-                self.last_message, self.session.service, '');
+    var cname = args.name || 'default';
+    this.wsc = OpenSRF.WebSocketConnection.pool[cname];
+
+    if (this.wsc) { // we have a WebSocketConnection.  
+
+        switch (this.wsc.socket.readyState) {
+
+            case this.wsc.socket.CONNECTING:
+                // replace the original onopen handler with a new combined handler
+                var orig_open = this.wsc.socket.onopen;
+                this.wsc.socket.onopen = function() {
+                    orig_open();
+                    self.onopen(self);
+                };
+                break;
+
+            case this.wsc.socket.OPEN:
+                // user is expecting an onopen event.  socket is 
+                // already open, so we have to manufacture one.
+                this.onopen(this);
+                break;
+
+            default:
+                console.log('WebSocket is no longer connecting; reconnecting');
+                this.wsc.setupSocket();
         }
+
+    } else { // no connection found
+
+        if (cname == 'default' || args.useDefaultHandlers) { // create the default handle 
+
+            this.wsc = new OpenSRF.WebSocketConnection(
+                {name : cname}, {
+                    onopen : function(evt) {if (self.onopen) self.onopen(self)},
+                    onmessage : OpenSRF.WebSocketConnection.default_onmessage,
+                    onerror : OpenSRF.WebSocketRequest.default_onerror,
+                    onclose : OpenSRF.WebSocketRequest.default_onclose
+                } 
+            );
+
+        } else {
+            throw new Error("No such WebSocketConnection '" + cname + "'");
+        }
+    }
+}
+
+
+OpenSRF.WebSocketRequest.prototype.send = function(message) {
+    var wrapper = {
+        service : this.session.service,
+        thread : this.session.thread,
+        osrf_msg : [message.serialize()]
     };
+
+    var json = js2JSON(wrapper);
+    console.log('sending: ' + json);
+
+    // drop it on the wire
+    this.wsc.socket.send(json);
+    return this;
 };
 
-OpenSRF.WSRequest.prototype.transport_error_handler = function(msg) {
-    if(this.args.ontransporterror) {
-        this.args.ontransporterror(msg);
-    }
-    if(this.args.onerror) {
-        this.args.onerror(msg, this.session.service, '');
-    }
-};
+
 
 

@@ -206,9 +206,8 @@ OpenSRF.Session = function() {
     this.state = OSRF_APP_SESSION_DISCONNECTED;
 };
 
-OpenSRF.Session.transport = OSRF_TRANSPORT_TYPE_WS;
-if (true || typeof WebSocket == 'undefined')
-    OpenSRF.Session.transport = OSRF_TRANSPORT_TYPE_XHR;
+//OpenSRF.Session.transport = OSRF_TRANSPORT_TYPE_WS;
+OpenSRF.Session.transport = OSRF_TRANSPORT_TYPE_XHR;
 
 OpenSRF.Session.cache = {};
 OpenSRF.Session.find_session = function(thread_trace) {
@@ -222,7 +221,7 @@ OpenSRF.Session.prototype.send = function(osrf_msg, args) {
     args = (args) ? args : {};
     switch(OpenSRF.Session.transport) {
         case OSRF_TRANSPORT_TYPE_WS:
-            return this.send_ws(osrf_msg, args);
+            return this.send_ws(osrf_msg);
         case OSRF_TRANSPORT_TYPE_XHR:
             return this.send_xhr(osrf_msg, args);
         case OSRF_TRANSPORT_TYPE_XMPP:
@@ -237,18 +236,11 @@ OpenSRF.Session.prototype.send_xhr = function(osrf_msg, args) {
     new OpenSRF.XHRequest(osrf_msg, args).send();
 };
 
-OpenSRF.Session.prototype.send_ws = function(osrf_msg, args) {
-    args.session = this;
-    if (this.websocket) {
-        this.websocket.args = args; // callbacks
-        this.websocket.send(osrf_msg);
-    } else {
-        this.websocket = new OpenSRF.WSRequest(
-            this, args, function(wsreq) {
-                wsreq.send(osrf_msg);
-            }
-        );
-    }
+OpenSRF.Session.prototype.send_ws = function(osrf_msg) {
+    new OpenSRF.WebSocketRequest(
+        this, 
+        function(wsreq) {wsreq.send(osrf_msg)} // onopen
+    );
 };
 
 OpenSRF.Session.prototype.send_xmpp = function(osrf_msg, args) {
@@ -262,9 +254,9 @@ OpenSRF.ClientSession = function(service) {
     this.remote_id = null;
     this.locale = OpenSRF.locale || 'en-US';
     this.last_id = 0;
-    this.thread = Math.random() + '' + new Date().getTime();
     this.requests = [];
     this.onconnect = null;
+    this.thread = Math.random() + '' + new Date().getTime();
     OpenSRF.Session.cache[this.thread] = this;
 };
 OpenSRF.set_subclass('OpenSRF.ClientSession', 'OpenSRF.Session');
@@ -412,11 +404,12 @@ OpenSRF.Request.prototype.send = function() {
     });
 };
 
-OpenSRF.NetMessage = function(to, from, thread, body) {
+OpenSRF.NetMessage = function(to, from, thread, body, osrf_msg) {
     this.to = to;
     this.from = from;
     this.thread = thread;
     this.body = body;
+    this.osrf_msg = osrf_msg;
 };
 
 OpenSRF.Stack = function() {
@@ -435,49 +428,59 @@ function log(msg) {
 }
 
 // ses may be passed to us by the network handler
-OpenSRF.Stack.push = function(net_msg, callbacks, ses) {
-    if (!ses) ses = OpenSRF.Session.find_session(net_msg.thread); 
+OpenSRF.Stack.push = function(net_msg, callbacks) {
+    var ses = OpenSRF.Session.find_session(net_msg.thread); 
     if (!ses) return;
     ses.remote_id = net_msg.from;
-    osrf_msgs = [];
 
-    try {
-        osrf_msgs = JSON2js(net_msg.body);
+    // NetMessage's from websocket connections are parsed before they get here
+    osrf_msgs = net_msg.osrf_msg;
 
-    } catch(E) {
-        log('Error parsing OpenSRF message body as JSON: ' + net_msg.body + '\n' + E);
-
-        /** UGH
-          * For unknown reasons, the Content-Type header will occasionally
-          * be included in the XHR.responseText for multipart/mixed messages.
-          * When this happens, strip the header and newlines from the message
-          * body and re-parse.
-          */
-        net_msg.body = net_msg.body.replace(/^.*\n\n/, '');
-        log('Cleaning up and retrying...');
+    if (!osrf_msgs) {
 
         try {
             osrf_msgs = JSON2js(net_msg.body);
-        } catch(E2) {
-            log('Unable to clean up message, giving up: ' + net_msg.body);
-            return;
+
+            if (OpenSRF.Session.transport == OSRF_TRANSPORT_TYPE_WS) {
+                // WebSocketRequests wrap the content
+                osrf_msgs = osrf_msgs.osrf_msg;
+            }
+
+        } catch(E) {
+            log('Error parsing OpenSRF message body as JSON: ' + net_msg.body + '\n' + E);
+
+            /** UGH
+              * For unknown reasons, the Content-Type header will occasionally
+              * be included in the XHR.responseText for multipart/mixed messages.
+              * When this happens, strip the header and newlines from the message
+              * body and re-parse.
+              */
+            net_msg.body = net_msg.body.replace(/^.*\n\n/, '');
+            log('Cleaning up and retrying...');
+
+            try {
+                osrf_msgs = JSON2js(net_msg.body);
+            } catch(E2) {
+                log('Unable to clean up message, giving up: ' + net_msg.body);
+                return;
+            }
         }
     }
 
     // push the latest responses onto the end of the inbound message queue
     for(var i = 0; i < osrf_msgs.length; i++)
-        OpenSRF.Stack.queue.push({msg : osrf_msgs[i], callbacks : callbacks, ses : ses});
+        OpenSRF.Stack.queue.push({msg : osrf_msgs[i], ses : ses});
 
     // continue processing responses, oldest to newest
     while(OpenSRF.Stack.queue.length) {
         var data = OpenSRF.Stack.queue.shift();
-        OpenSRF.Stack.handle_message(data.ses, data.msg, data.callbacks);
+        OpenSRF.Stack.handle_message(data.ses, data.msg);
     }
 };
 
-OpenSRF.Stack.handle_message = function(ses, osrf_msg, callbacks) {
+OpenSRF.Stack.handle_message = function(ses, osrf_msg) {
     
-    var req = null;
+    var req = ses.find_request(osrf_msg.threadTrace());
 
     if(osrf_msg.type() == OSRF_MESSAGE_TYPE_STATUS) {
 
@@ -486,12 +489,11 @@ OpenSRF.Stack.handle_message = function(ses, osrf_msg, callbacks) {
         var status_text = payload.status();
 
         if(status == OSRF_STATUS_COMPLETE) {
-            req = ses.find_request(osrf_msg.threadTrace());
             if(req) {
                 req.complete = true;
-                if(callbacks.oncomplete && !req.oncomplete_called) {
+                if(req.oncomplete && !req.oncomplete_called) {
                     req.oncomplete_called = true;
-                    return callbacks.oncomplete(req);
+                    return req.oncomplete(req);
                 }
             }
         }
@@ -507,18 +509,17 @@ OpenSRF.Stack.handle_message = function(ses, osrf_msg, callbacks) {
         }
 
         if(status == OSRF_STATUS_NOTFOUND || status == OSRF_STATUS_INTERNALSERVERERROR) {
-            req = ses.find_request(osrf_msg.threadTrace());
-            if(callbacks.onmethoderror) 
-                return callbacks.onmethoderror(req, status, status_text);
+            if(req && req.onmethoderror) 
+                return req.onmethoderror(req, status, status_text);
         }
     }
 
     if(osrf_msg.type() == OSRF_MESSAGE_TYPE_RESULT) {
-        req = ses.find_request(osrf_msg.threadTrace());
         if(req) {
             req.response_queue.push(osrf_msg.payload());
-            if(callbacks.onresponse) 
-                return callbacks.onresponse(req);
+            if(req.onresponse) {
+                return req.onresponse(req);
+            }
         }
     }
 };
