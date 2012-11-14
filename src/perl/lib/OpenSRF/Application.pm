@@ -581,8 +581,16 @@ sub run {
 	if (!$self->{remote}) {
 		my $code = \&{$self->{package} . '::' . $self->{method}};
 		my $err = undef;
+		my $warnhandler;
 
 		try {
+			$warnhandler = $SIG{__WARN__};
+			$SIG{__WARN__} = sub {
+				(my $msg = shift) =~ s/\n$//;
+				$log->warn($self->{api_name} . ": $msg");
+				return 1; # prevents warning going out to stderr
+			};
+
 			$resp = $code->($self, $req, @params);
 
 		} catch Error with {
@@ -591,6 +599,8 @@ sub run {
 			if( ref($self) eq 'HASH') {
 				$log->error("Sub $$self{package}::$$self{method} DIED!!!\n\t$err\n", ERROR);
 			}
+		} finally {
+			$SIG{__WARN__} = $warnhandler;
 		};
 
 		if($err) {
