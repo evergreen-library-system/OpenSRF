@@ -35,6 +35,14 @@ sub load_bootstrap_config {
 	OpenSRF::Transport->message_envelope("OpenSRF::Transport::SlimJabber::MessageWrapper");
 	OpenSRF::Transport::PeerHandle->set_peer_client("OpenSRF::Transport::SlimJabber::PeerConnection");
 	OpenSRF::Application->server_class('client');
+    # Read in a shared portion of the config file
+    # for later use in log parameter redaction
+    $OpenSRF::Application::shared_conf = OpenSRF::Utils::Config->load(
+        'config_file' => OpenSRF::Utils::Config->current->FILE,
+        'nocache' => 1,
+        'force' => 1,
+        'base_path' => '/config/shared'
+    );
 }
 
 # ----------------------------------------------
@@ -83,15 +91,6 @@ sub run_service {
     OpenSRF::Utils::JSON->register_class_hint(name => $impl, hint => $service, type => 'hash');
     OpenSRF::Application->application_implementation->initialize()
         if (OpenSRF::Application->application_implementation->can('initialize'));
-
-    # Read in a shared portion of the config file
-    # for later use in log parameter redaction
-    $OpenSRF::Application::shared_conf = OpenSRF::Utils::Config->load(
-        'config_file' => OpenSRF::Utils::Config->current->FILE,
-        'nocache' => 1,
-        'force' => 1,
-        'base_path' => '/config/shared'
-    );
 
     # kill the temp connection
     OpenSRF::Transport::PeerHandle->retrieve->disconnect;
