@@ -1,4 +1,4 @@
-Release notes for OpenSRF 2.1.1
+Release notes for OpenSRF 2.1.2
 ===============================
 
 Supported platforms
@@ -15,6 +15,20 @@ The following platforms are *no longer* supported:
   * Debian 5 (Lenny)
   * Fedora 14 and 15
   * RHEL 5
+
+Changes in 2.1.2
+----------------
+
+Input log redaction fix
+~~~~~~~~~~~~~~~~~~~~~~~
+The way that access was provided to the shared configuration section
+of `opensrf_core.xml` did not always result in OpenSRF clients being
+able to access that section, causing OpenSRF application errors.
+
+Removal of ChopChop XMPP server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The ChopChop minimalist XMPP server code was not being used or
+maintained and thus has been removed from the codebase.
 
 Changes in 2.1.1
 ----------------
