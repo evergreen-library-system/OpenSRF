@@ -1,6 +1,94 @@
 ChangeLog
 =========
 
+OpenSRF 2.1.2
+-------------
+
+commit bcbf73bf1379699bfb49908f1ed4171468372a4b
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Sun Nov 18 07:41:46 2012 -0500
+
+    Bump version numbers for 2.1.2
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+2	2	src/perl/lib/OpenSRF.pm
+1	1	version.m4
+
+commit 583898087349ff1d35dd481ddc1ebd95fa096ae8
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Fri Nov 16 10:36:28 2012 -0500
+
+    Whitespace in OpenSRF/System.pm
+    
+    Spaces not tabs.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+21	21	src/perl/lib/OpenSRF/System.pm
+
+commit a769201157545c9bc311634777217249f86bf428
+Author: Jason Stephenson <jstephenson@mvlc.org>
+Date:   Thu Nov 15 12:20:11 2012 -0500
+
+    Move setting of OpenSRF::Application::shared_conf to load_bootstrap_config.
+    
+    shared_conf was not available and broke clients that were not in a
+    service, such as the Evergreen CStoreEditor.
+    
+    Signed-off-by: Jason Stephenson <jstephenson@mvlc.org>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+8	9	src/perl/lib/OpenSRF/System.pm
+
+commit 724bc6d80e805b580b8340f6d205597e2423ed07
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Tue Oct 30 23:39:25 2012 -0400
+
+    Bump release numbers, create 2.1.1 change log
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+182	2	ChangeLog
+2	2	src/perl/lib/OpenSRF.pm
+1	1	version.m4
+
+commit 7c3727761dd359adde04f7ff0584ad98f25baf67
+Author: Dan Scott <dan@coffeecode.net>
+Date:   Tue Oct 30 23:34:04 2012 -0400
+
+    Release notes for 2.1.1: input log redaction
+    
+    Signed-off-by: Dan Scott <dan@coffeecode.net>
+
+12	3	doc/RELEASE_NOTES.txt
+
+commit c49f3d1c5c65e7313d631df20ec38c459a8cd404
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Mon May 21 16:42:12 2012 -0400
+
+    ChopChop is dead, long live ChopChop.
+    
+    It was never fully baked, nor was it secure, nor does it compile cleanly
+    with -Wall, nor does it provide any useful examples for working with
+    opensrf, etc.  Time to clear out.  So long, chopchop.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+0	6	Makefile.am
+0	21	configure.ac
+0	13	examples/opensrf_core.xml.example
+0	4	src/Makefile.am
+0	23	src/jserver/Makefile.am
+0	1082	src/jserver/osrf_chat.c
+0	45	src/jserver/osrf_chat.h
+0	92	src/jserver/osrf_chat_main.c
+ delete mode 100644 src/jserver/Makefile.am
+ delete mode 100644 src/jserver/osrf_chat.c
+ delete mode 100644 src/jserver/osrf_chat.h
+ delete mode 100644 src/jserver/osrf_chat_main.c
+
 OpenSRF 2.1.1
 -------------
 
