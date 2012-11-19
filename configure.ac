@@ -264,7 +264,7 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.0], [enable_tests=yes],
 AM_CONDITIONAL(CHECK_TESTS, test x$enable_tests = xyes)
 
 if test "x$enable_tests" = "xno"; then
-  AC_MSG_WARN(Check unit testing framweork not found.)
+  AC_MSG_WARN(Check unit testing framework not found.)
 fi
 
 if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
