@@ -288,8 +288,13 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		const char* authtoken = apr_table_get(r->headers_in, "X-OILS-Authtoken");
 		if(!authtoken) authtoken = "";
 		growing_buffer* act = buffer_init(128);
+#ifdef APACHE_MIN_24
+		buffer_fadd(act, "[%s] [%s] [%s] %s %s", r->connection->client_ip,
+			authtoken, osrf_locale, service, method );
+#else
 		buffer_fadd(act, "[%s] [%s] [%s] %s %s", r->connection->remote_ip,
 			authtoken, osrf_locale, service, method );
+#endif
 
 		const char* str; int i = 0;
 		int redact_params = 0;

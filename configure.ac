@@ -203,6 +203,29 @@ if ! test -d "$APR_HEADERS"; then
 fi
 AC_SUBST([APR_HEADERS])
 
+# The following Apache version detection code is adapted from
+# http://www.gnu.org/software/autoconf-archive/ax_prog_apache.html
+# licensed under version 2 of the GNU General Public License, or
+# (at your discretion) any later version.
+#
+# Copyright (c) 2008 Loic Dachary <loic@senga.org>
+#
+# Collect apache version number. If for nothing else, this
+# guarantees that httpd is a working apache executable.
+#
+changequote(<<, >>)dnl
+APACHE=`$APXS2 -q progname`
+APACHE_READABLE_VERSION=`$APACHE -v | grep 'Server version' | sed -e 's;.*Apache/\([0-9\.][0-9\.]*\).*;\1;'`
+changequote([, ])dnl
+APACHE_VERSION=`echo $APACHE_READABLE_VERSION | sed -e 's/\.//g'`
+if test -z "$APACHE_VERSION" ; then
+    AC_MSG_ERROR("could not determine apache version number");
+fi
+APACHE_MAJOR=`expr $APACHE_VERSION : '\(..\)'`
+APACHE_MINOR=`expr $APACHE_VERSION : '..\(.*\)'`
+AM_CONDITIONAL(APACHE_MIN_24, test "$APACHE_MAJOR" -ge "24")
+AC_SUBST([APACHE_MIN_24])
+
 AC_ARG_WITH([libxml],
 [  --with-libxml=path               location of the libxml2 headers (default is /usr/include/libxml2/))],
 [LIBXML2_HEADERS=${withval}],
@@ -371,6 +394,7 @@ fi
         AC_MSG_RESULT(APXS2 location:                  ${APXS2})
         AC_MSG_RESULT(Apache headers location:         ${APACHE2_HEADERS})
         AC_MSG_RESULT(APR headers location:            ${APR_HEADERS})
+        AC_MSG_RESULT(Apache version:                  ${APACHE_READABLE_VERSION})
         AC_MSG_RESULT(libxml2 headers location:        ${LIBXML2_HEADERS})
 
 AC_MSG_RESULT([----------------------------------------------------------------------])

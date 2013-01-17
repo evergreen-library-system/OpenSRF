@@ -117,7 +117,11 @@ static osrfHttpTranslator* osrfNewHttpTranslator(request_rec* apreq) {
     trans->disconnectOnly = 0;
     trans->connecting = 0;
     trans->disconnecting = 0;
+#ifdef APACHE_MIN_24
+    trans->remoteHost = apreq->connection->client_ip;
+#else
     trans->remoteHost = apreq->connection->remote_ip;
+#endif
     trans->messages = NULL;
 
     /* load the message body */
