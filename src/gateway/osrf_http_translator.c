@@ -331,7 +331,11 @@ static char* osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
         }
     }
 
-    return osrfMessageSerializeBatch(msgList, numMsgs);
+    char* jsonString = osrfMessageSerializeBatch(msgList, numMsgs);
+    for(i = 0; i < numMsgs; i++) {
+        osrfMessageFree(msgList[i]);
+    }
+    return jsonString;
 }
 
 static int osrfHttpTranslatorCheckStatus(osrfHttpTranslator* trans, transport_message* msg) {
