@@ -26,7 +26,7 @@
  *   "service"  : "opensrf.foo", // required
  *   "thread"   : "123454321",   // AKA thread. required for follow-up requests; max 64 chars.
  *   "log_xid"  : "123..32",     // optional log trace ID, max 64 chars;
- *   "osrf_msg" : {<osrf_msg>}   // required
+ *   "osrf_msg" : [<osrf_msg>, <osrf_msg>, ...]   // required
  * }
  *
  * Each translator operates with two threads.  One thread receives messages
@@ -214,6 +214,7 @@ void* osrf_responder_thread_main_body(transport_message *tmsg) {
     }
 
     // maintenance is done
+    msg_list->freeItem = osrfMessageFree;
     osrfListFree(msg_list);
 
     if (!trans->client_connected) {
@@ -478,9 +479,17 @@ static char* extract_inbound_messages(
                 clear_cached_recipient(thread);
                 break;
         }
+
+        osrfMessageFree(msg);
     }
 
-    return osrfMessageSerializeBatch(msg_list, num_msgs);
+    char* finalMsg = osrfMessageSerializeBatch(msg_list, num_msgs);
+
+    // clean up our messages
+    for(i = 0; i < num_msgs; i++) 
+        osrfMessageFree(msg_list[i]);
+
+    return finalMsg;
 }
 
 /**
