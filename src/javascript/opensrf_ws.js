@@ -65,7 +65,7 @@ OpenSRF.WebSocketConnection.prototype.setupSocket = function() {
 
 /** default onmessage handler: push the message up the opensrf stack */
 OpenSRF.WebSocketConnection.default_onmessage = function(evt) {
-    console.log('receiving: ' + evt.data);
+    //console.log('receiving: ' + evt.data);
     var msg = JSON2js(evt.data);
     OpenSRF.Stack.push(
         new OpenSRF.NetMessage(
@@ -153,7 +153,7 @@ OpenSRF.WebSocketRequest.prototype.send = function(message) {
     };
 
     var json = js2JSON(wrapper);
-    console.log('sending: ' + json);
+    //console.log('sending: ' + json);
 
     // drop it on the wire
     this.wsc.socket.send(json);

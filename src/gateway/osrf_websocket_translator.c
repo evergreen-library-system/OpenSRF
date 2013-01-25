@@ -168,8 +168,7 @@ void* osrf_responder_thread_main_body(transport_message *tmsg) {
     int i;
 
     osrfLogDebug(OSRF_LOG_MARK, 
-        "WS received opensrf response for thread=%s, xid=%s", 
-            tmsg->thread, tmsg->osrf_xid);
+        "WS received opensrf response for thread=%s", tmsg->thread);
 
     // first we need to perform some maintenance
     msg_list = osrfMessageDeserialize(tmsg->body, NULL);
@@ -213,19 +212,18 @@ void* osrf_responder_thread_main_body(transport_message *tmsg) {
         }
     }
 
-    // maintenance is done
-    msg_list->freeItem = osrfMessageFree;
+    // osrfMessageDeserialize applies the freeItem handler to the 
+    // newly created osrfList.  We only need to free the list and 
+    // the individual osrfMessage's will be freed along with it
     osrfListFree(msg_list);
 
     if (!trans->client_connected) {
 
-        osrfLogDebug(OSRF_LOG_MARK, 
-            "WS discarding response for thread=%s, xid=%s", 
-            tmsg->thread, tmsg->osrf_xid);
+        osrfLogInfo(OSRF_LOG_MARK, 
+            "WS discarding response for thread=%s", tmsg->thread);
 
         return;
     }
-
     
     // client is still connected. 
     // relay the response messages to the client
@@ -240,8 +238,8 @@ void* osrf_responder_thread_main_body(transport_message *tmsg) {
 
     if (tmsg->is_error) {
         osrfLogError(OSRF_LOG_MARK, 
-            "WS received jabber error message in response to thread=%s and xid=%s", 
-            tmsg->thread, tmsg->osrf_xid);
+            "WS received jabber error message in response to thread=%s", 
+            tmsg->thread);
         jsonObjectSetKey(msg_wrapper, "transport_error", jsonNewBoolObject(1));
     }
 
@@ -281,6 +279,7 @@ void* APR_THREAD_FUNC osrf_responder_thread_main(apr_thread_t *thread, void *dat
             return NULL;
         }
 
+        osrfLogForceXid(tmsg->osrf_xid);
         osrf_responder_thread_main_body(tmsg);
         message_free(tmsg);                                                         
     }
@@ -379,7 +378,7 @@ void* CALLBACK on_connect_handler(const WebSocketServer *server) {
     request_rec *r = server->request(server);
     apr_pool_t *pool;
 
-    osrfLogDebug(OSRF_LOG_MARK, 
+    osrfLogInfo(OSRF_LOG_MARK, 
         "WS connect from %s", r->connection->remote_ip); 
         //"WS connect from %s", r->connection->client_ip); // apache 2.4
 
@@ -479,8 +478,6 @@ static char* extract_inbound_messages(
                 clear_cached_recipient(thread);
                 break;
         }
-
-        osrfMessageFree(msg);
     }
 
     char* finalMsg = osrfMessageSerializeBatch(msg_list, num_msgs);
@@ -512,6 +509,10 @@ static size_t on_message_handler_body(void *data,
     int i;
 
     if (buffer_size <= 0) return OK;
+
+    // generate a new log trace for this request. it 
+    // may be replaced by a client-provided trace below.
+    osrfLogMkXid();
 
     osrfLogDebug(OSRF_LOG_MARK, "WS received message size=%d", buffer_size);
 
@@ -546,13 +547,7 @@ static size_t on_message_handler_body(void *data,
             return HTTP_BAD_REQUEST;
         }
 
-        // TODO: make this work with non-client and make this call accept 
-        // const char*'s.  casting to (char*) for now to silence warnings.
-        osrfLogSetXid((char*) log_xid); 
-
-    } else {
-        // generate a new log trace id for this relay
-        osrfLogMkXid();
+        osrfLogForceXid(log_xid);
     }
 
     if (thread) {
@@ -587,8 +582,8 @@ static size_t on_message_handler_body(void *data,
     }
 
     osrfLogDebug(OSRF_LOG_MARK, 
-        "WS relaying message thread=%s, xid=%s, recipient=%s", 
-            thread, osrfLogGetXid(), recipient);
+        "WS relaying message to opensrf thread=%s, recipient=%s", 
+            thread, recipient);
 
     msg_body = extract_inbound_messages(
         r, service, thread, recipient, osrf_msg);
@@ -648,7 +643,7 @@ void CALLBACK on_disconnect_handler(
 
     request_rec *r = server->request(server);
 
-    osrfLogDebug(OSRF_LOG_MARK, 
+    osrfLogInfo(OSRF_LOG_MARK, 
         "WS disconnect from %s", r->connection->remote_ip); 
         //"WS disconnect from %s", r->connection->client_ip); // apache 2.4
 }

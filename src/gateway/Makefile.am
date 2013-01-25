@@ -37,7 +37,7 @@ install-exec-local:
 	$(MKDIR_P) $(DESTDIR)$(AP_LIBEXECDIR)
 	$(APXS2) -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) -a @srcdir@/osrf_json_gateway.la
 	$(APXS2) -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) -a @srcdir@/osrf_http_translator.la
-	$(APXS2) -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) -a @srcdir@/osrf_websocket_translator.la
+	$(APXS2) -n osrf_websocket_translator -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) -a @srcdir@/osrf_websocket_translator.la
 
 clean-local:
 	rm -f @srcdir@/osrf_http_translator.la @srcdir@/osrf_http_translator.lo @srcdir@/osrf_http_translator.slo @srcdir@/osrf_json_gateway.la @srcdir@/osrf_json_gateway.lo @srcdir@/osrf_json_gateway.slo  @srcdir@/osrf_websocket_translator.la @srcdir@/osrf_websocket_translator.lo @srcdir@/osrf_websocket_translator.slo
