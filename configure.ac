@@ -213,9 +213,18 @@ AC_SUBST([APR_HEADERS])
 # Collect apache version number. If for nothing else, this
 # guarantees that httpd is a working apache executable.
 #
-changequote(<<, >>)dnl
 APACHE=`$APXS2 -q progname`
-APACHE_READABLE_VERSION=`$APACHE -v | grep 'Server version' | sed -e 's;.*Apache/\([0-9\.][0-9\.]*\).*;\1;'`
+AC_PATH_PROG(APACHE_PATH, [$APACHE], [])
+if test -z "$APACHE_PATH" ; then
+	for i in /usr/bin /usr/sbin /usr/local/apache/bin /usr/local/apache2/bin ; do
+        if test -x "$i/$APACHE"; then
+            APACHE_PATH="$i/$APACHE"
+            break
+        fi
+	done
+fi
+changequote(<<, >>)dnl
+APACHE_READABLE_VERSION=`$APACHE_PATH -v | grep 'Server version' | sed -e 's;.*Apache/\([0-9\.][0-9\.]*\).*;\1;'`
 changequote([, ])dnl
 APACHE_VERSION=`echo $APACHE_READABLE_VERSION | sed -e 's/\.//g'`
 if test -z "$APACHE_VERSION" ; then
