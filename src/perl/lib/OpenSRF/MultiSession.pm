@@ -215,17 +215,21 @@ sub request {
 sub session_wait {
 	my $self = shift;
 	my $all = shift;
+	my $xmpp = OpenSRF::Transport::PeerHandle->retrieve;
 
 	my $count;
 	if ($all) {
 		$count = $self->running;
 		while ($self->running) {
+			# block on the xmpp socket until data arrives
+			$xmpp->process(-1);
 			$self->session_reap;
 		}
 		return $count;
 	} else {
 		while(($count = $self->session_reap) == 0 && $self->running) {
-			usleep 100;
+			# block on the xmpp socket until data arrives
+			$xmpp->process(-1);
 		}
 		return $count;
 	}
