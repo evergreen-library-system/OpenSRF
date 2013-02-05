@@ -1,0 +1,47 @@
+
+Websockets installation instructions for Debian:
+
+# TODO: Most of this can be scripted.
+# TODO: Better handling of external dependencies (websocket_plugin.h).  
+
+# as root
+
+# see also /usr/share/doc/apache2/README.multiple-instances
+% sh /usr/share/doc/apache2.2-common/examples/setup-instance websockets
+
+% cp examples/apache2/websockets.conf /etc/apache2-websockets/sites-available/
+
+# activate the websockets configuration
+% a2ensite-websockets websockets.conf 
+
+# deactivate the default site
+% a2dissite-websockets default 
+
+# remove most of the mods with this shell script
+
+MODS=$(apache2ctl-websockets -M | grep shared | grep -v 'Syntax OK' | sed 's/_module//g' | cut -d' ' -f2 | xargs);
+for mod in $MODS; do
+    if [ $mod = 'mime' -o $mod = 'ssl' -o $mod = 'websocket' ]; then
+        echo "* Leaving module $mod in place";
+    else
+        echo "* Disabling module $mod";
+        a2dismod-websockets $mod;
+    fi;
+done
+
+# follow the instructions for installing Apache mod_websockets at
+# https://github.com/disconnect/apache-websocket
+
+# copy the headers into place so OpenSRF can compile
+% cp $LOCATION_OF_APACHE_WEBSOCKET_CHECKOUT/websocket_plugin.h src/gateway/
+
+# install OpenSRF
+
+# remove the websocket module from the default OpenSRF Apache instance
+% a2dismod osrf_websocket_translator
+
+# After OpenSRF is up and running, fire up the secondary Apache instance
+# errors will appear in /var/log/apache2-websockets/error.log
+% /etc/init.d/apache2-websockets restart
+
+
