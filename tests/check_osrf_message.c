@@ -31,7 +31,7 @@ START_TEST(test_osrf_message_set_locale)
       "osrf_message_set_locale should return NULL if locale is NULL");
   fail_unless(osrf_message_set_locale(NULL, new_locale) == NULL,
       "osrf_message_set_locale should return NULL if msg is NULL");
-  char* l = osrf_message_set_locale(o, new_locale);
+  const char* l = osrf_message_set_locale(o, new_locale);
   fail_unless(strcmp(l, "en-CA") == 0,
       "osrf_message_set_locale should return the new locale");
   fail_unless(strcmp(o->sender_locale, "en-CA") == 0,
