@@ -236,6 +236,20 @@ sub session_wait {
 }
 
 sub session_reap {
+    my $self = shift;
+    $self->_session_reap;
+
+    # if any requests are marked complete as a side effect of 
+    # _session_reap, re-run _session_reap.  note that we check
+    # for completeness without touching the underlying socket
+    # (req->{complete} vs req->complete) to avoid additional 
+    # unintended socket-touching side effects.
+    while (grep { $_->{req}->{complete} } @{$self->{running}}) {
+        $self->_session_reap;
+    }
+}
+
+sub _session_reap {
 	my $self = shift;
 
 	my @done;
