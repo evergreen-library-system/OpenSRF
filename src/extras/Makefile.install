@@ -73,10 +73,15 @@ DEBS =  \
 	libxslt1-dev\
 	memcached\
 	pkg-config\
+	python-coverage\
 	psmisc\
 	python-dev\
 	python-libxml2\
+	python-memcache\
+	python-nose\
+	python-pyxmpp\
 	python-setuptools\
+	python-simplejson\
 	tar\
 	zlib1g-dev
 
