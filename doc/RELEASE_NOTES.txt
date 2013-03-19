@@ -60,6 +60,9 @@ to an OpenSRF network.
 
 Build improvements
 ------------------
+OpenSRF no longer uses `/opensrf` as a non-standard default installation
+directory prefix, easing the task of packagers.
+
 OpenSRF's Java libraries can now be built without requiring that
 `src/Java/Makefile` be edited manually.
 
