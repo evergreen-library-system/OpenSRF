@@ -153,7 +153,7 @@ int osrfAppRegisterApplication( const char* appName, const char* soFile ) {
 	void* handle = dlopen( soFile, RTLD_NOW );
 	if( ! handle ) {
 		const char* msg = dlerror();
-		osrfLogWarning( OSRF_LOG_MARK, "Failed to dlopen library file %s: %s", soFile, msg );
+		osrfLogError( OSRF_LOG_MARK, "Failed to dlopen library file %s: %s", soFile, msg );
 		return -1;
 	}
 
