@@ -4,6 +4,97 @@ ChangeLog
 OpenSRF 2.2.0
 -------------
 
+commit c5563a175edf84e11e628d254b566ae5344df80b
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Fri Apr 19 20:06:40 2013 -0400
+
+    bump up version to 2.2.0
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+2	2	src/perl/lib/OpenSRF.pm
+1	1	src/python/setup.py
+1	1	version.m4
+
+commit 2a0eff986aef7b45043baf67b788833060e05351
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Fri Apr 19 20:04:19 2013 -0400
+
+    updated release notes for 2.2.0
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+4	2	doc/RELEASE_NOTES.txt
+
+commit 161cb3fa16e518c63ac2680082bfde118312be27
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Thu Apr 4 23:01:49 2013 -0400
+
+    LP#1162907: don't require installing RPC::XML
+    
+    RPC::XML is not required by OpenSRF, although it is an
+    Evergreen dependency.
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+0	2	src/extras/Makefile.install
+
+commit 4b2118dc1f2f5d09ae5c7b931777c21c46df6fc1
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Tue Mar 19 11:14:31 2013 -0400
+
+    remove Fedora 16 from the supported platforms list
+    
+    Per commit 2c6fabe8
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+1	1	doc/RELEASE_NOTES.txt
+
+commit 32e2cce60ac342ba7e1c2437a04080f61737efe6
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Tue Mar 19 01:23:31 2013 -0400
+
+    add one last change to the release notes for 2.2.0-alpha
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+3	0	doc/RELEASE_NOTES.txt
+
+commit de5f067661d9ce77fcd5260101e8c633a76b0495
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Sun Mar 17 16:37:46 2013 -0700
+
+    release notes for 2.2.0-alpha
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+75	0	doc/RELEASE_NOTES.txt
+ create mode 100644 doc/RELEASE_NOTES.txt
+
+commit bc0c14b5c2dad7d4849eb36875f63cd7e5254ba3
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Sun Mar 17 15:16:51 2013 -0700
+
+    bump up version numbers for 2.2.0-alpha release
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+2	2	src/perl/lib/OpenSRF.pm
+1	1	src/python/setup.py
+1	1	version.m4
+
+commit a9182c03a3b61953751fda2da0e881d47f95e035
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Sun Mar 17 14:50:34 2013 -0700
+
+    ChangeLog for 2.2.0-alpha
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+185	1189	ChangeLog
+
 commit 78f15b09801f508a8db3b03cf40ab73c6d6b144d
 Author: Bill Erickson <berick@esilibrary.com>
 Date:   Fri Mar 15 15:56:55 2013 -0400
