@@ -1,5 +1,5 @@
-Release notes for OpenSRF 2.2.0-alpha
-=====================================
+Release notes for OpenSRF 2.2.0
+===============================
 
 Supported platforms
 -------------------
@@ -65,6 +65,8 @@ directory prefix, easing the task of packagers.
 
 OpenSRF's Java libraries can now be built without requiring that
 `src/Java/Makefile` be edited manually.
+
+OpenSRF no longer incorrectly asserts a dependency on the RPC::XML Perl module.
 
 Continuous integration support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
