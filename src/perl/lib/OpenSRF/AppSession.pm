@@ -1098,15 +1098,22 @@ package OpenSRF::AppSubrequest;
 
 sub respond {
 	my $self = shift;
+	return if $self->complete;
+
 	my $resp = shift;
 	push @{$$self{resp}}, $resp if (defined $resp);
 }
-sub respond_complete { respond(@_); }
+
+sub respond_complete {
+	my $self = shift;
+	$self->respond(@_);
+	$self->complete(1);
+}
 
 sub new {
 	my $class = shift;
 	$class = ref($class) || $class;
-	return bless({resp => [], @_}, $class);
+	return bless({complete => 0, resp => [], @_}, $class);
 }
 
 sub responses { @{$_[0]->{resp}} }
@@ -1116,6 +1123,13 @@ sub session {
 	my $s = shift;
 	$x->{session} = $s if ($s);
 	return $x->{session};
+}
+
+sub complete {
+	my $x = shift;
+	my $c = shift;
+	$x->{complete} = $c if ($c);
+	return $x->{complete};
 }
 
 sub status {}
