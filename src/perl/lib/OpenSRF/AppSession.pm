@@ -24,6 +24,28 @@ my $logger = "OpenSRF::Utils::Logger";
 my $_last_locale = 'en-US';
 our $current_ingress = 'opensrf';
 
+# Get/set the locale used by all new client sessions 
+# for the current process.  This is primarily useful 
+# for clients that wish to make a series of opensrf 
+# calls and don't wish to set the locale for each new 
+# AppSession object.
+#
+# The caller should reset the locale when done using 
+# reset_locale(), as the locale will otherwise persist 
+# for the current process until set/reset again.
+#
+# This is not for SERVER processes, since they 
+# adopt the locale of their respective callers.
+sub default_locale {
+    my ($class, $locale) = @_;
+    $_last_locale = $locale if $locale;
+    return $_last_locale;
+}
+sub reset_locale {
+    my ($class) = @_;
+    return $_last_locale = 'en-US';
+}
+
 sub ingress {
     my ($class, $ingress) = @_;
     $current_ingress = $ingress if $ingress;
