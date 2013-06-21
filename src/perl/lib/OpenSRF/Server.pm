@@ -65,8 +65,26 @@ sub new {
 sub cleanup {
     my $self = shift;
     my $no_exit = shift;
+    my $graceful = shift;
 
     $logger->info("server: shutting down and cleaning up...");
+
+    # de-register routers
+    $self->unregister_routers;
+
+    if ($graceful) {
+        # graceful shutdown waits for all active 
+        # children to complete their in-process tasks.
+
+        while (@{$self->{active_list}}) {
+            $logger->info("server: graceful shutdown with ".
+                @{$self->{active_list}}." active children...");
+
+            # block until a child is becomes available
+            $self->check_status(1);
+        }
+        $logger->info("server: all clear for graceful shutdown");
+    }
 
     # don't get sidetracked by signals while we're cleaning up.
     # it could result in unexpected behavior with list traversal
@@ -75,9 +93,6 @@ sub cleanup {
     # terminate the child processes
     $self->kill_child($_) for
         (@{$self->{idle_list}}, @{$self->{active_list}});
-
-    # de-register routers
-    $self->unregister_routers;
 
     $self->{osrf_handle}->disconnect;
 
@@ -126,7 +141,8 @@ sub run {
 
     $logger->set_service($self->{service});
 
-    $SIG{$_} = sub { $self->cleanup; } for (qw/INT TERM QUIT/);
+    $SIG{$_} = sub { $self->cleanup; } for (qw/INT QUIT/);
+    $SIG{TERM} = sub { $self->cleanup(0, 1); };
     $SIG{CHLD} = sub { $self->reap_children(); };
     $SIG{HUP} = sub { $self->handle_sighup(); };
 
