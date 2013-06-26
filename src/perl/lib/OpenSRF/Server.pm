@@ -449,7 +449,7 @@ sub spawn_child {
 
     } else { # child process
 
-        $SIG{$_} = 'DEFAULT' for (qw/INT TERM QUIT HUP/);
+        $SIG{$_} = 'DEFAULT' for (qw/INT TERM QUIT HUP CHLD/);
 
         if($self->{stderr_log}) {
 
