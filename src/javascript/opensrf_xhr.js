@@ -48,9 +48,11 @@ OpenSRF.XHRequest.prototype.send = function() {
 
     } else {
 
-    /* Only Firefox supports multipart calls, but Safari / Chrome include
-           "Mozilla" in their user agent strings... sigh */
-        if(!navigator.userAgent.match(/mozilla/i) || navigator.userAgent.match(/webkit/i) || navigator.userAgent.match(/msie/i)) {
+        /**
+         * multi-part messages are deprecated.  Eventually this will go away.
+         * For now, continue allowing the Evergreen staff client to use
+         * multi-part messages. */
+        if (!navigator.userAgent.match(/open_ils_staff_client/)) {
             /* standard asynchronous call */
             xreq.onreadystatechange = function() {
                 if(xreq.readyState == 4)
