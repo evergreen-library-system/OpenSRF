@@ -101,17 +101,22 @@ static prefork_child* prefork_child_init( prefork_simple* forker,
 
 /* listens on the 'data_to_child' fd and wait for incoming data */
 static void prefork_child_wait( prefork_child* child );
-static void prefork_clear( prefork_simple* );
+static void prefork_clear( prefork_simple*, int graceful);
 static void prefork_child_free( prefork_simple* forker, prefork_child* );
 static void osrf_prefork_register_routers( const char* appname, bool unregister );
 static void osrf_prefork_child_exit( prefork_child* );
 
 static void sigchld_handler( int sig );
 static void sigusr1_handler( int sig );
+static void sigterm_handler( int sig );
+static void sigint_handler( int sig );
 
-/** Track the appname globally so we can refer back to it for 
-    router de-registration.  */
-static const char* service_name = NULL;
+/** Maintain a global pointer to the prefork_simple object
+ *  for the current process so we can refer to it later
+ *  for signal handling.  There will only ever be one
+ *  forker per process.
+ */
+static prefork_simple *global_forker = NULL;
 
 /**
 	@brief Spawn and manage a collection of drone processes for servicing requests.
@@ -126,7 +131,6 @@ int osrf_prefork_run( const char* appname ) {
 	}
 
 	set_proc_title( "OpenSRF Listener [%s]", appname );
-    service_name = appname;
 
 	int maxr = 1000;
 	int maxc = 10;
@@ -189,6 +193,7 @@ int osrf_prefork_run( const char* appname ) {
 	// Finish initializing the prefork_simple.
 	forker.appname   = strdup( appname );
 	forker.keepalive = kalive;
+	global_forker = &forker;
 
 	// Spawn the children; put them in the idle list.
 	prefork_launch_children( &forker );
@@ -196,14 +201,17 @@ int osrf_prefork_run( const char* appname ) {
 	// Tell the router that you're open for business.
 	osrf_prefork_register_routers( appname, false );
 
-    signal( SIGUSR1, sigusr1_handler );
+	signal( SIGUSR1, sigusr1_handler);
+	signal( SIGTERM, sigterm_handler);
+	signal( SIGINT,  sigint_handler );
+	signal( SIGQUIT, sigint_handler );
 
 	// Sit back and let the requests roll in
 	osrfLogInfo( OSRF_LOG_MARK, "Launching osrf_forker for app %s", appname );
 	prefork_run( &forker );
 
 	osrfLogWarning( OSRF_LOG_MARK, "prefork_run() returned - how??" );
-	prefork_clear( &forker );
+	prefork_clear( &forker, 0 );
 	return 0;
 }
 
@@ -606,9 +614,12 @@ static prefork_child* launch_child( prefork_simple* forker ) {
 
 	else { /* child */
 
-        // ignore the unregister-router signal.  Belt+suspenders protection 
-        // against sending USR1 to the wrong PID.
-		signal( SIGUSR1, SIG_IGN );
+		// we don't want to adopt our parent's handlers.
+		signal( SIGUSR1, SIG_DFL );
+		signal( SIGTERM, SIG_DFL );
+		signal( SIGINT,  SIG_DFL );
+		signal( SIGQUIT, SIG_DFL );
+		signal( SIGCHLD, SIG_DFL );
 
 		osrfLogInternal( OSRF_LOG_MARK,
 			"I am new child with read_data_fd = %d and write_status_fd = %d",
@@ -671,11 +682,38 @@ static void sigchld_handler( int sig ) {
 	@brief Signal handler for SIGUSR1
 	@param sig The value of the trapped signal; always SIGUSR1.
 
-    Send unregister command to all registered routers.
+	Send unregister command to all registered routers.
 */
 static void sigusr1_handler( int sig ) {
-    osrf_prefork_register_routers(service_name, true);
+	if (!global_forker) return;
+	osrf_prefork_register_routers(global_forker->appname, true);
 	signal( SIGUSR1, sigusr1_handler );
+}
+
+/**
+	@brief Signal handler for SIGTERM
+	@param sig The value of the trapped signal; always SIGTERM
+
+	Perform a graceful prefork server shutdown.
+*/
+static void sigterm_handler(int sig) {
+	if (!global_forker) return;
+	osrfLogInfo(OSRF_LOG_MARK, "server: received SIGTERM, shutting down");
+	prefork_clear(global_forker, 1);
+	_exit(0);
+}
+
+/**
+	@brief Signal handler for SIGINT or SIGQUIT
+	@param sig The value of the trapped signal
+
+	Perform a non-graceful prefork server shutdown.
+*/
+static void sigint_handler(int sig) {
+	if (!global_forker) return;
+	osrfLogInfo(OSRF_LOG_MARK, "server: received SIGINT/QUIT, shutting down");
+	prefork_clear(global_forker, 0);
+	_exit(0);
 }
 
 /**
@@ -881,10 +919,11 @@ static int check_children( prefork_simple* forker, int forever ) {
 
 	if( NULL == forker->first_child ) {
 		// If forever is true, then we're here because we've run out of idle
-		// processes, so there should be some active ones around.
+		// processes, so there should be some active ones around, except during
+		// graceful shutdown, as we wait for all active children to become idle.
 		// If forever is false, then the children may all be idle, and that's okay.
 		if( forever )
-			osrfLogError( OSRF_LOG_MARK, "No active child processes to check" );
+			osrfLogDebug( OSRF_LOG_MARK, "No active child processes to check" );
 		return 0;
 	}
 
@@ -906,8 +945,6 @@ static int check_children( prefork_simple* forker, int forever ) {
 	FD_CLR( 0, &read_set ); /* just to be sure */
 
 	if( forever ) {
-		osrfLogWarning( OSRF_LOG_MARK,
-			"We have no children available - waiting for one to show up..." );
 
 		if( (select_ret=select( max_fd + 1, &read_set, NULL, NULL, NULL )) == -1 ) {
 			osrfLogWarning( OSRF_LOG_MARK, "Select returned error %d on check_children: %s",
@@ -1196,12 +1233,30 @@ static prefork_child* prefork_child_init( prefork_simple* forker,
 
 	We do not deallocate the prefork_simple itself, just its contents.
 */
-static void prefork_clear( prefork_simple* prefork ) {
+static void prefork_clear( prefork_simple* prefork, int graceful ) {
 
-	// Kill all the active children, and move their prefork_child nodes to the free list.
+	// always de-register routers before killing child processes (or waiting
+	// for them to complete) so that new requests are directed elsewhere.
+	osrf_prefork_register_routers(global_forker->appname, true);
+
 	while( prefork->first_child ) {
-		kill( prefork->first_child->pid, SIGKILL );
-		del_prefork_child( prefork, prefork->first_child->pid );
+
+		if (graceful) {
+			// wait for at least one active child to become idle, then repeat.
+			// once complete, all children will be idle and cleaned up below.
+			osrfLogInfo(OSRF_LOG_MARK, "graceful shutdown waiting...");
+			check_children(prefork, 1);
+
+		} else {
+			// Kill and delete all the active children
+			kill( prefork->first_child->pid, SIGKILL );
+			del_prefork_child( prefork, prefork->first_child->pid );
+		}
+	}
+
+	if (graceful) {
+		osrfLogInfo(OSRF_LOG_MARK,
+			"all active children are now idle in graceful shutdown");
 	}
 
 	// Kill all the idle prefork children, close their file
