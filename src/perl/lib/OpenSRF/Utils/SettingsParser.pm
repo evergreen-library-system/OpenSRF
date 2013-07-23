@@ -2,34 +2,46 @@ use strict; use warnings;
 package OpenSRF::Utils::SettingsParser;
 use OpenSRF::Utils::Config;
 use OpenSRF::EX qw(:try);
-
-
-
+use OpenSRF::Utils::Logger;
 use XML::LibXML;
 
+# logger is not yet exported when this mod is loaded
+my $logger = 'OpenSRF::Utils::Logger';
+
 sub DESTROY{}
-our $log = 'OpenSRF::Utils::Logger';
-my $parser;
 my $doc;
+my $settings_file; # /path/to/opensrf.xml
 
 sub new { return bless({},shift()); }
+
+# reload the configuration file
+sub reload {
+    my $self = shift;
+    $logger->info("settings parser reloading '$settings_file'");
+    $self->initialize;
+}
 
 
 # returns 0 if the config file could not be found or if there is a parse error
 # returns 1 if successful
 sub initialize {
+	my ($self, $filename) = @_;
 
-	my ($self,$bootstrap_config) = @_;
-	return 0 unless($self and $bootstrap_config);
+	$settings_file = $filename if $filename;
+	return 0 unless $settings_file;
 
-	$parser = XML::LibXML->new();
+	my $parser = XML::LibXML->new();
 	$parser->keep_blanks(0);
+
+	my $err;
 	try {
-		$doc = $parser->parse_file( $bootstrap_config );
+		$doc = $parser->parse_file( $settings_file );
 	} catch Error with {
-		return 0;
+		$err = shift;
+		$logger->error("Error parsing $settings_file : $err");
 	};
-	return 1;
+
+	return $err ? 0 : 1;
 }
 
 sub _get { _get_overlay(@_) }
@@ -149,20 +161,5 @@ sub get_default_config {
 	my $xpath = "/opensrf/default";
 	return $self->_get( $xpath );
 }
-
-sub get_bootstrap_config {
-	my( $self ) = @_;
-	my $xpath = "/opensrf/bootstrap";
-	return $self->_get( $xpath );
-}
-
-sub get_router_config {
-	my( $self, $router ) = @_;
-	my $xpath = "/opensrf/routers/$router";
-	return $self->_get($xpath );
-}
-
-
-
 
 1;

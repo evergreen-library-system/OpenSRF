@@ -13,12 +13,6 @@ sub new {return bless({},shift());}
 my $session;
 $host_config = undef;
 
-my $we_cache = 1;
-sub set_cache {
-	my($self, $val) = @_;
-	if(defined($val)) { $we_cache = $val; }
-}
-
 sub has_config {
 	if($host_config) { return 1; }
 	return 0;
@@ -30,20 +24,7 @@ sub has_config {
 sub config_value {
 	my($self,@keys) = @_;
 
-
-	my $bsconfig = OpenSRF::Utils::Config->current;
-	die "No bootstrap config exists.  Have you bootstrapped?\n" unless $bsconfig;
-	my $host = $bsconfig->env->hostname;
-
-	if($we_cache) {
-		if(!$host_config) { grab_host_config($host); }
-	} else {
-		grab_host_config($host);
-	}
-
-	if(!$host_config) {
-		throw OpenSRF::EX::Config ("Unable to retrieve host config for $host" );
-	}
+	$self->grab_host_config unless $host_config;
 
 	my $hash = $host_config;
 
@@ -69,24 +50,27 @@ sub config_value {
 
 # XXX make smarter and more robust...
 sub grab_host_config {
+	my $self = shift;
+	my $reload = shift;
 
-	my $host = shift;
+	my $bsconfig = OpenSRF::Utils::Config->current;
+	die "No bootstrap config exists.  Have you bootstrapped?\n" unless $bsconfig;
+	my $host = $bsconfig->env->hostname;
 
 	$session = OpenSRF::AppSession->create( "opensrf.settings" ) unless $session;
-	my $bsconfig = OpenSRF::Utils::Config->current;
 
 	my $resp;
 	my $req;
 	try {
 
 		if( ! ($session->connect()) ) {die "Settings Connect timed out\n";}
-		$req = $session->request( "opensrf.settings.host_config.get", $host );
+		$req = $session->request( "opensrf.settings.host_config.get", $host, $reload);
 		$resp = $req->recv( timeout => 10 );
 
 	} catch OpenSRF::EX with {
 
 		if( ! ($session->connect()) ) {die "Settings Connect timed out\n";}
-		$req = $session->request( "opensrf.settings.default_config.get" );
+		$req = $session->request( "opensrf.settings.default_config.get", $reload );
 		$resp = $req->recv( timeout => 10 );
 
 	} catch Error with {
@@ -112,6 +96,11 @@ sub grab_host_config {
 	}
 
 	$host_config = $resp->content();
+
+	if(!$host_config) {
+		throw OpenSRF::EX::Config ("Unable to retrieve host config for $host" );
+	}
+
 	$req->finish();
 	$session->disconnect();
 	$session->finish;
