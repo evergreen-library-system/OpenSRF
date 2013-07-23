@@ -145,6 +145,7 @@ sub run {
     $SIG{TERM} = sub { $self->cleanup(0, 1); };
     $SIG{CHLD} = sub { $self->reap_children(); };
     $SIG{HUP} = sub { $self->handle_sighup(); };
+    $SIG{USR1} = sub { $self->unregister_routers; };
 
     $self->spawn_children;
     $self->build_osrf_handle;
@@ -465,7 +466,9 @@ sub spawn_child {
 
     } else { # child process
 
-        $SIG{$_} = 'DEFAULT' for (qw/INT TERM QUIT HUP CHLD/);
+        # recover default handling for any signal whose handler 
+        # may have been adopted from the parent process.
+        $SIG{$_} = 'DEFAULT' for qw/TERM INT QUIT HUP CHLD USR1 USR2/;
 
         if($self->{stderr_log}) {
 

@@ -103,10 +103,15 @@ static prefork_child* prefork_child_init( prefork_simple* forker,
 static void prefork_child_wait( prefork_child* child );
 static void prefork_clear( prefork_simple* );
 static void prefork_child_free( prefork_simple* forker, prefork_child* );
-static void osrf_prefork_register_routers( const char* appname );
+static void osrf_prefork_register_routers( const char* appname, bool unregister );
 static void osrf_prefork_child_exit( prefork_child* );
 
 static void sigchld_handler( int sig );
+static void sigusr1_handler( int sig );
+
+/** Track the appname globally so we can refer back to it for 
+    router de-registration.  */
+static const char* service_name = NULL;
 
 /**
 	@brief Spawn and manage a collection of drone processes for servicing requests.
@@ -121,6 +126,7 @@ int osrf_prefork_run( const char* appname ) {
 	}
 
 	set_proc_title( "OpenSRF Listener [%s]", appname );
+    service_name = appname;
 
 	int maxr = 1000;
 	int maxc = 10;
@@ -188,7 +194,9 @@ int osrf_prefork_run( const char* appname ) {
 	prefork_launch_children( &forker );
 
 	// Tell the router that you're open for business.
-	osrf_prefork_register_routers( appname );
+	osrf_prefork_register_routers( appname, false );
+
+    signal( SIGUSR1, sigusr1_handler );
 
 	// Sit back and let the requests roll in
 	osrfLogInfo( OSRF_LOG_MARK, "Launching osrf_forker for app %s", appname );
@@ -210,17 +218,30 @@ int osrf_prefork_run( const char* appname ) {
 	Called only by the parent process.
 */
 static void osrf_prefork_send_router_registration(
-		const char* appname, const char* routerName, const char* routerDomain ) {
+		const char* appname, const char* routerName, 
+            const char* routerDomain, bool unregister ) {
+
 	// Get a pointer to the global transport_client
 	transport_client* client = osrfSystemGetTransportClient();
 
 	// Construct the Jabber address of the router
 	char* jid = va_list_to_string( "%s@%s/router", routerName, routerDomain );
-	osrfLogInfo( OSRF_LOG_MARK, "%s registering with router %s", appname, jid );
 
 	// Create the registration message, and send it
-	transport_message* msg = message_init( "registering", NULL, NULL, jid, NULL );
-	message_set_router_info( msg, NULL, NULL, appname, "register", 0 );
+	transport_message* msg;
+    if (unregister) {
+
+	    osrfLogInfo( OSRF_LOG_MARK, "%s un-registering with router %s", appname, jid );
+	    msg = message_init( "unregistering", NULL, NULL, jid, NULL );
+	    message_set_router_info( msg, NULL, NULL, appname, "unregister", 0 );
+
+    } else {
+
+	    osrfLogInfo( OSRF_LOG_MARK, "%s registering with router %s", appname, jid );
+	    msg = message_init( "registering", NULL, NULL, jid, NULL );
+	    message_set_router_info( msg, NULL, NULL, appname, "register", 0 );
+    }
+
 	client_send_message( client, msg );
 
 	// Clean up
@@ -241,7 +262,8 @@ static void osrf_prefork_send_router_registration(
 
 	Called only by the parent process.
 */
-static void osrf_prefork_parse_router_chunk( const char* appname, const jsonObject* routerChunk ) {
+static void osrf_prefork_parse_router_chunk( 
+    const char* appname, const jsonObject* routerChunk, bool unregister ) {
 
 	const char* routerName = jsonObjectGetString( jsonObjectGetKeyConst( routerChunk, "name" ));
 	const char* domain = jsonObjectGetString( jsonObjectGetKeyConst( routerChunk, "domain" ));
@@ -261,19 +283,19 @@ static void osrf_prefork_parse_router_chunk( const char* appname, const jsonObje
 			for( j = 0; j < service_obj->size; j++ ) {
 				const char* service = jsonObjectGetString( jsonObjectGetIndex( service_obj, j ));
 				if( service && !strcmp( appname, service ))
-					osrf_prefork_send_router_registration( appname, routerName, domain );
+					osrf_prefork_send_router_registration( appname, routerName, domain, unregister );
 			}
 		}
 		else if( JSON_STRING == service_obj->type ) {
 			// There's only one service listed.  Register with this router
 			// if and only if this service is the one listed.
 			if( !strcmp( appname, jsonObjectGetString( service_obj )) )
-				osrf_prefork_send_router_registration( appname, routerName, domain );
+				osrf_prefork_send_router_registration( appname, routerName, domain, unregister );
 		}
 	} else {
 		// This router is not restricted to any set of services,
 		// so go ahead and register with it.
-		osrf_prefork_send_router_registration( appname, routerName, domain );
+		osrf_prefork_send_router_registration( appname, routerName, domain, unregister );
 	}
 }
 
@@ -283,7 +305,7 @@ static void osrf_prefork_parse_router_chunk( const char* appname, const jsonObje
 
 	Called only by the parent process.
 */
-static void osrf_prefork_register_routers( const char* appname ) {
+static void osrf_prefork_register_routers( const char* appname, bool unregister ) {
 
 	jsonObject* routerInfo = osrfConfigGetValueObject( NULL, "/routers/router" );
 
@@ -297,12 +319,12 @@ static void osrf_prefork_register_routers( const char* appname ) {
 			char* domain = osrfConfigGetValue( NULL, "/routers/router" );
 			osrfLogDebug( OSRF_LOG_MARK, "found simple router settings with router name %s",
 				routerName );
-			osrf_prefork_send_router_registration( appname, routerName, domain );
+			osrf_prefork_send_router_registration( appname, routerName, domain, unregister );
 
 			free( routerName );
 			free( domain );
 		} else {
-			osrf_prefork_parse_router_chunk( appname, routerChunk );
+			osrf_prefork_parse_router_chunk( appname, routerChunk, unregister );
 		}
 	}
 
@@ -584,6 +606,10 @@ static prefork_child* launch_child( prefork_simple* forker ) {
 
 	else { /* child */
 
+        // ignore the unregister-router signal.  Belt+suspenders protection 
+        // against sending USR1 to the wrong PID.
+		signal( SIGUSR1, SIG_IGN );
+
 		osrfLogInternal( OSRF_LOG_MARK,
 			"I am new child with read_data_fd = %d and write_status_fd = %d",
 			child->read_data_fd, child->write_status_fd );
@@ -639,6 +665,17 @@ static void prefork_launch_children( prefork_simple* forker ) {
 static void sigchld_handler( int sig ) {
 	signal( SIGCHLD, sigchld_handler );
 	child_dead = 1;
+}
+
+/**
+	@brief Signal handler for SIGUSR1
+	@param sig The value of the trapped signal; always SIGUSR1.
+
+    Send unregister command to all registered routers.
+*/
+static void sigusr1_handler( int sig ) {
+    osrf_prefork_register_routers(service_name, true);
+	signal( SIGUSR1, sigusr1_handler );
 }
 
 /**
