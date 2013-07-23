@@ -146,6 +146,7 @@ sub run {
     $SIG{CHLD} = sub { $self->reap_children(); };
     $SIG{HUP} = sub { $self->handle_sighup(); };
     $SIG{USR1} = sub { $self->unregister_routers; };
+    $SIG{USR2} = sub { $self->register_routers; };
 
     $self->spawn_children;
     $self->build_osrf_handle;

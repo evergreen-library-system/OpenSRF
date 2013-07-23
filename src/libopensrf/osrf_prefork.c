@@ -101,13 +101,14 @@ static prefork_child* prefork_child_init( prefork_simple* forker,
 
 /* listens on the 'data_to_child' fd and wait for incoming data */
 static void prefork_child_wait( prefork_child* child );
-static void prefork_clear( prefork_simple*, int graceful);
+static void prefork_clear( prefork_simple*, bool graceful);
 static void prefork_child_free( prefork_simple* forker, prefork_child* );
 static void osrf_prefork_register_routers( const char* appname, bool unregister );
 static void osrf_prefork_child_exit( prefork_child* );
 
 static void sigchld_handler( int sig );
 static void sigusr1_handler( int sig );
+static void sigusr2_handler( int sig );
 static void sigterm_handler( int sig );
 static void sigint_handler( int sig );
 
@@ -202,6 +203,7 @@ int osrf_prefork_run( const char* appname ) {
 	osrf_prefork_register_routers( appname, false );
 
 	signal( SIGUSR1, sigusr1_handler);
+	signal( SIGUSR2, sigusr2_handler);
 	signal( SIGTERM, sigterm_handler);
 	signal( SIGINT,  sigint_handler );
 	signal( SIGQUIT, sigint_handler );
@@ -211,7 +213,7 @@ int osrf_prefork_run( const char* appname ) {
 	prefork_run( &forker );
 
 	osrfLogWarning( OSRF_LOG_MARK, "prefork_run() returned - how??" );
-	prefork_clear( &forker, 0 );
+	prefork_clear( &forker, false );
 	return 0;
 }
 
@@ -616,6 +618,7 @@ static prefork_child* launch_child( prefork_simple* forker ) {
 
 		// we don't want to adopt our parent's handlers.
 		signal( SIGUSR1, SIG_DFL );
+		signal( SIGUSR2, SIG_DFL );
 		signal( SIGTERM, SIG_DFL );
 		signal( SIGINT,  SIG_DFL );
 		signal( SIGQUIT, SIG_DFL );
@@ -691,6 +694,18 @@ static void sigusr1_handler( int sig ) {
 }
 
 /**
+	@brief Signal handler for SIGUSR2
+	@param sig The value of the trapped signal; always SIGUSR2.
+
+	Send register command to all known routers
+*/
+static void sigusr2_handler( int sig ) {
+	if (!global_forker) return;
+	osrf_prefork_register_routers(global_forker->appname, false);
+	signal( SIGUSR2, sigusr2_handler );
+}
+
+/**
 	@brief Signal handler for SIGTERM
 	@param sig The value of the trapped signal; always SIGTERM
 
@@ -699,7 +714,7 @@ static void sigusr1_handler( int sig ) {
 static void sigterm_handler(int sig) {
 	if (!global_forker) return;
 	osrfLogInfo(OSRF_LOG_MARK, "server: received SIGTERM, shutting down");
-	prefork_clear(global_forker, 1);
+	prefork_clear(global_forker, true);
 	_exit(0);
 }
 
@@ -712,7 +727,7 @@ static void sigterm_handler(int sig) {
 static void sigint_handler(int sig) {
 	if (!global_forker) return;
 	osrfLogInfo(OSRF_LOG_MARK, "server: received SIGINT/QUIT, shutting down");
-	prefork_clear(global_forker, 0);
+	prefork_clear(global_forker, false);
 	_exit(0);
 }
 
@@ -1233,7 +1248,7 @@ static prefork_child* prefork_child_init( prefork_simple* forker,
 
 	We do not deallocate the prefork_simple itself, just its contents.
 */
-static void prefork_clear( prefork_simple* prefork, int graceful ) {
+static void prefork_clear( prefork_simple* prefork, bool graceful ) {
 
 	// always de-register routers before killing child processes (or waiting
 	// for them to complete) so that new requests are directed elsewhere.
