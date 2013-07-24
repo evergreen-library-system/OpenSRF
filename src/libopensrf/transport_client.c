@@ -250,9 +250,7 @@ transport_message* client_recv( transport_client* client, int timeout ) {
 
 	transport_message* msg = NULL;
 
-	if( error )
-		client->error = 1;
-	else if( client->msg_q_head != NULL ) {
+	if( !error && client->msg_q_head != NULL ) {
 		/* got message(s); dequeue the oldest one */
 		msg = client->msg_q_head;
 		client->msg_q_head = msg->next;

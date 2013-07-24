@@ -285,7 +285,6 @@ int session_wait( transport_session* session, int timeout ) {
 
 	if( ret ) {
 		osrfLogDebug(OSRF_LOG_MARK, "socket_wait returned error code %d", ret);
-		session->state_machine->connected = 0;
 	}
 	return ret;
 }
