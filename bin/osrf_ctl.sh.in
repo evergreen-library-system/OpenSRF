@@ -20,6 +20,8 @@ exec_prefix=@exec_prefix@
 OPT_ACTION=""
 OPT_CONFIG=""
 OPT_PID_DIR=""
+OPT_SIGNAL=""
+OPT_SERVICE=""
 OSRF_HOSTNAME=""
 
 # ---------------------------------------------------------------------------
@@ -32,14 +34,18 @@ usage() {
 	cat << EOF
 
 usage: $0 [OPTION]... -c <c_config> -a <action>
+usage: $0 -a signal -k <signal> -s <service>
 
 Mandatory parameters:
   -a    action to perform
 
-Optional parameters:";
+Optional parameters:
   -c    full path to C configuration file (opensrf_core.xml)
   -d    store PID files in this directory
   -l    accept 'localhost' as the fully-qualified domain name
+  -k    signal to send to process. Argument is passed directly to 'kill'.
+  -s    service name.  Used in conjunction with -k.
+
 
 Actions include:
     start_router
@@ -62,10 +68,15 @@ Actions include:
     restart_all
     smart_clear     - Clear all PID files that don't refer to a process 
     clear_pid       - Clear all PID files
+    signal          - send signal specified by -k to service specified by -s
+    signal_all      - send signal specified by -k to all services
+
 
 Examples:
   $0 -a restart_all
   $0 -l -c opensrf_core.xml -a restart_all
+  $0 -a signal -k opensrf.settings -s USR1
+  $0 -a signal_all -s HUP
 
 EOF
 }
@@ -73,11 +84,13 @@ EOF
 # ---------------------------------------------------------------------------
 # Load the command line options and set the global vars
 # ---------------------------------------------------------------------------
-while getopts  "a:d:c:lh" flag; do
+while getopts  "a:d:c:s:k:lh" flag; do
 	case $flag in	
 		"a")		OPT_ACTION="$OPTARG";;
 		"c")		OPT_CONFIG="$OPTARG";;
 		"d")		OPT_PID_DIR="$OPTARG";;
+		"s")		OPT_SERVICE="$OPTARG";;
+		"k")		OPT_SIGNAL="$OPTARG";;
 		"l")		export OSRF_HOSTNAME="localhost";;
 		"h"|*)	usage;;
 	esac;
@@ -99,6 +112,28 @@ PID_OSRF_PERL="$OPT_PID_DIR/osrf_perl.pid";
 PID_OSRF_PYTHON="$OPT_PID_DIR/osrf_python.pid";
 PID_OSRF_C="$OPT_PID_DIR/osrf_c.pid";
 
+# apply some sanity checks to the signal handling arguments
+if [ ${OPT_ACTION%_all} = "signal" ]; then
+    warning="";
+
+    [ -z "$OPT_SIGNAL" ] && \
+        warning="-a $OPT_ACTION requires a signal specified by -k";
+
+    [ $OPT_ACTION = "signal" -a -z "$OPT_SERVICE" ] && \
+        warning="$warning\n-a $OPT_ACTION requires a service specified by -s";
+
+    [ $OPT_ACTION = "signal_all" -a -n "$OPT_SERVICE" ] && \
+        warning="$warning\n-s $OPT_SERVICE cannot be used together with $OPT_ACTION";
+
+    if [ -n "$warning" ]; then
+        usage;
+        echo "------------"
+        echo -e $warning;
+        exit;
+    fi;
+
+    [ $OPT_ACTION = "signal_all" ] && OPT_SERVICE="*";
+fi;
 
 # ---------------------------------------------------------------------------
 # Utility code for checking the PID files
@@ -273,6 +308,40 @@ smart_clear() {
 	return 0;
 }
 
+# send signal $OPT_SIGNAL to the Listener for service $OPT_SERVICE
+# if $OPT_SERVICE = "*", signal all OpenSRF Listener services
+send_signal() {
+    sig=$OPT_SIGNAL;
+    service=$OPT_SERVICE;
+
+    # openrsf C services do not write per-process PID files,
+    # so the simplest approach is to locate all listeners via ps/grep
+
+    found=0;
+    for svc in $(ps ax | grep "OpenSRF Listener" | grep -v grep | \
+        perl -e 'while(<>){s/.*\[(.*)\].*/$1/; print}' | sort | uniq); do
+
+        if [ "$service" = "*" -o "$service" = "$svc" ]; then
+
+            # grab the listener PIDs
+            for pid in $(ps ax | grep "OpenSRF Listener \[$svc\]" | \
+                    grep -v grep | cut -d' ' -f1); do
+                found=1;
+                echo "Sending signal '$sig' to $pid : $svc";
+                kill -s $sig $pid;
+            done;
+        fi;
+    done;
+
+    if [ $found -eq 0 ]; then
+        if [ "$service" = "*" ]; then
+            echo "I have no services to signal!"
+        else
+            echo "No PID found for $service!"
+        fi;
+    fi;
+}
+
 # ---------------------------------------------------------------------------
 # Do the requested action
 # ---------------------------------------------------------------------------
@@ -297,6 +366,8 @@ case $OPT_ACTION in
 	"restart_all") stop_python; stop_c; stop_perl; stop_router; start_router; start_perl; start_c; start_python;;
 	"clear_pid") clear_pid;;
 	"smart_clear") smart_clear;;
+	"signal") send_signal;;
+	"signal_all") send_signal;;
 	*) usage;;
 esac;
 
