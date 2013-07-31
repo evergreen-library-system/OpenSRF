@@ -214,6 +214,7 @@ start_python() {
 Python processes are either already running, or were not correctly shut down.
 Now clearing any stale PID files and restarting Perl processes.
 EOF
+    rm $PID_OSRF_PYTHON;
     smart_clear;
     fi;
 
@@ -247,37 +248,96 @@ start_perl() {
 Perl processes are either already running, or were not correctly shut down.
 Now clearing any stale PID files and restarting Perl processes.
 EOF
+    rm $PID_OSRF_PERL;
     smart_clear;
     fi;
+
+    PL_ARGS="--verbose --pid-dir $OPT_PID_DIR --config $OPT_CONFIG --settings-startup-pause 3";
+
+    if [ -n "$OPT_SERVICE" ]; then 
+        PL_ARGS="$PL_ARGS --action start --service $OPT_SERVICE";
+    else
+        PL_ARGS="$PL_ARGS --action start_all";
+    fi;
     
-    opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR \
-        --config $OPT_CONFIG --action start_all --settings-startup-pause 3
-    [ "$?" = "0" ] && echo "Perl Started" > $PID_OSRF_PERL;  #Dummy pid file, removed when a proper shutdown happens.
+    echo "opensrf-perl.pl $PL_ARGS";
+    opensrf-perl.pl $PL_ARGS;
+
+    #Dummy pid file, removed when a proper shutdown happens.
+    [ "$?" = "0" ] && echo "Perl Started" > $PID_OSRF_PERL;  
 	return 0;
 }
 
 stop_perl() {
     echo "Stopping OpenSRF Perl";
-    opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR --config $OPT_CONFIG --action stop_all
+
+    PL_ARGS="--verbose --pid-dir $OPT_PID_DIR --config $OPT_CONFIG"
+
+    if [ -n "$OPT_SERVICE" ]; then 
+        PL_ARGS="$PL_ARGS --action stop --service $OPT_SERVICE";
+    else
+        PL_ARGS="$PL_ARGS --action stop_all";
+    fi;
+
+    echo "opensrf-perl.pl $PL_ARGS";
+    opensrf-perl.pl $PL_ARGS;
+
+    # remove the dummy PID file
     [ -e $PID_OSRF_PERL ] && rm $PID_OSRF_PERL;
 	sleep 1;
 	return 0;
 }
 
 start_c() {
+    echo "Starting OpenSRF C";
+
+    if [ -e $PID_OSRF_C ]; then # If C is started already (or it thinks so)
+    cat << EOF
+C processes are either already running, or were not correctly shut down.
+Now clearing any stale PID files and starting C processes.
+EOF
+    rm $PID_OSRF_C;
+    smart_clear;
+    fi;
+
 	host=$OSRF_HOSTNAME
 	if [ "_$host" = "_" ]; then
 		host=$(perl -MNet::Domain=hostfqdn -e 'print hostfqdn()');
 	fi;
 
-	do_action "start" $PID_OSRF_C "OpenSRF C (host=$host)";
-	opensrf-c $host $OPT_CONFIG opensrf "$PID_OSRF_C";
+    C_ARGS="-h $host -c $OPT_CONFIG -x opensrf -p $OPT_PID_DIR";
+    if [ -n "$OPT_SERVICE" ]; then
+        C_ARGS="$C_ARGS -s $OPT_SERVICE -a start";
+    else
+        C_ARGS="$C_ARGS -a start_all";
+    fi;
+
+    echo "opensrf-c $C_ARGS";
+	opensrf-c $C_ARGS;
+
+    #Dummy pid file, removed when a proper shutdown happens.
+    [ "$?" = "0" ] && echo "C Started" > $PID_OSRF_C;
 	return 0;
 }
 
 stop_c() {
-	do_action "stop" $PID_OSRF_C "OpenSRF C";
-	[ -e $PID_OSRF_C ] && rm $PID_OSRF_C;
+    echo "Stopping OpenSRF C";
+	host=$OSRF_HOSTNAME
+	if [ "_$host" = "_" ]; then
+		host=$(perl -MNet::Domain=hostfqdn -e 'print hostfqdn()');
+	fi;
+
+    C_ARGS="-h $host -c $OPT_CONFIG -x opensrf -p $OPT_PID_DIR";
+    if [ -n "$OPT_SERVICE" ]; then
+        C_ARGS="$C_ARGS -s $OPT_SERVICE -a stop";
+    else
+        C_ARGS="$C_ARGS -a stop_all";
+    fi;
+
+    echo "opensrf-c $C_ARGS";
+	opensrf-c $C_ARGS;
+
+    [ -e $PID_OSRF_C ] && rm $PID_OSRF_C;
 	sleep 1;
 	return 0;
 }
@@ -293,6 +353,11 @@ smart_clear() {
 	echo "Smart clearing PID files...";
 	for line in $(find $OPT_PID_DIR -name *.pid -type f)
 	do
+        if [ $line = $PID_OSRF_PERL -o $line = $PID_OSRF_C \
+            -o $line = $PID_OSRF_PYTHON ]; then
+            continue;
+        fi;
+
 		running="false";
 		for p in $(cat $line)
 		do

@@ -369,6 +369,7 @@ static int prefork_child_init_hook( prefork_child* child ) {
 	free( isclient );
 
 	// Remove traces of our parent's socket connection so we can have our own.
+    // TODO: not necessary if parent disconnects first
 	osrfSystemIgnoreTransportClient();
 
 	// Connect to Jabber

@@ -1,4 +1,8 @@
 #include "opensrf/osrf_system.h"
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 /**
 	@brief Run an OSRF server as defined by the command line and a config file.
@@ -14,24 +18,61 @@
 */
 int main( int argc, char* argv[] ) {
 
-	if( argc < 4 ) {
-		fprintf(stderr, "Usage: %s <host> <bootstrap_config> <config_context>\n", argv[0]);
+    char* host    = NULL;
+    char* config  = NULL;
+    char* context = NULL;
+    char* piddir  = NULL;
+    char* action  = NULL;
+    char* service = NULL;
+    opterr = 0;
+
+	/* values must be strdup'ed because init_proc_title / 
+     * set_proc_title are evil and overwrite the argv memory */
+
+    int c;
+    while ((c = getopt(argc, argv, "h:c:x:p:a:s:")) != -1) {
+        switch (c) {
+            case 'h':
+                host = strdup(optarg);
+                break;
+            case 'c':
+                config = strdup(optarg);
+                break;
+            case 'x':
+                context = strdup(optarg);
+                break;
+            case 'p':
+                piddir = strdup(optarg);
+                break;
+            case 'a':
+                action = strdup(optarg);
+                break;
+            case 's':
+                service = strdup(optarg);
+                break;
+            default:
+                continue;
+        }
+    }
+
+
+    if (!(host && config && context && piddir && action)) {
+		fprintf(stderr, "Usage: %s -h <host> -c <config> "
+            "-x <config_context> -p <piddir>\n", argv[0]);
 		return 1;
 	}
 
-	/* these must be strdup'ed because init_proc_title / set_proc_title
-		are evil and overwrite the argv memory */
-	char* host      = strdup( argv[1] );
-	char* config    = strdup( argv[2] );
-	char* context   = strdup( argv[3] );
+    // prepare the proc title hack
+    init_proc_title(argc, argv);
 
-	if( argv[4] )
-		osrfSystemSetPidFile( argv[4] );
+    // make sure the service name is valid
+    if (service && strlen(service) == 0) {
+        free(service);
+        service = NULL;
+    }
 
-	init_proc_title( argc, argv );
-	set_proc_title( "OpenSRF System-C" );
-
-	int ret = osrfSystemBootstrap( host, config, context );
+    int ret = osrf_system_service_ctrl(
+        host, config, context, piddir, action, service);
 
 	if (ret != 0) {
 		osrfLogError(
@@ -44,6 +85,9 @@ int main( int argc, char* argv[] ) {
 	free(host);
 	free(config);
 	free(context);
+    free(piddir);
+    free(action);
+    if (service) free(service);
 
 	return ret;
 }

@@ -27,6 +27,11 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 int osrfSystemBootstrap( const char* hostname, const char* configfile,
 		const char* contextNode );
 
+int osrf_system_service_ctrl(
+    const char* host,    const char* config,
+    const char* context, const char* piddir, 
+    const char* action,  const char* service);
+
 transport_client* osrfSystemGetTransportClient( void );
 
 int osrf_system_disconnect_client();
