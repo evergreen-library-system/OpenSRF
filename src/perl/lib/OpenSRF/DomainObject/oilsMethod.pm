@@ -91,7 +91,11 @@ sub params {
 	my $self = shift;
 	my @args = @_;
 	$self->{params} = \@args if (@args);
-	return @{ $self->{params} };
+	if ($self->{params}) {
+		return @{ $self->{params} };
+	} else {
+		return ();
+	}
 }
 
 1;
