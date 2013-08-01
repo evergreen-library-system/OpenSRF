@@ -265,7 +265,7 @@ sub interval_to_seconds {
                 $amount += 60 * $count if ($type =~ /^m(?!o)/oi);
                 $amount += 60 * 60 * $count if ($type =~ /^h/);
                 $amount += 60 * 60 * 24 * $count if ($type =~ /^d/oi);
-                $amount += 60 * 60 * 24 * 7 * $count if ($2 =~ /^w/oi);
+                $amount += 60 * 60 * 24 * 7 * $count if (defined $2 && $2 =~ /^w/oi);
                 $amount += ((60 * 60 * 24 * 365)/12) * $count if ($type =~ /^mo/io);
                 $amount += 60 * 60 * 24 * 365 * $count if ($type =~ /^y/oi);
         }
