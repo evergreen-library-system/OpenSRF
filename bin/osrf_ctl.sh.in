@@ -260,7 +260,6 @@ EOF
         PL_ARGS="$PL_ARGS --action start_all";
     fi;
     
-    echo "opensrf-perl.pl $PL_ARGS";
     opensrf-perl.pl $PL_ARGS;
 
     #Dummy pid file, removed when a proper shutdown happens.
@@ -279,7 +278,6 @@ stop_perl() {
         PL_ARGS="$PL_ARGS --action stop_all";
     fi;
 
-    echo "opensrf-perl.pl $PL_ARGS";
     opensrf-perl.pl $PL_ARGS;
 
     # remove the dummy PID file
@@ -312,7 +310,6 @@ EOF
         C_ARGS="$C_ARGS -a start_all";
     fi;
 
-    echo "opensrf-c $C_ARGS";
 	opensrf-c $C_ARGS;
 
     #Dummy pid file, removed when a proper shutdown happens.
@@ -334,7 +331,6 @@ stop_c() {
         C_ARGS="$C_ARGS -a stop_all";
     fi;
 
-    echo "opensrf-c $C_ARGS";
 	opensrf-c $C_ARGS;
 
     [ -e $PID_OSRF_C ] && rm $PID_OSRF_C;
