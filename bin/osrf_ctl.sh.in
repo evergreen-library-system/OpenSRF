@@ -34,49 +34,25 @@ usage() {
 	cat << EOF
 
 usage: $0 [OPTION]... -c <c_config> -a <action>
-usage: $0 -a signal -k <signal> -s <service>
 
 Mandatory parameters:
   -a    action to perform
 
-Optional parameters:
+Optional parameters:";
   -c    full path to C configuration file (opensrf_core.xml)
   -d    store PID files in this directory
   -l    accept 'localhost' as the fully-qualified domain name
-  -k    signal to send to process. Argument is passed directly to 'kill'.
-  -s    service name.  Used in conjunction with -k.
-
 
 Actions include:
-    start_router
-    stop_router
-    restart_router
-    start_perl
-    stop_perl
-    restart_perl
-    start_python
-    stop_python
-    restart_python
-    start_c
-    stop_c
-    restart_c
-    start_osrf
-    stop_osrf
-    restart_osrf
     stop_all
     start_all
     restart_all
     smart_clear     - Clear all PID files that don't refer to a process 
     clear_pid       - Clear all PID files
-    signal          - send signal specified by -k to service specified by -s
-    signal_all      - send signal specified by -k to all services
-
 
 Examples:
   $0 -a restart_all
   $0 -l -c opensrf_core.xml -a restart_all
-  $0 -a signal -k opensrf.settings -s USR1
-  $0 -a signal_all -s HUP
 
 EOF
 }
@@ -107,330 +83,25 @@ fi;
 [ -z "$OPT_PID_DIR" ] && OPT_PID_DIR=`$OSRF_CONFIG --localstatedir`/run/opensrf;
 [ -z "$OPT_ACTION" ] && usage;
 
-PID_ROUTER="$OPT_PID_DIR/router.pid";
-PID_OSRF_PERL="$OPT_PID_DIR/osrf_perl.pid";
-PID_OSRF_PYTHON="$OPT_PID_DIR/osrf_python.pid";
-PID_OSRF_C="$OPT_PID_DIR/osrf_c.pid";
 
-# apply some sanity checks to the signal handling arguments
-if [ ${OPT_ACTION%_all} = "signal" ]; then
-    warning="";
-
-    [ -z "$OPT_SIGNAL" ] && \
-        warning="-a $OPT_ACTION requires a signal specified by -k";
-
-    [ $OPT_ACTION = "signal" -a -z "$OPT_SERVICE" ] && \
-        warning="$warning\n-a $OPT_ACTION requires a service specified by -s";
-
-    [ $OPT_ACTION = "signal_all" -a -n "$OPT_SERVICE" ] && \
-        warning="$warning\n-s $OPT_SERVICE cannot be used together with $OPT_ACTION";
-
-    if [ -n "$warning" ]; then
-        usage;
-        echo "------------"
-        echo -e $warning;
-        exit;
-    fi;
-
-    [ $OPT_ACTION = "signal_all" ] && OPT_SERVICE="*";
-fi;
-
-# ---------------------------------------------------------------------------
-# Utility code for checking the PID files
-# ---------------------------------------------------------------------------
-do_action() {
-
-	action="$1"; 
-	pidfile="$2";
-	item="$3"; 
-
-	if [ $action = "start" ]; then
-
-		if [ -e $pidfile ]; then
-			pid=$(cat $pidfile);
-			reported=$(ps ax | grep "$item" | grep -v grep | awk '{print $1}' | awk '{ printf "%s ", $0 }')
-			
-			if [ "$pid " = "$reported" ]; then
-				echo "$item already started : $pid";
-				return 0;
-			else
-				echo "$item not started, but PID file exists, removing file and starting";
-				rm $pidfile;
-				return 0;
-			fi;
-		fi;
-		echo "Starting $item";
-	fi;
-
-	if [ $action = "stop" ]; then
-
-		if [ ! -e $pidfile ]; then
-			echo "$item not running";
-			return 0;
-		fi;
-
-        while read pid; do
-            if [ -n "$pid" ]; then
-                echo "Stopping $item process $pid..."
-                kill -s INT $pid
-            fi;
-        done < $pidfile;
-		rm -f $pidfile;
-
-	fi;
-
-	return 0;
+start_all() {
+    opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR \
+        --config $OPT_CONFIG --start-all --settings-startup-pause 3
 }
 
-
-# ---------------------------------------------------------------------------
-# Start / Stop functions
-# ---------------------------------------------------------------------------
-
-
-start_router() {
-	do_action "start" $PID_ROUTER "OpenSRF Router";
-	opensrf_router $OPT_CONFIG routers
-    sleep 2; # give the router procs time to fork and appear in ps
-	pid=$(ps ax | grep "OpenSRF Router" | grep -v grep | awk '{print $1}')
-	echo $pid > $PID_ROUTER;
-	return 0;
-}
-
-stop_router() {
-	do_action "stop" $PID_ROUTER "OpenSRF Router";
-	return 0;
-}
-
-# The clean way to do this would be to invoke the "start_all" action
-# on opensrf.py, but that seems to randomly fail for services. So we
-# start each one separately from a bash script instead.
-start_python() {
-    [ ! $($OSRF_CONFIG | grep OSRF_PYTHON) ] && return;
-    echo "Starting OpenSRF Python";
-    
-    if [ -e $PID_OSRF_PYTHON ]; then  #If python is started already (or it thinks so).
-    cat << EOF
-Python processes are either already running, or were not correctly shut down.
-Now clearing any stale PID files and restarting Perl processes.
-EOF
-    rm $PID_OSRF_PYTHON;
-    smart_clear;
-    fi;
-
-    OPT_LOCAL=""
-    [ "$OSRF_HOSTNAME" = "localhost" ] && OPT_LOCAL="-l"
-    for service in `opensrf.py -a list_all $OPT_LOCAL`; do
-            opensrf.py -p $OPT_PID_DIR -f $OPT_CONFIG -d -a start -s $service $OPT_LOCAL
-            [ "$?" = "0" ] && echo "Python Started" > $PID_OSRF_PYTHON;  #Dummy pid file, removed when a proper shutdown happens.
-    done
-    return 0;
-}
-
-stop_python() {
-    [ ! $($OSRF_CONFIG | grep OSRF_PYTHON) ] && return;
-    echo "Stopping OpenSRF Python";
-    [ -e $PID_OSRF_PYTHON ] && rm $PID_OSRF_PYTHON;
-    OPT_LOCAL=""
-    [ "$OSRF_HOSTNAME" = "localhost" ] && OPT_LOCAL="-l"
-    set +e # Ignore errors for NXDOMAIN
-    opensrf.py -p $OPT_PID_DIR -f $OPT_CONFIG -a stop_all $OPT_LOCAL
-    set -e # Errors matter again
-    sleep 1;
-    return 0;
-}
-
-start_perl() {
-    echo "Starting OpenSRF Perl";
-    
-    if [ -e $PID_OSRF_PERL ]; then  #If perl is started already (or it thinks so)
-    cat << EOF
-Perl processes are either already running, or were not correctly shut down.
-Now clearing any stale PID files and restarting Perl processes.
-EOF
-    rm $PID_OSRF_PERL;
-    smart_clear;
-    fi;
-
-    PL_ARGS="--verbose --pid-dir $OPT_PID_DIR --config $OPT_CONFIG --settings-startup-pause 3";
-
-    if [ -n "$OPT_SERVICE" ]; then 
-        PL_ARGS="$PL_ARGS --action start --service $OPT_SERVICE";
-    else
-        PL_ARGS="$PL_ARGS --action start_all";
-    fi;
-    
-    opensrf-perl.pl $PL_ARGS;
-
-    #Dummy pid file, removed when a proper shutdown happens.
-    [ "$?" = "0" ] && echo "Perl Started" > $PID_OSRF_PERL;  
-	return 0;
-}
-
-stop_perl() {
-    echo "Stopping OpenSRF Perl";
-
-    PL_ARGS="--verbose --pid-dir $OPT_PID_DIR --config $OPT_CONFIG"
-
-    if [ -n "$OPT_SERVICE" ]; then 
-        PL_ARGS="$PL_ARGS --action stop --service $OPT_SERVICE";
-    else
-        PL_ARGS="$PL_ARGS --action stop_all";
-    fi;
-
-    opensrf-perl.pl $PL_ARGS;
-
-    # remove the dummy PID file
-    [ -e $PID_OSRF_PERL ] && rm $PID_OSRF_PERL;
-	sleep 1;
-	return 0;
-}
-
-start_c() {
-    echo "Starting OpenSRF C";
-
-    if [ -e $PID_OSRF_C ]; then # If C is started already (or it thinks so)
-    cat << EOF
-C processes are either already running, or were not correctly shut down.
-Now clearing any stale PID files and starting C processes.
-EOF
-    rm $PID_OSRF_C;
-    smart_clear;
-    fi;
-
-	host=$OSRF_HOSTNAME
-	if [ "_$host" = "_" ]; then
-		host=$(perl -MNet::Domain=hostfqdn -e 'print hostfqdn()');
-	fi;
-
-    C_ARGS="-h $host -c $OPT_CONFIG -x opensrf -p $OPT_PID_DIR";
-    if [ -n "$OPT_SERVICE" ]; then
-        C_ARGS="$C_ARGS -s $OPT_SERVICE -a start";
-    else
-        C_ARGS="$C_ARGS -a start_all";
-    fi;
-
-	opensrf-c $C_ARGS;
-
-    #Dummy pid file, removed when a proper shutdown happens.
-    [ "$?" = "0" ] && echo "C Started" > $PID_OSRF_C;
-	return 0;
-}
-
-stop_c() {
-    echo "Stopping OpenSRF C";
-	host=$OSRF_HOSTNAME
-	if [ "_$host" = "_" ]; then
-		host=$(perl -MNet::Domain=hostfqdn -e 'print hostfqdn()');
-	fi;
-
-    C_ARGS="-h $host -c $OPT_CONFIG -x opensrf -p $OPT_PID_DIR";
-    if [ -n "$OPT_SERVICE" ]; then
-        C_ARGS="$C_ARGS -s $OPT_SERVICE -a stop";
-    else
-        C_ARGS="$C_ARGS -a stop_all";
-    fi;
-
-	opensrf-c $C_ARGS;
-
-    [ -e $PID_OSRF_C ] && rm $PID_OSRF_C;
-	sleep 1;
-	return 0;
-}
-
-clear_pid() {
-	echo "Clearing PID files...";
-	cd $OPT_PID_DIR;
-	[ 0 -lt ls | wc -l ] && rm -v *.pid;
-	return 0;
-}
-
-smart_clear() {
-	echo "Smart clearing PID files...";
-	for line in $(find $OPT_PID_DIR -name *.pid -type f)
-	do
-        if [ $line = $PID_OSRF_PERL -o $line = $PID_OSRF_C \
-            -o $line = $PID_OSRF_PYTHON ]; then
-            continue;
-        fi;
-
-		running="false";
-		for p in $(cat $line)
-		do
-			[ 0 -lt $(ps ax | grep "$p" | grep -v grep | wc -l) ] && running="true";
-		done
-		
-		if [ $running = "false" ]; then
-			rm $line;
-			echo "Removing stale PID file: $line";
-		fi;
-	done
-	
-	return 0;
-}
-
-# send signal $OPT_SIGNAL to the Listener for service $OPT_SERVICE
-# if $OPT_SERVICE = "*", signal all OpenSRF Listener services
-send_signal() {
-    sig=$OPT_SIGNAL;
-    service=$OPT_SERVICE;
-
-    # openrsf C services do not write per-process PID files,
-    # so the simplest approach is to locate all listeners via ps/grep
-
-    found=0;
-    for svc in $(ps ax | grep "OpenSRF Listener" | grep -v grep | \
-        perl -e 'while(<>){s/.*\[(.*)\].*/$1/; print}' | sort | uniq); do
-
-        if [ "$service" = "*" -o "$service" = "$svc" ]; then
-
-            # grab the listener PIDs
-            for pid in $(ps ax | grep "OpenSRF Listener \[$svc\]" | \
-                    grep -v grep | cut -d' ' -f1); do
-                found=1;
-                echo "Sending signal '$sig' to $pid : $svc";
-                kill -s $sig $pid;
-            done;
-        fi;
-    done;
-
-    if [ $found -eq 0 ]; then
-        if [ "$service" = "*" ]; then
-            echo "I have no services to signal!"
-        else
-            echo "No PID found for $service!"
-        fi;
-    fi;
+stop_all() {
+    opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR --config $OPT_CONFIG --stop-all
 }
 
 # ---------------------------------------------------------------------------
 # Do the requested action
 # ---------------------------------------------------------------------------
+echo "$0 is deprecated.  Use opensrf-perl.pl instead"
 case $OPT_ACTION in
-	"start_router") start_router;;
-	"stop_router") stop_router;;
-	"restart_router") stop_router; start_router;;
-	"start_perl") start_perl;;
-	"stop_perl") stop_perl;;
-	"restart_perl") stop_perl; start_perl;;
-	"start_python") start_python;;
-	"stop_python") stop_python;;
-	"restart_python") stop_python; start_python;;
-	"start_c") start_c;;
-	"stop_c") stop_c;;
-	"restart_c") stop_c; start_c;;
-	"start_osrf") start_perl; start_c; start_python;;
-	"stop_osrf") stop_python; stop_c; stop_perl;;
-	"restart_osrf") stop_python; stop_c; stop_perl; start_perl; start_c; start_python;;
-	"stop_all") stop_python; stop_c; stop_perl; stop_router;;
-	"start_all") start_router; start_perl; start_c; start_python;;
-	"restart_all") stop_python; stop_c; stop_perl; stop_router; start_router; start_perl; start_c; start_python;;
-	"clear_pid") clear_pid;;
-	"smart_clear") smart_clear;;
-	"signal") send_signal;;
-	"signal_all") send_signal;;
+	"stop_all") stop_all;;
+	"start_all") start_all;;
+	"restart_all") stop_all; start_all;;
 	*) usage;;
 esac;
-
 
 
