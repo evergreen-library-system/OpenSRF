@@ -480,7 +480,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
                     buffer_chomp(buf); // chomp off the closing array bracket
                     char* body = osrfListGetIndex(trans->messages, i);
                     char newbuf[strlen(body)];
-                    sprintf(newbuf, body+1); // chomp off the opening array bracket
+                    sprintf(newbuf, "%s", body+1); // chomp off the opening array bracket
                     OSRF_BUFFER_ADD_CHAR(buf, ',');
                     OSRF_BUFFER_ADD(buf, newbuf);
                 }
