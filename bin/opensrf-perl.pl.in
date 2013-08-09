@@ -49,6 +49,7 @@ my $opt_restart = 0;
 my $opt_start_all = 0;
 my $opt_stop_all = 0;
 my $opt_restart_all = 0;
+my $opt_force_clean_process = 0;
 my $verbose = 0;
 my $sclient;
 my @perl_services;
@@ -71,6 +72,7 @@ GetOptions(
     'fast-shutdown-all' => \$opt_shutdown_fast_all,
     'immediate-shutdown-all' => \$opt_shutdown_immediate_all,
     'kill-with-fire' => \$opt_kill_with_fire,
+    'force-clean-process' => \$opt_force_clean_process,
     'signal-timeout' => \$opt_signal_timeout,
     'signal=s' => \$opt_signal,
     'signal-all' => \$opt_signal_all,
@@ -88,26 +90,18 @@ if ($opt_localhost) {
 }
 
 my $C_COMMAND = "opensrf-c -c $opt_config -x opensrf -p $opt_pid_dir -h $hostname";
-my $PY_COMMAND = ""; #TODO
+my $PY_COMMAND = "opensrf.py -f $opt_config -p $opt_pid_dir ". ($opt_localhost ? '-l' : '');
 
 sub do_signal_send {
     my $service = shift;
     my $signal = shift;
 
-    my @pids = get_service_pids($service);
+    my @pids = get_service_pids_from_file($service);
 
     if (!@pids) {
         # no PID files exist.  see if the service is running anyway
 
-        my $ps = ($service eq 'router') ?
-            "ps ax | grep 'OpenSRF Router'" :
-            "ps ax | grep 'OpenSRF Listener \\[$service\\]'";
-
-        $ps .= " | grep -v grep |  sed 's/^\\s*//' | cut -d' ' -f1";
-
-        @pids = `$ps`;
-        s/^\s*|\n//g for @pids;
-
+        @pids = get_service_pids_from_ps($service);
         if (!@pids) {
             msg("cannont signal $service : no pid file or running procesesses");
             return 0;
@@ -133,7 +127,7 @@ sub do_signal_send {
 # status of any failures, but not the successes.
 sub do_signal_wait {
     my $service = shift;
-    my @pids = get_service_pids($service);
+    my @pids = get_service_pids_from_file($service);
 
     my $stat = 1;
     for my $pid (@pids) {
@@ -167,7 +161,7 @@ sub get_pid_file {
 }
 
 # services usually only have 1 pid, but the router will have at least 2
-sub get_service_pids {
+sub get_service_pids_from_file {
     my $service = shift;
     my $pid_file = get_pid_file($service);
     return () unless -e $pid_file;
@@ -176,19 +170,30 @@ sub get_service_pids {
     return @pids;
 }
 
-sub do_start_router {
-    my $pidfile = get_pid_file('router');
-    if (-e $pidfile) {
-        msg("router already running", 1);
-        return;
-    }
+sub get_service_pids_from_ps {
+    my $service = shift;
 
+    my $ps = ($service eq 'router') ?
+        "ps ax | grep 'OpenSRF Router'" :
+        "ps ax | grep 'OpenSRF Listener \\[$service\\]'";
+
+    $ps .= " | grep -v grep |  sed 's/^\\s*//' | cut -d' ' -f1";
+    my @pids = `$ps`;
+    s/^\s*|\n//g for @pids;
+
+    return @pids;
+}
+
+
+
+sub do_start_router {
     `opensrf_router $opt_config routers`;
 
     sleep 2; # give the router time to fork
     my @pids = `ps -C opensrf_router -o pid=`;
     s/^\s*|\n//g for @pids;
 
+    my $pidfile = get_pid_file('router');
     open(PF, '>', $pidfile) or die "Cannot open $pidfile: $!\n";
     foreach (@pids) {
         chomp;
@@ -243,12 +248,36 @@ sub do_init {
 # start a specific service
 sub do_start {
     my $service = shift;
-    return do_start_router() if $service eq 'router';
 
-    if(-e get_pid_file($service)) {
-        msg("$service is already running");
-        return;
+    my @pf_pids = get_service_pids_from_file($service);
+    my @ps_pids = get_service_pids_from_ps($service); 
+
+    if (@pf_pids) { # had pidfile
+
+        if (@ps_pids) {
+            msg("service $service already running : @ps_pids");
+            return;
+
+        } else { # stale pidfile
+
+            my $pidfile = get_pid_file($service);
+            msg("removing stale pid file $pidfile");
+            unlink $pidfile;
+        }
+
+    } elsif (@ps_pids) { # orphan process
+
+        if ($opt_force_clean_process) {
+            msg("service $service pid=@ps_pids is running with no pidfile");
+            do_signal($service, 'KILL');
+        } else {
+            msg("service $service pid=@ps_pids is running with no pidfile! ".
+                "use --force-clean-process to automatically kill orphan processes");
+            return;
+        }
     }
+
+    return do_start_router() if $service eq 'router';
 
     load_settings() if $service eq 'opensrf.settings';
 
@@ -262,7 +291,10 @@ sub do_start {
         my ($svc) = grep { $_->{service} eq $service } @nonperl_services;
         if ($svc) {
             if ($svc->{lang} =~ /c/i) {
-                `$C_COMMAND -a start -s $service`;
+                system("$C_COMMAND -a start -s $service");
+                return;
+            } elsif ($svc->{lang} =~ /python/i) {
+                system("$PY_COMMAND -a start -s $service");
                 return;
             }
         }
@@ -274,8 +306,7 @@ sub do_start {
 
 sub do_start_all {
     msg("starting all services for $hostname", 1);
-    clear_stale_pids();
-    do_start_router();
+    do_start('router');
 
     if(grep {$_ eq 'opensrf.settings'} @perl_services) {
         do_start('opensrf.settings');
@@ -289,10 +320,12 @@ sub do_start_all {
         do_start($service) unless $service eq 'opensrf.settings';
     }
 
-    # TODO: check for already-running services...
-    # opensrf-c has its own start_all command.
-    # allow the opensrf-c output to go directly to the terminal
-    system("$C_COMMAND -a start_all");
+    # start each non-perl service individually instead of using the native
+    # start-all command.  this allows us to test for existing pid files 
+    # and/or running processes on each service before starting.
+    # it also means each service has to connect-fetch_setting-disconnect
+    # from jabber, which makes startup slightly slower than native start-all
+    do_start($_->{service}) for @nonperl_services;
 
     return 1;
 }
@@ -307,7 +340,7 @@ sub do_signal {
 # returns the list of running services based on presence of PID files.
 # the 'router' service is not included by deault, since it's 
 # usually treated special.
-sub get_service_list_from_pids {
+sub get_service_list_from_files {
     my $include_router = shift;
     my @services = `ls $opt_pid_dir/*.pid 2> /dev/null`;
     s/^\s*|\n//g for @services;
@@ -318,7 +351,7 @@ sub get_service_list_from_pids {
 
 sub do_signal_all {
     my ($signal, @services) = @_;                                              
-    @services = get_service_list_from_pids() unless @services;     
+    @services = get_service_list_from_files() unless @services;     
 
     do_signal_send($_, $signal) for @services;
 
@@ -356,10 +389,12 @@ sub get_running_pids {
 
     # start with the listeners, then drones, then routers
     my @greps = (
-        "ps ax | grep 'OpenSRF Listener' | grep -v grep |  sed 's/^\\s*//' | cut -d' ' -f1",
-        "ps ax | grep 'OpenSRF Drone' | grep -v grep |  sed 's/^\\s*//' | cut -d' ' -f1",
-        "ps ax | grep 'OpenSRF Router' | grep -v grep |  sed 's/^\\s*//' | cut -d' ' -f1"
+        "ps ax | grep 'OpenSRF Listener' ",
+        "ps ax | grep 'OpenSRF Drone' ",
+        "ps ax | grep 'OpenSRF Router' "
     );
+
+    $_ .= "| grep -v grep |  sed 's/^\\s*//' | cut -d' ' -f1" for @greps;
 
     for my $grep (@greps) {
         my @spids = `$grep`;
@@ -371,11 +406,11 @@ sub get_running_pids {
 }
 
 sub clear_stale_pids {
-    my @pidfile_services = get_service_list_from_pids(1);
+    my @pidfile_services = get_service_list_from_files(1);
     my @running_pids = get_running_pids();
     
     for my $svc (@pidfile_services) {
-        my @pids = get_service_pids($svc);
+        my @pids = get_service_pids_from_file($svc);
         for my $pid (@pids) {
             next if grep { $_ eq $pid } @running_pids;
             my $pidfile = get_pid_file($svc);
@@ -390,7 +425,7 @@ sub do_stop_all {
 
     msg("stopping all services for $hostname", 1);
 
-    my @services = get_service_list_from_pids();
+    my @services = get_service_list_from_files();
     @signals = qw/TERM INT KILL/ unless @signals;
     
     for my $signal (@signals) {
@@ -499,6 +534,11 @@ sub do_help {
 
     --restart
         Restart the service specified by --service
+
+    --force-clean-process
+        When starting a service, if a service process is already running 
+        but no pidfile exists, kill the service process before starting
+        the new one.
 
     ==== stopping services =====
 

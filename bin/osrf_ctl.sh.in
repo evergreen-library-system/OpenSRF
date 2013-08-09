@@ -20,8 +20,6 @@ exec_prefix=@exec_prefix@
 OPT_ACTION=""
 OPT_CONFIG=""
 OPT_PID_DIR=""
-OPT_SIGNAL=""
-OPT_SERVICE=""
 OSRF_HOSTNAME=""
 
 # ---------------------------------------------------------------------------
@@ -47,8 +45,6 @@ Actions include:
     stop_all
     start_all
     restart_all
-    smart_clear     - Clear all PID files that don't refer to a process 
-    clear_pid       - Clear all PID files
 
 Examples:
   $0 -a restart_all
@@ -65,8 +61,6 @@ while getopts  "a:d:c:s:k:lh" flag; do
 		"a")		OPT_ACTION="$OPTARG";;
 		"c")		OPT_CONFIG="$OPTARG";;
 		"d")		OPT_PID_DIR="$OPTARG";;
-		"s")		OPT_SERVICE="$OPTARG";;
-		"k")		OPT_SIGNAL="$OPTARG";;
 		"l")		export OSRF_HOSTNAME="localhost";;
 		"h"|*)	usage;;
 	esac;
@@ -90,13 +84,15 @@ start_all() {
 }
 
 stop_all() {
-    opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR --config $OPT_CONFIG --stop-all
+    opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR \
+        --config $OPT_CONFIG --stop-all
 }
 
 # ---------------------------------------------------------------------------
 # Do the requested action
 # ---------------------------------------------------------------------------
 echo "$0 is deprecated.  Use opensrf-perl.pl instead"
+
 case $OPT_ACTION in
 	"stop_all") stop_all;;
 	"start_all") start_all;;
