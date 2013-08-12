@@ -489,7 +489,7 @@ sub msg {
 sub do_help {
     print <<HELP;
 
-    Usage: perl $0 --pid-dir @TMP@ --config @CONF_DIR@/opensrf_core.xml --service opensrf.settings --start
+    Usage: $0 --localhost --start-all
 
     --config <file> [default: @CONF_DIR@/opensrf_core.xml]
         OpenSRF configuration file 
