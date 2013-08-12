@@ -50,7 +50,7 @@ my $opt_start_all = 0;
 my $opt_stop_all = 0;
 my $opt_restart_all = 0;
 my $opt_force_clean_process = 0;
-my $verbose = 0;
+my $opt_quiet = 0;
 my $sclient;
 my @perl_services;
 my @nonperl_services;
@@ -64,7 +64,7 @@ GetOptions(
     'settings-startup-pause=i' => \$opt_settings_pause,
     'localhost' => \$opt_localhost,
     'help' => \$opt_help,
-    'verbose' => \$verbose,
+    'quiet' => \$opt_quiet,
     'graceful-shutdown' => \$opt_shutdown_graceful,
     'fast-shutdown' => \$opt_shutdown_fast,
     'immediate-shutdown' => \$opt_shutdown_immediate,
@@ -103,7 +103,7 @@ sub do_signal_send {
 
         @pids = get_service_pids_from_ps($service);
         if (!@pids) {
-            msg("cannont signal $service : no pid file or running procesesses");
+            msg("cannot signal $service : no pid file or running process");
             return 0;
         }
     }
@@ -116,7 +116,7 @@ sub do_signal_send {
             next;
         }
 
-        msg("sending $signal signal to pid=$pid $service", 1);
+        msg("sending $signal signal to pid=$pid $service");
     }
 
     return 1;
@@ -197,7 +197,7 @@ sub do_start_router {
     open(PF, '>', $pidfile) or die "Cannot open $pidfile: $!\n";
     foreach (@pids) {
         chomp;
-        msg("starting service pid=$_ router", 1);
+        msg("starting service pid=$_ router");
         print PF "$_\n";
     }
     close PF;
@@ -305,7 +305,7 @@ sub do_start {
 }
 
 sub do_start_all {
-    msg("starting all services for $hostname", 1);
+    msg("starting all services for $hostname");
     do_start('router');
 
     if(grep {$_ eq 'opensrf.settings'} @perl_services) {
@@ -364,14 +364,14 @@ sub do_signal_all {
 # pull all opensrf listener and drone PIDs from 'ps', 
 # kill them all, and remove all pid files
 sub do_kill_with_fire {
-    msg("killing with fire", 1);
+    msg("killing with fire");
 
     my @pids = get_running_pids();
     for (@pids) {
         next unless $_ =~ /\d+/;
         my $proc = `ps -p $_ -o cmd=`;
         chomp $proc;
-        msg("killing with fire pid=$_ $proc", 1);
+        msg("killing with fire pid=$_ $proc");
         kill('KILL', $_);
     }
 
@@ -423,7 +423,7 @@ sub clear_stale_pids {
 sub do_stop_all {
     my @signals = @_;
 
-    msg("stopping all services for $hostname", 1);
+    msg("stopping all services for $hostname");
 
     my @services = get_service_list_from_files();
     @signals = qw/TERM INT KILL/ unless @signals;
@@ -443,9 +443,9 @@ sub do_stop_all {
         last unless @services;
     }
 
-    # finally stop the routers
-    # graceful shutdown requires the presence of the router
-    do_stop('router', $signals[0]);
+    # graceful shutdown requires the presence of the router, so stop the 
+    # router last.  See if it's running first to avoid unnecessary warnings.
+    do_stop('router', $signals[0]) if get_service_pids_from_file('router'); 
 
     return 1;
 }
@@ -457,7 +457,7 @@ sub do_daemon {
     my $pid_file = get_pid_file($service);
     #exit if OpenSRF::Utils::safe_fork();
     return 0 if OpenSRF::Utils::safe_fork();
-    msg("starting service pid=$$ $service", 1);
+    msg("starting service pid=$$ $service");
     chdir('/');
     setsid();
     close STDIN;
@@ -483,8 +483,7 @@ sub load_settings {
 
 sub msg {
     my $m = shift;
-    my $v = shift;
-    print "* $m\n" unless $v and not $verbose;
+    print "* $m\n" unless $opt_quiet;
 }
 
 sub do_help {
@@ -511,8 +510,8 @@ sub do_help {
     --service <service>
         Specifies which OpenSRF service to control
 
-    --verbose
-        Print extra info/debug messages to STDOUT 
+    --quiet
+        Do not print informational messages to STDOUT 
 
     --no-daemon
         Do not detach and run as a daemon process.  Useful for debugging.  
@@ -592,9 +591,6 @@ HELP
 exit;
 }
 
-
-do_help() if $opt_help; # TODO
-
 # starting services
 do_init() and do_start($opt_service) if $opt_start;
 do_init() and do_stop($opt_service) and do_start($opt_service) if $opt_restart;
@@ -610,9 +606,27 @@ do_stop($opt_service, 'KILL') if $opt_shutdown_immediate;
 do_stop_all('TERM') if $opt_shutdown_graceful_all;
 do_stop_all('INT') if $opt_shutdown_fast_all;
 do_stop_all('KILL') if $opt_shutdown_immediate_all;
-
 do_kill_with_fire() if $opt_kill_with_fire;
 
+# signaling
 do_signal($opt_service, $opt_signal) if $opt_signal;
 do_signal_all($opt_signal) if $opt_signal_all;
 
+# show help if no action was requested
+do_help() if $opt_help or not (
+    $opt_start or 
+    $opt_start_all or 
+    $opt_stop or 
+    $opt_stop_all or 
+    $opt_restart or 
+    $opt_restart_all or 
+    $opt_signal or 
+    $opt_signal_all or
+    $opt_shutdown_graceful or
+    $opt_shutdown_graceful_all or
+    $opt_shutdown_fast or
+    $opt_shutdown_fast_all or
+    $opt_shutdown_immediate or
+    $opt_shutdown_immediate_all or
+    $opt_kill_with_fire
+)
