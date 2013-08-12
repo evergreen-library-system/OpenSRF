@@ -69,6 +69,9 @@ install-exec-hook:
 		done; \
 	fi
 	cp -r @srcdir@/javascript/* $(DESTDIR)$(jsdir)/
+	if [ ! -e @bindir@/osrf_control ]; then \ 
+		ln -s @bindir@/opensrf-perl.pl @bindir@/osrf_control; \
+	fi
 
 uninstall-hook:
 	rm -f @includedir@/opensrf/apachetools.h
