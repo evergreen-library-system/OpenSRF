@@ -455,9 +455,11 @@ sub do_daemon {
     return 1 if $opt_no_daemon;
     my $service = shift;
     my $pid_file = get_pid_file($service);
-    #exit if OpenSRF::Utils::safe_fork();
-    return 0 if OpenSRF::Utils::safe_fork();
-    msg("starting service pid=$$ $service");
+    my $pid = OpenSRF::Utils::safe_fork();
+    if ($pid) { # parent
+        msg("starting service pid=$pid $service");
+        return 0;
+    }
     chdir('/');
     setsid();
     close STDIN;

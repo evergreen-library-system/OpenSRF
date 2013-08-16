@@ -79,7 +79,7 @@ fi;
 
 
 start_all() {
-    opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR \
+    opensrf-perl.pl --pid-dir $OPT_PID_DIR \
         --config $OPT_CONFIG --start-all --settings-startup-pause 3
 }
 
