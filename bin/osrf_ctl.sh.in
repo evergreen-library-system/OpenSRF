@@ -91,7 +91,7 @@ stop_all() {
 # ---------------------------------------------------------------------------
 # Do the requested action
 # ---------------------------------------------------------------------------
-echo "$0 is deprecated.  Use opensrf-perl.pl instead"
+echo "$0 is deprecated.  Use osrf_control instead"
 
 case $OPT_ACTION in
 	"stop_all") stop_all;;
