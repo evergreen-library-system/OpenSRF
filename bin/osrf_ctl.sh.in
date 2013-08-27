@@ -84,8 +84,7 @@ start_all() {
 }
 
 stop_all() {
-    opensrf-perl.pl --verbose --pid-dir $OPT_PID_DIR \
-        --config $OPT_CONFIG --stop-all
+    opensrf-perl.pl --pid-dir $OPT_PID_DIR --config $OPT_CONFIG --stop-all
 }
 
 # ---------------------------------------------------------------------------
