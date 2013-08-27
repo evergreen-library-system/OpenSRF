@@ -299,7 +299,7 @@ following command as the *opensrf* Linux account:
 
 [source, bash]
 ---------------------------------------------------------------------------
-osrf_ctl.sh -l -a start_all
+osrf_control --localhost --start-all
 ---------------------------------------------------------------------------
 
 To stop all OpenSRF services with a hostname of `localhost`, issue the
@@ -307,7 +307,7 @@ following command as the *opensrf* Linux account:
 
 [source,bash]
 ---------------------------------------------------------------------------
-osrf_ctl.sh -l -a stop_all
+osrf_control --localhost --stop-all
 ---------------------------------------------------------------------------
 
 Testing the default OpenSRF services
