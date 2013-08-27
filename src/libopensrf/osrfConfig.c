@@ -26,6 +26,10 @@ void osrfConfigSetDefaultConfig(osrfConfig* cfg) {
 	}
 }
 
+osrfConfig* osrfConfigGetDefaultConfig() {
+    return osrfConfigDefault;
+}
+
 /**
 	@brief Free an osrfConfig.
 	@param cfg Pointer to the osrfConfig to be freed.
@@ -34,6 +38,7 @@ void osrfConfigFree(osrfConfig* cfg) {
 	if(cfg) {
 		jsonObjectFree(cfg->config);
 		free(cfg->configContext);
+		free(cfg->configFileName);
 		free(cfg);
 	}
 }
@@ -112,6 +117,7 @@ osrfConfig* osrfConfigInit(const char* configFile, const char* configContext) {
 	else
 		cfg->configContext = NULL;
 
+    cfg->configFileName = strdup(configFile);
 	cfg->config = json_config;
 
 	return cfg;

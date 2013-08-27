@@ -63,6 +63,7 @@ typedef struct {
 		raw memory, apart from the "next" pointer used to stitch them together.  In particular,
 		there is no child process for them, and the file descriptors are not open. */
 	struct prefork_child_struct* free_list;
+    struct prefork_child_struct* sighup_pending_list;
 	transport_client* connection;  /**< Connection to Jabber. */
 } prefork_simple;
 
@@ -111,6 +112,7 @@ static void sigusr1_handler( int sig );
 static void sigusr2_handler( int sig );
 static void sigterm_handler( int sig );
 static void sigint_handler( int sig );
+static void sighup_handler( int sig );
 
 /** Maintain a global pointer to the prefork_simple object
  *  for the current process so we can refer to it later
@@ -207,6 +209,7 @@ int osrf_prefork_run( const char* appname ) {
 	signal( SIGTERM, sigterm_handler);
 	signal( SIGINT,  sigint_handler );
 	signal( SIGQUIT, sigint_handler );
+	signal( SIGHUP,  sighup_handler );
 
 	// Sit back and let the requests roll in
 	osrfLogInfo( OSRF_LOG_MARK, "Launching osrf_forker for app %s", appname );
@@ -553,6 +556,7 @@ static int prefork_simple_init( prefork_simple* prefork, transport_client* clien
 	prefork->idle_list    = NULL;
 	prefork->free_list    = NULL;
 	prefork->connection   = client;
+	prefork->sighup_pending_list = NULL;
 
 	return 0;
 }
@@ -624,6 +628,7 @@ static prefork_child* launch_child( prefork_simple* forker ) {
 		signal( SIGINT,  SIG_DFL );
 		signal( SIGQUIT, SIG_DFL );
 		signal( SIGCHLD, SIG_DFL );
+		signal( SIGHUP,  SIG_DFL );
 
 		osrfLogInternal( OSRF_LOG_MARK,
 			"I am new child with read_data_fd = %d and write_status_fd = %d",
@@ -732,6 +737,70 @@ static void sigint_handler(int sig) {
 	_exit(0);
 }
 
+static void sighup_handler(int sig) {
+    if (!global_forker) return;
+    osrfLogInfo(OSRF_LOG_MARK, "server: received SIGHUP, reloading config");
+
+    osrfConfig* oldConfig = osrfConfigGetDefaultConfig();
+    osrfConfig* newConfig = osrfConfigInit(
+        oldConfig->configFileName, oldConfig->configContext);
+
+    if (!newConfig) {
+        osrfLogError(OSRF_LOG_MARK, "Config reload failed");
+        return;
+    }
+
+    // frees oldConfig
+    osrfConfigSetDefaultConfig(newConfig); 
+    
+    // apply the log level from the reloaded file
+    char* log_level = osrfConfigGetValue(NULL, "/loglevel");
+    if(log_level) {
+        int level = atoi(log_level);
+        osrfLogSetLevel(level);
+    }
+
+    // Copy the list of active children into the sighup_pending list.
+    // Cloning is necessary, since the nodes in the active list, particularly
+    // their next/prev pointers, will start changing once we exit this func.
+    // sighup_pending_list is a non-circular, singly linked list.
+    prefork_child* cur_child = global_forker->first_child;
+    prefork_child* clone;
+
+    // the first_pid lets us know when we've made a full circle of the active 
+    // children
+    pid_t first_pid = 0;
+    while (cur_child && cur_child->pid != first_pid) {
+
+        if (!first_pid) first_pid = cur_child->pid;
+
+        // all we need to keep track of is the pid
+        clone = safe_malloc(sizeof(prefork_child));
+        clone->pid = cur_child->pid;
+        clone->next = NULL;
+
+        osrfLogDebug(OSRF_LOG_MARK, 
+            "Adding child %d to sighup pending list", clone->pid);
+
+        // add the clone to the front of the list
+        if (global_forker->sighup_pending_list) 
+            clone->next = global_forker->sighup_pending_list;
+        global_forker->sighup_pending_list = clone;
+
+        cur_child = cur_child->next;
+    }
+
+    // Kill all idle children.
+    // Let them get cleaned up through the normal response-handling cycle
+    cur_child = global_forker->idle_list;
+    while (cur_child) {
+        osrfLogDebug(OSRF_LOG_MARK, "Killing child in SIGHUP %d", cur_child->pid);
+        kill(cur_child->pid, SIGKILL);
+        cur_child = cur_child->next;
+    }
+}
+    
+
 /**
 	@brief Replenish the collection of child processes, after one has terminated.
 	@param forker Pointer to the prefork_simple that manages the child processes.
@@ -742,7 +811,7 @@ static void sigint_handler(int sig) {
 	Wait on the dead children so that they won't be zombies.  Spawn new ones as needed
 	to maintain at least a minimum number.
 */
-void reap_children( prefork_simple* forker ) {
+static void reap_children( prefork_simple* forker ) {
 
 	pid_t child_pid;
 
@@ -792,8 +861,13 @@ static void prefork_run( prefork_simple* forker ) {
 		osrfLogDebug( OSRF_LOG_MARK, "Forker going into wait for data..." );
 		cur_msg = client_recv( forker->connection, -1 );
 
-		if( cur_msg == NULL )
-			continue;           // Error?  Interrupted by a signal?  Try again...
+		if( cur_msg == NULL ) {
+			// most likely a signal was received.  clean up any recently
+			// deceased children and try again.
+			if(child_dead)
+				reap_children(forker);
+			continue;
+        }
 
 		message_prepare_xml( cur_msg );
 		const char* msg_data = cur_msg->msg_xml;
@@ -1009,23 +1083,64 @@ static int check_children( prefork_simple* forker, int forever ) {
 				osrfLogDebug( OSRF_LOG_MARK,  "Read %d bytes from status buffer: %s", n, buf );
 			}
 
-			// Remove the child from the active list
-			if( forker->first_child == cur_child ) {
-				if( cur_child->next == cur_child )
-					forker->first_child = NULL;   // only child in the active list
-				else
-					forker->first_child = cur_child->next;
-			}
-			cur_child->next->prev = cur_child->prev;
-			cur_child->prev->next = cur_child->next;
 
-			// Add it to the idle list
-			cur_child->prev = NULL;
-			cur_child->next = forker->idle_list;
-			forker->idle_list = cur_child;
-		}
-		cur_child = next_child;
-	} while( forker->first_child && forker->first_child != next_child );
+            // if this child is in the sighup_pending list, kill the child,
+            // but leave it in the active list so that it won't be picked
+            // for new work.  When reap_children() next runs, it will be 
+            // properly cleaned up.
+            prefork_child* hup_child = forker->sighup_pending_list;
+            prefork_child* prev_hup_child = NULL;
+            int hup_cleanup = 0;
+
+            while (hup_child) {
+                pid_t hup_pid = hup_child->pid;
+                if (hup_pid == cur_child->pid) {
+
+                    osrfLogDebug(OSRF_LOG_MARK, 
+                        "server: killing previously-active child after "
+                        "receiving SIGHUP: %d", hup_pid);
+
+                    if (forker->sighup_pending_list == hup_child) {
+                        // hup_child is the first (maybe only) in the list
+                        forker->sighup_pending_list = hup_child->next;
+                    } else {
+                        // splice it from the list
+                        prev_hup_child->next = hup_child->next;
+                    }
+
+                    free(hup_child); // clean up the thin clone
+                    kill(hup_pid, SIGKILL);
+                    hup_cleanup = 1;
+                    break;
+                }
+
+                prev_hup_child = hup_child;
+                hup_child = hup_child->next;
+            }
+
+            if (!hup_cleanup) {
+
+                // Remove the child from the active list
+                if( forker->first_child == cur_child ) {
+                    if( cur_child->next == cur_child ) {
+                        // only child in the active list
+                        forker->first_child = NULL;   
+                    } else {
+                        forker->first_child = cur_child->next;
+                    }
+                }
+                cur_child->next->prev = cur_child->prev;
+                cur_child->prev->next = cur_child->next;
+
+                // Add it to the idle list
+                cur_child->prev = NULL;
+                cur_child->next = forker->idle_list;
+                forker->idle_list = cur_child;
+            }
+        }
+
+        cur_child = next_child;
+    } while( forker->first_child && forker->first_child != next_child );
 
     return select_ret;
 }

@@ -48,6 +48,7 @@ extern "C" {
 typedef struct {
 	jsonObject* config;   /**< Represents the contents of the XML configuration file. */
 	char* configContext;  /**< Context string (optional). */
+    char* configFileName; /**< config file path/name */
 } osrfConfig;
 
 osrfConfig* osrfConfigInit(const char* configFile, const char* configContext);
@@ -59,6 +60,7 @@ void osrfConfigReplaceConfig(osrfConfig* cfg, const jsonObject* obj);
 void osrfConfigFree(osrfConfig* cfg);
 
 void osrfConfigSetDefaultConfig(osrfConfig* cfg);
+osrfConfig* osrfConfigGetDefaultConfig();
 
 void osrfConfigCleanup( void );
 
