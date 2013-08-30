@@ -94,6 +94,20 @@ if ($opt_localhost) {
 my $C_COMMAND = "opensrf-c -c $opt_config -x opensrf -p $opt_pid_dir -h $hostname";
 my $PY_COMMAND = "opensrf.py -f $opt_config -p $opt_pid_dir ". ($opt_localhost ? '-l' : '');
 
+sub verify_services {
+    my $service = shift;
+    my @services = (@perl_services, map {$_->{service}} @nonperl_services);
+    if (@services) {
+        return 1 unless $service;
+        return 1 if grep { $_ eq $service } @services;
+        msg("$service is not configured to run on $hostname");
+    } else {
+        msg("No services are configured to run on $hostname");
+    }
+    msg("Perhaps you meant to use --localhost?") unless $opt_localhost;
+    exit;
+}
+
 sub do_signal_send {
     my $service = shift;
     my $signal = shift;
@@ -371,8 +385,8 @@ sub do_start {
         }
     }
 
-    msg("$service is not configured to run on $hostname");
-    return 1;
+    # should not get here
+    return 0;
 }
 
 sub do_start_all {
@@ -667,11 +681,20 @@ HELP
 exit;
 }
 
-# starting services
-do_init() and do_start($opt_service) if $opt_start;
-do_init() and do_stop($opt_service) and do_start($opt_service) if $opt_restart;
-do_init() and do_start_all() if $opt_start_all;
-do_init() and do_stop_all() and do_start_all() if $opt_restart_all;
+# we do not verify services for stop/signal actions, since those may
+# legitimately be used against services not (or no longer) configured
+# to run on the selected host.
+do_init() and verify_services($opt_service) if 
+    $opt_start or 
+    $opt_start_all or
+    $opt_restart or
+    $opt_restart_all;
+
+# starting services.  do_init() handled above
+do_start($opt_service) if $opt_start;
+do_stop($opt_service) and do_start($opt_service) if $opt_restart;
+do_start_all() if $opt_start_all;
+do_stop_all() and do_start_all() if $opt_restart_all;
 
 # stopping services
 do_stop($opt_service) if $opt_stop;
