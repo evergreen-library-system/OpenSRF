@@ -204,61 +204,48 @@ sub do_diagnostic {
         $len = length($svc) if length($svc) > $len;
         $services{$svc} = 1;
     }
-    $len++;
+
     for my $svc (sort keys %services) {
         my @pf_pids = get_service_pids_from_file($svc);
         my @ps_pids = get_service_pids_from_ps($svc); 
         my $svc_str = sprintf("%-${len}s ", $svc);
-        my $err = '';
+        my %seen;
 
-        if (@ps_pids) {
-            $err .= "NOT configured for this host! [@ps_pids]"
-                unless $svc eq 'router' or 
-                grep {$_ eq $svc} @conf_services;
-        } else {
-            $err .= "NOT running! ";
-        }
-
-        my $matching = 1;
-        if (scalar(@pf_pids) == scalar(@ps_pids)) {
-            # we could use Array::Compare, but requires new dep.
-            for my $pfpid (@pf_pids) {
-                unless (grep {$_ == $pfpid} @ps_pids) {
-                    $matching = 0;
-                    last;
-                }
-            }
-        } else { $matching = 0 }
-
-        if (!$matching) {
-            $err .= "Process list does not match PID files!";
-            $err .= "\n\tPS=@ps_pids / PID=@pf_pids";
-        }
-
-        if ($err) {
-            msg("$svc_str $err");
+        unless(@ps_pids or @pf_pids) {
+            msg("$svc_str is not running");
             next;
         }
 
         for my $pid (@ps_pids) {
-            my $str = "$svc_str OK [$pid] ";
+            $seen{$pid} = 1;
 
-            my $etime = `ps -o etime= $pid`;
-            my $cputime = `ps -o cputime= $pid`;
-            $etime =~ s/^\s*|\s*$//g;
-            $cputime =~ s/^\s*|\s*$//g;
-            $str .= sprintf("uptime=%-11s cputime=%-11s ", $etime, $cputime);
+            my $str = "$svc_str [$pid] ";
+            my $times = `ps -o etime=,cputime= $pid`;
+            $times =~ s/^\s+|\s+$//g;
+            my @times = split(/ /, $times);
+            $str .= sprintf("uptime=%-11s cputime=%-11s ", $times[0], $times[1]);
 
-            if ($svc ne 'router') {
+            if ($svc eq 'router') {
+                msg($str);
+            } else {
                 my @drones = `pgrep -f "Drone \\[$svc\\]"`;
-                if (@drones) {
-                    $str .= "#drones=".scalar(@drones);
-                } else {
-                    $str .= "NO Running Drones!";
-                }
+                $str .= "#drones=".scalar(@drones);
+                msg($str);
+                msg("\tERR $svc has no running drones.") unless @drones;
             }
 
-            msg($str);
+            msg("\tERR $svc [$pid] NOT configured for this host.")
+                unless grep {$_ eq $svc} @conf_services 
+                or $svc eq 'router';
+
+            msg("\tERR $svc [$pid] NOT found in PID file.")
+                unless grep {$_ eq $pid} @pf_pids;
+        }
+
+        for my $pid (@pf_pids) {
+            next if $seen{$pid};
+            msg("\tERR $svc Has PID file entry [$pid], ".
+                "which matches no running $svc processes");
         }
     }
 }
