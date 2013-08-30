@@ -51,6 +51,7 @@ my $opt_stop_all = 0;
 my $opt_restart_all = 0;
 my $opt_force_clean_process = 0;
 my $opt_quiet = 0;
+my $opt_diagnostic = 0;
 my $sclient;
 my @perl_services;
 my @nonperl_services;
@@ -81,7 +82,8 @@ GetOptions(
     'start-all' => \$opt_start_all,
     'stop-all' => \$opt_stop_all,
     'restart' => \$opt_restart,
-    'restart-all' => \$opt_restart_all
+    'restart-all' => \$opt_restart_all,
+    'diagnostic' => \$opt_diagnostic
 );
 
 if ($opt_localhost) {
@@ -185,6 +187,83 @@ sub get_service_pids_from_ps {
 }
 
 
+sub do_diagnostic {
+    my $alive = do_init(1);
+
+    my @services = get_service_list_from_files(1);
+    my @conf_services;
+    if ($alive) {
+        @conf_services = (@perl_services, 
+            map {$_->{service}} @nonperl_services);
+        push(@services, @conf_services);
+    }
+    
+    my %services;
+    my $len = 0;
+    for my $svc (@services) {
+        $len = length($svc) if length($svc) > $len;
+        $services{$svc} = 1;
+    }
+    $len++;
+    for my $svc (sort keys %services) {
+        my @pf_pids = get_service_pids_from_file($svc);
+        my @ps_pids = get_service_pids_from_ps($svc); 
+        my $svc_str = sprintf("%-${len}s ", $svc);
+        my $err = '';
+
+        if (@ps_pids) {
+            $err .= "NOT configured for this host! [@ps_pids]"
+                unless $svc eq 'router' or 
+                grep {$_ eq $svc} @conf_services;
+        } else {
+            $err .= "NOT running! ";
+        }
+
+        my $matching = 1;
+        if (scalar(@pf_pids) == scalar(@ps_pids)) {
+            # we could use Array::Compare, but requires new dep.
+            for my $pfpid (@pf_pids) {
+                unless (grep {$_ == $pfpid} @ps_pids) {
+                    $matching = 0;
+                    last;
+                }
+            }
+        } else { $matching = 0 }
+
+        if (!$matching) {
+            $err .= "Process list does not match PID files!";
+            $err .= "\n\tPS=@ps_pids / PID=@pf_pids";
+        }
+
+        if ($err) {
+            msg("$svc_str $err");
+            next;
+        }
+
+        for my $pid (@ps_pids) {
+            my $str = "$svc_str OK [$pid] ";
+
+            my $etime = `ps -o etime= $pid`;
+            my $cputime = `ps -o cputime= $pid`;
+            $etime =~ s/^\s*|\s*$//g;
+            $cputime =~ s/^\s*|\s*$//g;
+            $str .= sprintf("uptime=%-11s cputime=%-11s ", $etime, $cputime);
+
+            if ($svc ne 'router') {
+                my @drones = `pgrep -f "Drone \\[$svc\\]"`;
+                if (@drones) {
+                    $str .= "#drones=".scalar(@drones);
+                } else {
+                    $str .= "NO Running Drones!";
+                }
+            }
+
+            msg($str);
+        }
+    }
+}
+
+
 
 sub do_start_router {
     `opensrf_router $opt_config routers`;
@@ -214,9 +293,14 @@ sub do_stop {
 }
 
 sub do_init {
+    my $fail_ok = shift;
+
     OpenSRF::System->bootstrap_client(config_file => $opt_config);
-    die "Unable to bootstrap client for requests\n"
-        unless OpenSRF::Transport::PeerHandle->retrieve;
+
+    if (!OpenSRF::Transport::PeerHandle->retrieve) {
+        return 0 if $fail_ok;
+        die "Unable to bootstrap client for requests\n";
+    }
 
     load_settings(); # load the settings config if we can
 
@@ -522,6 +606,9 @@ sub do_help {
     --help
         Print this help message
 
+    --diagnostic
+        Print information about running services
+
     ==== starting services =====
 
     --start-all
@@ -614,6 +701,10 @@ do_kill_with_fire() if $opt_kill_with_fire;
 do_signal($opt_service, $opt_signal) if $opt_signal;
 do_signal_all($opt_signal) if $opt_signal_all;
 
+# misc
+do_diagnostic() if $opt_diagnostic;
+
+
 # show help if no action was requested
 do_help() if $opt_help or not (
     $opt_start or 
@@ -630,5 +721,6 @@ do_help() if $opt_help or not (
     $opt_shutdown_fast_all or
     $opt_shutdown_immediate or
     $opt_shutdown_immediate_all or
-    $opt_kill_with_fire
+    $opt_kill_with_fire or
+    $opt_diagnostic
 )
