@@ -49,6 +49,9 @@ my $opt_restart = 0;
 my $opt_start_all = 0;
 my $opt_stop_all = 0;
 my $opt_restart_all = 0;
+my $opt_start_services = 0;
+my $opt_stop_services = 0;
+my $opt_restart_services = 0;
 my $opt_force_clean_process = 0;
 my $opt_quiet = 0;
 my $opt_diagnostic = 0;
@@ -83,6 +86,9 @@ GetOptions(
     'stop-all' => \$opt_stop_all,
     'restart' => \$opt_restart,
     'restart-all' => \$opt_restart_all,
+    'start-services' => \$opt_start_services,
+    'stop-services' => \$opt_stop_services,
+    'restart-services' => \$opt_restart_services,
     'diagnostic' => \$opt_diagnostic
 );
 
@@ -389,9 +395,15 @@ sub do_start {
     return 0;
 }
 
+
 sub do_start_all {
-    msg("starting all services for $hostname");
+    msg("starting router and services for $hostname");
     do_start('router');
+    return do_start_services();
+}
+
+sub do_start_services {
+    msg("starting services for $hostname");
 
     if(grep {$_ eq 'opensrf.settings'} @perl_services) {
         do_start('opensrf.settings');
@@ -505,14 +517,13 @@ sub clear_stale_pids {
     }
 }
 
-sub do_stop_all {
+sub do_stop_services {
     my @signals = @_;
-
-    msg("stopping all services for $hostname");
-
-    my @services = get_service_list_from_files();
     @signals = qw/TERM INT KILL/ unless @signals;
-    
+
+    msg("stopping services for $hostname");
+    my @services = get_service_list_from_files();
+
     for my $signal (@signals) {
         my @redo;
 
@@ -527,6 +538,15 @@ sub do_stop_all {
         @services = @redo;
         last unless @services;
     }
+
+    return 1;
+}
+
+sub do_stop_all {
+    my @signals = @_;
+    @signals = qw/TERM INT KILL/ unless @signals;
+
+    do_stop_services(@signals);
 
     # graceful shutdown requires the presence of the router, so stop the 
     # router last.  See if it's running first to avoid unnecessary warnings.
@@ -618,11 +638,17 @@ sub do_help {
     --start
         Start the service specified by --service
 
+    --start-services
+        Start all services but do not start any routers
+
     --restart-all
         Restart the router and all services
 
     --restart
         Restart the service specified by --service
+
+    --restart-services
+        Restart all services but do not restart any routers
 
     --force-clean-process
         When starting a service, if a service process is already running 
@@ -641,6 +667,9 @@ sub do_help {
         Stop the service specified by --service.  See also --stop-all.
         If the requested service does not have a matching PID file, an
         attempt to locate the PID via 'ps' will be made.
+
+    --stop-services
+        Stop all services but do not stop any routers.  See also --stop-all.
 
     --graceful-shutdown-all
         Send TERM signal to all services + router
@@ -687,18 +716,23 @@ exit;
 do_init() and verify_services($opt_service) if 
     $opt_start or 
     $opt_start_all or
+    $opt_start_services or
     $opt_restart or
-    $opt_restart_all;
+    $opt_restart_all or
+    $opt_restart_services;
 
 # starting services.  do_init() handled above
 do_start($opt_service) if $opt_start;
 do_stop($opt_service) and do_start($opt_service) if $opt_restart;
 do_start_all() if $opt_start_all;
+do_start_services() if $opt_start_services;
 do_stop_all() and do_start_all() if $opt_restart_all;
+do_stop_services() and do_start_services() if $opt_restart_services;
 
 # stopping services
 do_stop($opt_service) if $opt_stop;
 do_stop_all() if $opt_stop_all;
+do_stop_services() if $opt_stop_services;
 do_stop($opt_service, 'TERM') if $opt_shutdown_graceful;
 do_stop($opt_service, 'INT') if $opt_shutdown_fast;
 do_stop($opt_service, 'KILL') if $opt_shutdown_immediate;
@@ -719,10 +753,13 @@ do_diagnostic() if $opt_diagnostic;
 do_help() if $opt_help or not (
     $opt_start or 
     $opt_start_all or 
+    $opt_start_services or 
     $opt_stop or 
     $opt_stop_all or 
+    $opt_stop_services or 
     $opt_restart or 
     $opt_restart_all or 
+    $opt_restart_services or 
     $opt_signal or 
     $opt_signal_all or
     $opt_shutdown_graceful or
