@@ -155,8 +155,6 @@ START_TEST(test_transport_client_recv)
   transport_message *msg2 = client_recv(other_client, -1);
   fail_unless(msg2 == NULL,
       "client_recv should return NULL if the call to session_wait() returns an error");
-  fail_unless(other_client->error == 1,
-      "client_recv should set client->error to true if an error has occured");
 
   //message in queue with no timeout
   transport_message *msg3 = client_recv(a_client, -1);
@@ -190,8 +188,6 @@ START_TEST(test_transport_client_recv)
   transport_message *msg5 = client_recv(other_client, 1); //only 1 sec again...
   fail_unless(msg5 == NULL,
       "client_recv should return NULL if there is an error");
-  fail_unless(other_client->error == 1,
-      "client_recv should set client->error to 1 if there is an error");
 END_TEST
 
 START_TEST(test_transport_client_free)
