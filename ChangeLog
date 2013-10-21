@@ -1,6 +1,107 @@
 ChangeLog
 =========
 
+OpenSRF 2.2.1
+-------------
+
+commit 2b9389dcabbe33aab06fa97f42a07d207811f3d3
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Mon Oct 21 09:01:36 2013 +0000
+
+    bump up version number to 2.2.1
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+2	2	src/perl/lib/OpenSRF.pm
+1	1	src/python/setup.py
+1	1	version.m4
+
+commit a367290f622321a828bbb3243f6058e348133b39
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Mon Oct 21 08:59:41 2013 +0000
+
+    update release notes for 2.2.1
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+22	1	doc/RELEASE_NOTES.txt
+
+commit 425821b7a8e4dde99beeb325a119e3dae154e1b3
+Author: Jason Etheridge <jason@esilibrary.com>
+Date:   Thu Aug 1 14:15:14 2013 -0400
+
+    silence some uninitialized warnings
+    
+    Signed-off-by: Jason Etheridge <jason@esilibrary.com>
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+5	1	src/perl/lib/OpenSRF/DomainObject/oilsMethod.pm
+1	1	src/perl/lib/OpenSRF/Utils.pm
+
+commit d081052e872468d228d55c8fc4eb6cffa527da3b
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Tue Aug 6 22:00:15 2013 +0000
+
+    LP#1188195: add tests for setting default client locale
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+8	1	src/perl/t/02-AppSession.t
+
+commit 811caee573b71ea3ac59c48f83d9ca29accad2f0
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Thu May 23 15:17:12 2013 -0400
+
+    LP#1188195: Default per-process client locale (Perl)
+    
+    Get/set the locale used by all new client sessions
+    for the current process.  This is primarily useful
+    for clients that wish to make a series of opensrf
+    calls and don't wish to set the locale for each new
+    AppSession object.
+    
+    The caller should reset the locale when done using
+    reset_locale(), as the locale will otherwise persist
+    for the current process until set/reset again.
+    
+    This is not for SERVER processes, since they
+    adopt the locale of their respective callers.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+22	0	src/perl/lib/OpenSRF/AppSession.pm
+
+commit 0a19073843476c02a168af1c00d6ccc5e0c03a14
+Author: Pasi Kallinen <pasi.kallinen@pttk.fi>
+Date:   Tue Aug 6 16:56:06 2013 +0300
+
+    LP#1208860: fix sprintf without format string.
+    
+    Fixes error preventing installation on Debian testing and
+    removes warning on earlier versions of Debian.
+    
+    Signed-off-by: Pasi Kallinen <pasi.kallinen@pttk.fi>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+1	1	src/gateway/osrf_http_translator.c
+
+commit 312a1d9f61aefc69602e7db4f6fe82e7b84d7207
+Author: Bill Erickson <berick@esilibrary.com>
+Date:   Thu Jul 11 16:36:43 2013 -0400
+
+    LP1198983 disable multipart/mixed for Firefox
+    
+    Only allow multipart mixed/replace message within the Evergreen staff
+    client for now.  Eventually, multi-part messages will be wholly
+    deprecated.
+    
+    Signed-off-by: Bill Erickson <berick@esilibrary.com>
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+
+5	3	src/javascript/opensrf_xhr.js
+
 OpenSRF 2.2.0
 -------------
 
