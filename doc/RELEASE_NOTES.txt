@@ -1,4 +1,4 @@
-Release notes for OpenSRF 2.2.0
+Release notes for OpenSRF 2.2.1
 ===============================
 
 Supported platforms
@@ -8,6 +8,27 @@ The following Linux distributions are supported:
   * Debian 6 (Squeeze) and 7 (Wheezy)
   * Fedora 17, 18
   * Ubuntu 10.04 LTS (Lucid Lynx), 12.04 LTS (Precise Pangolin)
+
+Changes in 2.2.1
+----------------
+
+Disable use of multipart/mixed XHR for most clients
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Due to Mozilla withdrawing support for multipart XHR responses from
+Firefox as of version 22, multipart message support is now disabled
+for all clients except the Evergreen staff client.
+
+Default per-process client locale (Perl)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A method was added to get and/or set the locale used by all new client
+sessions for the current process.  This is primarily useful for
+clients that wish to make a series of OpenSRF calls and don't wish to
+set the locale for each new AppSession object.
+
+Minor fixes
+~~~~~~~~~~~
+One fix improves support for Debian testing while another resolves some
+unitialized variable warnings.
 
 New features in 2.2.0
 ----------------------
