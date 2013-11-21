@@ -102,6 +102,7 @@ my $PY_COMMAND = "opensrf.py -f $opt_config -p $opt_pid_dir ". ($opt_localhost ?
 
 sub verify_services {
     my $service = shift;
+    return 1 if $service and $service eq 'router';
     my @services = (@perl_services, map {$_->{service}} @nonperl_services);
     if (@services) {
         return 1 unless $service;
