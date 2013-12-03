@@ -160,13 +160,13 @@ sub JSONObject2Perl {
         # is a hash, but no class marker; simply revivify innards
         for my $k (keys %$obj) {
             $obj->{$k} = $pkg->JSONObject2Perl($obj->{$k})
-              unless ref $obj->{$k} eq 'JSON::XS::Boolean';
+              unless JSON::XS::is_bool $obj->{$k};
         }
     } elsif ( ref $obj eq 'ARRAY' ) {
         # not a hash; an array. revivify.
         for my $i (0..scalar(@$obj) - 1) {
             $obj->[$i] = $pkg->JSONObject2Perl($obj->[$i])
-              unless (ref $obj->[$i] eq 'JSON::XS::Boolean');
+              unless JSON::XS::is_bool $obj->[$i];
               # FIXME? This does nothing except leave any Booleans in
               # place, without recursively calling this sub on
               # them. I'm not sure if that's what's supposed to
@@ -205,8 +205,7 @@ sub perl2JSONObject {
     my ($pkg, $obj) = @_;
     my $ref = ref $obj;
 
-    return $obj unless $ref;
-    return $obj if $ref eq 'JSON::XS::Boolean';
+    return $obj if !$ref or JSON::XS::is_bool $obj;
 
     my $jsonobj;
 
