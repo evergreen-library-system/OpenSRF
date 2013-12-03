@@ -76,8 +76,8 @@ is (OpenSRF::Utils::JSON->perl2JSONObject(),      undef, "Returns argument unles
 is (OpenSRF::Utils::JSON->perl2JSONObject(3),     3,     "Returns argument unless it's a ref");
 is (OpenSRF::Utils::JSON->perl2JSONObject('foo'), 'foo', "Returns argument unless it's a ref");
 
-is (ref OpenSRF::Utils::JSON->true, 'JSON::XS::Boolean');
-is (OpenSRF::Utils::JSON->perl2JSONObject(OpenSRF::Utils::JSON->true), '1', "Returns argument if it's a JSON::XS::Boolean");
+ok (JSON::XS::is_bool(OpenSRF::Utils::JSON->true), 'OpenSRF::Utils::JSON->true is a Boolean according to JSON::XS');
+is (OpenSRF::Utils::JSON->perl2JSONObject(OpenSRF::Utils::JSON->true), '1', "Returns argument if it's a Boolean according to JSON");
 
 my $hashref = { foo => 'bar' };
 is (UNIVERSAL::isa($hashref,'HASH'), 1);
@@ -114,13 +114,13 @@ is (OpenSRF::Utils::JSON->JSONObject2Perl($coderef), $coderef, "Returns argument
 
 is_deeply (OpenSRF::Utils::JSON->JSONObject2Perl([11, 12]), [11, 12], "Arrayrefs get reconstructed as themselves");
 is_deeply (OpenSRF::Utils::JSON->JSONObject2Perl([11, OpenSRF::Utils::JSON->true, 12]), [11, OpenSRF::Utils::JSON->true, 12],
-           "Even when they contain JSON::XS::Booleans; those just don't get recursed upon");
-           # note: [11, 1, 12] doesn't work here, even though you can do math on J:X:Booleans
+           "Even when they contain JSON::XS  Booleans; those just don't get recursed upon");
+           # note: [11, 1, 12] doesn't work here, even though you can do math on J::X Booleans
 
 is_deeply (OpenSRF::Utils::JSON->JSONObject2Perl($hashref), { foo => 'bar' }, "Hashrefs without the class flag also get turned into themselves");
 is_deeply (OpenSRF::Utils::JSON->JSONObject2Perl({ foo => OpenSRF::Utils::JSON->true, bar => 'baz' }), 
            { foo => OpenSRF::Utils::JSON->true, bar => 'baz'},
-           "Even when they contain JSON::XS::Booleans; those just don't get recursed upon");
+           "Even when they contain JSON::XS  Booleans; those just don't get recursed upon");
 
 my $vivobj = OpenSRF::Utils::JSON->JSONObject2Perl($jsonobj);
 is (ref $vivobj, 'OpenSRF::DomainObject::oilsException');
