@@ -229,6 +229,7 @@ sub wait {
     if ($first_read and defined $nbytes and $nbytes == 0) {
         # if the first read on an active socket is 0 bytes, 
         # the socket has been disconnected from the remote end. 
+        $self->{stream_state} = DISCONNECTED;
         $logger->error("Disconnected from Jabber server");
         throw OpenSRF::EX::Jabber("Disconnected from Jabber server");
     }

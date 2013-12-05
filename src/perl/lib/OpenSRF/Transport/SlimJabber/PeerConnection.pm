@@ -31,6 +31,12 @@ sub retrieve {
 	return $_singleton_connection;
 }
 
+sub reset {
+    return unless $_singleton_connection;
+    $_singleton_connection->disconnect;
+    $_singleton_connection = undef;
+}
+
 
 sub new {
 	my( $class, $app ) = @_;
