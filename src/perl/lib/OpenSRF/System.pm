@@ -52,7 +52,13 @@ sub bootstrap_client {
     my $self = shift;
 
     my $con = OpenSRF::Transport::PeerHandle->retrieve;
-    return if $con and $con->tcp_connected;
+    if ($con) {
+        # flush the socket to force a non-blocking read
+        # and to clear out any unanticipated leftovers
+        eval { $con->flush_socket };
+        return if $con->connected;
+        $con->reset;
+    }
 
     my %params = @_;
 
@@ -68,7 +74,7 @@ sub bootstrap_client {
 
 sub connected {
     if (my $con = OpenSRF::Transport::PeerHandle->retrieve) {
-        return 1 if $con->tcp_connected;
+        return 1 if $con->connected;
     }
     return 0;
 }

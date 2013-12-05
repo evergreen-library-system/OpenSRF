@@ -98,6 +98,11 @@ sub tcp_connected {
     return 0;
 }
 
+sub connected {
+    my $self = shift;
+    return $self->reader->connected if $self->reader;
+    return 0;
+}
 
 
 =head2 send
@@ -210,6 +215,7 @@ the socket isn't connected.
 
 sub flush_socket {
 	my $self = shift;
+    return 0 unless $self->reader;
     return $self->reader->flush_socket;
 }
 
