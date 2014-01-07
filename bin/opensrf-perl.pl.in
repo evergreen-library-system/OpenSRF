@@ -53,6 +53,12 @@ my $opt_start_services = 0;
 my $opt_stop_services = 0;
 my $opt_restart_services = 0;
 my $opt_force_clean_process = 0;
+my $opt_router_de_register = 0;
+my $opt_router_de_register_all = 0;
+my $opt_router_re_register = 0;
+my $opt_router_re_register_all = 0;
+my $opt_reload = 0;
+my $opt_reload_all = 0;
 my $opt_quiet = 0;
 my $opt_diagnostic = 0;
 my $sclient;
@@ -89,6 +95,12 @@ GetOptions(
     'start-services' => \$opt_start_services,
     'stop-services' => \$opt_stop_services,
     'restart-services' => \$opt_restart_services,
+    'router-de-register' => \$opt_router_de_register,
+    'router-de-register-all' => \$opt_router_de_register_all,
+    'router-re-register' => \$opt_router_re_register,
+    'router-re-register-all' => \$opt_router_re_register_all,
+    'reload' => \$opt_reload,
+    'reload-all' => \$opt_reload_all,
     'diagnostic' => \$opt_diagnostic
 );
 
@@ -706,7 +718,30 @@ sub do_help {
     --signal-timeout
         Seconds to wait for a process to die after sending a shutdown signal.
         All signals except HUP, USR1, and USR2 are assumed to be shutdown signals.
-        
+
+    ==== special signals ====
+
+    --router-de-register
+    --router-de-register-all
+        Sends a SIGUSR1 signal to the selected service(s), which causes each 
+        service's listener process to send an "unregister" command to all 
+        registered routers.  The --all variant sends the signal to all 
+        running listeners.  The non-(--all) variant requires a --service.
+
+    --router-re-register
+    --router-re-register-all
+        Sends a SIGUSR2 signal to the selected service(s), which causes each 
+        service's listener process to send a "register" command to all 
+        configured routers routers.  The --all variant sends the signal to
+        all running listeners.  The non-(--all) variant requires a --service.
+
+    --reload
+    --reload-all
+        Sends a SIGHUP signal to the selected service(s).  SIGHUP causes
+        each Listener process to reload its opensrf_core.xml config file 
+        and gracefully re-launch drone processes.  The -all variant sends
+        the signal to all services.  The non-(-all) variant requires a
+        --service.
 HELP
 exit;
 }
@@ -743,8 +778,16 @@ do_stop_all('KILL') if $opt_shutdown_immediate_all;
 do_kill_with_fire() if $opt_kill_with_fire;
 
 # signaling
-do_signal($opt_service, $opt_signal) if $opt_signal;
-do_signal_all($opt_signal) if $opt_signal_all;
+$opt_signal = 'USR1' if $opt_router_de_register or $opt_router_de_register_all;
+$opt_signal = 'USR2' if $opt_router_re_register or $opt_router_re_register_all;
+$opt_signal = 'HUP'  if $opt_reload or $opt_reload_all;
+
+do_signal($opt_service, $opt_signal) if $opt_signal and $opt_service;
+do_signal_all($opt_signal) if 
+    $opt_signal_all or 
+    $opt_reload_all or
+    $opt_router_de_register_all or 
+    $opt_router_re_register_all;
 
 # misc
 do_diagnostic() if $opt_diagnostic;
