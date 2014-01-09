@@ -305,11 +305,6 @@ OpenSRF.ClientSession.prototype.disconnect = function(args) {
 
     this.remote_id = null;
     this.state = OSRF_APP_SESSION_DISCONNECTED;
-
-    if (this.websocket) {
-        this.websocket.close();
-        delete this.websocket;
-    }
 };
 
 
