@@ -22,6 +22,7 @@ var OSRF_APP_SESSION_DISCONNECTED = 2;
 var OSRF_TRANSPORT_TYPE_XHR = 1;
 var OSRF_TRANSPORT_TYPE_XMPP = 2;
 var OSRF_TRANSPORT_TYPE_WS = 3;
+var OSRF_TRANSPORT_TYPE_WS_SHARED = 4;
 
 /* message types */
 var OSRF_MESSAGE_TYPE_REQUEST = 'REQUEST';
@@ -222,6 +223,8 @@ OpenSRF.Session.prototype.send = function(osrf_msg, args) {
     switch(OpenSRF.Session.transport) {
         case OSRF_TRANSPORT_TYPE_WS:
             return this.send_ws(osrf_msg);
+        case OSRF_TRANSPORT_TYPE_WS_SHARED:
+            return this.send_ws_shared(osrf_msg);
         case OSRF_TRANSPORT_TYPE_XHR:
             return this.send_xhr(osrf_msg, args);
         case OSRF_TRANSPORT_TYPE_XMPP:
@@ -242,6 +245,57 @@ OpenSRF.Session.prototype.send_ws = function(osrf_msg) {
         function(wsreq) {wsreq.send(osrf_msg)} // onopen
     );
 };
+
+OpenSRF.Session.setup_shared_ws = function(onconnect) {
+    // TODO path
+    OpenSRF.sharedWSWorker = new SharedWorker('opensrf_ws_shared.js'); 
+
+    OpenSRF.sharedWSWorker.port.addEventListener('message', function(e) {                          
+        var data = e.data;
+        console.log('sharedWSWorker received message ' + data.action);
+
+        if (data.action == 'message') {
+            // pass all inbound message up the opensrf stack
+
+            var msg = JSON2js(data.message); // TODO: json error handling
+            OpenSRF.Stack.push(                                                        
+                new OpenSRF.NetMessage(                                                
+                   null, null, msg.thread, null, msg.osrf_msg)                        
+            ); 
+
+            return;
+        }
+
+        if (data.action == 'socket_connected') {
+            if (onconnect) onconnect();
+            return;
+        }
+
+        if (data.action == 'error') {
+            throw new Error(data.message);
+        }
+    });
+
+    OpenSRF.sharedWSWorker.port.start();   
+}
+
+OpenSRF.Session.prototype.send_ws_shared = function(message) {
+
+    var json = js2JSON({
+        service : this.service,
+        thread : this.thread,
+        osrf_msg : [message.serialize()]
+    });
+
+    OpenSRF.sharedWSWorker.port.postMessage({
+        action : 'message', 
+        // pass the thread additionally as a stand-alone value so the
+        // worker can more efficiently inspect it.
+        thread : this.thread,
+        message : json
+    });
+}
+
 
 OpenSRF.Session.prototype.send_xmpp = function(osrf_msg, args) {
     alert('xmpp transport not implemented');
@@ -436,6 +490,7 @@ OpenSRF.Stack.push = function(net_msg, callbacks) {
         try {
             osrf_msgs = JSON2js(net_msg.body);
 
+            // TODO: pretty sure we don't need this..
             if (OpenSRF.Session.transport == OSRF_TRANSPORT_TYPE_WS) {
                 // WebSocketRequests wrap the content
                 osrf_msgs = osrf_msgs.osrf_msg;
