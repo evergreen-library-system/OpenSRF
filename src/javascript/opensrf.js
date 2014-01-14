@@ -246,7 +246,7 @@ OpenSRF.Session.prototype.send_ws = function(osrf_msg) {
     );
 };
 
-OpenSRF.Session.setup_shared_ws = function(onconnect) {
+OpenSRF.Session.setup_shared_ws = function() {
     // TODO path
     OpenSRF.sharedWSWorker = new SharedWorker('opensrf_ws_shared.js'); 
 
@@ -266,11 +266,6 @@ OpenSRF.Session.setup_shared_ws = function(onconnect) {
             return;
         }
 
-        if (data.action == 'socket_connected') {
-            if (onconnect) onconnect();
-            return;
-        }
-
         if (data.action == 'error') {
             throw new Error(data.message);
         }
@@ -280,6 +275,9 @@ OpenSRF.Session.setup_shared_ws = function(onconnect) {
 }
 
 OpenSRF.Session.prototype.send_ws_shared = function(message) {
+
+    if (!OpenSRF.sharedWSWorker) 
+        OpenSRF.Session.setup_shared_ws();
 
     var json = js2JSON({
         service : this.service,

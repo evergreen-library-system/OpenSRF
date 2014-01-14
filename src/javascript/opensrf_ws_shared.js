@@ -27,6 +27,9 @@ var thread_port_map = {};
 // our shared websocket
 var websocket;
 
+// pending messages awaiting a successful websocket connection
+var pending_ws_messages = [];
+
 function send_msg_to_port(ident, msg) {
     console.debug('sending msg to port ' + ident + ' : ' + msg.action);
     try {
@@ -34,7 +37,7 @@ function send_msg_to_port(ident, msg) {
     } catch(E) {
         // some browsers (Opera) throw an exception when messaging
         // a disconnected port.
-        console.log('unable to send msg to port ' + ident);
+        console.debug('unable to send msg to port ' + ident);
         delete connected_ports[ident];
     }
 }
@@ -48,43 +51,46 @@ function broadcast(msg) {
 
 // opens the websocket connection
 // port_ident refers to the requesting port
-function open_websocket(port_ident) {
-    var port = connected_ports[port_ident];
+function send_to_websocket(message) {
 
-    if (websocket) {
-        switch (websocket.readyState) {
-
-            case websocket.CONNECTING:
-                // nothing to do.  The port will get notified on open
-                return;
-
-            case websocket.OPEN:
-                // websocket is already open, let the connecting.
-                // other ports have been notified already, so
-                // no broadcast is required.
-                send_msg_to_port(port_ident, {action : 'socket_connected'});
-                return;
-
-            default:
-                // websocket is no longer connected.  We need a new socket.
-                websocket = null;
-        }
+    if (websocket && websocket.readyState == websocket.OPEN) {
+        // websocket connection is viable.  send our message.
+        websocket.send(message);
+        return;
     }
+
+    // no viable connection. queue our outbound messages for future delivery.
+    pending_ws_messages.push(message);
+
+    if (websocket && websocket.readyState == websocket.CONNECTING) {
+        // we are already in the middle of a setup call.  
+        // our queued message will be delivered after setup completes.
+        return;
+    }
+
+    // we have no websocket or an invalid websocket.  build a new one.
 
     // TODO:
     // assume non-SSL for now.  SSL silently dies if the cert is
-    // invalid and has not been added as an exception.
-    var path = 'ws://' + location.host + ':' + 
-        WEBSOCKET_PORT + WEBSOCKET_URL_PATH
+    // invalid and has not been added as an exception.  need to
+    // explain / document / avoid this better.
+    var path = 'ws://' + location.host + ':' + WEBSOCKET_PORT + WEBSOCKET_URL_PATH;
 
-    console.log('connecting websocket to ' + path);
+    console.debug('connecting websocket to ' + path);
 
-    websocket = new WebSocket(path);
+    try {
+        websocket = new WebSocket(path);
+    } catch(E) {
+        console.log('Error creating WebSocket for path ' + path + ' : ' + E);
+        throw new Error(E);
+    }
 
     websocket.onopen = function() {
-        // tell all ports the websocket is open and ready
-        console.log('websocket.onopen()');
-        broadcast({action : 'socket_connected'});
+        console.debug('websocket.onopen()');
+        // deliver any queued messages
+        var msg;
+        while ( (msg = pending_ws_messages.shift()) )
+            websocket.send(msg);
     }
 
     websocket.onmessage = function(evt) {
@@ -92,6 +98,9 @@ function open_websocket(port_ident) {
 
         // this is a hack to avoid having to run JSON2js multiple 
         // times on the same message.  Hopefully match() is faster.
+        // We can't use JSON_v1 within a shared worker for marshalling
+        // messages, because it has no knowledge of application-level
+        // class hints in this environment.
         var thread;
         var match = message.match(/"thread":"(.*?)"/);
         if (!match || !(thread = match[1])) {
@@ -112,17 +121,19 @@ function open_websocket(port_ident) {
         }
 
         /* poor man's memory management.  We are not cleaning up our
-         * thread_port_map as we go, because that gets messy.  Instead,
-         * after the map has reached a certain size, clear it.  If any
-         * pending messages are afield that depend on the map, they 
-         * will be broadcast to all ports on arrival (see above).  Only the 
-         * port expecting a message with the given thread will honor the 
-         * message, all other ports will drop it silently.  We could just 
-         * do that for every messsage, but this is more efficient.
+         * thread_port_map as we go, because that would require parsing
+         * and analyzing every message to look for opensrf statuses.  
+         * parsing messages adds overhead (see also above comments about
+         * JSON_v1.js).  So, instead, after the map has reached a certain 
+         * size, clear it.  If any pending messages are afield that depend 
+         * on the map, they will be broadcast to all ports on arrival 
+         * (see above).  Only the port expecting a message with the given 
+         * thread will honor the message, all other ports will drop it 
+         * silently.  We could just broadcastfor every messsage, but this 
+         * is more efficient.
          */
-        if (Object.keys(thread_port_map).length > 1000) {
+        if (Object.keys(thread_port_map).length > 1000) 
             thread_port_map = {};
-        }
     }
 
     websocket.onerror = function(evt) {
@@ -133,7 +144,8 @@ function open_websocket(port_ident) {
     }
 
     websocket.onclose = function() {
-        console.log('closing websocket');
+        console.debug('closing websocket');
+        websocket = null;
     }
 }
 
@@ -152,14 +164,14 @@ onconnect = function(e) {
 
         if (data.action == 'message') {
             thread_port_map[data.thread] = port_ident;
-            websocket.send(data.message);
+            send_to_websocket(data.message);
             return;
         } 
 
         if (messsage.action == 'close') {
             // TODO: add me to body onunload in calling pages.
             delete connected_ports[port_ident];
-            console.log('closed port ' + port_ident + 
+            console.debug('closed port ' + port_ident + 
                 '; ' + Object.keys(connected_ports).length + ' remaining');
             return;
         }
@@ -168,9 +180,7 @@ onconnect = function(e) {
 
     port.start();
 
-    console.log('added port ' + port_ident + 
+    console.debug('added port ' + port_ident + 
       '; ' + Object.keys(connected_ports).length + ' total');
-
-    open_websocket(port_ident);
 }
 
