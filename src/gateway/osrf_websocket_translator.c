@@ -98,7 +98,7 @@
 // default values, replaced during setup (below) as needed.
 static char* config_file = "/openils/conf/opensrf_core.xml";
 static char* config_ctxt = "gateway";
-static time_t idle_timeout_interval = 300; 
+static time_t idle_timeout_interval = 60; 
 static time_t idle_check_interval = 5;
 static time_t last_activity_time = 0;
 

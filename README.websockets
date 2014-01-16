@@ -40,6 +40,25 @@ done
 # remove the websocket module from the default OpenSRF Apache instance
 % a2dismod osrf_websocket_translator
 
+# optional: add these configuration variables to 
+# /etc/init.d/apache2-websockets/envvars and adjust as needed.
+# export OSRF_WEBSOCKET_IDLE_TIMEOUT=60
+# export OSRF_WEBSOCKET_IDLE_CHECK_INTERVAL=5
+# export OSRF_WEBSOCKET_CONFIG_FILE=/openils/conf/opensrf_core.xml
+# export OSRF_WEBSOCKET_CONFIG_CTXT=gateway
+#
+# IDLE_TIMEOUT specifies how long we will allow a client to stay connected
+# while idle.  A longer timeout means less network traffic (from fewer
+# websocket CONNECT calls), but it also means more Apache processes are 
+# tied up doing nothing.
+#
+# IDLE_CHECK_INTERVAL specifies how often we wake to check the idle status
+# of the connected client.
+#
+# Both specified in seconds
+#
+# CONFIG_FILE / CTXT are the standard opensrf core config options.
+
 # After OpenSRF is up and running, fire up the secondary Apache instance
 # errors will appear in /var/log/apache2-websockets/error.log
 % /etc/init.d/apache2-websockets restart
