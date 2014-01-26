@@ -4,7 +4,7 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (jessie/wheezy/squeeze), Ubuntu (lucid/precise)
+# Currently supports Debian (jessie/wheezy/squeeze), Ubuntu (precise/trusty)
 # and Fedora (16).
 #
 # Installs Perl prereqs, libjs with Perl wrapper
@@ -16,9 +16,9 @@
 # 	- or -
 # 	make -f Makefile.install debian-squeeze
 # 	- or -
-# 	make -f Makefile.install ubuntu-lucid
-# 	- or -
 # 	make -f Makefile.install ubuntu-precise
+# 	- or -
+# 	make -f Makefile.install ubuntu-trusty
 # 	- or -
 # 	make -f Makefile.install fedora
 #
@@ -173,12 +173,13 @@ EXTRA_DEBS_JESSIE = \
 	libxml-libxslt-perl \
 	libncurses5-dev
 
-EXTRA_DEBS_UBUNTU_LUCID = \
+EXTRA_DEBS_UBUNTU_PRECISE = \
 	libmemcached-dev\
 	libxml-libxml-perl \
-	libxml-libxslt-perl
+	libxml-libxslt-perl \
+	ncurses-dev
 
-EXTRA_DEBS_UBUNTU_PRECISE = \
+EXTRA_DEBS_UBUNTU_TRUSTY = \
 	libmemcached-dev\
 	libxml-libxml-perl \
 	libxml-libxslt-perl \
@@ -200,10 +201,10 @@ generic_debian: install_debs debian_sys_config
 
 fedora: install_fedora_rpms
 
-ubuntu-lucid: generic_ubuntu lucid
 ubuntu-precise: generic_ubuntu precise
-lucid: install_extra_debs install_extra_debs_lucid
+ubuntu-trusty: generic_ubuntu trusty
 precise: install_extra_debs install_extra_debs_precise
+trusty: install_extra_debs install_extra_debs_trusty
 generic_ubuntu: install_debs debian_sys_config
 
 # ------------------------------------------------------------------
@@ -237,11 +238,11 @@ install_extra_debs_squeeze: install_extra_debs
 	$(APT_TOOL) install $(EXTRA_DEBS_SQUEEZE)
 
 # Install even more packaged dependencies on modern distros
-install_extra_debs_lucid:
-	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_LUCID)
-
 install_extra_debs_precise:
 	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_PRECISE)
+
+install_extra_debs_trusty:
+	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_TRUSTY)
 
 # Fedora
 install_fedora_rpms:
