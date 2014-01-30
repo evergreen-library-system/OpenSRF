@@ -9,6 +9,25 @@ The following Linux distributions are supported:
   * Fedora 17, 18
   * Ubuntu 10.04 LTS (Lucid Lynx), 12.04 LTS (Precise Pangolin)
 
+Changes in 2.2.2
+----------------
+
+Support JSON::XS 3.0
+~~~~~~~~~~~~~~~~~~~~
+Version 3.0 JSON::XS changed its internal representation of Boolean
+values.  OpenSRF's JSON utility routines had been dependent on
+details of that representation used by previous versions of
+JSON::XS, but that dependency is now gone.
+
+Protect subrequests from post-complete messages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Subrequests (AKA method_lookup()-based API calls) sometimes append
+final-lvalue responses to the response list even after
+respond_complete() has been called from within the implementation
+method.  OpenSRF now discards all post-respond_complete values,
+protecting against extra, spurious values being returned to the
+ultimate client.
+
 Changes in 2.2.1
 ----------------
 
