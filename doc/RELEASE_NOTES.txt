@@ -1,4 +1,4 @@
-Release notes for OpenSRF 2.2.1
+Release notes for OpenSRF 2.2.2
 ===============================
 
 Supported platforms
