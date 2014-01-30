@@ -749,13 +749,13 @@ exit;
 # we do not verify services for stop/signal actions, since those may
 # legitimately be used against services not (or no longer) configured
 # to run on the selected host.
-do_init() and verify_services($opt_service) if 
-    $opt_start or 
+do_init() and verify_services($opt_service) if
+    ($opt_start or
     $opt_start_all or
     $opt_start_services or
     $opt_restart or
     $opt_restart_all or
-    $opt_restart_services;
+    $opt_restart_services) and $opt_service ne 'router';
 
 # starting services.  do_init() handled above
 do_start($opt_service) if $opt_start;
