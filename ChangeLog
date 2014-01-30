@@ -1,6 +1,102 @@
 ChangeLog
 =========
 
+OpenSRF 2.2.2
+-------------
+
+commit 9366b3355680668055c22bf1bae94f81f259b9d6
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Thu Jan 30 00:08:29 2014 -0500
+
+    update release notes for OpenSRF 2.2.2
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+19	0	doc/RELEASE_NOTES.txt
+
+commit 1ff3f4617bd78b354afd56d7c725b915dee3a9a5
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Wed Jan 29 23:46:54 2014 -0500
+
+    bump up version number for OpenSRF 2.2.2
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+2	2	src/perl/lib/OpenSRF.pm
+1	1	src/python/setup.py
+1	1	version.m4
+
+commit eebe50f1b6835b108f70085a0199d835bc4d9623
+Author: Mike Rylander <mrylander@gmail.com>
+Date:   Thu May 16 10:17:15 2013 -0400
+
+    Protect subrequests from post-complete messages
+    
+    Subrequests (AKA method_lookup()-based API calls) sometimes append
+    final-lvalue responses to the response list even after respond_complete()
+    has been called from within the implementation method.  This commit
+    discards all post-respond_complete values, protecting against extra,
+    spurious values being returned to the ultimate client.
+    
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+16	2	src/perl/lib/OpenSRF/AppSession.pm
+
+commit 8861f86b0183866a329531515935872628d8d2e6
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Mon Dec 16 08:08:51 2013 -0800
+
+    LP#1180849: test case - ignoring subrequest responses after respond_complete()
+    
+    This patch adds a regression test for verifying that subrequests
+    ignore additional responses after respond_complete() is called.
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+9	1	src/perl/t/02-AppSession.t
+
+commit 899661bbfba59f719650077875afa813cc50f044
+Author: Jeff Godin <jgodin@tadl.org>
+Date:   Tue Dec 3 13:52:39 2013 -0500
+
+    Add some additional boolean-related JSON tests
+    
+    Add some additional boolean-related JSON tests, enable use strict /
+    use warnings for JSON tests.
+    
+    Signed-off-by: Jeff Godin <jgodin@tadl.org>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+12	5	src/perl/t/09-Utils-JSON.t
+
+commit 98fd4b223def201382b4b4c330c4a0a1fc376e3d
+Author: Mike Rylander <mrylander@gmail.com>
+Date:   Tue Dec 3 09:57:39 2013 -0500
+
+    LP#1257264: Use the built-in JSON-y test for bools
+    
+    This removes a dependency on internal details of JSON::XS's
+    implementation of Boolean types which changed with the release
+    of JSON::XS 3.0.
+    
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+    Signed-off-by: Jeff Godin <jgodin@tadl.org>
+
+3	4	src/perl/lib/OpenSRF/Utils/JSON.pm
+
+commit 77d2bfe7d7dbe7815e980bb5e6e9be9a14b9992f
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Tue Dec 3 09:43:54 2013 -0800
+
+    LP#1257264: make test cases for JSON::XS Boolean-ness more generic
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+    Signed-off-by: Jeff Godin <jgodin@tadl.org>
+
+5	5	src/perl/t/09-Utils-JSON.t
+
 OpenSRF 2.2.1
 -------------
 
