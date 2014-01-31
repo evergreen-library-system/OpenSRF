@@ -738,7 +738,7 @@ sub do_help {
     --reload
     --reload-all
         Sends a SIGHUP signal to the selected service(s).  SIGHUP causes
-        each Listener process to reload its opensrf_core.xml config file 
+        each listener process to reload its opensrf_core.xml config file 
         and gracefully re-launch drone processes.  The -all variant sends
         the signal to all services.  The non-(-all) variant requires a
         --service.
