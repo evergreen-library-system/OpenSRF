@@ -732,13 +732,13 @@ sub do_help {
     --router-re-register-all
         Sends a SIGUSR2 signal to the selected service(s), which causes each 
         service's listener process to send a "register" command to all 
-        configured routers routers.  The --all variant sends the signal to
-        all running listeners.  The non-(--all) variant requires a --service.
+        configured routers.  The --all variant sends the signal to all
+        running listeners.  The non-(--all) variant requires a --service.
 
     --reload
     --reload-all
         Sends a SIGHUP signal to the selected service(s).  SIGHUP causes
-        each Listener process to reload its opensrf_core.xml config file 
+        each listener process to reload its opensrf_core.xml config file 
         and gracefully re-launch drone processes.  The -all variant sends
         the signal to all services.  The non-(-all) variant requires a
         --service.
