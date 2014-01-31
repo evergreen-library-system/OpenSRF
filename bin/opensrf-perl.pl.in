@@ -61,6 +61,7 @@ my $opt_reload = 0;
 my $opt_reload_all = 0;
 my $opt_quiet = 0;
 my $opt_diagnostic = 0;
+my $opt_ignore_orphans = 0;
 my $sclient;
 my @perl_services;
 my @nonperl_services;
@@ -101,7 +102,8 @@ GetOptions(
     'router-re-register-all' => \$opt_router_re_register_all,
     'reload' => \$opt_reload,
     'reload-all' => \$opt_reload_all,
-    'diagnostic' => \$opt_diagnostic
+    'diagnostic' => \$opt_diagnostic,
+    'are-there-no-prisons' => \$opt_ignore_orphans
 );
 
 if ($opt_localhost) {
@@ -369,7 +371,7 @@ sub do_start {
             unlink $pidfile;
         }
 
-    } elsif (@ps_pids) { # orphan process
+    } elsif (@ps_pids and not $opt_ignore_orphans) { # orphan process
 
         if ($opt_force_clean_process) {
             msg("service $service pid=@ps_pids is running with no pidfile");
@@ -666,7 +668,12 @@ sub do_help {
     --force-clean-process
         When starting a service, if a service process is already running 
         but no pidfile exists, kill the service process before starting
-        the new one.
+        the new one. This applies to routers too.
+
+    --are-there-no-prisons
+        When starting a service, if a service procses is already running but
+        no pidfile exists, ignore the existing process and carry on starting
+        the new one (i.e., ignore orphans).  This applies to routers too.
 
     ==== stopping services =====
 
