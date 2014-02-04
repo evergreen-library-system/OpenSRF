@@ -18,6 +18,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <errno.h>
 #include "opensrf/utils.h"
 #include "opensrf/log.h"
@@ -30,7 +31,14 @@ static osrfRouter* router = NULL;
 
 static volatile sig_atomic_t stop_signal = 0;
 
-static void setupRouter( const jsonObject* configChunk );
+static void setupRouter( const jsonObject* configChunk, int configPos );
+
+/* I think it's important these following things not be static */
+pid_t* daemon_pid_list;
+size_t	daemon_pid_list_size;
+
+
+void storeRouterDaemonPid( pid_t, int );
 
 /**
 	@brief Respond to signal by setting a switch that will interrupt the main loop.
@@ -58,12 +66,14 @@ int main( int argc, char* argv[] ) {
 
 	if( argc < 3 ) {
 		osrfLogError( OSRF_LOG_MARK,
-			"Usage: %s <path_to_config_file> <config_context>", argv[0] );
+			"Usage: %s <path_to_config_file> <config_context> [pid_file]",
+			argv[0] );
 		exit( EXIT_FAILURE );
 	}
 
 	const char* config_file = argv[1];
 	const char* context = argv[2];
+	char* pid_file = argc >= 4 ? strdup(argv[3]) : NULL;
 
 	/* Get a set of router definitions from a config file */
 
@@ -87,11 +97,35 @@ int main( int argc, char* argv[] ) {
 	init_proc_title( argc, argv );
 	set_proc_title( "OpenSRF Router" );
 
+	/* Set up some shared memory so after some forking(), our children
+	 * can tell us about all our grandchildren's PIDs, and we can write
+	 * them to a file.
+	 */
+	daemon_pid_list_size = configInfo->size * sizeof(pid_t);
+	daemon_pid_list = mmap(
+		NULL, daemon_pid_list_size, PROT_READ | PROT_WRITE,
+		MAP_ANONYMOUS | MAP_SHARED, -1 , 0
+	);
+
+	if ( daemon_pid_list == MAP_FAILED ) {
+		osrfLogError(
+			OSRF_LOG_MARK,
+			"mmap() for router daemon PID list failed: %s",
+			strerror(errno)
+		);
+		exit( EXIT_FAILURE );
+	}
+
+	memset( daemon_pid_list, 0, daemon_pid_list_size );
+
 	/* Spawn child process(es) */
 
 	int rc = EXIT_SUCCESS;
 	int parent = 1;    // boolean
 	int i;
+
+	FILE *pid_fp;
+
 	for(i = 0; i < configInfo->size; i++) {
 		const jsonObject* configChunk = jsonObjectGetIndex( configInfo, i );
 		if( ! jsonObjectGetKeyConst( configChunk, "transport" ) )
@@ -107,8 +141,10 @@ int main( int argc, char* argv[] ) {
 			// typo or other such error, making it look spurious.  In that case, well, too bad.
 			continue;
 		}
+
 		if(fork() == 0) { /* create a new child to run this router instance */
-			setupRouter(configChunk);
+			free( pid_file );   /* we don't need this as a child */
+			setupRouter(configChunk, i);
 			parent = 0;
 			break;  /* We're a child; don't spawn any more children here */
 		}
@@ -150,6 +186,43 @@ int main( int argc, char* argv[] ) {
 				rc = EXIT_FAILURE;
 			}
 		}
+
+		/* If rc is still EXIT_SUCCESS after the preceding loop,
+		 * all our children have spawned grandchildren and will have
+		 * reported their IDs via our shared memory daemon_pid_list
+		 * buffer by now.
+		 *
+		 * A note about that list: it's going to have one pid_t-sized
+		 * slot for every configInfo chunk in the config.  Commonly,
+		 * this code sees empty chunks or chunks that don't correspond
+		 * to full router configs, so the slots for these unused chunks
+		 * get left at zero.  We skip those zeros both when writing the
+		 * PID file and when reporting to the log.
+		 * */
+		if ( rc == EXIT_SUCCESS ) {
+			if ( pid_file ) {
+				if ( (pid_fp = fopen(pid_file, "w")) ) {
+					for (i = 0; i < configInfo->size; i++) {
+						if ( daemon_pid_list[i] > 0 )
+							fprintf(pid_fp, "%d\n", daemon_pid_list[i]);
+					}
+					fclose(pid_fp);
+				} else {
+					osrfLogWarning(OSRF_LOG_MARK,
+						"Tried to write PID file at %s but couldn't: %s",
+						pid_file, strerror(errno));
+				}
+				free( pid_file );
+			}
+
+//			for (i = 0; i < configInfo->size; i++) {
+//				if ( daemon_pid_list[i] > 0 ) {
+//					osrfLogInfo(OSRF_LOG_MARK,
+//						"Reporting a grandchild with PID %d", daemon_pid_list[i]);
+//				}
+//			}
+		}
+		munmap( daemon_pid_list, daemon_pid_list_size );
 	}
 
 	if( stop_signal ) {
@@ -166,11 +239,12 @@ int main( int argc, char* argv[] ) {
 /**
 	@brief Configure and run a child process.
 	@param configChunk Pointer to a subset of the loaded configuration.
+	@param configPos Index of configChunk in its original containing array, doubling as index for storing PID of child from daemonization (the original process' grandchild)
 
 	Configure oneself, daemonize, and then call osrfRouterRun() to go into a
 	near-endless loop.  Return when interrupted by a signal, or when something goes wrong.
 */
-static void setupRouter( const jsonObject* configChunk ) {
+static void setupRouter( const jsonObject* configChunk, int configPos ) {
 
 	const jsonObject* transport_cfg = jsonObjectGetKeyConst( configChunk, "transport" );
 
@@ -266,7 +340,7 @@ static void setupRouter( const jsonObject* configChunk ) {
 
 	// Done configuring?  Let's get to work.
 
-	daemonize();
+	daemonizeWithCallback( storeRouterDaemonPid, configPos );
 	osrfRouterRun( router );
 
 	osrfRouterFree(router);
@@ -274,4 +348,9 @@ static void setupRouter( const jsonObject* configChunk ) {
 	osrfLogInfo( OSRF_LOG_MARK, "Router freed" );
 
 	return;
+}
+
+void storeRouterDaemonPid( pid_t p, int i ) {
+	if( i != -1 )
+		daemon_pid_list[i] = p;
 }

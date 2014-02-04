@@ -280,6 +280,7 @@ extern "C" {
 int init_proc_title( int argc, char* argv[] );
 int set_proc_title( const char* format, ... );
 
+int daemonizeWithCallback( void (*)(pid_t, int), int );
 int daemonize( void );
 
 void* safe_malloc(int size);

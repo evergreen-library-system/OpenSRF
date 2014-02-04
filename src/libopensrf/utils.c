@@ -645,12 +645,14 @@ char* uescape( const char* string, int size, int full_escape ) {
 
 /**
 	@brief Become a proper daemon.
+	@param callback Ptr to a function.  From parent, called with child PID as first argument, and the next argument to *this* function as the second argument.  From child, called with -1, -1 (yes pid_t is signed)
+	@param callback_arg An integer argument passed as the second argument to the callback function from the parent process post-fork()
 	@return 0 if successful, or -1 if not.
 
 	Call fork().  The parent exits.  The child moves to the root directory, detaches from
 	the terminal, and redirects the standard streams (stdin, stdout, stderr) to /dev/null.
 */
-int daemonize( void ) {
+int daemonizeWithCallback( void (*callback)(pid_t, int), int callback_arg ) {
 	pid_t f = fork();
 
 	if (f == -1) {
@@ -659,6 +661,9 @@ int daemonize( void ) {
 
 	} else if (f == 0) { // We're in the child now...
 		
+		if( callback )
+			callback( -1, -1 );
+
 		// Change directories.  Otherwise whatever directory
 		// we're in couldn't be deleted until the program
 		// terminated -- possibly causing some inconvenience.
@@ -676,8 +681,21 @@ int daemonize( void ) {
 		return 0;
 
 	} else { // We're in the parent...
+		if( callback )
+			callback( f, callback_arg );
+
 		_exit(0);
 	}
+}
+
+/**
+	@brief Become a proper daemon.
+	@return 0 if successful, or -1 if not.
+
+	See daemonizeWithCallback() for details.
+*/
+int daemonize( void ) {
+	return daemonizeWithCallback( NULL, 0 );
 }
 
 

@@ -288,20 +288,11 @@ sub do_diagnostic {
 
 
 sub do_start_router {
-    `opensrf_router $opt_config routers`;
-
-    sleep 2; # give the router time to fork
-    my @pids = `ps -C opensrf_router -o pid=`;
-    s/^\s*|\n//g for @pids;
 
     my $pidfile = get_pid_file('router');
-    open(PF, '>', $pidfile) or die "Cannot open $pidfile: $!\n";
-    foreach (@pids) {
-        chomp;
-        msg("starting service pid=$_ router");
-        print PF "$_\n";
-    }
-    close PF;
+    `opensrf_router $opt_config routers $pidfile`;
+
+    sleep 2; # give the router time to fork (probably not need now but w/e)
 }
 
 # stop a specific service
@@ -762,7 +753,9 @@ do_init() and verify_services($opt_service) if
     $opt_start_services or
     $opt_restart or
     $opt_restart_all or
-    $opt_restart_services) and $opt_service ne 'router';
+    $opt_restart_services) and (
+        not defined $opt_service or $opt_service ne 'router'
+    );
 
 # starting services.  do_init() handled above
 do_start($opt_service) if $opt_start;
