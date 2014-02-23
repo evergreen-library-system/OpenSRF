@@ -89,7 +89,7 @@
 /**
 	@brief Default size of output buffer.
 */
-#define OSRF_MSG_BUFFER_SIZE     10240
+#define OSRF_MSG_BUNDLE_SIZE     10240
 
 /**
 	@brief Represent an Application.
@@ -421,7 +421,8 @@ static osrfMethod* build_method( const char* methodName, const char* symbolName,
 	if(user_data)
 		method->userData    = user_data;
 
-	method->bufsize         = OSRF_MSG_BUFFER_SIZE;
+	method->max_bundle_size = OSRF_MSG_BUNDLE_SIZE;
+    method->max_chunk_size  = OSRF_MSG_CHUNK_SIZE;
 	return method;
 }
 
@@ -429,7 +430,7 @@ static osrfMethod* build_method( const char* methodName, const char* symbolName,
 	@brief Set the effective output buffer size for a given method.
 	@param appName Name of the application.
 	@param methodName Name of the method.
-	@param bufsize Desired size of the output buffer, in bytes.
+	@param max_bundle_size Desired size of the output buffer, in bytes.
 	@return Zero if successful, or -1 if the specified method cannot be found.
 
 	A smaller buffer size may result in a lower latency for the first response, since we don't
@@ -442,18 +443,18 @@ static osrfMethod* build_method( const char* methodName, const char* symbolName,
 	This function has no effect on atomic methods, because all responses are sent in a single
 	message anyway.  Likewise it has no effect on a method that returns only a single response.
 */
-int osrfMethodSetBufferSize( const char* appName, const char* methodName, size_t bufsize ) {
+int osrfMethodSetBundleSize( const char* appName, const char* methodName, size_t max_bundle_size ) {
 	osrfMethod* method = _osrfAppFindMethod( appName, methodName );
 	if( method ) {
 		osrfLogInfo( OSRF_LOG_MARK,
 			"Setting outbuf buffer size to %lu for method %s of application %s",
-			(unsigned long) bufsize, methodName, appName );
-		method->bufsize = bufsize;
+			(unsigned long) max_bundle_size, methodName, appName );
+		method->max_bundle_size = max_bundle_size;
 		return 0;
 	} else {
 		osrfLogWarning( OSRF_LOG_MARK,
 			"Unable to set outbuf buffer size to %lu for method %s of application %s",
-			(unsigned long) bufsize, methodName, appName );
+			(unsigned long) max_bundle_size, methodName, appName );
 		return -1;
 	}
 }
@@ -752,7 +753,7 @@ static int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int 
 
 			// If the new message would overflow the buffer, flush the output buffer first
 			int len_so_far = buffer_length( ctx->session->outbuf );
-			if( len_so_far && (strlen( json ) + len_so_far + 3 >= ctx->method->bufsize )) {
+			if( len_so_far && (strlen( json ) + len_so_far + 3 >= ctx->method->max_bundle_size )) {
 				if( flush_responses( ctx->session, ctx->session->outbuf ))
 					return -1;
 			}

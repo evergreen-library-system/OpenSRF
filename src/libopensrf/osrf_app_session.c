@@ -24,6 +24,9 @@ struct osrf_app_request_struct {
 	/** Linked list of responses to the request. */
 	osrfMessage* result;
 
+    /** Buffer used to collect partial response messages */
+    growing_buffer* part_response_buffer;
+
 	/** Boolean; if true, then a call that is waiting on a response will reset the
 	timeout and set this variable back to false. */
 	int reset_timeout;
@@ -76,6 +79,7 @@ static osrfAppRequest* _osrf_app_request_init(
 	req->reset_timeout  = 0;
 	req->next           = NULL;
 	req->prev           = NULL;
+	req->part_response_buffer = NULL;
 
 	return req;
 }
@@ -98,6 +102,9 @@ static void _osrf_app_request_free( osrfAppRequest * req ) {
 			req->result = next_msg;
 		}
 
+        if (req->part_response_buffer)
+            buffer_free(req->part_response_buffer);
+
 		free( req );
 	}
 }
@@ -114,8 +121,57 @@ static void _osrf_app_request_push_queue( osrfAppRequest* req, osrfMessage* resu
 	if(req == NULL || result == NULL)
 		return;
 
+    if (result->status_code == OSRF_STATUS_PARTIAL) {
+        osrfLogDebug(OSRF_LOG_MARK, "received partial message response");
+
+        if (!req->part_response_buffer) {
+            // assume the max_chunk_size of the server matches ours for
+            // buffer initialization,  since the setting will usually be 
+            // a site-wide value.
+	        req->part_response_buffer = buffer_init(OSRF_MSG_CHUNK_SIZE + 1);
+        }
+
+        const char* partial = jsonObjectGetString(result->_result_content);
+
+        if (partial != NULL) {
+            osrfLogDebug(OSRF_LOG_MARK, 
+                "adding %d bytes to response buffer", strlen(partial));
+        
+            // add the partial contents of the message to the buffer
+            buffer_add(req->part_response_buffer, partial);
+        }
+
+        // all done.  req and result are freed by the caller
+        return;
+
+    } else if (result->status_code == OSRF_STATUS_NOCONTENT) {
+        if (req->part_response_buffer && req->part_response_buffer->n_used) {
+
+            // part_response_buffer contains a stitched-together JSON string
+            osrfLogDebug(OSRF_LOG_MARK, 
+                "partial response complete, parsing %d bytes", 
+                req->part_response_buffer->n_used);
+
+            // coerce the partial-complete response into a standard RESULT.
+            osrf_message_set_status_info(result, NULL, "OK", OSRF_STATUS_OK);
+
+            // use the stitched-together JSON string as the result conten
+            osrf_message_set_result_content(
+                result, req->part_response_buffer->buf);
+
+            // free string, keep the buffer
+            buffer_reset(req->part_response_buffer); 
+
+        } else {
+            osrfLogDebug(OSRF_LOG_MARK, 
+                "Received OSRF_STATUS_NOCONTENT with no preceeding content");
+            return;
+        }
+    }
+
 	osrfLogDebug( OSRF_LOG_MARK, "App Session pushing request [%d] onto request queue",
 			result->thread_trace );
+
 	if(req->result == NULL) {
 		req->result = result;   // Add the first node
 
