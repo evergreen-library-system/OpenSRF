@@ -45,7 +45,9 @@ var OSRF_MESSAGE_TYPE_DISCONNECT = 'DISCONNECT';
 var OSRF_STATUS_CONTINUE = 100;
 var OSRF_STATUS_OK = 200;
 var OSRF_STATUS_ACCEPTED = 202;
+var OSRF_STATUS_NOCONTENT = 204;
 var OSRF_STATUS_COMPLETE = 205;
+var OSRF_STATUS_PARTIAL = 206;
 var OSRF_STATUS_REDIRECTED = 307;
 var OSRF_STATUS_BADREQUEST = 400;
 var OSRF_STATUS_UNAUTHORIZED = 401;
@@ -186,6 +188,45 @@ osrfResult.prototype.content = function(d) {
         this.hash.content = d; 
     return this.hash.content; 
 };
+function osrfResultPartial(hash) {
+    this.hash = hash;
+    this._encodehash = true;
+}
+osrfResultPartial.prototype.status = function(d) {
+    if(arguments.length == 1) 
+        this.hash.status = d; 
+    return this.hash.status; 
+};
+osrfResultPartial.prototype.statusCode = function(d) {
+    if(arguments.length == 1) 
+        this.hash.statusCode = d; 
+    return this.hash.statusCode; 
+};
+osrfResultPartial.prototype.content = function(d) {
+    if(arguments.length == 1) 
+        this.hash.content = d; 
+    return this.hash.content; 
+};
+function osrfResultPartialComplete(hash) {
+    this.hash = hash;
+    this._encodehash = true;
+}
+osrfResultPartialComplete.prototype.status = function(d) {
+    if(arguments.length == 1) 
+        this.hash.status = d; 
+    return this.hash.status; 
+};
+osrfResultPartialComplete.prototype.statusCode = function(d) {
+    if(arguments.length == 1) 
+        this.hash.statusCode = d; 
+    return this.hash.statusCode; 
+};
+osrfResultPartialComplete.prototype.content = function(d) {
+    if(arguments.length == 1) 
+        this.hash.content = d; 
+    return this.hash.content; 
+};
+
 function osrfServerError(hash) { 
     this.hash = hash;
     this._encodehash = true;
@@ -508,6 +549,7 @@ OpenSRF.Request = function(session, reqid, args) {
     this.timeout = args.timeout;
     this.api_level = args.api_level || OpenSRF.api_level;
     this.response_queue = [];
+    this.part_response_buffer = '';
     this.complete = false;
 };
 
@@ -632,11 +674,12 @@ OpenSRF.Stack.handle_message = function(ses, osrf_msg) {
     
     var req = ses.find_request(osrf_msg.threadTrace());
 
+    var payload = osrf_msg.payload();
+    var status = payload.statusCode();
+    var status_text = payload.status();
+
     if(osrf_msg.type() == OSRF_MESSAGE_TYPE_STATUS) {
 
-        var payload = osrf_msg.payload();
-        var status = payload.statusCode();
-        var status_text = payload.status();
 
         if(status == OSRF_STATUS_COMPLETE) {
             if(req) {
@@ -666,11 +709,19 @@ OpenSRF.Stack.handle_message = function(ses, osrf_msg) {
     }
 
     if(osrf_msg.type() == OSRF_MESSAGE_TYPE_RESULT) {
+        req = ses.find_request(osrf_msg.threadTrace());
         if(req) {
-            req.response_queue.push(osrf_msg.payload());
-            if(req.onresponse) {
-                return req.onresponse(req);
+            if (status == OSRF_STATUS_PARTIAL) {
+                req.part_response_buffer += payload.content()
+                return; // we're just collecting a big chunked payload
+            } else if (status == OSRF_STATUS_NOCONTENT) {
+                payload.content( JSON2js(req.part_response_buffer) );
+                payload.statusCode( OSRF_STATUS_OK );
+                req.part_response_buffer = '';
             }
+            req.response_queue.push(payload);
+            if(req.onresponse) 
+                return req.onresponse(req);
         }
     }
 };

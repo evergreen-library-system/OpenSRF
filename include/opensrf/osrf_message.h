@@ -38,6 +38,9 @@ extern "C" {
 #define OSRF_STATUS_ACCEPTED             202
 #define OSRF_STATUS_COMPLETE             205
 
+#define OSRF_STATUS_PARTIAL              206
+#define OSRF_STATUS_NOCONTENT            204
+
 #define OSRF_STATUS_REDIRECTED           307
 
 #define OSRF_STATUS_BADREQUEST           400
