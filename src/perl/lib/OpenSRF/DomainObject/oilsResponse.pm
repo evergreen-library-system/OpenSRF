@@ -51,9 +51,12 @@ layer messages send between the client and server.
 
 sub STATUS_CONTINUE		{ return 100 }
 
-sub STATUS_OK				{ return 200 }
+sub STATUS_OK			{ return 200 }
 sub STATUS_ACCEPTED		{ return 202 }
 sub STATUS_COMPLETE		{ return 205 }
+
+sub STATUS_PARTIAL		{ return 206 }
+sub STATUS_NOCONTENT	{ return 204 }
 
 sub STATUS_REDIRECTED	{ return 307 }
 
@@ -256,6 +259,85 @@ Sets or gets the content of the response.  This should be exactly one object
 of (sub)type domainObject or domainObjectCollection.
 
 =back
+
+=cut
+
+sub content {
+        my $self = shift;
+	my $val = shift;
+
+	$self->{content} = $val if (defined $val);
+	return $self->{content};
+}
+
+=head1 SEE ALSO
+
+B<OpenSRF::DomainObject::oilsResponse>
+
+=cut
+
+1;
+
+#-------------------------------------------------------------------------------
+
+package OpenSRF::DomainObject::oilsResult::Partial;
+use OpenSRF::DomainObject::oilsResponse qw/:status/;
+use base 'OpenSRF::DomainObject::oilsResult';
+use vars qw/$status $statusCode/;
+OpenSRF::Utils::JSON->register_class_hint( hint => 'osrfResult', name => 'OpenSRF::DomainObject::oilsResult::Partial', type => 'hash' );
+
+
+$status = 'Partial Response';
+$statusCode = STATUS_PARTIAL;
+
+=head1 NAME
+
+OpenSRF::DomainObject::oilsResult::Partial
+
+=head1 SYNOPSIS
+
+This class is used internally to break apart large OpenSRF messages into small
+chunks, to reduce the maximum possible stanza size when sending a message over
+XMPP.
+
+=cut
+
+sub content {
+        my $self = shift;
+	my $val = shift;
+
+	$self->{content} = $val if (defined $val);
+	return $self->{content};
+}
+
+=head1 SEE ALSO
+
+B<OpenSRF::DomainObject::oilsResponse>
+
+=cut
+
+1;
+
+#-------------------------------------------------------------------------------
+
+package OpenSRF::DomainObject::oilsResult::PartialComplete;
+use OpenSRF::DomainObject::oilsResponse qw/:status/;
+use base 'OpenSRF::DomainObject::oilsResult';
+use vars qw/$status $statusCode/;
+OpenSRF::Utils::JSON->register_class_hint( hint => 'osrfResult', name => 'OpenSRF::DomainObject::oilsResult::Partial', type => 'hash' );
+
+
+$status = 'Partial Response Finalized';
+$statusCode = STATUS_NOCONTENT;
+
+=head1 NAME
+
+OpenSRF::DomainObject::oilsResult::Partial
+
+=head1 SYNOPSIS
+
+This class is used internally to mark the end of a stream of small partial
+OpenSRF messages of type OpenSRF::DomainObject::oilsResult::Partial.
 
 =cut
 
