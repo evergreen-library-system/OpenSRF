@@ -65,7 +65,7 @@ sub max_chunk_size {
 	my $self = shift;
 	return 0 unless ref($self);
 	return $self->{max_chunk_size} if (defined($self->{max_chunk_size}));
-	return 2 * $self->max_bundle_size;
+	return 104858; # 1/10 MB
 }
 
 sub api_name {
@@ -182,6 +182,7 @@ sub handler {
 			my $appreq = OpenSRF::AppRequest->new( $session );
 			$appreq->max_bundle_size( $coderef->max_bundle_size );
 			$appreq->max_bundle_count( $coderef->max_bundle_count );
+			$appreq->max_chunk_size( $coderef->max_chunk_size );
 
 			$log->debug( "in_request = $in_request : [" . $appreq->threadTrace."]", INTERNAL );
 			if( $in_request ) {

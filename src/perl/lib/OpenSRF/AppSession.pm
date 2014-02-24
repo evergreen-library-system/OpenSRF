@@ -892,6 +892,13 @@ sub max_bundle_size {
 	return $self->{max_bundle_size};
 }
 
+sub max_chunk_size {
+	my $self = shift;
+	my $value = shift;
+	$self->{max_chunk_size} = $value if (defined($value));
+	return $self->{max_chunk_size};
+}
+
 sub recv_timeout {
 	my $self = shift;
 	my $timeout = shift;
@@ -1034,27 +1041,31 @@ sub respond {
 	my $msg = shift;
 	return unless ($self and $self->session and !$self->complete);
 
-
     my $type = 'RESULT';
 	my $response;
 	if (ref($msg) && UNIVERSAL::isa($msg, 'OpenSRF::DomainObject::oilsResponse')) {
 		$response = $msg;
         $type = 'STATUS' if UNIVERSAL::isa($response, 'OpenSRF::DomainObject::oilsStatus');
-	} elsif ($self->max_chunk_size > 0) { # we might need to chunk
-        my $str = OpenSRF::Utils::JSON->perl2JSON($msg);
-        if (length($str) > $self->max_chunk_size) { # send partials ("chunking")
-            for (my $i = 0; $i < length($str); $i += $self->max_chunk_size) {
-                $response = new OpenSRF::DomainObject::oilsResult::Partial;
-        		$response->content( substr($str, $i, $self->max_chunk_size) );
-	            $self->session->send($type, $response, $self->threadTrace);
+
+	} else {
+
+        if ($self->max_chunk_size > 0) { # we might need to chunk
+            my $str = OpenSRF::Utils::JSON->perl2JSON($msg);
+            if (length($str) > $self->max_chunk_size) { # send partials ("chunking")
+                for (my $i = 0; $i < length($str); $i += $self->max_chunk_size) {
+                    $response = new OpenSRF::DomainObject::oilsResult::Partial;
+                    $response->content( substr($str, $i, $self->max_chunk_size) );
+                    $self->session->send($type, $response, $self->threadTrace);
+                }
+                # This triggers reconstruction on the remote end
+                $response = new OpenSRF::DomainObject::oilsResult::PartialComplete;
+                return $self->session->send($type, $response, $self->threadTrace);
             }
-            # This triggers reconstruction on the remote end
-            $response = new OpenSRF::DomainObject::oilsResult::PartialComplete;
-	        return $self->session->send($type, $response, $self->threadTrace);
-        } else {
-            $response = new OpenSRF::DomainObject::oilsResult;
-            $response->content( $msg );
         }
+
+        # message failed to exceed max chunk size OR chunking disabled
+        $response = new OpenSRF::DomainObject::oilsResult;
+        $response->content($msg);
     }
 
     if ($self->{max_bundle_count} > 0 or $self->{max_bundle_size} > 0) { # we are bundling, and we need to test the size or count

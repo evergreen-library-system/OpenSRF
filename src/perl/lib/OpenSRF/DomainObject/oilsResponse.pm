@@ -13,7 +13,8 @@ BEGIN {
 					STATUS_NOTFOUND STATUS_NOTALLOWED STATUS_TIMEOUT
 					STATUS_INTERNALSERVERERROR STATUS_NOTIMPLEMENTED
 					STATUS_VERSIONNOTSUPPORTED STATUS_REDIRECTED 
-					STATUS_EXPFAILED STATUS_COMPLETE/;
+					STATUS_EXPFAILED STATUS_COMPLETE STATUS_PARTIAL
+					STATUS_NOCONTENT/;
 
 %EXPORT_TAGS = (
 	status => [ qw/STATUS_CONTINUE STATUS_OK STATUS_ACCEPTED
@@ -21,7 +22,8 @@ BEGIN {
 					STATUS_NOTFOUND STATUS_NOTALLOWED STATUS_TIMEOUT
 					STATUS_INTERNALSERVERERROR STATUS_NOTIMPLEMENTED
 					STATUS_VERSIONNOTSUPPORTED STATUS_REDIRECTED 
-					STATUS_EXPFAILED STATUS_COMPLETE/ ],
+					STATUS_EXPFAILED STATUS_COMPLETE STATUS_PARTIAL
+					STATUS_NOCONTENT/ ],
 );
 
 }
@@ -284,7 +286,10 @@ package OpenSRF::DomainObject::oilsResult::Partial;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use base 'OpenSRF::DomainObject::oilsResult';
 use vars qw/$status $statusCode/;
-OpenSRF::Utils::JSON->register_class_hint( hint => 'osrfResult', name => 'OpenSRF::DomainObject::oilsResult::Partial', type => 'hash' );
+OpenSRF::Utils::JSON->register_class_hint(
+    hint => 'osrfResultPartial',
+    name => 'OpenSRF::DomainObject::oilsResult::Partial',
+    type => 'hash');
 
 
 $status = 'Partial Response';
@@ -324,7 +329,10 @@ package OpenSRF::DomainObject::oilsResult::PartialComplete;
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use base 'OpenSRF::DomainObject::oilsResult';
 use vars qw/$status $statusCode/;
-OpenSRF::Utils::JSON->register_class_hint( hint => 'osrfResult', name => 'OpenSRF::DomainObject::oilsResult::Partial', type => 'hash' );
+OpenSRF::Utils::JSON->register_class_hint( 
+    hint => 'osrfResultPartialComplete',
+    name => 'OpenSRF::DomainObject::oilsResult::PartialComplete',
+    type => 'hash');
 
 
 $status = 'Partial Response Finalized';
