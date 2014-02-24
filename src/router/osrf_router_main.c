@@ -154,8 +154,8 @@ int main( int argc, char* argv[] ) {
 
 	if( stop_signal ) {
 		// Interrupted by a signal?  Re-raise so the parent can see it.
-		osrfLogWarning( OSRF_LOG_MARK, "Interrupted by signal %d; re-raising",
-				(int) stop_signal );
+		osrfLogDebug(OSRF_LOG_MARK,
+			"Router received signal %d; re-raising", (int) stop_signal);
 		signal( stop_signal, SIG_DFL );
 		raise( stop_signal );
 	}

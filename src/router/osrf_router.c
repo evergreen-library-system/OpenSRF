@@ -220,7 +220,7 @@ void osrfRouterRun( osrfRouter* router ) {
 		if( (selectret = select(maxfd + 1, &set, NULL, NULL, NULL)) < 0 ) {
 			if( EINTR == errno ) {
 				if( router->stop ) {
-					osrfLogWarning( OSRF_LOG_MARK, "Top level select call interrupted by signal" );
+					osrfLogInfo(OSRF_LOG_MARK, "Router shutting down");
 					break;
 				}
 				else
