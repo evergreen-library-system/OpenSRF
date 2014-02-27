@@ -52,7 +52,7 @@ sub max_bundle_size {
 	my $self = shift;
 	return 0 unless ref($self);
 	return $self->{max_bundle_size} if (defined($self->{max_bundle_size}));
-	return 10240;
+	return 25600; # 25K
 }
 
 sub max_bundle_count {
@@ -65,7 +65,7 @@ sub max_chunk_size {
 	my $self = shift;
 	return 0 unless ref($self);
 	return $self->{max_chunk_size} if (defined($self->{max_chunk_size}));
-	return 104858; # 1/10 MB
+	return $self->max_bundle_size * 2;
 }
 
 sub api_name {

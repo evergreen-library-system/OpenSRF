@@ -87,11 +87,6 @@
 /*@}*/
 
 /**
-	@brief Default size of output buffer.
-*/
-#define OSRF_MSG_BUNDLE_SIZE     10240
-
-/**
 	@brief Represent an Application.
 */
 typedef struct {

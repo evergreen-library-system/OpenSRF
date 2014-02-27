@@ -34,7 +34,12 @@ struct osrf_app_request_struct;
 typedef struct osrf_app_request_struct osrfAppRequest;
 
 #define OSRF_REQUEST_HASH_SIZE 64
-#define OSRF_MSG_CHUNK_SIZE    104858 /* 0.1 MB */
+
+/**
+	@brief Default size of output buffer.
+*/
+#define OSRF_MSG_BUNDLE_SIZE 25600 /* 25K */
+#define OSRF_MSG_CHUNK_SIZE  (OSRF_MSG_BUNDLE_SIZE * 2)
 
 /**
 	@brief Representation of a session with another application.
