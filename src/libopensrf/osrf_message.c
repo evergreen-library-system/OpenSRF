@@ -489,7 +489,13 @@ jsonObject* osrfMessageToJSON( const osrfMessage* msg ) {
 		case RESULT:
 			jsonObjectSetKey(json, "type", jsonNewObject("RESULT"));
 			payload = jsonNewObject(NULL);
-			jsonObjectSetClass(payload,"osrfResult");
+            char* cname = "osrfResult";
+            if (msg->status_code == OSRF_STATUS_PARTIAL) {
+                cname = "osrfResultPartial";
+            } else if (msg->status_code == OSRF_STATUS_NOCONTENT) {
+                cname = "osrfResultPartialComplete";
+            }
+			jsonObjectSetClass(payload, cname);
 			jsonObjectSetKey(payload, "status", jsonNewObject(msg->status_text));
 			snprintf(sc, sizeof(sc), "%d", msg->status_code);
 			jsonObjectSetKey(payload, "statusCode", jsonNewObject(sc));
