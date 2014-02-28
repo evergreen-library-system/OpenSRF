@@ -1,0 +1,90 @@
+Release notes for OpenSRF 2.3.0-beta
+====================================
+
+Supported platforms
+-------------------
+The following Linux distributions are supported:
+
+  * Debian 6 (Squeeze) and 7 (Wheezy)
+  * Fedora 17, 18
+  * Ubuntu 10.04 LTS (Lucid Lynx), 12.04 LTS (Precise Pangolin)
+
+New features in 2.3.0
+---------------------
+
+New control script
+~~~~~~~~~~~~~~~~~~
+OpenSRF 2.3.0 introduces a new control script, `osrf_control`.
+The previous control script, `osrf_ctl.sh`, is deprecated.
+
+`osrf_control` provides fine-grained control for starting and
+stopping services all at once or individually; service stops can be
+graceful, fast, or immediate.
+
+`osrf_control` also provides a new `--diagnostic` option to supply
+useful information about running services, including uptime, the PID
+of the listener, and the number of drone processes.
+
+For a complete list of options, run `osrf_control --help`.
+
+New signals for controlling OpenSRF processes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OpenSRF 2.3.0 adds support for using the following signals to manage
+processes:
+
+* `SIGTERM` -- graceful shutdown. When this signal is sent to a
+  listener, unregisters it from its routers, waits for its drones to
+  finish servicing their active requests, then stops the drones and
+  itself.
+* `SIGUSR1` -- router unregister. When this siginal is sent to a
+  listener, unregisters it from its routers.
+* `SIGUSR2` -- router re-register. When this siginal is sent to a
+  listener, registers it with its routers.
+* `SIGHUP` -- reload core configuration and refresh drones. When sent
+  to a listener, causes it to reload the `opensrf_core.xml` configuration,
+  update the logging level, reap idle drones and putting active drones
+  on a list to be terminated when they finish their current requests,
+  then spawns new drones.  This allows the logging level to be changed
+  as well as freeing memory used by long-running or leaky drones.
+
+Typically one would not send these signals directly, but instead use
+`osrf_control`.
+
+As part of this change, services written in C now have a per-service
+listener process rather than a single master process for all C services.
+
+Add option to opensrf.settings methods to force rereading of opensrf.xml
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The following methods in `opensrf.settings` now accept Boolean
+reload parameter as the last argument. If set, the `opensrf.xml`
+file will be reread prior to responding with the requested settings.
+
+* `opensrf.settings.host_config.get`
+* `opensrf.settings.default_config.get`
+* `opensrf.settings.xpath.get`
+* `opensrf.settings.xpath.get.raw`
+
+Bugfixes in 2.3.0
+-----------------
+
+Better detect disconnections from the Jabber server (LP#1258251)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The Perl XMPP client code now better detects when it has lost its
+connection to the Jabber server, thereby improving its ability to
+attempt to reconnect.
+
+Improved Python support (LP#1066131 and LP#1155446)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`srfsh.py` no longer assumes that it is running on a private domain,
+and can now run on non-private networks.
+
+The dependencies required for the Python test suite to pass are now
+installed by default on Debian and Ubuntu.
+
+Logging improvements (LP#1170484 and LP#1284137)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The failure to load a shared library required by a service written in
+C is now logged as an error rather than just a warning.
+
+Certain events that typically occur when a router has been signalled to
+shut down are no longer logged as warnings.
