@@ -46,7 +46,7 @@ dist_bin_SCRIPTS = @top_srcdir@/bin/opensrf-perl.pl @top_srcdir@/src/python/open
 else
 dist_bin_SCRIPTS = @top_srcdir@/bin/opensrf-perl.pl
 endif
-bin_SCRIPTS = @top_srcdir@/bin/osrf_config @top_srcdir@/bin/osrf_ctl.sh 
+bin_SCRIPTS = @top_srcdir@/bin/osrf_config
 dist_sysconf_DATA = @top_srcdir@/examples/opensrf.xml.example @top_srcdir@/examples/opensrf_core.xml.example @top_srcdir@/examples/srfsh.xml.example 
 endif
 

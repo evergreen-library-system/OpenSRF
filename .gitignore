@@ -2,7 +2,6 @@ aclocal.m4
 autom4te.cache/
 bin/opensrf-perl.pl
 bin/osrf_config
-bin/osrf_ctl.sh
 compile
 config.guess
 config.log

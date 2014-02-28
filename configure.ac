@@ -375,8 +375,7 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 			 src/srfsh/Makefile
              tests/Makefile
 			 bin/opensrf-perl.pl
-			 bin/osrf_config
-			 bin/osrf_ctl.sh])
+			 bin/osrf_config])
 fi
 
 AC_OUTPUT
