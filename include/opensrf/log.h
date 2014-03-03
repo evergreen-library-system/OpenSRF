@@ -107,9 +107,9 @@ void osrfLogCleanup( void );
 
 void osrfLogClearXid( void );
 
-void osrfLogSetXid(char* xid);
+void osrfLogSetXid(const char* xid);
 
-void osrfLogForceXid(char* xid);
+void osrfLogForceXid(const char* xid);
 
 void osrfLogMkXid( void );
 

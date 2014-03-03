@@ -126,7 +126,7 @@ void osrfLogClearXid( void ) { _osrfLogSetXid(""); }
 	@brief Store a transaction id, unless running as a client process.
 	@param xid Pointer to the new transaction id
 */
-void osrfLogSetXid(char* xid) {
+void osrfLogSetXid(const char* xid) {
    if(!_osrfLogIsClient) _osrfLogSetXid(xid);
 }
 
@@ -134,7 +134,7 @@ void osrfLogSetXid(char* xid) {
 	@brief Store a transaction id for future use, whether running as a client or as a server.
 	@param xid Pointer to the new transaction id
 */
-void osrfLogForceXid(char* xid) {
+void osrfLogForceXid(const char* xid) {
    _osrfLogSetXid(xid);
 }
 

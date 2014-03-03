@@ -68,12 +68,6 @@
  * export OSRF_WEBSOCKET_CONFIG_CTXT=gateway
  */
 
-/**
- * TODO:
- * short-timeout mode for brick detachment where inactivity timeout drops way 
- * down for graceful disconnects.
- */
-
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
@@ -109,6 +103,14 @@ static void sigusr1_handler(int sig) {
     shutdown_requested = 1; 
     signal(SIGUSR1, sigusr1_handler);
     osrfLogInfo(OSRF_LOG_MARK, "WS received SIGUSR1 - Graceful Shutdown");
+}
+
+static const char* get_client_ip(const request_rec* r) {
+#ifdef APACHE_MIN_24
+    return r->connection->client_ip;
+#else
+    return r->connection->remote_ip;
+#endif
 }
 
 typedef struct _osrfWebsocketTranslator {
@@ -603,12 +605,7 @@ void* CALLBACK on_connect_handler(const WebSocketServer *server) {
     apr_thread_t *thread = NULL;
     apr_threadattr_t *thread_attr = NULL;
 
-#ifdef APACHE_MIN_24
-    char* client_ip = r->connection->client_ip;
-#else
-    char* client_ip = r->connection->remote_ip;
-#endif
-
+    const char* client_ip = get_client_ip(r);
     osrfLogInfo(OSRF_LOG_MARK, "WS connect from %s", client_ip);
 
     if (!trans) {
@@ -674,7 +671,7 @@ static char* extract_inbound_messages(
                 growing_buffer* act = buffer_init(128);
                 char* method = msg->method_name;
                 buffer_fadd(act, "[%s] [%s] %s %s", 
-                    r->connection->remote_ip, "", service, method);
+                    get_client_ip(r), "", service, method);
 
                 const jsonObject* obj = NULL;
                 int i = 0;
@@ -880,9 +877,7 @@ void CALLBACK on_disconnect_handler(
 
     request_rec *r = server->request(server);
 
-    osrfLogInfo(OSRF_LOG_MARK, 
-        "WS disconnect from %s", r->connection->remote_ip); 
-        //"WS disconnect from %s", r->connection->client_ip); // apache 2.4
+    osrfLogInfo(OSRF_LOG_MARK, "WS disconnect from %s", get_client_ip(r)); 
 }
 
 /**
