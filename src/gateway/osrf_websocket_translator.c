@@ -653,6 +653,8 @@ static char* extract_inbound_messages(
 
     // here we do an extra json round-trip to get the data
     // in a form osrf_message_deserialize can understand
+    // TODO: consider a version of osrf_message_init which can 
+    // accept a jsonObject* instead of a JSON string.
     char *osrf_msg_json = jsonObjectToJSON(osrf_msg);
     osrf_message_deserialize(osrf_msg_json, msg_list, num_msgs);
     free(osrf_msg_json);
@@ -749,6 +751,8 @@ static size_t on_message_handler_body(void *data,
     memcpy(buf, buffer, buffer_size);
     buf[buffer_size] = '\0';
 
+    osrfLogInternal(OSRF_LOG_MARK, "WS received inbound message: %s", buf);
+
     msg_wrapper = jsonParse(buf);
 
     if (msg_wrapper == NULL) {
@@ -815,6 +819,9 @@ static size_t on_message_handler_body(void *data,
 
     msg_body = extract_inbound_messages(
         r, service, thread, recipient, osrf_msg);
+
+    osrfLogInternal(OSRF_LOG_MARK, 
+        "WS relaying inbound message: %s", msg_body);
 
     transport_message *tmsg = message_init(
         msg_body, NULL, thread, recipient, NULL);
