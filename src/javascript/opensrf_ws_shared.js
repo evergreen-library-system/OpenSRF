@@ -13,23 +13,54 @@
  * GNU General Public License for more details.
  * ----------------------------------------------------------------------- */
 
-var WEBSOCKET_URL_PATH = '/osrf-websocket-translator';
-var WEBSOCKET_PORT = 7680;
-var WEBSOCKET_PORT_SSL = 7682;
 
-// set of shared ports (i.e. browser tabs)
+/**
+ * Shared WebSocket communication layer.  Each browser tab registers with
+ * this code all inbound / outbound messages are delivered through a
+ * single websocket connection managed within.
+ *
+ * Messages take the form : {action : my_action, message : my_message}
+ * actions for tab-generated messages may be "message" or "close".
+ * actions for messages generated within may be "message" or "error"
+ */
+
+var WEBSOCKET_URL_PATH = '/osrf-websocket-translator';
+var WEBSOCKET_PORT = 7680; // TODO: remove.  all traffic should use SSL.
+var WEBSOCKET_PORT_SSL = 7682;
+var WEBSOCKET_MAX_THREAD_PORT_CACHE_SIZE = 1000;
+
+/**
+ * Collection of shared ports (browser tabs)
+ */
 var connected_ports = {};
+
+/**
+ * Each port gets a local identifier so we have an easy way to refer to 
+ * it later.
+ */
 var port_identifier = 0;
 
-// maps osrf message threads to a port index in connected_ports
+// maps osrf message threads to a port index in connected_ports.
+// this is how we know which browser tab to deliver messages to.
 var thread_port_map = {}; 
 
-// our shared websocket
+/**
+ * Browser-global, shared websocket connection.
+ */
 var websocket;
 
-// pending messages awaiting a successful websocket connection
+/** 
+ * Pending messages awaiting a successful websocket connection
+ *
+ * instead of asking the caller to pass messages after a connection
+ * is made, queue the messages for the caller and deliver them
+ * after the connection is established.
+ */
 var pending_ws_messages = [];
 
+/** 
+ * Deliver the message blob to the specified port (tab)
+ */
 function send_msg_to_port(ident, msg) {
     console.debug('sending msg to port ' + ident + ' : ' + msg.action);
     try {
@@ -42,19 +73,25 @@ function send_msg_to_port(ident, msg) {
     }
 }
 
-// send a message to all listeners
+/**
+ * Send a message blob to all ports (tabs)
+ */
 function broadcast(msg) {
     for (var ident in connected_ports)
       send_msg_to_port(ident, msg);
 }
 
 
-// opens the websocket connection
-// port_ident refers to the requesting port
+/**
+ * Opens the websocket connection.
+ *
+ * If our global socket is already open, use it.  Otherwise, queue the 
+ * message for delivery after the socket is open.
+ */
 function send_to_websocket(message) {
 
     if (websocket && websocket.readyState == websocket.OPEN) {
-        // websocket connection is viable.  send our message.
+        // websocket connection is viable.  send our message now.
         websocket.send(message);
         return;
     }
@@ -96,11 +133,11 @@ function send_to_websocket(message) {
     websocket.onmessage = function(evt) {
         var message = evt.data;
 
-        // this is a hack to avoid having to run JSON2js multiple 
-        // times on the same message.  Hopefully match() is faster.
-        // We can't use JSON_v1 within a shared worker for marshalling
-        // messages, because it has no knowledge of application-level
-        // class hints in this environment.
+        // this is sort of a hack to avoid having to run JSON2js
+        // multiple times on the same message.  Hopefully match() is
+        // faster.  Note: We can't use JSON_v1 within a shared worker
+        // for marshalling messages, because it has no knowledge of
+        // application-level class hints in this environment.
         var thread;
         var match = message.match(/"thread":"(.*?)"/);
         if (!match || !(thread = match[1])) {
@@ -130,26 +167,50 @@ function send_to_websocket(message) {
          * (see above).  Only the port expecting a message with the given 
          * thread will honor the message, all other ports will drop it 
          * silently.  We could just broadcastfor every messsage, but this 
-         * is more efficient.
+         * is presumably more efficient.
+         *
+         * If for some reason this fails to work as expected, we could add
+         * a new tab->ws message type for marking a thread as complete.
+         * My hunch is this will be faster, since it will require a lot
+         * fewer cross-tab messages overall.
          */
-        if (Object.keys(thread_port_map).length > 1000) 
+        if (Object.keys(thread_port_map).length > 
+                WEBSOCKET_MAX_THREAD_PORT_CACHE_SIZE) {
+            console.debug('resetting thread_port_map');
             thread_port_map = {};
+        }
     }
 
+    /**
+     * Websocket error handler.  This type of error indicates a probelem
+     * with the connection.  I.e. it's not port-specific. 
+     * Broadcast to all ports.
+     */
     websocket.onerror = function(evt) {
         var err = "WebSocket Error " + evt + ' : ' + evt.data;
-        // propagate to all ports so it can be logged, etc. 
         broadcast({action : 'error', message : err});
-        throw new Error(err);
+        websocket.close(); // connection is no good; reset.
+        throw new Error(err); 
     }
 
+    /**
+     * Called when the websocket connection is closed.
+     *
+     * Once a websocket is closed, it will be re-opened the next time
+     * a message delivery attempt is made.  Clean up and prepare to reconnect.
+     */
     websocket.onclose = function() {
         console.debug('closing websocket');
         websocket = null;
+        thread_port_map = {};
     }
 }
 
-// called when a new port (tab) is opened
+/**
+ * New port (tab) opened handler
+ *
+ * Apply the port identifier and message handlers.
+ */
 onconnect = function(e) {
     var port = e.ports[0];
 
@@ -169,7 +230,9 @@ onconnect = function(e) {
         } 
 
         if (messsage.action == 'close') {
-            // TODO: add me to body onunload in calling pages.
+            // TODO: all browser tabs need an onunload handler which sends
+            // a action=close message, so that the port may be removed from
+            // the conected_ports collection.
             delete connected_ports[port_ident];
             console.debug('closed port ' + port_ident + 
                 '; ' + Object.keys(connected_ports).length + ' remaining');
