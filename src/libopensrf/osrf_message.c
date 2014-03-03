@@ -425,6 +425,9 @@ jsonObject* osrfMessageToJSON( const osrfMessage* msg ) {
 	if (msg->sender_ingress != NULL) 
 		jsonObjectSetKey(json, "ingress", jsonNewObject(msg->sender_ingress));
 
+	if (msg->protocol > 0) 
+		jsonObjectSetKey(json, "api_level", jsonNewNumberObject(msg->protocol));
+
 	switch(msg->m_type) {
 
 		case CONNECT:
@@ -620,7 +623,7 @@ static osrfMessage* deserialize_one_message( const jsonObject* obj ) {
 
 	// Get the protocol, defaulting to zero.
 	int protocol = 0;
-	tmp = jsonObjectGetKeyConst( obj, "protocol" );
+	tmp = jsonObjectGetKeyConst( obj, "api_level" );
 	if(tmp) {
 		const char* proto = jsonObjectGetString(tmp);
 		if( proto ) {
