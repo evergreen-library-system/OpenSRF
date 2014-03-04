@@ -48,6 +48,9 @@ var OSRF_STATUS_INTERNALSERVERERROR = 500;
 var OSRF_STATUS_NOTIMPLEMENTED = 501;
 var OSRF_STATUS_VERSIONNOTSUPPORTED = 505;
 
+// TODO: get path from ./configure prefix
+var SHARED_WORKER_LIB = '/js/dojo/opensrf/opensrf_ws_shared.js'; 
+
 /* The following classes map directly to network-serializable opensrf objects */
 
 function osrfMessage(hash) {
@@ -76,6 +79,11 @@ osrfMessage.prototype.locale = function(d) {
         this.hash.locale = d; 
     return this.hash.locale; 
 };
+osrfMessage.prototype.api_level = function(d) { 
+    if(arguments.length == 1) 
+        this.hash.api_level = d; 
+    return this.hash.api_level; 
+};
 osrfMessage.prototype.serialize = function() {
     return {
         "__c":"osrfMessage",
@@ -83,7 +91,8 @@ osrfMessage.prototype.serialize = function() {
             'threadTrace' : this.hash.threadTrace,
             'type' : this.hash.type,
             'payload' : (this.hash.payload) ? this.hash.payload.serialize() : 'null',
-            'locale' : this.hash.locale
+            'locale' : this.hash.locale,
+            'api_level' : this.hash.api_level
         }
     };
 };
@@ -190,6 +199,7 @@ osrfContinueStatus.prototype.statusCode = function(d) {
 
 OpenSRF = {};
 OpenSRF.locale = null;
+OpenSRF.api_level = 1;
 
 /* makes cls a subclass of pcls */
 OpenSRF.set_subclass = function(cls, pcls) {
@@ -207,10 +217,9 @@ OpenSRF.Session = function() {
     this.state = OSRF_APP_SESSION_DISCONNECTED;
 };
 
-//OpenSRF.Session.transport = OSRF_TRANSPORT_TYPE_WS;
 OpenSRF.Session.transport = OSRF_TRANSPORT_TYPE_XHR;
-
 OpenSRF.Session.cache = {};
+
 OpenSRF.Session.find_session = function(thread_trace) {
     return OpenSRF.Session.cache[thread_trace];
 };
@@ -247,17 +256,23 @@ OpenSRF.Session.prototype.send_ws = function(osrf_msg) {
 };
 
 OpenSRF.Session.setup_shared_ws = function() {
-    // TODO path
-    OpenSRF.sharedWSWorker = new SharedWorker('opensrf_ws_shared.js'); 
+    OpenSRF.sharedWSWorker = new SharedWorker(SHARED_WORKER_LIB);
 
     OpenSRF.sharedWSWorker.port.addEventListener('message', function(e) {                          
         var data = e.data;
-        console.log('sharedWSWorker received message ' + data.action);
+        console.debug('sharedWSWorker received message of type: ' + data.action);
 
         if (data.action == 'message') {
             // pass all inbound message up the opensrf stack
 
-            var msg = JSON2js(data.message); // TODO: json error handling
+            var msg;
+            try {
+                msg = JSON2js(data.message);
+            } catch(E) {
+                console.error(
+                    "Error parsing JSON in shared WS response: " + msg);
+                throw E;
+            }
             OpenSRF.Stack.push(                                                        
                 new OpenSRF.NetMessage(                                                
                    null, null, msg.thread, null, msg.osrf_msg)                        
@@ -407,6 +422,7 @@ OpenSRF.Request = function(session, reqid, args) {
     this.method = args.method;
     this.params = args.params;
     this.timeout = args.timeout;
+    this.api_level = args.api_level || OpenSRF.api_level;
     this.response_queue = [];
     this.complete = false;
 };
@@ -438,7 +454,8 @@ OpenSRF.Request.prototype.send = function() {
         'threadTrace' : this.reqid, 
         'type' : OSRF_MESSAGE_TYPE_REQUEST, 
         'payload' : method, 
-        'locale' : this.session.locale
+        'locale' : this.session.locale,
+        'api_level' : this.api_level
     });
 
     this.session.send(message, {
