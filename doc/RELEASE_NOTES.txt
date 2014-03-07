@@ -1,5 +1,5 @@
-Release notes for OpenSRF 2.3.0-beta
-====================================
+Release notes for OpenSRF 2.3.0-rc
+==================================
 
 Supported platforms
 -------------------
@@ -52,6 +52,20 @@ Typically one would not send these signals directly, but instead use
 
 As part of this change, services written in C now have a per-service
 listener process rather than a single master process for all C services.
+
+Ability to run multiple OpenSRF instances simultaneously
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When starting services using `osrf_control` in the case where no PID
+files exist, the `--ignore-orphans` switch can be used to make it
+ignore the presence of other running OpenSRF router and service
+processes.  Otherwise, if the `--ignore-orphans` switch is not used,
+`osrf_control` will either refuse to start the service(s) or will
+require that `--force-clean-process` be used to kill any running
+OpenSRF processes first.
+
+In other words, `--ignore-orphans` means that `osrf_control` can be used
+to manage the operation of multiple running OpenSRF instances on a
+single server, each with its own PID directory and core configuration.
 
 Add option to opensrf.settings methods to force rereading of opensrf.xml
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
