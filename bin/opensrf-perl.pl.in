@@ -103,7 +103,7 @@ GetOptions(
     'reload' => \$opt_reload,
     'reload-all' => \$opt_reload_all,
     'diagnostic' => \$opt_diagnostic,
-    'are-there-no-prisons' => \$opt_ignore_orphans
+    'ignore-orphans' => \$opt_ignore_orphans
 );
 
 if ($opt_localhost) {
@@ -661,8 +661,8 @@ sub do_help {
         but no pidfile exists, kill the service process before starting
         the new one. This applies to routers too.
 
-    --are-there-no-prisons
-        When starting a service, if a service procses is already running but
+    --ignore-orphans
+        When starting a service, if a service process is already running but
         no pidfile exists, ignore the existing process and carry on starting
         the new one (i.e., ignore orphans).  This applies to routers too.
 
