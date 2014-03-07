@@ -63,9 +63,11 @@ processes.  Otherwise, if the `--ignore-orphans` switch is not used,
 require that `--force-clean-process` be used to kill any running
 OpenSRF processes first.
 
-In other words, `--ignore-orphans` means that `osrf_control` can be used
-to manage the operation of multiple running OpenSRF instances on a
-single server, each with its own PID directory and core configuration.
+In other words, `--ignore-orphans`, in conjunction with a change
+whereby `opensrf_router` now creates its PID file directly, means that
+`osrf_control` can be used to manage the operation of multiple running
+OpenSRF instances on a single server, each with its own PID directory
+and core configuration.
 
 Add option to opensrf.settings methods to force rereading of opensrf.xml
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
