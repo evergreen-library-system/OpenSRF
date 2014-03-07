@@ -12,8 +12,8 @@ The following Linux distributions are supported:
 New features in 2.3.0
 ---------------------
 
-New control script
-~~~~~~~~~~~~~~~~~~
+New control script (LP#1204123 and LP#1266886)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 OpenSRF 2.3.0 introduces a new control script, `osrf_control`.
 The previous control script, `osrf_ctl.sh`, is deprecated.
 
@@ -27,8 +27,8 @@ of the listener, and the number of drone processes.
 
 For a complete list of options, run `osrf_control --help`.
 
-New signals for controlling OpenSRF processes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+New signals for controlling OpenSRF processes (LP#1204123)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 OpenSRF 2.3.0 adds support for using the following signals to manage
 processes:
 
@@ -53,8 +53,8 @@ Typically one would not send these signals directly, but instead use
 As part of this change, services written in C now have a per-service
 listener process rather than a single master process for all C services.
 
-Ability to run multiple OpenSRF instances simultaneously
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Ability to run multiple OpenSRF instances simultaneously (LP#1266886)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 When starting services using `osrf_control` in the case where no PID
 files exist, the `--ignore-orphans` switch can be used to make it
 ignore the presence of other running OpenSRF router and service
@@ -69,8 +69,8 @@ whereby `opensrf_router` now creates its PID file directly, means that
 OpenSRF instances on a single server, each with its own PID directory
 and core configuration.
 
-Add option to opensrf.settings methods to force rereading of opensrf.xml
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Add option to opensrf.settings methods to force rereading of opensrf.xml (LP#1204123)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The following methods in `opensrf.settings` now accept Boolean
 reload parameter as the last argument. If set, the `opensrf.xml`
 file will be reread prior to responding with the requested settings.
