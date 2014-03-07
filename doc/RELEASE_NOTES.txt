@@ -36,9 +36,9 @@ processes:
   listener, unregisters it from its routers, waits for its drones to
   finish servicing their active requests, then stops the drones and
   itself.
-* `SIGUSR1` -- router unregister. When this siginal is sent to a
+* `SIGUSR1` -- router unregister. When this signal is sent to a
   listener, unregisters it from its routers.
-* `SIGUSR2` -- router re-register. When this siginal is sent to a
+* `SIGUSR2` -- router re-register. When this signal is sent to a
   listener, registers it with its routers.
 * `SIGHUP` -- reload core configuration and refresh drones. When sent
   to a listener, causes it to reload the `opensrf_core.xml` configuration,
@@ -100,5 +100,5 @@ Logging improvements (LP#1170484 and LP#1284137)
 The failure to load a shared library required by a service written in
 C is now logged as an error rather than just a warning.
 
-Certain events that typically occur when a router has been signalled to
+Certain events that typically occur when a router has been signaled to
 shut down are no longer logged as warnings.
