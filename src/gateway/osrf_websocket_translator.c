@@ -520,6 +520,7 @@ int child_init(const WebSocketServer *server) {
             return 1;
         }
 
+        osrfLogSetAppname("osrf_websocket_translator");
         osrf_handle = osrfSystemGetTransportClient();
     }
 
