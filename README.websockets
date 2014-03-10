@@ -22,7 +22,7 @@ Websockets installation instructions for Debian
 % cp /path/to/OpenSRF/examples/apache2/websockets/apache2.conf /etc/apache2-websockets/
 
 # OPTIONAL: add these configuration variables to
-# /etc/init.d/apache2-websockets/envvars and adjust as needed.
+# /etc/apache2-websockets/envvars and adjust as needed.
 # export OSRF_WEBSOCKET_IDLE_TIMEOUT=60
 # export OSRF_WEBSOCKET_IDLE_CHECK_INTERVAL=5
 # export OSRF_WEBSOCKET_CONFIG_FILE=/openils/conf/opensrf_core.xml
@@ -41,6 +41,6 @@ Websockets installation instructions for Debian
 # CONFIG_FILE / CTXT are the standard opensrf core config options.
 
 # After OpenSRF is up and running (or after any re-install),
-# fire up the secondary Apache instance errors will appear in
+# fire up the secondary Apache instance. Errors will appear in
 # /var/log/apache2-websockets/error.log
 % /etc/init.d/apache2-websockets start
