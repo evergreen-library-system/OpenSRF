@@ -23,10 +23,11 @@ Websockets installation instructions for Debian
 
 # OPTIONAL: add these configuration variables to
 # /etc/apache2-websockets/envvars and adjust as needed.
-# export OSRF_WEBSOCKET_IDLE_TIMEOUT=60
+# export OSRF_WEBSOCKET_IDLE_TIMEOUT=120
 # export OSRF_WEBSOCKET_IDLE_CHECK_INTERVAL=5
 # export OSRF_WEBSOCKET_CONFIG_FILE=/openils/conf/opensrf_core.xml
 # export OSRF_WEBSOCKET_CONFIG_CTXT=gateway
+# export OSRF_WEBSOCKET_MAX_REQUEST_WAIT_TIME=600
 #
 # IDLE_TIMEOUT specifies how long we will allow a client to stay connected
 # while idle.  A longer timeout means less network traffic (from fewer
@@ -35,6 +36,12 @@ Websockets installation instructions for Debian
 #
 # IDLE_CHECK_INTERVAL specifies how often we wake to check the idle status
 # of the connected client.
+#
+# MAX_REQUEST_WAIT_TIME is the maximum amount of time the gateway will
+# wait before declaring a client as idle when there is a long-running
+# outstanding request, yet no other activity is occurring.  This is
+# primarily a fail-safe to allow idle timeouts when one or more requests
+# died on the server, and thus no response was ever delivered to the gateway.
 #
 # Both specified in seconds
 #
