@@ -307,7 +307,7 @@ span.subcode { color:darkblue;}        </style>
         <xsl:if test="@key='type'">Data type:</xsl:if>
         <xsl:if test="@key='class'">Object class:</xsl:if>
       </td>
-      <td class="value params"><xsl:value-of select="res:string"/></td>
+      <td class="value params"><pre><xsl:value-of select="res:string"/></pre></td>
     </tr>
   </xsl:template>
 
