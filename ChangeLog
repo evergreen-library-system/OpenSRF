@@ -1,8 +1,135 @@
 ChangeLog
 =========
 
-OpenSRF 2.3.0-beta
-------------------
+OpenSRF 2.3.0-rc
+----------------
+
+commit a67bae66dd6a5e4062d63a00773c8e4c3bf4f880
+Author: Galen Charlton <gmcharlt@gmail.com>
+Date:   Fri Mar 21 13:57:04 2014 -0400
+
+    bump up version number for 2.3.0 RC
+    
+    Signed-off-by: Galen Charlton <gmcharlt@gmail.com>
+
+2	2	src/perl/lib/OpenSRF.pm
+1	1	src/python/setup.py
+1	1	version.m4
+
+commit dae3c9a9134d71b6acb1c4905379780694dc2635
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Fri Mar 7 10:39:08 2014 -0800
+
+    cite the most relevant bug numbers for enhancements in the release notes
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+8	8	doc/RELEASE_NOTES.txt
+
+commit 9b6127b2a08892036699616d3fa8889f8933f545
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Fri Mar 7 10:33:16 2014 -0800
+
+    mention opensrf_router managing its own PID file in release notes
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+5	3	doc/RELEASE_NOTES.txt
+
+commit 328c7408e2836733f8fc72faef6fc9dbb9f20523
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Fri Mar 7 10:25:14 2014 -0800
+
+    fix typos in the release notes
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+3	3	doc/RELEASE_NOTES.txt
+
+commit fb561efb67a641bd3cf7767b31dcf70a7a0ae824
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Fri Mar 7 10:16:33 2014 -0800
+
+    update release notes for 2.3.0-rc
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+16	2	doc/RELEASE_NOTES.txt
+
+commit 824452bd95815ed8713761fbe770d2a0d2161087
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Fri Mar 7 08:22:38 2014 -0800
+
+    LP#1286198: use --ignore-orphans rather than --are-there-no-prisons
+    
+    The joke was fine while it lasted, but might be confusing to somebody
+    who doesn't catch the literary reference.  This patch also fixes
+    a minor typo.
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+3	3	bin/opensrf-perl.pl.in
+
+commit 410fb2d443826611b3f26e07e945f39ad374a98d
+Author: Lebbeous Fogle-Weekley <lebbeous@esilibrary.com>
+Date:   Tue Feb 4 17:56:07 2014 -0500
+
+    LP#1286198: Teach osrf_router to (optionally) write its own PID files
+    
+    Also, tiny bit of noise squelching on osrf_control/opensrf-perl.pl
+    
+    Signed-off-by: Lebbeous Fogle-Weekley <lebbeous@esilibrary.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+6	13	bin/opensrf-perl.pl.in
+1	0	include/opensrf/utils.h
+19	1	src/libopensrf/utils.c
+84	5	src/router/osrf_router_main.c
+
+commit 848e22fd7fe1478b86c4b64eb1e2a36cb8cbe115
+Author: Lebbeous Fogle-Weekley <lebbeous@esilibrary.com>
+Date:   Fri Jan 31 15:50:01 2014 -0500
+
+    LP#1286198: Offer ability to ignore what seem like orphan processes when starting things
+    
+    Signed-off-by: Lebbeous Fogle-Weekley <lebbeous@esilibrary.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+10	3	bin/opensrf-perl.pl.in
+
+commit b7dda84946771959e2a44af977a007a3bf7923c9
+Author: Lebbeous Fogle-Weekley <lebbeous@esilibrary.com>
+Date:   Thu Jan 30 18:32:24 2014 -0500
+
+    LP#1286198: When doing router-specific things, we don't need as much configuration loaded
+    
+    Signed-off-by: Lebbeous Fogle-Weekley <lebbeous@esilibrary.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+3	3	bin/opensrf-perl.pl.in
+
+commit d9ac17b0f18e7274468a426836b9c7f5dcfd2e72
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Thu Feb 27 17:34:50 2014 -0800
+
+    fix typo in 2.3.0-beta changelog
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+2	2	ChangeLog
+
+commit 8bf1f95aee67cd88e1ac0d6dca5380952ad404a9
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Thu Feb 27 16:53:26 2014 -0800
+
+    change log for 2.3.0-beta
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+597	1007	ChangeLog
 
 commit d6688eade4a5947efd5280768fc549942a22e451
 Author: Galen Charlton <gmc@esilibrary.com>
