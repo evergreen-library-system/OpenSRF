@@ -1,5 +1,5 @@
-Release notes for OpenSRF 2.3.0-rc
-==================================
+Release notes for OpenSRF 2.3.0
+===============================
 
 Supported platforms
 -------------------
