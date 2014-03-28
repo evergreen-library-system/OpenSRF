@@ -1,8 +1,20 @@
 ChangeLog
 =========
 
-OpenSRF 2.3.0-rc
-----------------
+OpenSRF 2.3.0
+-------------
+commit 95c5bcd2509fc92a399b073e8c5f04eb767089a5
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Fri Mar 28 13:14:10 2014 -0700
+
+    bump up version number to 2.3.0
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+2	2	doc/RELEASE_NOTES.txt
+2	2	src/perl/lib/OpenSRF.pm
+1	1	src/python/setup.py
+1	1	version.m4
 
 commit a67bae66dd6a5e4062d63a00773c8e4c3bf4f880
 Author: Galen Charlton <gmcharlt@gmail.com>
