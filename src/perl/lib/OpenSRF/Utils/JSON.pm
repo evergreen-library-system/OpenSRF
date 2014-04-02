@@ -80,7 +80,8 @@ sub JSON2perl {
 =head2 perl2JSON
 
 Given a Perl object, returns a JSON stringified representation of that
-object.
+object.  Callers should not expect that the JSON string has hash keys
+sorted in any particular order.
 
 =cut
 

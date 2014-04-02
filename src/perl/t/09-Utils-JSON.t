@@ -109,7 +109,11 @@ is_deeply ($jsonobj, { __c => 'osrfException', __p => { foo => 'bar' } },
 #
 # perl2JSON
 my $jsonstr = OpenSRF::Utils::JSON->perl2JSON($fakeobj);
-is ($jsonstr, '{"__c":"osrfException","__p":{"foo":"bar"}}');
+ok (
+    ($jsonstr eq '{"__c":"osrfException","__p":{"foo":"bar"}}' ||
+     $jsonstr eq '{"__p":{"foo":"bar"},"__c":"osrfException"}'),
+    'JSON corresponds to Perl object (though hash key order by vary)'
+);
 
 
 #
