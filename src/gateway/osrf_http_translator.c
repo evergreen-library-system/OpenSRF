@@ -382,7 +382,7 @@ static void osrfHttpTranslatorCacheSession(osrfHttpTranslator* trans, const char
     jsonObjectSetKey(cacheObj, "ip", jsonNewObject(trans->remoteHost));
     jsonObjectSetKey(cacheObj, "jid", jsonNewObject(jid));
     jsonObjectSetKey(cacheObj, "service", jsonNewObject(trans->service));
-    osrfCachePutObject((char*) trans->thread, cacheObj, CACHE_TIME);
+    osrfCachePutObject(trans->thread, cacheObj, CACHE_TIME);
 }
 
 

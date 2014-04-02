@@ -43,7 +43,7 @@ int osrfCacheInit( const char* serverStrings[], int size, time_t maxCacheSeconds
 	return 0;
 }
 
-int osrfCachePutObject( char* key, const jsonObject* obj, time_t seconds ) {
+int osrfCachePutObject( const char* key, const jsonObject* obj, time_t seconds ) {
 	if( !(key && obj) ) return -1;
 	char* s = jsonObjectToJSON( obj );
 	osrfLogInternal( OSRF_LOG_MARK, "osrfCachePut(): Putting object (key=%s): %s", key, s);
@@ -52,7 +52,7 @@ int osrfCachePutObject( char* key, const jsonObject* obj, time_t seconds ) {
 	return 0;
 }
 
-int osrfCachePutString( char* key, const char* value, time_t seconds ) {
+int osrfCachePutString( const char* key, const char* value, time_t seconds ) {
 	memcached_return rc;
 	if( !(key && value) ) return -1;
 	seconds = (seconds <= 0 || seconds > _osrfCacheMaxSeconds) ? _osrfCacheMaxSeconds : seconds;

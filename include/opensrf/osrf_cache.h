@@ -47,7 +47,7 @@ int osrfCacheInit( const char* serverStrings[], int size, time_t maxCacheSeconds
 	to cache up to 'maxCacheSeconds' as set by osrfCacheInit()
   @return 0 on success, -1 on error
   */
-int osrfCachePutObject( char* key, const jsonObject* obj, time_t seconds );
+int osrfCachePutObject( const char* key, const jsonObject* obj, time_t seconds );
 
 /**
   Puts a string into the cache
@@ -57,7 +57,7 @@ int osrfCachePutObject( char* key, const jsonObject* obj, time_t seconds );
 	to cache up to 'maxCacheSeconds' as set by osrfCacheInit()
   @return 0 on success, -1 on error
   */
-int osrfCachePutString( char* key, const char* value, time_t seconds);
+int osrfCachePutString( const char* key, const char* value, time_t seconds);
 
 /**
   Grabs an object from the cache.
