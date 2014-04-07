@@ -25,7 +25,6 @@
  */
 
 var WEBSOCKET_URL_PATH = '/osrf-websocket-translator';
-var WEBSOCKET_PORT = 7680; // TODO: remove.  all traffic should use SSL.
 var WEBSOCKET_PORT_SSL = 7682;
 var WEBSOCKET_MAX_THREAD_PORT_CACHE_SIZE = 1000;
 
@@ -111,7 +110,8 @@ function send_to_websocket(message) {
     // assume non-SSL for now.  SSL silently dies if the cert is
     // invalid and has not been added as an exception.  need to
     // explain / document / avoid this better.
-    var path = 'ws://' + location.host + ':' + WEBSOCKET_PORT + WEBSOCKET_URL_PATH;
+    var path = 'wss://' + location.host + ':' + 
+        WEBSOCKET_PORT_SSL + WEBSOCKET_URL_PATH;
 
     console.debug('connecting websocket to ' + path);
 
@@ -187,10 +187,10 @@ function send_to_websocket(message) {
      * Broadcast to all ports.
      */
     websocket.onerror = function(evt) {
-        var err = "WebSocket Error " + evt + ' : ' + evt.data;
+        var err = "WebSocket Error " + evt;
+        console.error(err);
         broadcast({action : 'error', message : err});
         websocket.close(); // connection is no good; reset.
-        throw new Error(err); 
     }
 
     /**

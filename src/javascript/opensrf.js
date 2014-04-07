@@ -249,13 +249,51 @@ OpenSRF.Session.prototype.send_xhr = function(osrf_msg, args) {
 };
 
 OpenSRF.Session.prototype.send_ws = function(osrf_msg) {
-    new OpenSRF.WebSocketRequest(
-        this, 
-        function(wsreq) {wsreq.send(osrf_msg)} // onopen
-    );
+
+    if (typeof SharedWorker == 'function') {
+        // vanilla websockets requested, but this browser supports
+        // shared workers, so use those instead.
+        return this.send_ws_shared(osrf_msg);
+    }
+
+    // otherwise, use a per-tab connection
+
+    if (!OpenSRF.websocketConnection) {
+        this.setup_single_ws();
+    }
+
+    var json = js2JSON({
+        service : this.service,
+        thread : this.thread,
+        osrf_msg : [message.serialize()]
+    });
+
+    OpenSRF.websocketConnection.send(json);
 };
 
+OpenSRF.Session.prototype.setup_single_ws = function() {
+    OpenSRF.websocketConnection = new OpenSRF.WebSocket();
+
+    OpenSRF.websocketConnection.onmessage = function(msg) {
+        try {
+            var msg = JSON2js(msg);
+        } catch(E) {
+            console.error(
+                "Error parsing JSON in shared WS response: " + msg);
+            throw E;
+        }
+        OpenSRF.Stack.push(                                                        
+            new OpenSRF.NetMessage(                                                
+               null, null, msg.thread, null, msg.osrf_msg)                        
+        ); 
+
+        return;
+    }
+}
+
 OpenSRF.Session.setup_shared_ws = function() {
+    OpenSRF.Session.transport = OSRF_TRANSPORT_TYPE_WS_SHARED;
+
     OpenSRF.sharedWSWorker = new SharedWorker(SHARED_WORKER_LIB);
 
     OpenSRF.sharedWSWorker.port.addEventListener('message', function(e) {                          
