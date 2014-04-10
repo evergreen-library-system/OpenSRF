@@ -53,7 +53,6 @@ EXAMPLES_FILES = @srcdir@/examples/fieldmapper2cdbi.xsl \
 				 @srcdir@/examples/math_bench.pl \
 				 @srcdir@/examples/math_client.py \
 				 @srcdir@/examples/multisession-test.pl \
-				 @srcdir@/examples/register.pl \
 				 @srcdir@/examples/srfsh_config.xsd \
 				 @srcdir@/examples/math_xul_client/math \
 				 @srcdir@/examples/math_xul_client/install.js
