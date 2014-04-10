@@ -128,6 +128,7 @@ function send_to_websocket(message) {
         var msg;
         while ( (msg = pending_ws_messages.shift()) )
             websocket.send(msg);
+
     }
 
     websocket.onmessage = function(evt) {
@@ -189,7 +190,7 @@ function send_to_websocket(message) {
     websocket.onerror = function(evt) {
         var err = "WebSocket Error " + evt;
         console.error(err);
-        broadcast({action : 'error', message : err});
+        broadcast({action : 'event', type : 'onerror', message : err});
         websocket.close(); // connection is no good; reset.
     }
 
@@ -203,6 +204,7 @@ function send_to_websocket(message) {
         console.debug('closing websocket');
         websocket = null;
         thread_port_map = {};
+        broadcast({action : 'event', type : 'onclose'});
     }
 }
 

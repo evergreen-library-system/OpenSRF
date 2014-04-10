@@ -248,6 +248,13 @@ OpenSRF.Session.prototype.send_xhr = function(osrf_msg, args) {
     new OpenSRF.XHRequest(osrf_msg, args).send();
 };
 
+OpenSRF.websocketConnected = function() {
+    return OpenSRF.sharedWebsocketConnected || (
+        OpenSRF.websocketConnection && 
+        OpenSRF.websocketConnection.connected()
+    );
+}
+
 OpenSRF.Session.prototype.send_ws = function(osrf_msg) {
 
     if (typeof SharedWorker == 'function') {
@@ -303,6 +310,7 @@ OpenSRF.Session.setup_shared_ws = function() {
         if (data.action == 'message') {
             // pass all inbound message up the opensrf stack
 
+            OpenSRF.sharedWebsocketConnected = true;
             var msg;
             try {
                 msg = JSON2js(data.message);
@@ -319,8 +327,16 @@ OpenSRF.Session.setup_shared_ws = function() {
             return;
         }
 
-        if (data.action == 'error') {
-            throw new Error(data.message);
+
+        if (data.action == 'event') {
+            console.debug('event type is ' + data.type);
+            if (data.type.match(/onclose|onerror/)) {
+                OpenSRF.sharedWebsocketConnected = false;
+                if (OpenSRF.onWebSocketClosed)
+                    OpenSRF.onWebSocketClosed();
+                if (data.type.match(/onerror/)) 
+                    throw new Error(data.message);
+            }
         }
     });
 

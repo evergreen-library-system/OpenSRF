@@ -21,6 +21,13 @@ OpenSRF.WebSocket = function() {
     this.pending_messages = [];
 }
 
+OpenSRF.WebSocket.prototype.connected = function() {
+    return (
+        this.socket && 
+        this.socket.readyState == this.socket.OPEN
+    );
+}
+
 /**
  * If our global socket is already open, use it.  Otherwise, queue the 
  * message for delivery after the socket is open.
@@ -28,7 +35,7 @@ OpenSRF.WebSocket = function() {
 OpenSRF.WebSocket.prototype.send = function(message) {
     var self = this;
 
-    if (this.socket && this.socket.readyState == this.socket.OPEN) {
+    if (this.connected()) {
         // this.socket connection is viable.  send our message now.
         this.socket.send(message);
         return;
@@ -91,5 +98,7 @@ OpenSRF.WebSocket.prototype.send = function(message) {
     this.socket.onclose = function() {
         console.debug('closing websocket');
         self.socket = null;
+        if (OpenSRF.onWebSocketClosed)
+            OpenSRF.onWebSocketClosed();
     }
 }
