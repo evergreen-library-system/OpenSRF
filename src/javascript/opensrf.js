@@ -257,7 +257,14 @@ OpenSRF.websocketConnected = function() {
 
 OpenSRF.Session.prototype.send_ws = function(osrf_msg) {
 
-    if (typeof SharedWorker == 'function') {
+    if (typeof SharedWorker == 'function' 
+
+        /*
+         * https://bugzilla.mozilla.org/show_bug.cgi?id=504553#c73
+         * Firefox does not yet support WebSockets in worker threads
+         */
+        && !navigator.userAgent.match(/Firefox/)
+    ) {
         // vanilla websockets requested, but this browser supports
         // shared workers, so use those instead.
         return this.send_ws_shared(osrf_msg);
@@ -305,7 +312,6 @@ OpenSRF.Session.setup_shared_ws = function() {
 
     OpenSRF.sharedWSWorker.port.addEventListener('message', function(e) {                          
         var data = e.data;
-        console.debug('sharedWSWorker received message of type: ' + data.action);
 
         if (data.action == 'message') {
             // pass all inbound message up the opensrf stack
@@ -329,7 +335,6 @@ OpenSRF.Session.setup_shared_ws = function() {
 
 
         if (data.action == 'event') {
-            console.debug('event type is ' + data.type);
             if (data.type.match(/onclose|onerror/)) {
                 OpenSRF.sharedWebsocketConnected = false;
                 if (OpenSRF.onWebSocketClosed)
