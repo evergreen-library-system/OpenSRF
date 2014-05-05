@@ -6,17 +6,10 @@ var JSON_DATA_KEY    = '__p';
 function JSON_version() { return 'wrapper'; }
 
 function JSON2js(text) {
-    return decodeJS(JSON2jsRaw(text));
+    return decodeJS(JSON.parse(text));
 }
 
 JSON2js.fallbackObjectifier = null;
-
-function JSON2jsRaw(text) {
-    var obj;
-    eval('obj = ' + text);
-    return obj;
-}
-
 
 /* iterates over object, arrays, or fieldmapper objects */
 function jsIterate( arg, callback ) {
@@ -132,90 +125,5 @@ function encodeJS(arg) {
 
 /* turns a javascript object into a JSON string */
 function js2JSON(arg) {
-    return js2JSONRaw(encodeJS(arg));
+    return JSON.stringify(encodeJS(arg));
 }
-
-function js2JSONRaw(arg) {
-
-    if( arg == null ) 
-        return 'null';
-
-    var o;
-
-    switch (typeof arg) {
-
-        case 'object':
-
-            if (arg.constructor == Array) {
-                o = '';
-                jsIterate( arg,
-                    function(obj, i) {
-                        if (o) o += ',';
-                        o += js2JSONRaw(obj[i]);
-                    }
-                );
-                return '[' + o + ']';
-
-            } else if (typeof arg.toString != 'undefined') {
-                o = '';
-                jsIterate( arg,
-                    function(obj, i) {
-                        if (o) o += ',';
-                        o = o + js2JSONRaw(i) + ':' + js2JSONRaw(obj[i]);
-                    }
-                );
-                return '{' + o + '}';
-
-            }
-
-            return 'null';
-
-        case 'number': return arg;
-
-        case 'string':
-            var s = String(arg);
-            s = s.replace(/\\/g, '\\\\');
-            s = s.replace(/"/g, '\\"');
-            s = s.replace(/\t/g, "\\t");
-            s = s.replace(/\n/g, "\\n");
-            s = s.replace(/\r/g, "\\r");
-            s = s.replace(/\f/g, "\\f");
-            return '"' + s + '"';
-
-        case 'boolean':
-            return (arg) ? 'true' : 'false';
-
-        default: return 'null';
-    }
-}
-
-
-function __tabs(c) { 
-    var s = ''; 
-    for( i = 0; i < c; i++ ) s += '\t';
-    return s;
-}
-
-function jsonPretty(str) {
-    if(!str) return "";
-    var s = '';
-    var d = 0;
-    for( var i = 0; i < str.length; i++ ) {
-        var c = str.charAt(i);
-        if( c == '{' || c == '[' ) {
-            s += c + '\n' + __tabs(++d);
-        } else if( c == '}' || c == ']' ) {
-            s += '\n' + __tabs(--d) + '\n';
-            if( str.charAt(i+1) == ',' ) {
-                s += '\n' + __tabs(d);
-            }
-        } else if( c == ',' ) {
-            s += ',\n' + __tabs(d);
-        } else {
-            s += c;
-        }
-    }
-    return s;
-}
-
-
