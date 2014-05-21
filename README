@@ -197,10 +197,10 @@ changes:
 {hosts, ["localhost", "private.localhost", "public.localhost"]}.
 ---------------------------------------------------------------------------
 +
-  b. Comment out the `mod_offline` directive
-  c. Increase the `max_user_sessions` value to 10000
-  d. Change all `max_stanza_size` values to 2000000
-  e. Change all `maxrate` values to 500000 
+  b. Change all `max_stanza_size` values to 2000000
+  c. Change all `maxrate` values to 500000
+  d. Increase the `max_user_sessions` value to 10000
+  e. Comment out the `mod_offline` directive
 +
 3. Restart the ejabberd server to make the changes take effect:
 +
