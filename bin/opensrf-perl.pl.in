@@ -211,8 +211,8 @@ sub get_service_pids_from_ps {
     my $service = shift;
 
     my $ps = ($service eq 'router') ?
-        "ps ax | grep 'OpenSRF Router'" :
-        "ps ax | grep 'OpenSRF Listener \\[$service\\]'";
+        "ps x | grep 'OpenSRF Router'" :
+        "ps x | grep 'OpenSRF Listener \\[$service\\]'";
 
     $ps .= " | grep -v grep |  sed 's/^\\s*//' | cut -d' ' -f1";
     my @pids = `$ps`;
@@ -492,9 +492,9 @@ sub get_running_pids {
 
     # start with the listeners, then drones, then routers
     my @greps = (
-        "ps ax | grep 'OpenSRF Listener' ",
-        "ps ax | grep 'OpenSRF Drone' ",
-        "ps ax | grep 'OpenSRF Router' "
+        "ps x | grep 'OpenSRF Listener' ",
+        "ps x | grep 'OpenSRF Drone' ",
+        "ps x | grep 'OpenSRF Router' "
     );
 
     $_ .= "| grep -v grep |  sed 's/^\\s*//' | cut -d' ' -f1" for @greps;
