@@ -35,6 +35,7 @@ my $facility;           # syslog facility
 my $actfac;             # activity log syslog facility
 my $actfile;            # activity log file
 my $service = $0;       # default service name
+my $service_tag = '';       # default service name
 my $syslog_enabled = 0; # is syslog enabled?
 my $act_syslog_enabled = 0; # is syslog enabled?
 my $logfile_enabled = 1;    # are we logging to a file?
@@ -73,6 +74,8 @@ sub set_config {
     if ($config->bootstrap->loglength) {
         $max_log_msg_len = $config->bootstrap->loglength;
     }
+
+    $service_tag = $config->bootstrap->logtag;
 
     $logfile = $config->bootstrap->logfile;
     if($logfile =~ /^syslog/) {
@@ -159,6 +162,7 @@ sub is_act_filelog {
 sub set_service {
     my( $self, $svc ) = @_;
     $service = $svc;    
+    $service .= '/' . $service_tag if (defined $service_tag);    
     if( is_syslog() ) {
         closelog();
         openlog($service, 0, $facility);

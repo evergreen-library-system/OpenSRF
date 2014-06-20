@@ -75,6 +75,8 @@ extern "C" {
 
 void osrfLogInit( int type, const char* appname, int maxlevel );
 
+void osrfLogSetLogTag( const char* logtag );
+
 void osrfLogSetSyslogFacility( int facility );
 
 void osrfLogSetSyslogActFacility( int facility );

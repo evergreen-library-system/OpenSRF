@@ -381,6 +381,7 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 	char* unixpath       = osrfConfigGetValue( NULL, "/unixpath" );
 	char* facility       = osrfConfigGetValue( NULL, "/syslog" );
 	char* actlog         = osrfConfigGetValue( NULL, "/actlog" );
+	char* logtag         = osrfConfigGetValue( NULL, "/logtag" );
 
 	/* if we're a source-client, tell the logger */
 	char* isclient = osrfConfigGetValue(NULL, "/client");
@@ -394,6 +395,7 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 	if(log_level) llevel = atoi(log_level);
 
 	if(!strcmp(log_file, "syslog")) {
+		if(logtag) osrfLogSetLogTag(strdup(logtag));
 		osrfLogInit( OSRF_LOG_TYPE_SYSLOG, contextnode, llevel );
 		osrfLogSetSyslogFacility(osrfLogFacilityToInt(facility));
 		if(actlog) osrfLogSetSyslogActFacility(osrfLogFacilityToInt(actlog));
@@ -444,6 +446,7 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 		free(unixpath);
 		free(facility);
 		free(actlog);
+		free(logtag);
 		return 0;
 	}
 

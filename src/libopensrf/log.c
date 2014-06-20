@@ -22,6 +22,7 @@ static int _osrfLogActFacility		= LOG_LOCAL1;
 static char* _osrfLogFile			= NULL;
 /** Application name.  This string will preface every log message. */
 static char* _osrfLogAppname		= NULL;
+static char* _osrfLogTag		= NULL;
 /** Maximum message level.  Messages of higher levels will be suppressed.
 	Default: OSRF_LOG_INFO. */
 static int _osrfLogLevel			= OSRF_LOG_INFO;
@@ -53,6 +54,9 @@ static void _osrfLogSetXid( const char* xid );
 	- log type (reset to OSRF_LOG_TYPE_STDERR)
 */
 void osrfLogCleanup( void ) {
+	if (_osrfLogTag)
+		free(_osrfLogTag);
+	_osrfLogTag = NULL;
 	free(_osrfLogAppname);
 	_osrfLogAppname = NULL;
 	free(_osrfLogFile);
@@ -278,8 +282,16 @@ void osrfLogSetActivityEnabled( int enabled ) {
 */
 void osrfLogSetAppname( const char* appname ) {
 	if(!appname) return;
+
+	char buf[256];
+	if(_osrfLogTag) {
+		snprintf(buf, sizeof(buf), "%s/%s", appname, _osrfLogTag);
+	} else {
+		snprintf(buf, sizeof(buf), "%s", appname);
+	}
+
 	if(_osrfLogAppname) free(_osrfLogAppname);
-	_osrfLogAppname = strdup(appname);
+	_osrfLogAppname = strdup(buf);
 
 	/* if syslogging, re-open the log with the appname */
 	if( _osrfLogType == OSRF_LOG_TYPE_SYSLOG) {
@@ -298,6 +310,19 @@ void osrfLogSetAppname( const char* appname ) {
 */
 void osrfLogSetSyslogFacility( int facility ) {
 	_osrfLogFacility = facility;
+}
+
+/**
+        @brief Store an arbitrary program name tag for future use.
+        @param logtag The string to be stored.
+
+        A log tag is a short string that is appended to the appname
+        we log under.  This can be used to segregate logs from different
+        users in, for instance, rsyslogd.
+*/
+
+void osrfLogSetLogTag( const char* logtag ) {
+	if (logtag) _osrfLogTag = strdup(logtag);
 }
 
 /**
