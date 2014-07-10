@@ -633,7 +633,7 @@ OpenSRF.Stack.handle_message = function(ses, osrf_msg) {
         }
 
         // capture all 400's and 500's as method errors
-        if (status.match(/^4/) || status.match(/^5/)) {
+        if ((status+'').match(/^4/) || (status+'').match(/^5/)) {
             if(req && req.onmethoderror) 
                 return req.onmethoderror(req, status, status_text);
         }
