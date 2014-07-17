@@ -395,7 +395,7 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 	if(log_level) llevel = atoi(log_level);
 
 	if(!strcmp(log_file, "syslog")) {
-		if(logtag) osrfLogSetLogTag(strdup(logtag));
+		if(logtag) osrfLogSetLogTag(logtag);
 		osrfLogInit( OSRF_LOG_TYPE_SYSLOG, contextnode, llevel );
 		osrfLogSetSyslogFacility(osrfLogFacilityToInt(facility));
 		if(actlog) osrfLogSetSyslogActFacility(osrfLogFacilityToInt(actlog));

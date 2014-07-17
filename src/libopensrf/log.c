@@ -605,7 +605,7 @@ static void _osrfLogToFile( const char* label, long pid, const char* filename, i
 		return;           // No log file defined
 
 	if(!_osrfLogAppname)
-		_osrfLogAppname = strdup("osrf");   // apply default application name
+		osrfLogSetAppname("osrf"); // apply default application name
 
 	char datebuf[36];
 	time_t t = time(NULL);

@@ -34,8 +34,8 @@ my $logfile;            # log file
 my $facility;           # syslog facility
 my $actfac;             # activity log syslog facility
 my $actfile;            # activity log file
-my $service = $0;       # default service name
-my $service_tag = '';       # default service name
+my $service;            # syslog service name.  default provided below.
+my $service_tag = '';   # default service tag
 my $syslog_enabled = 0; # is syslog enabled?
 my $act_syslog_enabled = 0; # is syslog enabled?
 my $logfile_enabled = 1;    # are we logging to a file?
@@ -235,6 +235,9 @@ sub get_osrf_xid { return $osrf_xid; }
 sub _log_message {
     my( $msg, $level ) = @_;
     return if $level > $loglevel;
+
+    # apply a sane default service name/tag
+    $logger->set_service($0) unless $service;
 
     my $l; my $n; 
     my $fac = $facility;

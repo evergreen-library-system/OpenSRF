@@ -256,6 +256,7 @@ static void setupRouter( const jsonObject* configChunk, int configPos ) {
 
 	const char* level    = jsonObjectGetString( jsonObjectGetKeyConst( configChunk, "loglevel" ));
 	const char* log_file = jsonObjectGetString( jsonObjectGetKeyConst( configChunk, "logfile" ));
+	const char* log_tag  = jsonObjectGetString( jsonObjectGetKeyConst( configChunk, "logtag" ));
 	const char* facility = jsonObjectGetString( jsonObjectGetKeyConst( configChunk, "syslog" ));
 
 	int llevel = 1;
@@ -268,6 +269,7 @@ static void setupRouter( const jsonObject* configChunk, int configPos ) {
 	}
 
 	if(!strcmp(log_file, "syslog")) {
+		if(log_tag) osrfLogSetLogTag(log_tag);
 		osrfLogInit( OSRF_LOG_TYPE_SYSLOG, "router", llevel );
 		osrfLogSetSyslogFacility(osrfLogFacilityToInt(facility));
 
