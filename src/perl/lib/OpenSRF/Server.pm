@@ -167,7 +167,11 @@ sub run {
 
         if($msg) {
 
-            if(my $child = pop(@{$self->{idle_list}})) {
+            if ($msg->type and $msg->type eq 'error') {
+                $logger->info("server: Listener received an XMPP error ".
+                    "message.  Likely a bounced message. sender=".$msg->from);
+
+            } elsif(my $child = pop(@{$self->{idle_list}})) {
 
                 # we have an idle child to handle the request
                 $chatty and $logger->internal("server: passing request to idle child $child");

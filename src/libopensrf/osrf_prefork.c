@@ -869,6 +869,15 @@ static void prefork_run( prefork_simple* forker ) {
 			continue;
         }
 
+        if (cur_msg->error_type) {
+            osrfLogInfo(OSRF_LOG_MARK, 
+                "Listener received an XMPP error message.  "
+                "Likely a bounced message. sender=%s", cur_msg->sender);
+            if(child_dead)
+                reap_children(forker);
+            continue;
+        }
+
 		message_prepare_xml( cur_msg );
 		const char* msg_data = cur_msg->msg_xml;
 		if( ! msg_data || ! *msg_data ) {
