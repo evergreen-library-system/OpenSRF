@@ -171,6 +171,7 @@ sub handler {
 
 		if (ref $coderef) {
 			my @args = $app_msg->params;
+			$coderef->session( $session );
 			my $appreq = OpenSRF::AppRequest->new( $session );
 			$appreq->max_chunk_size( $coderef->max_chunk_size );
 			$appreq->max_chunk_count( $coderef->max_chunk_count );
@@ -436,7 +437,12 @@ sub register_method {
 		($args{object_hint} = $args{package}) =~ s/::/_/go;
 	}
 
-	OpenSRF::Utils::JSON->register_class_hint( name => $args{package}, hint => $args{object_hint}, type => "hash" );
+	OpenSRF::Utils::JSON->register_class_hint(
+		strip => ['session'],
+		name => $app,
+		hint => $args{object_hint},
+		type => "hash"
+	);
 
 	$_METHODS[$args{api_level}]{$args{api_name}} = bless \%args => $app;
 
@@ -558,6 +564,7 @@ sub method_lookup {
 		$meth = $self->method_lookup($method,$proto,1);
 	}
 
+	$meth->session($self->session) if $meth && ref($self); # Pass the caller's session
 	return $meth;
 }
 
@@ -571,9 +578,7 @@ sub run {
 	if ( !UNIVERSAL::isa($req, 'OpenSRF::AppRequest') ) {
 		$log->debug("Creating a SubRequest object", DEBUG);
 		unshift @params, $req;
-		$req = OpenSRF::AppSubrequest->new;
-		$req->session( $self->session ) if ($self->session);
-
+		$req = OpenSRF::AppSubrequest->new( session => $self->session );
 	} else {
 		$log->debug("This is a top level request", DEBUG);
 	}
