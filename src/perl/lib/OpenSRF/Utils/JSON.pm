@@ -212,7 +212,14 @@ sub perl2JSONObject {
 
     if(UNIVERSAL::isa($obj, 'HASH')) {
         $jsonobj = {};
-        $jsonobj->{$_} = $pkg->perl2JSONObject($obj->{$_}) for (keys %$obj);
+        for my $k (keys %$obj) {
+            next if (
+                $ref ne 'HASH'
+                and exists $_class_map{classes}{$ref}{strip}
+                and grep { $k eq $_ } @{$_class_map{classes}{$ref}{strip}}
+            );
+            $jsonobj->{$k} = $pkg->perl2JSONObject($obj->{$k});
+        }
     } elsif(UNIVERSAL::isa($obj, 'ARRAY')) {
         $jsonobj = [];
         $jsonobj->[$_] = $pkg->perl2JSONObject($obj->[$_]) for(0..scalar(@$obj) - 1);
