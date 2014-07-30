@@ -106,10 +106,7 @@ function send_to_websocket(message) {
 
     // we have no websocket or an invalid websocket.  build a new one.
 
-    // TODO:
-    // assume non-SSL for now.  SSL silently dies if the cert is
-    // invalid and has not been added as an exception.  need to
-    // explain / document / avoid this better.
+    // assume SSL at all times
     var path = 'wss://' + location.host + ':' + 
         WEBSOCKET_PORT_SSL + WEBSOCKET_URL_PATH;
 
