@@ -257,7 +257,12 @@ OpenSRF.websocketConnected = function() {
 
 OpenSRF.Session.prototype.send_ws = function(osrf_msg) {
 
-    if (typeof SharedWorker == 'function' 
+    // XXX there appears to be a bug in Chromium where loading the
+    // same page multiple times (without a refresh or cache clear)
+    // causes the SharedWorker to fail to instantiate on 
+    // every other page load.  Disabling SharedWorker's entirely
+    // for now.
+    if (false /* ^-- */ && typeof SharedWorker == 'function' 
 
         /*
          * https://bugzilla.mozilla.org/show_bug.cgi?id=504553#c73
