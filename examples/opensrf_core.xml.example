@@ -55,6 +55,12 @@ vim:et:ts=2:sw=2:
     <syslog>local2</syslog>
     <actlog>local1</actlog>
     -->
+    <!-- Optional log tag.  You can use this to help distinguish
+         syslog entries when running multiple OpenSRF stacks on the
+         same server. -->
+    <!--
+    <logtag>instance1</logtag>
+    -->
 
     <!-- 0 None, 1 Error, 2 Warning, 3 Info, 4 debug, 5 Internal (Nasty) -->
     <loglevel>3</loglevel>
@@ -118,6 +124,9 @@ vim:et:ts=2:sw=2:
             <logfile>syslog</logfile>
             <syslog>local2</syslog>
             -->
+            <!--
+            <logtag>instance1</logtag>
+            -->
             <loglevel>2</loglevel>
         </router>
         <router> <!-- private router -->
@@ -139,6 +148,9 @@ vim:et:ts=2:sw=2:
             <!--
             <logfile>syslog</logfile>
             <syslog>local2</syslog>
+            -->
+            <!--
+            <logtag>instance1</logtag>
             -->
             <loglevel>4</loglevel>
         </router>
