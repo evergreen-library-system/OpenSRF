@@ -44,6 +44,7 @@ char* domainName = NULL;
 int osrfConnected = 0;
 char recipientBuf[128];
 char contentTypeBuf[80];
+osrfStringArray* allowedOrigins = NULL;
 
 #if 0
 // Commented out to avoid compiler warning
@@ -528,6 +529,9 @@ static void childInit(apr_pool_t *p, server_rec *s) {
     osrfCacheInit(servers, 1, 86400);
 	osrfConnected = 1;
 
+    allowedOrigins = osrfNewStringArray(4);
+    osrfConfigGetValueList(NULL, allowedOrigins, "/cross_origin/origin");
+
     // at pool destroy time (= child exit time), cleanup
     // XXX causes us to disconnect even for clone()'d process cleanup (as in mod_cgi)
     //apr_pool_cleanup_register(p, NULL, childExit, apr_pool_cleanup_null);
@@ -544,6 +548,7 @@ static int handler(request_rec *r) {
 	osrfLogSetAppname("osrf_http_translator");
 	osrfAppSessionSetIngress(TRANSLATOR_INGRESS);
     testConnection(r);
+    crossOriginHeaders(r, allowedOrigins);
 
 	osrfLogMkXid();
     osrfHttpTranslator* trans = osrfNewHttpTranslator(r);
