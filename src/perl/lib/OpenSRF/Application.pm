@@ -171,7 +171,6 @@ sub handler {
 
 		if (ref $coderef) {
 			my @args = $app_msg->params;
-			$coderef->session( $session );
 			my $appreq = OpenSRF::AppRequest->new( $session );
 			$appreq->max_chunk_size( $coderef->max_chunk_size );
 			$appreq->max_chunk_count( $coderef->max_chunk_count );
@@ -559,7 +558,6 @@ sub method_lookup {
 		$meth = $self->method_lookup($method,$proto,1);
 	}
 
-	$meth->session($self->session) if $meth; # Pass the caller's session
 	return $meth;
 }
 
@@ -573,7 +571,9 @@ sub run {
 	if ( !UNIVERSAL::isa($req, 'OpenSRF::AppRequest') ) {
 		$log->debug("Creating a SubRequest object", DEBUG);
 		unshift @params, $req;
-		$req = OpenSRF::AppSubrequest->new( session => $self->session );
+		$req = OpenSRF::AppSubrequest->new;
+		$req->session( $self->session ) if ($self->session);
+
 	} else {
 		$log->debug("This is a top level request", DEBUG);
 	}
