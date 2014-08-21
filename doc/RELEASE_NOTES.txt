@@ -108,7 +108,7 @@ Other enhancements
 Bugfixes in 2.4.0-alpha
 -----------------------
 
-OpenSRF.pm no longer supplies AUTOLAOD (LP#1179660)
+OpenSRF.pm no longer supplies AUTOLOAD (LP#1179660)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Instead of simply producing an error message in the OpenSRF logs, calls
 to nonexistent subroutines are now fatal errors which will stop code
