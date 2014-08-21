@@ -201,6 +201,7 @@ int crossOriginHeaders(request_rec* r, osrfStringArray* allowedOrigins) {
 	apr_table_set(r->headers_out, "Access-Control-Allow-Origin", origin);
 	apr_table_set(r->headers_out, "Access-Control-Allow-Methods", "POST,OPTIONS");
 	apr_table_set(r->headers_out, "Access-Control-Allow-Headers", OSRF_HTTP_ALL_HEADERS);
+	apr_table_set(r->headers_out, "Access-Control-Expose-Headers", OSRF_HTTP_ALL_HEADERS);
 
 	osrfLogInfo(OSRF_LOG_MARK, "Set cross-origin headers for request from %s", origin);
 
