@@ -179,6 +179,8 @@ int crossOriginHeaders(request_rec* r, osrfStringArray* allowedOrigins) {
 	char *host = origin;
 	if ( !strncmp(origin, "http://", 7) )
 		host = origin + 7;
+	if ( !strncmp(origin, "https://", 8) )
+		host = origin + 8;
 
 	int found = 0;
 	int i;
