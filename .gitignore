@@ -21,6 +21,7 @@ ltmain.sh
 Makefile
 Makefile.in
 missing
+README.html
 src/c-apps/.deps/
 src/c-apps/.libs/
 src/c-apps/Makefile
