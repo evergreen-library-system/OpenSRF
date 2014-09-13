@@ -28,9 +28,9 @@ before you can successfully configure, compile, and install OpenSRF.
 On Debian and Ubuntu, the easiest way to install these prerequisites
 is to use the Makefile.install prerequisite installer.
 
-Issue the following commands as the root user to install prerequisites
-using the Makefile.install prerequisite installer, substituting your
-operating system identifier for <osname> below:
+Issue the following commands as the *root* Linux account to install 
+prerequisites using the Makefile.install prerequisite installer, substituting 
+your operating system identifier for <osname> below:
 
 ---------------------------------------------------------------------------
 apt-get install make
