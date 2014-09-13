@@ -419,7 +419,13 @@ export OSRF_WEBSOCKET_MAX_REQUEST_WAIT_TIME=600
     died on the server, and thus no response was ever delivered to the gateway.
   * CONFIG_FILE / CTXT are the standard opensrf core config options.
 
-7. After OpenSRF is up and running (or after any re-install),
+7. Before you can start websockets, you must install a valid SSL certificate 
+   in `/etc/apache2/ssl/`.  It is possible, but not recommended, to generate a 
+   self-signed SSL certificate.  For example, if you need to test with a self-signed 
+   certicate on Chrome or Chromimum browsers, one workaround is to start the browser 
+   with `--ignore-certificate-errors`.
+
+8. After OpenSRF is up and running (or after any re-install),
    fire up the secondary Apache instance. Errors will appear in
    `/var/log/apache2-websockets/error.log`. Start apache2-websockets with:
 +
