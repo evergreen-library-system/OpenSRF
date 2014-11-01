@@ -386,13 +386,13 @@ a2dismod websocket
 .(Debian / Ubuntu Precise)
 [source,bash]
 ---------------------------------------------------------------------------
-cp /home/opensrf/OpenSRF/examples/apache2/websockets/apache2.conf /etc/apache2-websockets/
+cp examples/apache2/websockets/apache2.conf /etc/apache2-websockets/
 ---------------------------------------------------------------------------
 +
 .(Ubuntu Trusty)
 [source,bash]
 ---------------------------------------------------------------------------
-cp /home/opensrf/OpenSRF/examples/apache_24/websockets/apache2.conf /etc/apache2-websockets/
+cp examples/apache_24/websockets/apache2.conf /etc/apache2-websockets/
 ---------------------------------------------------------------------------
 +
 6. OPTIONAL: add these configuration variables to /etc/apache2-websockets/envvars
