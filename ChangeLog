@@ -1,8 +1,179 @@
 ChangeLog
 =========
 
-OpenSRF 2.4.0-alpha
--------------------
+OpenSRF 2.4.0
+-------------
+
+commit df5aa177d80b40fe1e318a103a48222378af1587
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Fri Oct 17 17:07:53 2014 -0400
+
+    LP#1383828 Jessie/Trusty installer Apache "mpm" repairs
+    
+    Disable the default Apache mpm_event module and enable mpm_prefork for
+    Debian Jessie and Ubuntu Trusty.
+    
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+
+8	2	src/extras/Makefile.install
+
+commit b199a9a84aa815dbcbc4c98e3269c192fecdb238
+Author: Ben Shum <bshum@biblio.org>
+Date:   Mon Nov 10 12:20:31 2014 -0500
+
+    LP#1391248: Fix NameVirtualHost warnings in websockets apache2.conf
+    
+    For the websockets configuration, the sample apache2.conf for Apache 2.4 (i.e.
+    Ubuntu 14.04, etc.) contains NameVirtualHost entries that are no longer
+    needed.
+    
+    When starting apache2-websockets, you may see warnings like:
+    
+    AH00548: NameVirtualHost has no effect and will be removed in the next
+    release /etc/apache2-websockets/apache2.conf:53
+    
+    Remove the NameVirtualHost entries and these warnings go away.
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+
+0	2	examples/apache_24/websockets/apache2.conf
+
+commit 3c268142659852c6b09a8709a84029702698d2ea
+Author: Ben Shum <bshum@biblio.org>
+Date:   Fri Oct 31 23:53:58 2014 -0400
+
+    LP#1369169: Remove hardcoded paths for OpenSRF directory
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+
+2	2	README
+
+commit 8bcfe29874dc2aeb2fdc07b16660a0350d377cee
+Author: Ben Shum <bshum@biblio.org>
+Date:   Sat Sep 13 18:23:46 2014 -0400
+
+    LP#1369169: Mention the requirement for valid SSL certificate
+    
+    The apache2-websockets instance will not start without a valid SSL certificate
+    in /etc/apache2/ssl.  Include a mention of this in the README with the extra
+    stipulation that it is still possible to use a self-signed SSL certificate for
+    testing purposes, but this is not recommended for live installations.
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+
+7	1	README
+
+commit 25d0b0d6abe90612430b74f3c9bcf9c75c0a972e
+Author: Ben Shum <bshum@biblio.org>
+Date:   Fri Sep 12 17:58:11 2014 -0400
+
+    LP#1369169: Add websockets section to the OpenSRF README
+    
+    Remove the separate README.websockets and move the contents into the primary
+    OpenSRF README document so that all steps are in one place.
+    
+    Additional edits to the websockets instructions to detail differences made
+    between Ubuntu 14.04 Trusty and Debian / Ubuntu 12.04 Precise. More edits
+    may be necessary for Debian Jessie later?
+    
+    Also, create a separate config file for Apache 2.4 that is copied into place
+    for Ubuntu Trusty and potentially other systems that will need it.
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+
+93	0	README
+0	53	README.websockets
+ delete mode 100644 README.websockets
+
+commit c6e0150be2b0d3c010d4ea6c34a81f69cec3004b
+Author: Ben Shum <bshum@biblio.org>
+Date:   Sat Sep 13 18:04:54 2014 -0400
+
+    LP#1369169: Add Apache 2.4 specific configuration file for websockets
+    
+    For Apache 2.4, there were some necessary modifications for running the
+    websockets code properly. Similar to how we do things in Evergreen, we
+    added a new directory for apache_24 which contains the modified apache2.conf
+    file.
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+
+80	0	examples/apache_24/websockets/apache2.conf
+ create mode 100644 examples/apache_24/websockets/apache2.conf
+
+commit 92e8a5f7d6040bda312317ce339e459d5549d3eb
+Author: Ben Shum <bshum@biblio.org>
+Date:   Sat Sep 13 18:07:47 2014 -0400
+
+    LP#1369169: Remove trailing whitespace from apache2.conf
+    
+    For some reason, there was a lot of trailing whitespace in this apache2.conf
+    file for websockets. Removing them.
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+
+19	19	examples/apache2/websockets/apache2.conf
+
+commit 1b0252065496be18b8c4eb3991d1057928dd7784
+Author: Ben Shum <bshum@biblio.org>
+Date:   Sat Sep 13 17:03:19 2014 -0400
+
+    LP#1369169: Standardize styling of root linux account for README
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+
+3	3	README
+
+commit 10b9f9eeac545cf46387e45b8cbd06e2a556baf3
+Author: Ben Shum <bshum@biblio.org>
+Date:   Sat Sep 13 17:38:54 2014 -0400
+
+    LP#1369169: Add generated README.html to the .gitignore file for OpenSRF
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+
+1	0	.gitignore
+
+commit 2bceabc55f8b1ccb13089298bfdb6a220c5735d6
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Thu Aug 21 16:52:10 2014 -0700
+
+    fix typo in release notes
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+1	1	doc/RELEASE_NOTES.txt
+
+commit e5eab9073e25b82914986326a5e97e7feecb5dfb
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Thu Aug 21 16:33:11 2014 -0700
+
+    bump up version number for OpenSRF 2.4.0-alpha
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+2	2	src/perl/lib/OpenSRF.pm
+1	1	src/python/setup.py
+1	1	version.m4
+
+commit b929dd7080b91e1f7c938778580ac6957835e666
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Thu Aug 21 16:30:58 2014 -0700
+
+    update ChangeLog for OpenSRF 2.4.0-alpha
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+582	1004	ChangeLog
 
 commit 4426a8a503baec5171ae4245eccd595444815358
 Author: Galen Charlton <gmc@esilibrary.com>
