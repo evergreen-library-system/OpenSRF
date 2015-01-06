@@ -1,5 +1,5 @@
-Release notes for OpenSRF 2.4.0-alpha
-=====================================
+Release notes for OpenSRF 2.4.0
+===============================
 
 Supported platforms
 -------------------
@@ -9,8 +9,8 @@ The following Linux distributions are supported:
   * Fedora 17, 18
   * Ubuntu 12.04 LTS (Precise Pangolin) and 14.04 (Trusty Tahr)
 
-New features in 2.4.0-alpha
----------------------------
+New features in 2.4.0
+---------------------
 
 WebSockets support (LP#1268619)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -64,8 +64,8 @@ server.
 
 Log tags can be set by adding `logtag` elements in `opensrf_core.xml`.
 
-Enhancements in 2.4.0-alpha
----------------------------
+Enhancements in 2.4.0
+---------------------
 
 JavaScript library now uses browser-native JSON routines (LP#1316245)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -105,8 +105,8 @@ Other enhancements
   * Document that perl2JSON doesn't order hash keys (LP#1285915)
   * Reorder changes to ejabberd.cfg in the install instructions
 
-Bugfixes in 2.4.0-alpha
------------------------
+Bugfixes in 2.4.0
+-----------------
 
 OpenSRF.pm no longer supplies AUTOLOAD (LP#1179660)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
