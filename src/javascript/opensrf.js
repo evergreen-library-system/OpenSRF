@@ -284,7 +284,7 @@ OpenSRF.Session.prototype.send_ws = function(osrf_msg) {
     var json = js2JSON({
         service : this.service,
         thread : this.thread,
-        osrf_msg : [message.serialize()]
+        osrf_msg : [osrf_msg.serialize()]
     });
 
     OpenSRF.websocketConnection.send(json);
