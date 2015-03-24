@@ -376,8 +376,10 @@ static int process_request( const char* request ) {
 		ret_val = handle_close( cmd_array );
 
 	else if ( request[0] == '!') {
-		if (!no_bang) system( request + 1 );
-		ret_val = 1;
+		if (!no_bang) {
+			system( request + 1 );
+			ret_val = 1;
+		}
 	}
 
 	osrfStringArrayFree( cmd_array );
@@ -985,8 +987,12 @@ static int print_help( void ) {
 			"---------------------------------------------------------------------------------\n"
 			"General commands:\n"
 			"---------------------------------------------------------------------------------\n"
-			"help                   - Display this message\n"
-			"!<command> [args]      - Forks and runs the given command in the shell\n"
+			"help                   - Display this message\n",
+			stdout );
+	if (!no_bang) fputs(
+			"!<command> [args]      - Forks and runs the given command in the shell\n",
+			stdout );
+	fputs(
 		/*
 			"time			- Prints the current time\n"
 			"time <timestamp>	- Formats seconds since epoch into readable format\n"
