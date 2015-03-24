@@ -95,6 +95,7 @@ static void close_all_sessions( void );
 
 static int recv_timeout = 120;
 static int is_from_script = 0;
+static int no_bang = 0;
 
 static osrfHash* server_hash = NULL;
 
@@ -120,20 +121,31 @@ int main( int argc, char* argv[] ) {
 	}
 
 	if(argc > 1) {
-		/* for now.. the first arg is used as a script file for processing */
 		int f;
-		if( (f = open(argv[1], O_RDONLY)) == -1 ) {
-			osrfLogError( OSRF_LOG_MARK, "Unable to open file %s for reading, exiting...", argv[1]);
-			return -1;
-		}
+		int i;
+		for (i = 1; i < argc; i++) {
 
-		if(dup2(f, STDIN_FILENO) == -1) {
-			osrfLogError( OSRF_LOG_MARK, "Unable to duplicate STDIN, exiting...");
-			return -1;
-		}
+			if( !strcmp( argv[i], "--safe" ) ) {
+				no_bang = 1;
+				continue;
+			}
 
-		close(f);
-		is_from_script = 1;
+			/* for now.. the first unrecognized arg is used as a script file for processing */
+			if (is_from_script) continue;
+
+			if( (f = open(argv[i], O_RDONLY)) == -1 ) {
+				osrfLogError( OSRF_LOG_MARK, "Unable to open file %s for reading, exiting...", argv[i]);
+				return -1;
+			}
+
+			if(dup2(f, STDIN_FILENO) == -1) {
+				osrfLogError( OSRF_LOG_MARK, "Unable to duplicate STDIN, exiting...");
+				return -1;
+			}
+
+			close(f);
+			is_from_script = 1;
+		}
 	}
 		
 	/* --------------------------------------------- */
@@ -364,7 +376,7 @@ static int process_request( const char* request ) {
 		ret_val = handle_close( cmd_array );
 
 	else if ( request[0] == '!') {
-		system( request + 1 );
+		if (!no_bang) system( request + 1 );
 		ret_val = 1;
 	}
 
