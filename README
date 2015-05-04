@@ -32,6 +32,7 @@ Issue the following commands as the *root* Linux account to install
 prerequisites using the Makefile.install prerequisite installer, substituting 
 your operating system identifier for <osname> below:
 
+[source, bash]
 ---------------------------------------------------------------------------
 apt-get install make
 make -f src/extras/Makefile.install <osname>
@@ -89,6 +90,7 @@ build OpenSRF. The default installation prefix (PREFIX) for OpenSRF is
 If you are building OpenSRF for Evergreen, issue the following commands as
 the *user* Linux account to configure and build OpenSRF:
 
+[source, bash]
 ---------------------------------------------------------------------------
 ./configure --prefix=/openils --sysconfdir=/openils/conf
 make
@@ -140,6 +142,7 @@ file. Here are entries that you could add to a stock `/etc/hosts` file for our
 example domains:
 
 .Example added entries for `/etc/hosts`
+[source, bash]
 ---------------------------------------------------------------------------
 127.0.1.2	public.localhost	public
 127.0.1.3	private.localhost	private
@@ -193,6 +196,7 @@ changes:
   a. Define your public and private domains in the `hosts` directive. For
    example:
 +
+[source, bash]
 ---------------------------------------------------------------------------
 {hosts, ["localhost", "private.localhost", "public.localhost"]}.
 ---------------------------------------------------------------------------
@@ -329,6 +333,7 @@ srfsh
 +
 2. Issue the following request to test the `opensrf.math` service:
 +
+[source, bash]
 ---------------------------------------------------------------------------
 srfsh# request opensrf.math add 2,2
 ---------------------------------------------------------------------------
@@ -398,6 +403,7 @@ cp examples/apache_24/websockets/apache2.conf /etc/apache2-websockets/
 6. OPTIONAL: add these configuration variables to /etc/apache2-websockets/envvars
    and adjust as needed.
 +
+[source, bash]
 ---------------------------------------------------------------------------
 export OSRF_WEBSOCKET_IDLE_TIMEOUT=120
 export OSRF_WEBSOCKET_IDLE_CHECK_INTERVAL=5
