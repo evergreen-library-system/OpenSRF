@@ -270,7 +270,7 @@ Updating the OpenSRF configuration files
      to create your locally customizable OpenSRF configuration files:
 +
 .Copying the example OpenSRF configuration files
-[source,bash]
+[source, bash]
 ---------------------------------------------------------------------------
 cd SYSCONFDIR
 cp opensrf_core.xml.example opensrf_core.xml
@@ -306,7 +306,7 @@ osrf_control --localhost --start-all
 To stop all OpenSRF services with a hostname of `localhost`, issue the
 following command as the *opensrf* Linux account:
 
-[source,bash]
+[source, bash]
 ---------------------------------------------------------------------------
 osrf_control --localhost --stop-all
 ---------------------------------------------------------------------------
@@ -322,7 +322,7 @@ services, test the services as follows:
    command as the *opensrf* Linux account:
 +
 .Starting the `srfsh` interactive OpenSRF shell
-[source,bash]
+[source, bash]
 ---------------------------------------------------------------------------
 srfsh
 ---------------------------------------------------------------------------
@@ -343,14 +343,14 @@ account:
 
 1. Install git if not already present:
 +
-[source,bash]
+[source, bash]
 ---------------------------------------------------------------------------
 apt-get install git-core
 ---------------------------------------------------------------------------
 +
 2. Install the apache-websocket module:
 +
-[source,bash]
+[source, bash]
 ---------------------------------------------------------------------------
 # Use a temporary directory
 cd /tmp
@@ -363,20 +363,20 @@ apxs2 -i -a -c mod_websocket.c
    /usr/share/doc/apache2/README.multiple-instances)
 +
 .(Debian / Ubuntu Precise)
-[source,bash]
+[source, bash]
 ---------------------------------------------------------------------------
 sh /usr/share/doc/apache2.2-common/examples/setup-instance websockets
 ---------------------------------------------------------------------------
 +
 .(Ubuntu Trusty)
-[source,bash]
+[source, bash]
 ---------------------------------------------------------------------------
 sh /usr/share/doc/apache2/examples/setup-instance websockets
 ---------------------------------------------------------------------------
 +
 4. Remove from the main apache instance
 +
-[source,bash]
+[source, bash]
 ---------------------------------------------------------------------------
 a2dismod websocket
 ---------------------------------------------------------------------------
@@ -384,13 +384,13 @@ a2dismod websocket
 5. Copy into place the config files
 +
 .(Debian / Ubuntu Precise)
-[source,bash]
+[source, bash]
 ---------------------------------------------------------------------------
 cp examples/apache2/websockets/apache2.conf /etc/apache2-websockets/
 ---------------------------------------------------------------------------
 +
 .(Ubuntu Trusty)
-[source,bash]
+[source, bash]
 ---------------------------------------------------------------------------
 cp examples/apache_24/websockets/apache2.conf /etc/apache2-websockets/
 ---------------------------------------------------------------------------
@@ -429,7 +429,7 @@ export OSRF_WEBSOCKET_MAX_REQUEST_WAIT_TIME=600
    fire up the secondary Apache instance. Errors will appear in
    `/var/log/apache2-websockets/error.log`. Start apache2-websockets with:
 +
-[source,bash]
+[source, bash]
 ---------------------------------------------------------------------------
 /etc/init.d/apache2-websockets start
 ---------------------------------------------------------------------------
