@@ -918,7 +918,7 @@ int send_request( const char* server,
 	fprintf(less, "Request Time in seconds: %.6f\n", end - start );
 	fputs("------------------------------------\n", less);
 
-	pclose(less);
+	if(!is_from_script) pclose(less);
 
 	osrf_app_session_request_finish( session, req_id );
 
