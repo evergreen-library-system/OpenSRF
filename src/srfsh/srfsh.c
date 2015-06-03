@@ -147,9 +147,13 @@ int main( int argc, char* argv[] ) {
 			is_from_script = 1;
 		}
 	}
-		
+
+	// if stdin is not a tty, assume that we're running
+	// a script and don't want to record history
+	if (!isatty(fileno(stdin))) is_from_script = 1;
+
 	/* --------------------------------------------- */
-	load_history();
+	if (!is_from_script) load_history();
 
 	client = osrfSystemGetTransportClient();
 	osrfAppSessionSetIngress("srfsh");
@@ -192,7 +196,7 @@ int main( int argc, char* argv[] ) {
 		}
 
 		process_request( cmd );
-		if( request && *cmd ) {
+		if( !is_from_script && request && *cmd ) {
 			add_history(request);
 		}
 
