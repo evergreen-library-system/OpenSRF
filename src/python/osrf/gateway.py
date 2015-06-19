@@ -50,18 +50,6 @@ class GatewayRequest:
     setDefaultHost = staticmethod(setDefaultHost)
 
     def buildURL(self):
-        """
-        Builds the URL for the OpenSRF gateway based on the host and path
-
-        Previous versions of the code assumed that the host would be a bare
-        hostname or IP address, and prepended the http:// protocol. However,
-        to enable more secure communications, now we check for the existence
-        of the HTTP or HTTPS prefix and use that if it has been supplied.
-        """
-
-        if defaultHost.lower().startswith(('http://', 'https://')):
-            return '%s/%s' % (defaultHost, self.path)
-
         return 'http://%s/%s' % (defaultHost, self.path)
 
 class JSONGatewayRequest(GatewayRequest):
