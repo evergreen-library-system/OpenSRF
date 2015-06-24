@@ -1,5 +1,5 @@
-Release notes for OpenSRF 2.4.0
-===============================
+OpenSRF 2.4 Release Notes
+=========================
 
 Supported platforms
 -------------------
@@ -9,11 +9,14 @@ The following Linux distributions are supported:
   * Fedora 17, 18
   * Ubuntu 12.04 LTS (Precise Pangolin) and 14.04 (Trusty Tahr)
 
+OpenSRF 2.4.0
+-------------
+
 New features in 2.4.0
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 WebSockets support (LP#1268619)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 WebSockets are a standards-compliant, cross-browser mechanism to support
 streaming, bi-directional communication between the browser and the
 server. For more information, see http://en.wikipedia.org/wiki/WebSocket
@@ -28,7 +31,7 @@ listens on ports 7680 and 7682 and uses a separate Apache
 instance.
 
 Cross Origin Resource Sharing for OpenSRF (LP#1002028)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Browsers' same-origin policy currently restricts requests to the current
 website's domain to prevent various nefarious scenarios. However,
 because APIs and other web resources need to remain open to cross-site
@@ -56,7 +59,7 @@ resulting in the oncomplete method never returning (as blocking requests
 are not possible with cross-domain XHR).
 
 Support for log tagging (LP#1343578)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 It is now possible to specify a log tag, i.e., a string to append
 to the application name in syslog message.  This allows easy filtering
 of log entries when running multiple OpenSRF instances on the same
@@ -65,10 +68,10 @@ server.
 Log tags can be set by adding `logtag` elements in `opensrf_core.xml`.
 
 Enhancements in 2.4.0
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 JavaScript library now uses browser-native JSON routines (LP#1316245)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The routines `JSON2js` and `js2JSON` now use native browser JSON
 routines.  In addition, `jsonPretty` is removed in favor of
 `JSON.stringify`.
@@ -78,7 +81,7 @@ consequence of this change, `JSON2js` will now throw an exception
 if it is given input not is not a valid JSON string.
 
 Listeners now log and drop XMPP error messages (LP#1341687)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The most common form of XMPP error messages are "bounced" messages, i.e.
 those where the recipient is not available.  Instead of passing these
 useless and confusing messages down to a drone for processing, listeners
@@ -88,16 +91,16 @@ An example of when this can occur is when a service is starting up and
 attempts to register with a router that is not yet available.
 
 Removes osrf_ctl.sh (LP#1286248)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The control script `osrf_ctl.sh` is removed in favor of `osrf_control`,
 which was introduced in OpenSRF 2.3.0.
 
 Improved docgen output(LP#1292214)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Docgen output now respects formatting present in method description.
 
 Other enhancements
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
   * Add support for Debian Jessie (LP#1306044)
   * Add support for Ubuntu Trusty (and removes support for Lucid) (LP#1315525)
   * Remove deprecated Jabber registration script (LP#1306044)
@@ -106,16 +109,16 @@ Other enhancements
   * Reorder changes to ejabberd.cfg in the install instructions
 
 Bugfixes in 2.4.0
------------------
+~~~~~~~~~~~~~~~~~
 
 OpenSRF.pm no longer supplies AUTOLOAD (LP#1179660)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Instead of simply producing an error message in the OpenSRF logs, calls
 to nonexistent subroutines are now fatal errors which will stop code
 execution.
 
-`osrf_control` only affects processed owned by current user LP#1337401
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`osrf_control` only affects processes owned by current user (LP#1337401)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 As of 2.3.0, OpenSRF can readily support running multiple instances on
 one server. This bugfix ensures that `osrf_control` only affects OpenSRF
 processes owened by the current user.
