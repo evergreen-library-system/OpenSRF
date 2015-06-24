@@ -9,6 +9,53 @@ The following Linux distributions are supported:
   * Fedora 17, 18
   * Ubuntu 12.04 LTS (Precise Pangolin) and 14.04 (Trusty Tahr)
 
+OpenSRF 2.4.1
+-------------
+
+Enhancements in 2.4.1
+~~~~~~~~~~~~~~~~~~~~~
+
+Improved documentation for configuring `ejabberd` on Debian Jessie (LP#1445503)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The documentation now reflects the fact that the version of
+`ejabberd` packaged for Jessie uses a new configuration file format.
+
+Minor `srfsh` enhancements (LP#1436047, LP#1152272)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`srfsh` now accepts a new command-line switch, `--safe`.  When
+`--safe` is supplied, `srfsh` will not allow the user to use
+the bang (`!`) command to run an external program.
+
+Also, when `srfsh` is run non-interactively (e.g., `srfsh /path/to/script.srfsh`
+or `srfsh < /path/to/script.srfsh`), it no longer
+records the commands run in the `srfsh` history file (`~/.srfsh_history`).
+This allows `srfsh` to be invoked as a cronjob without
+cluttering up its command history.
+
+Bugfixes in 2.4.0
+~~~~~~~~~~~~~~~~~
+
+Avoid re-sending messages extraneously over WebSockets (LP#1418613)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Under certain circumstances, the JavaScript OpenSRF WebSockets client
+library could inappropriately re-send messages.  This is now fixed.
+
+Testers of the prototype Evergreen web staff client are particularly
+encouraged to upgrade OpenSRF to get this bugfix.
+
+`srfsh` no longer closes STDOUT prematurely (LP#1461625)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+When run non-interactively, `srfsh` used to close STDOUT
+after handling the first command, which meant that the
+output of subsequent commands was not displayed. This is now
+fixed.
+
+Python gateway client now supports HTTPS-only gateways (LP#1409055)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Python gateway client used to coerce gateway requests to HTTP. As 
+of this release, if the value supplied to `setDefaultHost()` starts with
+"https://" or "http://", the specified protocol is used.
+
 OpenSRF 2.4.0
 -------------
 
