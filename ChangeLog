@@ -1,6 +1,219 @@
 ChangeLog
 =========
 
+OpenSRF 2.4.1
+-------------
+commit d266817a76b3659fd2b2acba13e94f01389d2a14
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Wed Jun 24 16:07:58 2015 +0000
+
+    set stage for point release notes, à la Evergreen
+    
+    Also fix a couple typos.
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+19	16	doc/RELEASE_NOTES.txt
+
+commit b1807500aa0e3854a512f5c244fef188b370ac65
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Wed Jun 24 16:01:26 2015 +0000
+
+    increment version number for 2.4.1 release
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+1	1	src/perl/lib/OpenSRF.pm
+1	1	src/python/setup.py
+1	1	version.m4
+
+commit 95b24da0e8b85b20b018b35a7c7ecdec73a6968e
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Wed Jun 3 18:35:35 2015 +0000
+
+    LP#1152272: do not log batch invocation of srfsh in .srfsh_history
+    
+    When running srfsh to process a script, do not log
+    the requests in .srfsh_history.
+    
+    To test
+    -------
+    [1] Run the following command:
+    
+        echo 'request opensrf.math opensrf.system.echo "foo"' | srfsh
+    
+    [2] Note that the last line of ~/.srfsh_history should be
+        'request opensrf.math opensrf.system.echo "foo"'
+    
+    [3] Apply the patch, compile, and run
+    
+        echo 'request opensrf.math opensrf.system.echo "bar"' | srfsh
+    
+    [4] This time, no additional line should have been added to
+        ~/.srfsh_history
+    
+    [5] Another variation to try:
+    
+        srfsh test.srfsh
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+7	3	src/srfsh/srfsh.c
+
+commit f3da6d5be3e607d8f4ba4c60815cccef60cd9487
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Wed Jun 3 17:42:06 2015 +0000
+
+    LP#1461625: ensure srfsh doesn't close STDOUT prematurely
+    
+    Ensure that when running srfsh in non-interactive mode
+    that reads commands directly from a file, (i.e.,
+    "srfsh script.srfsh" or as a shebang script), it does
+    not close STDOUT after handling the first request.
+    
+    To test
+    -------
+    [1] Create a srfsh script containing:
+    
+        request opensrf.math opensrf.system.echo "foo"
+        request opensrf.math opensrf.system.echo "bar"
+    
+    [2] Run "srfsh script.srfsh". Note that only the
+        results of the first echo request are output.
+    [3] Apply the patch and recompile, then run
+        "srfsh script.srfsh" again.  This time, the
+        output of both requests is displayed.
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+1	1	src/srfsh/srfsh.c
+
+commit ab6db9fb56317a553d58d7dc8471ad9288fe0b92
+Author: Dan Scott <dscott@laurentian.ca>
+Date:   Thu Jun 18 11:52:00 2015 -0400
+
+    LP#1409055 Support specific protocols for OpenSRF gateway requests
+    
+    If the user passes in a gateway hostname that contains a specific HTTP or HTTPS
+    protocol, let's just use that.
+    
+    Signed-off-by: Dan Scott <dscott@laurentian.ca>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+
+12	0	src/python/osrf/gateway.py
+
+commit 78e6fcbb637edbbec4d3996e0281a5e4d7e2663e
+Author: Galen Charlton <gmc@esilibrary.com>
+Date:   Tue Mar 24 21:00:57 2015 +0000
+
+    LP#1436047: make srfsh --safe act as if "! command" doesn't exist
+    
+    This patch make srfsh treat attempting to run an external
+    command via "! command" as a parsing error if --safe is
+    supplied.  It also suppress mention of "! commands" from
+    the internal help.
+    
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+10	4	src/srfsh/srfsh.c
+
+commit c7d5810f29fd5b8f7b125af58df053abf5dbb9bf
+Author: Mike Rylander <mrylander@gmail.com>
+Date:   Tue Mar 24 16:22:16 2015 -0400
+
+    LP#1436047: Allow disabling of "bang commands" in srfsh
+    
+    srfsh has the ability to execute commands via system() calls using
+    the common "!command" syntax.  This is very useful, but it would
+    be nice to be able to turn that functionality off in some cases.
+    
+    This branch adds argument parsing to detect a new '--safe' command
+    line parameter, which disables the "!command" syntax.
+    
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+
+24	12	src/srfsh/srfsh.c
+
+commit 24c230a7c90c6a7ff300ca86745998fd07ee2105
+Author: Ben Shum <bshum@biblio.org>
+Date:   Mon May 4 17:16:29 2015 -0400
+
+    Docs: Fix mailing list link for help in README
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+
+2	2	README
+
+commit 1d632a356086e5691605bd4b6a131769a05f4906
+Author: Josh Stompro <github@stompro.org>
+Date:   Tue Apr 21 09:50:49 2015 -0500
+
+    LP#1445503 - Updated Ejabberd setup steps for Ejabberd 14.x for Debian Jessie
+    
+    Signed-off-by: Josh Stompro <github@stompro.org>
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+
+29	2	README
+
+commit b8bef9320b13dd5a87f34072b71af70bb1714e4a
+Author: Ben Shum <bshum@biblio.org>
+Date:   Mon May 4 17:01:23 2015 -0400
+
+    Docs: Emphasize variables and paths consistently in README
+    
+    Some variables and paths were not emphasized when the instructions for
+    websockets was added. Maintain consistency in the document and emphasize
+    them.
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+
+6	6	README
+
+commit 0be401fa0b5e3db89db73e5daf5652e69a8947bb
+Author: Ben Shum <bshum@biblio.org>
+Date:   Mon May 4 16:57:38 2015 -0400
+
+    Docs: Add [source, bash] to code blocks that were not defined in README
+    
+    For consistency, add [source, bash] to all the blocks of code or script
+    commands in the README
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+
+6	0	README
+
+commit 30a5a2d9b13c4aa0636f2885f0953a840b291033
+Author: Ben Shum <bshum@biblio.org>
+Date:   Mon May 4 16:49:08 2015 -0400
+
+    Docs: Keep all source syntax consistent in README
+    
+    Change occurrences of [source,bash] to [source, bash] for consistency
+    throughout README.
+    
+    Signed-off-by: Ben Shum <bshum@biblio.org>
+
+11	11	README
+
+commit d59acb614910808b5773c377df4e9806f76546dc
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Thu Feb 5 10:34:40 2015 -0500
+
+    LP#1418613 per-tab websocket send() JS thinko repair
+    
+    Avoid referencing variable defined somewhere outside the send_ws()
+    function.  Doing so happened to result in re-sending the same message
+    twice in some cases.
+    
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+1	1	src/javascript/opensrf.js
+
 OpenSRF 2.4.0
 -------------
 
