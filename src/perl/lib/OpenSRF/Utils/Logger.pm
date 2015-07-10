@@ -85,7 +85,9 @@ sub set_config {
         $facility = $logfile;
         $logfile = undef;
         $facility = _fac_to_const($facility);
-        openlog($service, 0, $facility);
+        # OSRF_ADOPT_SYSLOG means we assume syslog is already
+        # opened w/ the correct values.  Don't clobber it.
+        openlog($service, 0, $facility) unless $ENV{OSRF_ADOPT_SYSLOG};
 
     } else { $logfile = "$logfile"; }
 
@@ -161,6 +163,7 @@ sub is_act_filelog {
 
 sub set_service {
     my( $self, $svc ) = @_;
+    return if $ENV{OSRF_ADOPT_SYSLOG};
     $service = $svc;    
     $service .= '/' . $service_tag if (defined $service_tag);    
     if( is_syslog() ) {
@@ -260,12 +263,15 @@ sub _log_message {
     # Trim the message to the configured maximum log message length
     $msg = substr($msg, 0, $max_log_msg_len); 
 
+    # avoid clobbering the adopted syslog facility
+    my $slog_flags = $ENV{OSRF_ADOPT_SYSLOG} ? $l : $fac | $l;
+
     if( $level == ACTIVITY() ) {
-        if( is_act_syslog() ) { syslog( $fac | $l, $msg ); } 
+        if( is_act_syslog() ) { syslog( $slog_flags, $msg ); }
         elsif( is_act_filelog() ) { _write_file( $msg, 1 ); }
 
     } else {
-        if( is_syslog() ) { syslog( $fac | $l, $msg ); }
+        if( is_syslog() ) { syslog( $slog_flags, $msg ); }
         elsif( is_filelog() ) { _write_file($msg); }
     }
 
