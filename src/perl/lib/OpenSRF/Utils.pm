@@ -261,11 +261,11 @@ sub interval_to_seconds {
         while ($interval =~ /\s*([\+-]?)\s*(\d+)\s*(\w+)\s*/g) {
 		my ($sign, $count, $type) = ($1, $2, $3);
 		$count = "$sign$count" if ($sign);
-                $amount += $count if ($type eq 's');
+                $amount += $count if ($type =~ /^s/);
                 $amount += 60 * $count if ($type =~ /^m(?!o)/oi);
                 $amount += 60 * 60 * $count if ($type =~ /^h/);
                 $amount += 60 * 60 * 24 * $count if ($type =~ /^d/oi);
-                $amount += 60 * 60 * 24 * 7 * $count if (defined $2 && $2 =~ /^w/oi);
+                $amount += 60 * 60 * 24 * 7 * $count if ($type =~ /^w/oi);
                 $amount += ((60 * 60 * 24 * 365)/12) * $count if ($type =~ /^mo/io);
                 $amount += 60 * 60 * 24 * 365 * $count if ($type =~ /^y/oi);
         }
