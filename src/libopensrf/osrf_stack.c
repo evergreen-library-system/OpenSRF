@@ -274,6 +274,11 @@ static void _do_server( osrfAppSession* session, osrfMessage* msg ) {
 
 	osrfLogDebug( OSRF_LOG_MARK, "Server received message of type %d", msg->m_type );
 
+        osrf_app_session_set_tz(session, msg->sender_tz);
+        osrf_app_session_set_locale(session, msg->sender_locale);
+
+	osrfLogDebug( OSRF_LOG_MARK, "Message has locale %s and tz %s", session->session_locale, session->session_tz );
+
 	switch( msg->m_type ) {
 
 		case STATUS:

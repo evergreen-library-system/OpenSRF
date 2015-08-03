@@ -372,6 +372,31 @@ char* osrf_app_session_set_locale( osrfAppSession* session, const char* locale )
 }
 
 /**
+	@brief Install a copy of a TZ string in a specified session.
+	@param session Pointer to the osrfAppSession in which the TZ is to be installed.
+	@param TZ The TZ string to be copied and installed.
+	@return A pointer to the installed copy of the TZ string.
+*/
+char* osrf_app_session_set_tz( osrfAppSession* session, const char* tz ) {
+	if (!session || !tz)
+		return NULL;
+
+	if(session->session_tz) {
+		if( strlen(session->session_tz) >= strlen(tz) ) {
+			/* There's room available; just copy */
+			strcpy(session->session_tz, tz);
+		} else {
+			free(session->session_tz);
+			session->session_tz = strdup( tz );
+		}
+	} else {
+		session->session_tz = strdup( tz );
+	}
+
+	return session->session_tz;
+}
+
+/**
 	@brief Install a copy of a ingress string as the new default.
 	@param session Pointer to the new strdup'ed default_ingress
 	@param ingress The ingress string to be copied and installed.
@@ -499,6 +524,7 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 	session->orig_remote_id = strdup(session->remote_id);
 	session->remote_service = strdup(remote_service);
 	session->session_locale = NULL;
+	session->session_tz = NULL;
 	session->transport_error = 0;
 	session->panic = 0;
 	session->outbuf = NULL;   // Not used by client
@@ -603,6 +629,7 @@ osrfAppSession* osrf_app_server_session_init(
 	session->state = OSRF_SESSION_DISCONNECTED;
 	session->type = OSRF_SESSION_SERVER;
 	session->session_locale = NULL;
+	session->session_tz = NULL;
 
 	session->userData = NULL;
 	session->userDataFree = NULL;
@@ -710,6 +737,8 @@ static int osrfAppSessionMakeLocaleRequest(
 	} else if (session->session_locale) {
 		osrf_message_set_locale(req_msg, session->session_locale);
 	}
+
+	osrf_message_set_tz(req_msg, session->session_tz);
 
 	if (!current_ingress)
 		osrfAppSessionSetIngress("opensrf");
@@ -1109,6 +1138,9 @@ void osrfAppSessionFree( osrfAppSession* session ){
 
 	if(session->session_locale)
 		free(session->session_locale);
+
+	if(session->session_tz)
+		free(session->session_tz);
 
 	free(session->remote_id);
 	free(session->orig_remote_id);

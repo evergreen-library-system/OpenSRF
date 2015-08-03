@@ -5,6 +5,7 @@ use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use OpenSRF::Utils::Logger qw/:level/;
 use warnings; use strict;
 use OpenSRF::EX qw/:try/;
+use POSIX qw/tzset/;
 
 OpenSRF::Utils::JSON->register_class_hint(hint => 'osrfMessage', name => 'OpenSRF::DomainObject::oilsMessage', type => 'hash');
 
@@ -17,6 +18,7 @@ sub new {
 	my $self = shift;
 	my $class = ref($self) || $self;
 	my %args = @_;
+	$args{tz} = $ENV{TZ};
 	return bless \%args => $class;
 }
 
@@ -100,6 +102,24 @@ sub sender_locale {
 	my $val = shift;
 	$self->{locale} = $val if (defined $val);
 	return $self->{locale};
+}
+
+=head2 OpenSRF::DomainObject::oilsMessage->sender_tz( [$tz] );
+
+=over 4
+
+Sets or gets the current message tz.  Useful for telling the
+server how you see the world.
+
+=back
+
+=cut
+
+sub sender_tz {
+	my $self = shift;
+	my $val = shift;
+	$self->{tz} = $val if (defined $val);
+	return $self->{tz};
 }
 
 =head2 OpenSRF::DomainObject::oilsMessage->sender_ingress( [$ingress] );
@@ -197,12 +217,13 @@ sub handler {
 	my $session = shift;
 
 	my $mtype = $self->type;
+	my $tz = $self->sender_tz || '';
 	my $locale = $self->sender_locale || '';
 	my $ingress = $self->sender_ingress || '';
 	my $api_level = $self->api_level || 1;
 	my $tT = $self->threadTrace;
 
-    $log->debug("Message locale is $locale; ingress = $ingress", DEBUG);
+    $log->debug("Message locale is $locale; ingress = $ingress; tz = $tz", DEBUG);
 
 	$session->last_message_type($mtype);
 	$session->last_message_api_level($api_level);
@@ -217,10 +238,13 @@ sub handler {
 		$val = $self->do_server( $session, $mtype, $api_level, $tT );
 
 	} elsif ($session->endpoint == $session->CLIENT()) {
+		$tz = undef; # Client should not adopt the TZ of the server
 		$val = $self->do_client( $session, $mtype, $api_level, $tT );
 	}
 
 	if( $val ) {
+		local $ENV{TZ} = $tz || $ENV{TZ}; # automatic revert at the end of this scope
+		tzset();
 		return OpenSRF::Application->handler($session, $self->payload);
 	} else {
 		$log->debug("Request was handled internally", DEBUG);

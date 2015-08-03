@@ -37,6 +37,7 @@ static void get_misc( ArgParser* parser );
 #define SRFSH_PORT 5222
 #define COMMAND_BUFSIZE 4096
 
+static char* tz = NULL;
 
 /* shell prompt */
 static const char* prompt = "srfsh# ";
@@ -104,6 +105,7 @@ int main( int argc, char* argv[] ) {
 	/* --------------------------------------------- */
 	/* see if they have a .srfsh.xml in their home directory */
 	char* home = getenv("HOME");
+	tz = getenv("TZ");
 	int l = strlen(home) + 36;
 	char fbuf[l];
 	snprintf(fbuf, sizeof(fbuf), "%s/.srfsh.xml", home);
@@ -797,6 +799,8 @@ int send_request( const char* server,
 		session = osrfAppSessionClientInit(server);   // open a session
 		session_is_temporary = 1;                     // just for this request
 	}
+
+	if (tz) osrf_app_session_set_tz(session,tz);
 
 	double start = get_timestamp_millis();
 

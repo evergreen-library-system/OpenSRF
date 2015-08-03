@@ -74,6 +74,9 @@ struct osrf_app_session_struct {
 	/** the current locale for this session. **/
 	char* session_locale;
 
+	/** the current TZ for this session. **/
+	char* session_tz;
+
 	/** let the user use the session to store their own session data. */
 	void* userData;
 
@@ -104,6 +107,8 @@ osrfAppSession* osrf_app_server_session_init(
 		const char* session_id, const char* our_app, const char* remote_id );
 
 char* osrf_app_session_set_locale( osrfAppSession*, const char* );
+
+char* osrf_app_session_set_tz( osrfAppSession*, const char* );
 
 /* ingress used by all sessions until replaced */
 char* osrfAppSessionSetIngress( const char* );

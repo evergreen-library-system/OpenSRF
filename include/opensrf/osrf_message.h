@@ -95,16 +95,23 @@ struct osrf_message_struct {
 
 	/** Magical ingress hint. */
 	char* sender_ingress;
+
+	/** Magical TZ hint. */
+	char* sender_tz;
 };
 typedef struct osrf_message_struct osrfMessage;
 
 const char* osrf_message_set_locale( osrfMessage* msg, const char* locale );
+
+const char* osrf_message_set_tz( osrfMessage* msg, const char* tz );
 
 const char* osrfMessageSetIngress( osrfMessage* msg, const char* ingress );
 
 const char* osrf_message_set_default_locale( const char* locale );
 
 const char* osrf_message_get_last_locale(void);
+
+const char* osrf_message_get_last_tz(void);
 
 osrfMessage* osrf_message_init( enum M_TYPE type, int thread_trace, int protocol );
 
