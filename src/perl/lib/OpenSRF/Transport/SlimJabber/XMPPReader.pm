@@ -166,6 +166,11 @@ sub tcp_connected {
 # -----------------------------------------------------------
 sub send {
     my($self, $xml) = @_;
+        
+    local $SIG{'PIPE'} = sub {
+        $logger->error("Disconnected from Jabber server, exiting immediately");
+        exit(99);
+    };
     $self->{socket}->print($xml);
 }
 
