@@ -1011,8 +1011,10 @@ int osrfSendTransportPayload( osrfAppSession* session, const char* payload ) {
 	message_set_osrf_xid( t_msg, osrfLogGetXid() );
 
 	int retval = client_send_message( session->transport_handle, t_msg );
-	if( retval )
-		osrfLogError( OSRF_LOG_MARK, "client_send_message failed" );
+	if( retval ) {
+		osrfLogError( OSRF_LOG_MARK, "client_send_message failed, exit()ing immediately" );
+		exit(99);
+	}
 
 	osrfLogInfo(OSRF_LOG_MARK, "[%s] sent %d bytes of data to %s",
 		session->remote_service, strlen( payload ), t_msg->recipient );
