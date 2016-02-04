@@ -29,14 +29,17 @@ is (OpenSRF::Utils::JSON->false, 0);
 # register_class_hint
 my $testmap =  { hints   => { osrfException =>
                               { hint => 'osrfException',
+                                strip => ['session'],
                                 name => 'OpenSRF::DomainObject::oilsException' }
                             },
                  classes => { 'OpenSRF::DomainObject::oilsException' =>
                               { hint => 'osrfException',
+                                strip => ['session'],
                                 name => 'OpenSRF::DomainObject::oilsException' }
                             }
                };
 OpenSRF::Utils::JSON->register_class_hint( hint => 'osrfException',
+                                           strip => ['session'],
                                            name => 'OpenSRF::DomainObject::oilsException');
 is_deeply (\%OpenSRF::Utils::JSON::_class_map, $testmap);
 
@@ -99,7 +102,7 @@ is (UNIVERSAL::isa($coderef,'CODE'), 1);   # code doesn't stop me from doing it
 is_deeply (OpenSRF::Utils::JSON->perl2JSONObject($coderef),
            { __c => 'CODE', __p => undef }, "Passing in coderef");
 
-my $fakeobj = bless { foo => 'bar' }, 'OpenSRF::DomainObject::oilsException';
+my $fakeobj = bless { foo => 'bar', session => 'hidden session stuff' }, 'OpenSRF::DomainObject::oilsException';
 is (UNIVERSAL::isa($fakeobj,'HASH'), 1);
 my $jsonobj = OpenSRF::Utils::JSON->perl2JSONObject($fakeobj);
 is_deeply ($jsonobj, { __c => 'osrfException', __p => { foo => 'bar' } },
