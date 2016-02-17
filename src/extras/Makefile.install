@@ -32,8 +32,6 @@ APT_TOOL=apt-get -yq
 
 # Debian dependencies
 DEBS =  \
-	apache2-mpm-prefork\
-	apache2-prefork-dev\
 	autoconf\
 	automake\
 	build-essential\
@@ -54,6 +52,8 @@ DEBS =  \
 	libgcrypt11-dev \
 	libgdbm-dev \
 	liblog-log4perl-perl\
+    libmemcached-dev \
+    libmemcached-tools \
 	libmodule-build-perl\
 	libnet-dns-perl\
 	libperl-dev\
@@ -100,6 +100,8 @@ FEDORAS = \
 	libmemcached \
 	libmemcached-devel \
 	libtool \
+	libxml-libxml-perl \
+	libxml-libxslt-perl \
 	libxml2-devel \
 	libxml2-python \
 	libxslt-devel \
@@ -152,30 +154,27 @@ EXTRA_DEBS = \
 	libnet-server-perl
 
 EXTRA_DEBS_WHEEZY = \
-	libmemcached-dev \
-	libmemcached-tools \
-	libxml-libxml-perl \
-	libxml-libxslt-perl \
+    apache2-mpm-prefork \
+    apache2-prefork-dev \
 	libncurses5-dev
 
 EXTRA_DEBS_JESSIE = \
-	libmemcached-dev \
-	libmemcached-tools \
-	libxml-libxml-perl \
-	libxml-libxslt-perl \
+	apache2-mpm-prefork \
+	apache2-prefork-dev \
 	libncurses5-dev
 
 EXTRA_DEBS_UBUNTU_PRECISE = \
-	libmemcached-dev\
-	libxml-libxml-perl \
-	libxml-libxslt-perl \
+	apache2-mpm-prefork \
+	apache2-prefork-dev \
 	ncurses-dev
 
 EXTRA_DEBS_UBUNTU_TRUSTY = \
-	libmemcached-dev\
-	libxml-libxml-perl \
-	libxml-libxslt-perl \
+	apache2-mpm-prefork \
+	apache2-prefork-dev \
 	ncurses-dev
+
+EXTRA_DEBS_UBUNTU_XENIAL = \
+	libncurses5-dev
 
 # ----------------------------------------------------------------------------
 
@@ -193,8 +192,10 @@ fedora: install_fedora_rpms
 
 ubuntu-precise: generic_ubuntu precise
 ubuntu-trusty: generic_ubuntu trusty apache_mpm_prefork_mods
+ubuntu-xenial: generic_ubuntu xenial apache_mpm_prefork_mods
 precise: install_extra_debs install_extra_debs_precise
 trusty: install_extra_debs install_extra_debs_trusty
+xenial: install_extra_debs
 generic_ubuntu: install_debs debian_sys_config
 
 # ------------------------------------------------------------------
