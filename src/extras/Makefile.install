@@ -194,10 +194,10 @@ fedora: install_fedora_rpms
 ubuntu-precise: generic_ubuntu precise
 ubuntu-trusty: generic_ubuntu trusty apache_mpm_prefork_mods
 ubuntu-xenial: generic_ubuntu xenial apache_mpm_prefork_mods
-precise: install_extra_debs install_extra_debs_precise
-trusty: install_extra_debs install_extra_debs_trusty
-xenial: install_extra_debs install_extra_debs_xenial
-generic_ubuntu: install_debs debian_sys_config
+precise: install_extra_debs install_extra_debs_precise debian_sys_config
+trusty: install_extra_debs install_extra_debs_trusty debian_sys_config
+xenial: install_extra_debs install_extra_debs_xenial debian_sys_config
+generic_ubuntu: install_debs
 
 # ------------------------------------------------------------------
 # - DEBIAN ---------------------------------------------------------
