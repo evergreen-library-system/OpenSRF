@@ -52,8 +52,8 @@ DEBS =  \
 	libgcrypt11-dev \
 	libgdbm-dev \
 	liblog-log4perl-perl\
-    libmemcached-dev \
-    libmemcached-tools \
+	libmemcached-dev \
+	libmemcached-tools \
 	libmodule-build-perl\
 	libnet-dns-perl\
 	libperl-dev\
@@ -154,8 +154,8 @@ EXTRA_DEBS = \
 	libnet-server-perl
 
 EXTRA_DEBS_WHEEZY = \
-    apache2-mpm-prefork \
-    apache2-prefork-dev \
+	apache2-mpm-prefork \
+	apache2-prefork-dev \
 	libncurses5-dev
 
 EXTRA_DEBS_JESSIE = \
@@ -175,6 +175,7 @@ EXTRA_DEBS_UBUNTU_TRUSTY = \
 
 EXTRA_DEBS_UBUNTU_XENIAL = \
 	apache2 \
+	apache2-dev \
 	libncurses5-dev
 
 # ----------------------------------------------------------------------------
