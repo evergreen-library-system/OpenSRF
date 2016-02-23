@@ -1,0 +1,44 @@
+Propagating client time zone in OpenSRF
+=======================================
+
+OpenSRF has long inspected the envelope of incoming requests for information
+about the client's locale and made this information available to business
+logic.  This is used, among other things, to drive transparent translation of
+in-database strings within Evergreen.  In addition to locale, OpenSRF will
+now respect client-supplied adjustment to the effective time zone in which it
+operates, and provide that information to the business logic layer of
+applications built on the framework.
+
+Client
+------
+
+As most clients that have time zones which differ from that of the server on
+which the OpenSRF processes run are, in fact, web browsers, it is necessary
+to include time zone detection directly within the browser.  This will be
+stored in a cookie to be sent with all subsequent HTTP requests, and used in
+all OpenSRF-over-HTTP calls made using the JavaScript bindings for OpenSRF,
+including those for WebSockets communication.
+
+For non-browser clients, such as support scripts written in Perl or other
+scripting languages, the local system's mechanisms for detecting time zone
+is relied upon.  For instance, Perl scripts can directly read the TZ
+environment variable.
+
+Additionally, the srfsh client now reads its local time zone from the
+environment and passes that to the server. 
+
+Server
+------
+
+Within OpenSRF services implemented in Perl, this information is now passed up
+to the business logic layer via the TZ environment variable, and is reverted
+to the server's value at the end of each request.  This allows automatic,
+transparent use of the client's time zone in almost all cases, and provides a
+system-normal access mechanism when direct access is required.
+
+For OpenSRF services implemented in C, the time zone information is provided
+as part of the request context object that is passed to implementation
+functions.  In particular, this allows services that interact with a database
+to set the time zone in which the database interprets timestamps to that of
+the client.
+
