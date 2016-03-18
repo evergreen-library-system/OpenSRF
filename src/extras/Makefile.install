@@ -4,7 +4,7 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (jessie/wheezy/squeeze), Ubuntu (precise/trusty)
+# Currently supports Debian (jessie/wheezy), Ubuntu (precise/trusty)
 # and Fedora (16).
 #
 # Installs Perl prereqs, libjs with Perl wrapper
@@ -13,8 +13,6 @@
 # 	make -f Makefile.install debian-jessie
 # 	- or -
 # 	make -f Makefile.install debian-wheezy
-# 	- or -
-# 	make -f Makefile.install debian-squeeze
 # 	- or -
 # 	make -f Makefile.install ubuntu-precise
 # 	- or -
@@ -153,12 +151,6 @@ EXTRA_DEBS = \
 	libjson-xs-perl \
 	libnet-server-perl
 
-EXTRA_DEBS_SQUEEZE = \
-	libmemcached-dev \
-	libmemcached-tools \
-	libxml-libxml-perl \
-	libxml-libxslt-perl
-
 EXTRA_DEBS_WHEEZY = \
 	libmemcached-dev \
 	libmemcached-tools \
@@ -193,10 +185,8 @@ all:
 
 debian-jessie: generic_debian jessie
 debian-wheezy: generic_debian wheezy
-debian-squeeze: generic_debian squeeze
 jessie: install_extra_debs_jessie apache_mpm_prefork_mods
 wheezy: install_extra_debs_wheezy
-squeeze: install_extra_debs_squeeze
 generic_debian: install_debs debian_sys_config
 
 fedora: install_fedora_rpms
@@ -233,9 +223,6 @@ install_extra_debs_jessie: install_extra_debs
 
 install_extra_debs_wheezy: install_extra_debs
 	$(APT_TOOL) install $(EXTRA_DEBS_WHEEZY)
-
-install_extra_debs_squeeze: install_extra_debs
-	$(APT_TOOL) install $(EXTRA_DEBS_SQUEEZE)
 
 # Install even more packaged dependencies on modern distros
 install_extra_debs_precise:

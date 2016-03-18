@@ -42,7 +42,6 @@ Well-tested values for <osname> include:
 
   * `debian-jessie` for Debian 8.0
   * `debian-wheezy` for Debian 7.0
-  * `debian-squeeze` for Debian 6.0
   * `ubuntu-precise` for Ubuntu 12.04
   * `ubuntu-trusty` for Ubuntu 14.04
   * `fedora` for Fedora 17 and later
