@@ -44,6 +44,7 @@ Well-tested values for <osname> include:
   * `debian-wheezy` for Debian 7.0
   * `ubuntu-precise` for Ubuntu 12.04
   * `ubuntu-trusty` for Ubuntu 14.04
+  * `ubuntu-xenial` for Ubuntu 16.04
   * `fedora` for Fedora 17 and later
 
 Patches and suggestions for improvement from users of these distributions,
@@ -178,13 +179,13 @@ work for OpenSRF.
 1. Stop ejabberd before making any changes to its configuration by issuing the
    following command as the *root* Linux account:
 +
-.(Debian / Ubuntu) Stopping ejabberd
+.(Debian / Ubuntu 14.04) Stopping ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 /etc/init.d/ejabberd stop
 ---------------------------------------------------------------------------
 +
-.(Fedora) Stopping ejabberd
+.(Fedora / Ubuntu 16.04) Stopping ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl stop ejabberd.service
@@ -192,7 +193,7 @@ systemctl stop ejabberd.service
 +
 2. Edit the ejabberd config file.
 +
-(Debian Wheezy / Ubuntu) Ejabberd 2.x.x::
+(Debian Wheezy / Ubuntu 14.04) Ejabberd 2.x.x::
 Open `/etc/ejabberd/ejabberd.cfg` and make the following
 changes:
   a. Define your public and private domains in the `hosts` directive. For
@@ -232,15 +233,40 @@ hosts:
     ##access_max_user_messages: max_user_offline_messages
 -----------------------
 +
+(Ubuntu 16.04) Ejabberd 16.x::
+Open `/etc/ejabberd/ejabberd.yml` and make the following
+changes:
+  a. Define your public and private domains in the `hosts` directive. For
+   example:
++
+[source, bash]
+---------------------------------------------------------------------------
+hosts:
+  - "localhost"
+  - "private.localhost"
+  - "public.localhost"
+---------------------------------------------------------------------------
++
+  b. Change all `max_stanza_size` values to 2000000
+  c. Change `auth_password_format` to plain
+  d. Change `shaper:` `normal` and `fast` values to 500000
+  e. Increase the `max_user_sessions:` `all:` value to 10000
+  f. Comment out the `mod_offline` directive
++
+-----------------------
+##mod_offline:
+    ##access_max_user_messages: max_user_offline_messages
+-----------------------
++
 3. Restart the ejabberd server to make the changes take effect:
 +
-.(Debian / Ubuntu) Starting ejabberd
+.(Debian / Ubuntu 14.04) Starting ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 /etc/init.d/ejabberd start
 ---------------------------------------------------------------------------
 +
-.(Fedora) Starting ejabberd
+.(Fedora / Ubuntu 16.04) Starting ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl start ejabberd.service
