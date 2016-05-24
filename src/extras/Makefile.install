@@ -184,11 +184,11 @@ all:
 	@echo "please specify an OS" && exit 0
 
 
-debian-jessie: generic_debian jessie
+debian-jessie: generic_debian jessie apache_mpm_prefork_mods
 debian-wheezy: generic_debian wheezy
-jessie: install_extra_debs_jessie apache_mpm_prefork_mods
-wheezy: install_extra_debs_wheezy
-generic_debian: install_debs debian_sys_config
+jessie: install_extra_debs_jessie debian_sys_config
+wheezy: install_extra_debs_wheezy debian_sys_config
+generic_debian: install_debs
 
 fedora: install_fedora_rpms
 
