@@ -185,7 +185,7 @@ work for OpenSRF.
 /etc/init.d/ejabberd stop
 ---------------------------------------------------------------------------
 +
-.(Fedora / Ubuntu 16.04) Stopping ejabberd
+.(Fedora / Ubuntu Xenial) Stopping ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl stop ejabberd.service
@@ -233,7 +233,7 @@ hosts:
     ##access_max_user_messages: max_user_offline_messages
 -----------------------
 +
-(Ubuntu 16.04) Ejabberd 16.x::
+(Ubuntu Xenial) Ejabberd 16.x::
 Open `/etc/ejabberd/ejabberd.yml` and make the following
 changes:
   a. Define your public and private domains in the `hosts` directive. For
@@ -266,7 +266,7 @@ hosts:
 /etc/init.d/ejabberd start
 ---------------------------------------------------------------------------
 +
-.(Fedora / Ubuntu 16.04) Starting ejabberd
+.(Fedora / Ubuntu Xenial) Starting ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl start ejabberd.service
@@ -425,7 +425,7 @@ apxs2 -i -a -c mod_websocket.c
 sh /usr/share/doc/apache2.2-common/examples/setup-instance websockets
 ---------------------------------------------------------------------------
 +
-.(Ubuntu Trusty)
+.(Ubuntu Trusty / Xenial)
 [source, bash]
 ---------------------------------------------------------------------------
 sh /usr/share/doc/apache2/examples/setup-instance websockets
@@ -446,7 +446,7 @@ a2dismod websocket
 cp examples/apache2/websockets/apache2.conf /etc/apache2-websockets/
 ---------------------------------------------------------------------------
 +
-.(Ubuntu Trusty)
+.(Ubuntu Trusty / Xenial)
 [source, bash]
 ---------------------------------------------------------------------------
 cp examples/apache_24/websockets/apache2.conf /etc/apache2-websockets/
