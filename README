@@ -42,7 +42,6 @@ Well-tested values for <osname> include:
 
   * `debian-jessie` for Debian 8.0
   * `debian-wheezy` for Debian 7.0
-  * `ubuntu-precise` for Ubuntu 12.04
   * `ubuntu-trusty` for Ubuntu 14.04
   * `ubuntu-xenial` for Ubuntu 16.04
   * `fedora` for Fedora 17 and later
@@ -419,7 +418,7 @@ apxs2 -i -a -c mod_websocket.c
 3. Create the websocket Apache instance (more information about this in 
    `/usr/share/doc/apache2/README.multiple-instances`)
 +
-.(Debian / Ubuntu Precise)
+.(Debian)
 [source, bash]
 ---------------------------------------------------------------------------
 sh /usr/share/doc/apache2.2-common/examples/setup-instance websockets
@@ -440,7 +439,7 @@ a2dismod websocket
 +
 5. Copy into place the config files
 +
-.(Debian / Ubuntu Precise)
+.(Debian)
 [source, bash]
 ---------------------------------------------------------------------------
 cp examples/apache2/websockets/apache2.conf /etc/apache2-websockets/
