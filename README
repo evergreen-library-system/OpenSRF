@@ -179,7 +179,7 @@ work for OpenSRF.
 1. Stop ejabberd before making any changes to its configuration by issuing the
    following command as the *root* Linux account:
 +
-.(Debian / Ubuntu 14.04) Stopping ejabberd
+.(Debian / Ubuntu Trusty) Stopping ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 /etc/init.d/ejabberd stop
@@ -193,7 +193,7 @@ systemctl stop ejabberd.service
 +
 2. Edit the ejabberd config file.
 +
-(Debian Wheezy / Ubuntu 14.04) Ejabberd 2.x.x::
+(Debian Wheezy / Ubuntu Trusty) Ejabberd 2.x.x::
 Open `/etc/ejabberd/ejabberd.cfg` and make the following
 changes:
   a. Define your public and private domains in the `hosts` directive. For
@@ -260,7 +260,7 @@ hosts:
 +
 3. Restart the ejabberd server to make the changes take effect:
 +
-.(Debian / Ubuntu 14.04) Starting ejabberd
+.(Debian / Ubuntu Trusty) Starting ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 /etc/init.d/ejabberd start
