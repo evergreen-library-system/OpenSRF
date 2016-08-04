@@ -210,7 +210,31 @@ sub wait {
     my $infile = '';
     vec($infile, $socket->fileno, 1) = 1;
 
-    my $nfound = select($infile, undef, undef, $timeout);
+    my $nfound;
+    if (!OpenSRF->OSRF_APACHE_REQUEST_OBJ || $timeout <= 1.0) {
+        $nfound = select($infile, undef, undef, $timeout);
+    } else {
+        $timeout -= 1.0;
+        for (
+            my $sleep = 1.0;
+            $timeout >= 0.0;
+            do {
+                $sleep = $timeout < 1.0 ? $timeout : 1.0;
+                $timeout -= 1.0;
+            }
+        ) {
+            $nfound = select($infile, undef, undef, $sleep);
+            last if $nfound;
+            if (
+                OpenSRF->OSRF_APACHE_REQUEST_OBJ &&
+                OpenSRF->OSRF_APACHE_REQUEST_OBJ->connection->aborted
+            ) {
+                # Should this be more severe? Die or throw error?
+                $logger->warn("Upstream Apache client disconnected, aborting.");
+                last;
+            };
+        }
+    }
     return undef if !$nfound or $nfound == -1;
 
     # now slurp the data off the socket
