@@ -42,4 +42,21 @@ Returns the scalar value of its caller.
 
 sub class { return scalar(caller); }
 
+=head2 OSRF_APACHE_REQUEST_OBJ
+
+Gets and sets the Apache request object when running inside mod_perl.
+This allows other parts of OpenSRF to investigate the state of the
+remote connection, such as whether the client has disconnected, and
+react accordingly.
+
+=cut
+
+our $_OARO;
+sub OSRF_APACHE_REQUEST_OBJ {
+	my $self = shift;
+	my $a = shift;
+	$_OARO = $a if $a;
+	return $_OARO;
+}
+
 1;
