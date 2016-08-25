@@ -1135,28 +1135,53 @@ sub gather {
 
 
 package OpenSRF::AppSubrequest;
+use base 'OpenSRF::AppRequest';
 
 sub respond {
 	my $self = shift;
 	return if $self->complete;
 
 	my $resp = shift;
+    return $self->SUPER::respond($resp) if $self->respond_directly;
+
 	push @{$$self{resp}}, $resp if (defined $resp);
 }
 
 sub respond_complete {
 	my $self = shift;
+    return $self->SUPER::respond_complete(@_) if $self->respond_directly;
 	$self->respond(@_);
 	$self->complete(1);
 }
 
 sub new {
-	my $class = shift;
-	$class = ref($class) || $class;
-	return bless({complete => 0, resp => [], @_}, $class);
+    my $class = shift;
+    $class = ref($class) || $class;
+    my $self = bless({
+        complete        => 0,
+        respond_directly=> 0,  # use the passed session directly (RD mode)
+        resp            => [],
+        threadTrace     => 0,  # needed for respond in RD mode
+        max_chunk_count => 0,  # needed for respond in RD mode
+        max_chunk_size  => 0,  # needed for respond in RD mode
+        current_chunk   => [], # needed for respond_complete in RD mode
+        @_
+    }, $class);
+    if ($self->session) {
+        # steal the thread trace from the parent session for RD mode
+        $self->{threadTrace} = $self->session->session_threadTrace || $self->session->last_threadTrace;
+    }
+    return $self;
 }
 
 sub responses { @{$_[0]->{resp}} }
+
+sub respond_directly {
+	my $x = shift;
+	my $s = shift;
+	$x->{respond_directly} = $s if (defined $s);
+	return $x->session && $x->{respond_directly};
+}
 
 sub session {
 	my $x = shift;

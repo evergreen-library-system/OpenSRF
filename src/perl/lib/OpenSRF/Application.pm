@@ -576,6 +576,13 @@ sub method_lookup {
 	return $meth;
 }
 
+sub dispatch {
+	my $self = shift;
+	$log->debug("Creating a dispatching SubRequest object", DEBUG);
+    my $req = OpenSRF::AppSubrequest->new( session => $self->session, respond_directly => 1 );
+    return $self->run($req,@_);
+}
+
 sub run {
 	my $self = shift;
 	my $req = shift;
@@ -627,7 +634,7 @@ sub run {
 
 		$log->debug("Coderef for [$$self{package}::$$self{method}] has been run", DEBUG);
 
-		if ( ref($req) and UNIVERSAL::isa($req, 'OpenSRF::AppSubrequest') ) {
+		if ( ref($req) and UNIVERSAL::isa($req, 'OpenSRF::AppSubrequest') and !$req->respond_directly ) {
 			$req->respond($resp) if (defined $resp);
 			$log->debug("SubRequest object is responding with : " . join(" ",$req->responses), DEBUG);
 			return $req->responses;
