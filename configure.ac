@@ -202,6 +202,12 @@ if ! test -d "$APR_HEADERS"; then
 fi
 AC_SUBST([APR_HEADERS])
 
+AC_ARG_WITH([perlbase],
+[  --with-perlbase=path             base location to install Perl modules (default based on Config.pm)],
+[PERL_BASE=${withval}],
+[PERL_BASE=x])
+AC_SUBST([PERL_BASE])
+
 # The following Apache version detection code is adapted from
 # http://www.gnu.org/software/autoconf-archive/ax_prog_apache.html
 # licensed under version 2 of the GNU General Public License, or

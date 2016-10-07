@@ -24,7 +24,7 @@ install: build-perl
 	./Build install
 
 build-perl:
-	perl Build.PL --destdir $(DESTDIR) || make -s build-perl-fail
+	@if [ "${PERL_BASE}" = 'x' ]; then perl Build.PL --destdir $(DESTDIR) || make -s build-perl-fail; else perl Build.PL --install_base ${PERL_BASE} --destdir $(DESTDIR) || make -s build-perl-fail; fi;
 
 build-perl-fail:
 	echo

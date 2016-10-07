@@ -30,6 +30,7 @@ export PID                      = @localstatedir@/run/opensrf
 export SOCK                     = @localstatedir@/lock/opensrf
 export LOG                      = @localstatedir@/log/opensrf
 export srcdir                   = @srcdir@
+export PERL_BASE                = @PERL_BASE@
 opensrfincludedir               = @includedir@/opensrf
 
 AM_CFLAGS = $(DEF_CFLAGS)
