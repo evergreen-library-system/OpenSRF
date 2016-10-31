@@ -1,0 +1,56 @@
+# File /etc/nginx/sites-available/osrf-ws-http-proxy
+#
+# $ ln -s /etc/nginx/sites-available/osrf-ws-http-proxy \
+#   /etc/nginx/sites-enabled/osrf-ws-http-proxy
+# $ sudo service nginx restart
+#
+# Assumes Apache is listening on HTTP=7080 and HTTPS=7443
+
+server { 
+    listen 80;
+
+    location / {
+        proxy_pass http://localhost:7080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 443;
+    ssl on;
+
+    # Use the same SSL certificate as Apache.
+    ssl_certificate /etc/apache2/ssl/server.crt;
+    ssl_certificate_key /etc/apache2/ssl/server.key;
+
+    location / {
+        proxy_pass https://localhost:7443;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /osrf-websocket-translator {
+        proxy_pass http://localhost:7680;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Needed for websockets proxying.
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        # Raise the default nginx proxy timeout values to an arbitrarily
+        # high value so that we can leverage osrf-websocket-translator's 
+        # timeout settings.
+        proxy_connect_timeout 5m;
+        proxy_send_timeout 1h;
+        proxy_read_timeout 1h;
+    }
+}
+
+
