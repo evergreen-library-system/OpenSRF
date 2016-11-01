@@ -38,7 +38,9 @@
 		<b> <pre style="border: solid thin blue; margin: 2% 10% 2% 10%; padding-left: 50px">
 		100	STATUS_CONTINUE
 		200	STATUS_OK	
+		204	STATUS_NOCONTENT
 		205	STATUS_COMPLETE
+		206	STATUS_PARTIAL
 		307	STATUS_REDIRECTED
 		400	STATUS_BADREQUEST
 		404	STATUS_NOTFOUND
@@ -137,7 +139,13 @@ while ( more requests ) {
 				the request is now complete, nothing more to be done with this request
 				break out of loop
 	
-		if ( response.typ == RESULT )
+		if ( response.type == RESULT )
+
+			if    ( response.statusCode == STATUS_PARTIAL )
+				add response chunk to buffer
+				continue receiving response chunks
+			elsif ( response.statusCode == STATUS_NOCONTENT )
+				have whole response, use buffer as result
 
 			pass result to the application layer for processing
 
