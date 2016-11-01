@@ -22,8 +22,12 @@ sends to the client:
 
   my ($subresult) = $meth->run( @params )
                    # runs the subrequest method and returns the array of
-		   # results
+                   # results
 
+  return $meth->dispatch( @params )
+                   # like ->run, but control of the session is passed to
+                   # to the delegated method, whose responses are sent
+                   # directly to the original client
 
 The method is also handed an OpenSRF::AppRequest object that has been
 constructed for the client request that generated the call to the method.
