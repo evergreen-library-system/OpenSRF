@@ -340,7 +340,7 @@ $statusCode = STATUS_NOCONTENT;
 
 =head1 NAME
 
-OpenSRF::DomainObject::oilsResult::Partial
+OpenSRF::DomainObject::oilsResult::PartialComplete
 
 =head1 SYNOPSIS
 
