@@ -203,10 +203,9 @@ changes:
 {hosts, ["localhost", "private.localhost", "public.localhost"]}.
 ---------------------------------------------------------------------------
 +
-  b. Change all `max_stanza_size` values to 2000000
-  c. Change all `maxrate` values to 500000
-  d. Increase the `max_user_sessions` value to 10000
-  e. Comment out the `mod_offline` directive
+  b. Change all `maxrate` values to 500000
+  c. Increase the `max_user_sessions` value to 10000
+  d. Comment out the `mod_offline` directive
 +
 (Debian Jessie) Ejabberd 13.x and 14.x::
 Open `/etc/ejabberd/ejabberd.yml` and make the following
@@ -222,10 +221,9 @@ hosts:
   - "public.localhost"
 ---------------------------------------------------------------------------
 +
-  b. Change all `max_stanza_size` values to 2000000
-  c. Change `shaper:` `normal` and `fast` values to 500000
-  d. Increase the `max_user_sessions:` `all:` value to 10000
-  e. Comment out the `mod_offline` directive
+  b. Change `shaper:` `normal` and `fast` values to 500000
+  c. Increase the `max_user_sessions:` `all:` value to 10000
+  d. Comment out the `mod_offline` directive
 +
 -----------------------
 ##mod_offline:
@@ -246,11 +244,10 @@ hosts:
   - "public.localhost"
 ---------------------------------------------------------------------------
 +
-  b. Change all `max_stanza_size` values to 2000000
-  c. Change `auth_password_format` to plain
-  d. Change `shaper:` `normal` and `fast` values to 500000
-  e. Increase the `max_user_sessions:` `all:` value to 10000
-  f. Comment out the `mod_offline` directive
+  b. Change `auth_password_format` to plain
+  c. Change `shaper:` `normal` and `fast` values to 500000
+  d. Increase the `max_user_sessions:` `all:` value to 10000
+  e. Comment out the `mod_offline` directive
 +
 -----------------------
 ##mod_offline:
