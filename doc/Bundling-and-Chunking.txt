@@ -1,0 +1,19 @@
+Message Bundling and Chunking
+=============================
+
+OpenSRF now supports message chunking, i.e., breaking up large OpenSRF
+messages across multiple XMPP envelopes. This is implemented with a
+new OpenSRF message type.
+
+C, Perl, and Javascript libraries are taught how to reconstruct chunked
+messages. The default chunking threshold is 50Kb, just a bit below the
+default ejabberd max stanza size of 64Kb.
+
+What was previously called chunking is now referred to as bundling:
+packing multiple OpenSRF messages together in a single XMPP envelope,
+as long as we believe more messages will be sent in the future and we
+are below some threshold of combined message size.  The default for
+that threshold is 25Kb.
+
+With this change, it is no longer necessary to change the `max_stanza_size`
+setting for ejabberd when installing OpenSRF.
