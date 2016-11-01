@@ -1,0 +1,12 @@
+Dispatch mode for method_lookup Subrequests
+===========================================
+
+There is a pattern in the wild of using OpenSRF's method_lookup() facility
+to decide between one of several local methods when delegating to pre-existing
+logic.  Often times, we want to simply hand control over to another method,
+but the output of a subrequest's run() is an array of results.  The caller has
+to know if, and how, to restructure the result for the client.
+
+Instead, we can now call dispatch() instead of run() and have OpenSRF session
+control completely passed to the delegate code.  This way, the delegate code
+need not know anything about its caller, and vice versa.
