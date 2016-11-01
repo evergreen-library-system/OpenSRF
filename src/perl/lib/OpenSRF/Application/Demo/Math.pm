@@ -20,7 +20,7 @@ sub send_request {
 	my @params = @_;
 
 	my $session = OpenSRF::AppSession->create( "opensrf.dbmath" );
-	my $request = $session->request( "dbmath.$method_name", @params );
+	my $request = $session->request( "$method_name", @params );
 	my $response = $request->recv();
 	if(!$response) { return undef; }
 	if($response->isa("Error")) {throw $response ($response->stringify);}
@@ -37,10 +37,9 @@ sub add_1 {
 	my $client = shift;
 	my @args = @_;
 
-	my $meth = $self->method_lookup('_send_request');
-	my ($result) = $meth->run('add',@args);
-
-	return $result;
+	# use ->dispatch rather than run; results of the delegated
+	# method will be directly passed to the caller
+	return $self->method_lookup('_send_request')->dispatch('add', @args);
 }
 
 __PACKAGE__->register_method( method => 'sub_1', api_name => 'sub' );
