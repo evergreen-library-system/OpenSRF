@@ -1082,6 +1082,79 @@ static int osrfAppSessionSendBatch( osrfAppSession* session, osrfMessage* msgs[]
 }
 
 /**
+	@brief Split a given string into one or more transport result messages and send it
+	@param session Pointer to the osrfAppSession responsible for sending the message(s).
+	@param request_id Request ID of the osrfAppRequest.
+	@param payload A string to be sent via Jabber.
+	@param payload_size length of payload
+	@param chunk_size chunk_size to use
+
+	@return 0 upon success, or -1 upon failure.
+*/
+int osrfSendChunkedResult(
+        osrfAppSession* session, int request_id, const char* payload,
+        size_t payload_size, size_t chunk_size ) {
+
+	// chunking payload
+	int i;
+	for (i = 0; i < payload_size; i += chunk_size) {
+		osrfMessage* msg = osrf_message_init(RESULT, request_id, 1);
+		osrf_message_set_status_info(msg,
+			"osrfResultPartial",
+			"Partial Response",
+			OSRF_STATUS_PARTIAL
+		);
+
+		// see how long this chunk is.  If this is the last
+		// chunk, it will likely be less than chunk_size
+		int partial_size = strlen(&payload[i]);
+		if (partial_size > chunk_size)
+			partial_size = chunk_size;
+
+		// substr(data, i, partial_size)
+		char partial_buf[partial_size + 1];
+		memcpy(partial_buf, &payload[i], partial_size);
+		partial_buf[partial_size] = '\0';
+
+		// package the partial chunk as a JSON string object
+		jsonObject*  partial_obj = jsonNewObject(partial_buf);
+		osrf_message_set_result(msg, partial_obj);
+		jsonObjectFree(partial_obj);
+
+		// package the osrf message within an array then
+		// serialize to json for delivery
+		jsonObject* arr = jsonNewObject(NULL);
+
+		// msg json freed when arr is freed
+		jsonObjectPush(arr, osrfMessageToJSON(msg));
+		char* json = jsonObjectToJSON(arr);
+
+		osrfSendTransportPayload(session, json);
+		osrfMessageFree(msg);
+		jsonObjectFree(arr);
+		free(json);
+	}
+
+	// all chunks sent; send the final partial-complete msg
+	osrfMessage* msg = osrf_message_init(RESULT, request_id, 1);
+	osrf_message_set_status_info(msg,
+		"osrfResultPartialComplete",
+		"Partial Response Finalized",
+		OSRF_STATUS_NOCONTENT
+	);
+
+	jsonObject* arr = jsonNewObject(NULL);
+	jsonObjectPush(arr, osrfMessageToJSON(msg));
+	char* json = jsonObjectToJSON(arr);
+	osrfSendTransportPayload(session, json);
+	osrfMessageFree(msg);
+	jsonObjectFree(arr);
+	free(json);
+
+	return 0;
+}
+
+/**
 	@brief Wrap a given string in a transport message and send it.
 	@param session Pointer to the osrfAppSession responsible for sending the message(s).
 	@param payload A string to be sent via Jabber.
@@ -1290,20 +1363,33 @@ int osrfAppRequestRespondComplete(
 			OSRF_STATUS_COMPLETE );
 
 	if (data) {
-		osrfMessage* payload = osrf_message_init( RESULT, requestId, 1 );
-		osrf_message_set_status_info( payload, NULL, "OK", OSRF_STATUS_OK );
 
-		char* json = jsonObjectToJSON( data );
-		osrf_message_set_result_content( payload, json );
+		char* json = jsonObjectToJSON(data);
+		size_t data_size = strlen(json);
+		size_t chunk_size = OSRF_MSG_CHUNK_SIZE;
+		if (chunk_size > 0 && chunk_size < data_size) {
+
+			osrfSendChunkedResult(ses, requestId, json, data_size, chunk_size);
+			osrfAppSessionSendBatch( ses, &status, 1 );
+
+		} else {
+			// message doesn't need to be chunked
+			osrfMessage* payload = osrf_message_init( RESULT, requestId, 1 );
+			osrf_message_set_status_info( payload, NULL, "OK", OSRF_STATUS_OK );
+
+			osrf_message_set_result_content( payload, json );
+
+			osrfMessage* ms[2];
+			ms[0] = payload;
+			ms[1] = status;
+
+			osrfAppSessionSendBatch( ses, ms, 2 );
+
+			osrfMessageFree( payload );
+		}
+
 		free(json);
 
-		osrfMessage* ms[2];
-		ms[0] = payload;
-		ms[1] = status;
-
-		osrfAppSessionSendBatch( ses, ms, 2 );
-
-		osrfMessageFree( payload );
 	} else {
 		osrfAppSessionSendBatch( ses, &status, 1 );
 	}

@@ -740,65 +740,9 @@ static int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int 
             if (chunk_size > 0 && chunk_size < data_size) {
                 // chunking -- response message exceeds max message size.
                 // break it up into chunks for partial delivery
-                
-                int i;
-                for (i = 0; i < data_size; i += chunk_size) {
 
-                    osrfMessage* msg = 
-                        osrf_message_init(RESULT, ctx->request, 1);
-                    osrf_message_set_status_info(msg, 
-                        "osrfResultPartial", 
-                        "Partial Response", 
-                        OSRF_STATUS_PARTIAL
-                    );
-
-                    // see how long this chunk is.  If this is the last
-                    // chunk, it will likely be less than chunk_size
-                    int partial_size = strlen(&data_str[i]);
-                    if (partial_size > chunk_size) 
-                        partial_size = chunk_size;
-
-                    // substr(data_str, i, partial_size)
-                    char partial_buf[partial_size + 1];
-                    memcpy(partial_buf, &data_str[i], partial_size);
-                    partial_buf[partial_size] = '\0';
-
-                    // package the partial chunk as a JSON string object
-                    jsonObject * partial_obj = jsonNewObject(partial_buf);
-                    osrf_message_set_result(msg, partial_obj);
-                    jsonObjectFree(partial_obj);
-    
-                    // package the osrf message within an array then
-                    // serialize to json for delivery
-                    jsonObject* arr = jsonNewObject(NULL);
-
-                    // msg json freed when arr is freed
-                    jsonObjectPush(arr, osrfMessageToJSON(msg));
-                    char* json = jsonObjectToJSON(arr);
-
-		            osrfSendTransportPayload(ctx->session, json);
-                    osrfMessageFree(msg);
-                    jsonObjectFree(arr);
-                    free(json);
-                }
-
-                // all chunks sent; send the final partial-complete msg
-                osrfMessage* msg = 
-                    osrf_message_init(RESULT, ctx->request, 1);
-                osrf_message_set_status_info(msg, 
-                    "osrfResultPartialComplete",
-                    "Partial Response Finalized", 
-                    OSRF_STATUS_NOCONTENT
-                );
-
-                jsonObject* arr = jsonNewObject(NULL);
-                jsonObjectPush(arr, osrfMessageToJSON(msg));
-                char* json = jsonObjectToJSON(arr);
-                osrfSendTransportPayload(ctx->session, json);
-                osrfMessageFree(msg);
-                jsonObjectFree(arr);
-                free(json);
-
+				osrfSendChunkedResult(ctx->session, ctx->request,
+									  data_str, data_size, chunk_size);
 
             } else {
 

@@ -143,6 +143,10 @@ void osrf_app_session_request_finish( osrfAppSession* session, int request_id );
 
 int osrf_app_session_request_resend( osrfAppSession*, int request_id );
 
+int osrfSendChunkedResult(
+		osrfAppSession* session, int request_id, const char* payload,
+		size_t payload_size, size_t chunk_size );
+
 int osrfSendTransportPayload( osrfAppSession* session, const char* payload );
 
 void osrf_app_session_reset_remote( osrfAppSession* );
