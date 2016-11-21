@@ -20,6 +20,30 @@ follows:
        of installing OpenSRF. You can switch to this account from the *root*
        account by issuing the `su - opensrf` command.
 
+Download and unpack the code
+----------------------------
+
+Issue the following commands as the *user* Linux account.
+
+1. Acquire a stable release tarball from https://evergreen-ils.org/opensrf-downloads/
++
+[source, bash]
+------------------------------------------------------------------------------
+wget http://evergreen-ils.org/downloads/opensrf-2.4.1.tar.gz
+------------------------------------------------------------------------------
++
+[NOTE]
+Developers can find the full source code at the OpenSRF Git repository:
+http://git.evergreen-ils.org/?p=OpenSRF.git
++
+2. Unpack the tarball, and move into that directory:
++
+[source, bash]
+------------------------------------------------------------------------------
+tar -xvf opensrf-2.4.1.tar.gz
+cd opensrf-2.4.1/
+------------------------------------------------------------------------------
+
 Installing prerequisites
 ------------------------
 
