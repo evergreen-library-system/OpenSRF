@@ -515,6 +515,64 @@ export OSRF_WEBSOCKET_MAX_REQUEST_WAIT_TIME=600
 /etc/init.d/apache2-websockets start
 ---------------------------------------------------------------------------
 
+Optional: Using NGINX as a proxy
+--------------------------------
+NGINX can be used to proxy HTTP, HTTPS, and WebSockets traffic. Among other
+reasons, this can be useful for Evergreen setups that want to have both
+HTTPS and secure WebSockets traffic both go through port 443 while using
+two Apache instances (one for the WebSockets gateway and one for the more
+memory-intensive TPAC pages).
+
+The following instructions are a guide for setting this up on Debian
+and Ubuntu systems, but expect general familiarity with various system
+administration and netwrok tasks.  The steps should be run as the *root*
+Linux account, and assume that you already followed the instructions
+for installing WebSockets support.
+
+1. Install NGINX if not already present:
++
+[source, bash]
+---------------------------------------------------------------------------
+apt-get install nginx
+---------------------------------------------------------------------------
++
+2. Configure the main Apache instance to listen on port 7080 for HTTP and
+   port 7443 for HTTPS and ensure that it is not listening on ports 80
+   and 443, then restart Apache.
+3. Copy the example NGINX configuration file into place.
++
+[source, bash]
+---------------------------------------------------------------------------
+cd /path/to/opensrf-OSRFVERSION
+cp examples/nginx/osrf-ws-http-proxy /etc/nginx/sites-available/
+ln -s /etc/nginx/sites-available/osrf-ws-http-proxy /etc/nginx/sites-enabled/osrf-ws-http-proxy
+---------------------------------------------------------------------------
++
+4. Edit `/etc/nginx/sites-available/osrf-ws-http-proxy` to set the location
+   of the SSL certificate and private key.
+5. Start NGINX
++
+[source, bash]
+---------------------------------------------------------------------------
+/etc/init.d/nginx start
+---------------------------------------------------------------------------
++
+6. Edit `<PREFIX>/javascript/opensrf_ws.js` and `<PREFIX>/javascript/opensrf_ws_shared.js`
+   and change
++
+[source, javascript]
+---------------------------------------------------------------------------
+var WEBSOCKET_PORT_SSL = 7682;
+---------------------------------------------------------------------------
++
+to
++
+[source, javascript]
+---------------------------------------------------------------------------
+var WEBSOCKET_PORT_SSL = 443;
+---------------------------------------------------------------------------
+
+
 Troubleshooting note for Python users
 -------------------------------------
 
