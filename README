@@ -29,7 +29,7 @@ Issue the following commands as the *user* Linux account.
 +
 [source, bash]
 ------------------------------------------------------------------------------
-wget http://evergreen-ils.org/downloads/opensrf-2.4.1.tar.gz
+wget https://evergreen-ils.org/downloads/opensrf-OSRFVERSION.tar.gz
 ------------------------------------------------------------------------------
 +
 [NOTE]
@@ -40,8 +40,8 @@ http://git.evergreen-ils.org/?p=OpenSRF.git
 +
 [source, bash]
 ------------------------------------------------------------------------------
-tar -xvf opensrf-2.4.1.tar.gz
-cd opensrf-2.4.1/
+tar -xvf opensrf-OSRFVERSION.tar.gz
+cd opensrf-OSRFVERSION/
 ------------------------------------------------------------------------------
 
 Installing prerequisites
@@ -83,7 +83,7 @@ Preamble: Developer instructions
 
 [NOTE]
 Skip this section if you are using an official release tarball downloaded
-from http://evergreen-ils.org/downloads
+from https://evergreen-ils.org/opensrf-downloads/
 
 Developers working directly with the source code from the Git repository,
 rather than an official release tarball, must install some extra packages
