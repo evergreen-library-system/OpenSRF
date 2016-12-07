@@ -1,0 +1,25 @@
+listen web 0.0.0.0:80
+	mode http
+	option forwardfor
+	http-request set-header X-Client-IP %[src]
+	balance roundrobin
+	server web01 localhost:7080 check
+
+frontend https_ws
+	bind 0.0.0.0:443 ssl crt /etc/apache2/ssl/cert_plus_key.pem
+	mode http
+	option forwardfor
+	option httpclose
+  	reqadd X-Forwarded-Proto:\ https
+	acl is_websocket hdr(Upgrade) -i WebSocket
+	use_backend ws if is_websocket
+	default_backend https_server
+
+backend https_server
+	mode http
+	balance roundrobin
+	server s1 localhost:7443 ssl verify none
+
+backend ws
+	timeout server 300s
+	server ws1 localhost:7682 ssl verify none
