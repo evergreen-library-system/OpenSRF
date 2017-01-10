@@ -572,14 +572,24 @@ sub method_lookup {
 		$meth = $self->method_lookup($method,$proto,1);
 	}
 
-	$meth->session($self->session) if $meth && ref($self); # Pass the caller's session
+	if ($meth && ref($self)) {
+		$meth->session($self->session); # Pass the caller's session
+		$meth->max_chunk_size($self->max_chunk_size);
+		$meth->max_bundle_size($self->max_bundle_size);
+	}
+
 	return $meth;
 }
 
 sub dispatch {
 	my $self = shift;
 	$log->debug("Creating a dispatching SubRequest object", DEBUG);
-    my $req = OpenSRF::AppSubrequest->new( session => $self->session, respond_directly => 1 );
+    my $req = OpenSRF::AppSubrequest->new(
+        session => $self->session,
+        max_chunk_size  => $self->max_chunk_size,
+        max_bundle_size  => $self->max_bundle_size,
+        respond_directly => 1
+    );
     return $self->run($req,@_);
 }
 
@@ -593,7 +603,11 @@ sub run {
 	if ( !UNIVERSAL::isa($req, 'OpenSRF::AppRequest') ) {
 		$log->debug("Creating a SubRequest object", DEBUG);
 		unshift @params, $req;
-		$req = OpenSRF::AppSubrequest->new( session => $self->session );
+		$req = OpenSRF::AppSubrequest->new(
+			session => $self->session,
+			max_chunk_size  => $self->max_chunk_size,
+			max_bundle_size  => $self->max_bundle_size
+		);
 	} else {
 		$log->debug("This is a top level request", DEBUG);
 	}

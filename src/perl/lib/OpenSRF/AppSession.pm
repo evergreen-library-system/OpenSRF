@@ -1164,7 +1164,11 @@ sub new {
         threadTrace     => 0,  # needed for respond in RD mode
         max_chunk_count => 0,  # needed for respond in RD mode
         max_chunk_size  => 0,  # needed for respond in RD mode
-        current_chunk   => [], # needed for respond_complete in RD mode
+        max_bundle_size	=> 0,
+        current_bundle  => [], # needed for respond_complete in RD mode
+        current_bundle_count=> 0,
+        current_bundle_size	=> 0,
+        max_bundle_count	=> 0,
         @_
     }, $class);
     if ($self->session) {
