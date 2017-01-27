@@ -17,6 +17,7 @@ GNU General Public License for more details.
 
 static struct memcached_st* _osrfCache = NULL;
 static time_t _osrfCacheMaxSeconds = -1;
+static char* _clean_key( const char* );
 
 int osrfCacheInit( const char* serverStrings[], int size, time_t maxCacheSeconds ) {
 	memcached_server_st *server_pool;
@@ -52,17 +53,30 @@ int osrfCachePutObject( const char* key, const jsonObject* obj, time_t seconds )
 	return 0;
 }
 
+char* _clean_key( const char* key ) {
+    char* clean_key = (char*)strdup(key);
+    char* d = clean_key;
+    char* s = clean_key;
+    do while(isspace(*s)) s++; while(*d++ = *s++);
+    return clean_key;
+}
+
 int osrfCachePutString( const char* key, const char* value, time_t seconds ) {
 	memcached_return rc;
 	if( !(key && value) ) return -1;
 	seconds = (seconds <= 0 || seconds > _osrfCacheMaxSeconds) ? _osrfCacheMaxSeconds : seconds;
 	osrfLogInternal( OSRF_LOG_MARK, "osrfCachePutString(): Putting string (key=%s): %s", key, value);
+
+	char* clean_key = _clean_key( key );
+
 	/* add or overwrite existing key:value pair */
-	rc = memcached_set(_osrfCache, key, strlen(key), value, strlen(value), seconds, 0);
+	rc = memcached_set(_osrfCache, clean_key, strlen(clean_key), value, strlen(value), seconds, 0);
 	if (rc != MEMCACHED_SUCCESS) {
 		osrfLogError(OSRF_LOG_MARK, "Failed to cache key:value [%s]:[%s] - %s",
 			key, value, memcached_strerror(_osrfCache, rc));
 	}
+
+	free(clean_key);
 	return 0;
 }
 
@@ -73,7 +87,9 @@ jsonObject* osrfCacheGetObject( const char* key, ... ) {
 	jsonObject* obj = NULL;
 	if( key ) {
 		VA_LIST_TO_STRING(key);
-		const char* data = (const char*) memcached_get(_osrfCache, VA_BUF, strlen(VA_BUF), &val_len, &flags, &rc);
+		char* clean_key = _clean_key( VA_BUF );
+		const char* data = (const char*) memcached_get(_osrfCache, clean_key, strlen(clean_key), &val_len, &flags, &rc);
+		free(clean_key);
 		if (rc != MEMCACHED_SUCCESS) {
 			osrfLogDebug(OSRF_LOG_MARK, "Failed to get key [%s] - %s",
 				VA_BUF, memcached_strerror(_osrfCache, rc));
@@ -94,7 +110,9 @@ char* osrfCacheGetString( const char* key, ... ) {
 	memcached_return rc;
 	if( key ) {
 		VA_LIST_TO_STRING(key);
+		char* clean_key = _clean_key( VA_BUF );
 		char* data = (char*) memcached_get(_osrfCache, VA_BUF, strlen(VA_BUF), &val_len, &flags, &rc);
+		free(clean_key);
 		if (rc != MEMCACHED_SUCCESS) {
 			osrfLogDebug(OSRF_LOG_MARK, "Failed to get key [%s] - %s",
 				VA_BUF, memcached_strerror(_osrfCache, rc));
