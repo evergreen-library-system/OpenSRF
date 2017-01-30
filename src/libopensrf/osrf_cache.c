@@ -111,7 +111,7 @@ char* osrfCacheGetString( const char* key, ... ) {
 	if( key ) {
 		VA_LIST_TO_STRING(key);
 		char* clean_key = _clean_key( VA_BUF );
-		char* data = (char*) memcached_get(_osrfCache, VA_BUF, strlen(VA_BUF), &val_len, &flags, &rc);
+		char* data = (char*) memcached_get(_osrfCache, clean_key, strlen(clean_key), &val_len, &flags, &rc);
 		free(clean_key);
 		if (rc != MEMCACHED_SUCCESS) {
 			osrfLogDebug(OSRF_LOG_MARK, "Failed to get key [%s] - %s",
