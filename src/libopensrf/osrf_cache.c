@@ -15,6 +15,8 @@ GNU General Public License for more details.
 
 #include <opensrf/osrf_cache.h>
 
+#define MAX_KEY_LEN 250
+
 static struct memcached_st* _osrfCache = NULL;
 static time_t _osrfCacheMaxSeconds = -1;
 static char* _clean_key( const char* );
@@ -57,7 +59,14 @@ char* _clean_key( const char* key ) {
     char* clean_key = (char*)strdup(key);
     char* d = clean_key;
     char* s = clean_key;
-    do while(isspace(*s)) s++; while(*d++ = *s++);
+    do while(isspace(*s) || iscntrl(*s)) s++; while(*d++ = *s++);
+    if (strlen(clean_key) > MAX_KEY_LEN) {
+        char *hashed = md5sum(clean_key);
+        clean_key[0] = '\0';
+        strncat(clean_key, "shortened_", 11);
+        strncat(clean_key, hashed, MAX_KEY_LEN);
+        free(hashed);
+    }
     return clean_key;
 }
 

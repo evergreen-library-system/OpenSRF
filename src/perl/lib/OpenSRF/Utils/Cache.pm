@@ -2,6 +2,7 @@ package OpenSRF::Utils::Cache;
 use strict; use warnings;
 use base qw/OpenSRF/;
 use Cache::Memcached;
+use Digest::MD5 qw(md5_hex);
 use OpenSRF::Utils::Logger qw/:level/;
 use OpenSRF::Utils::Config;
 use OpenSRF::Utils::SettingsClient;
@@ -281,6 +282,9 @@ sub _clean_cache_key {
     my $key = shift;
 
     $key =~ s{(\p{Cntrl}|\s)}{}g;
+    if (length($key) > 250) { # max length of memcahed key
+        $key = 'shortened_' . md5_hex($key);
+    }
 
     return $key;
 }
