@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='OpenSRF',
-    version='2.5.0-alpha',
+    version='2.5.0-alpha2',
     install_requires=[
         'dnspython', # required by pyxmpp
     	'python-memcached',
