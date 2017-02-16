@@ -1,5 +1,5 @@
-Release notes for OpenSRF 2.5.0-alpha
-=====================================
+Release notes for OpenSRF 2.5.0-alpha2
+======================================
 
 Supported platforms
 -------------------
@@ -8,6 +8,18 @@ The following Linux distributions are supported:
   * Debian 7 (Wheezy) and 8 (Jessie)
   * Fedora 17, 18
   * Ubuntu 14.04 (Trusty Tahr) and 16.04 LTS (Xenial Xerus)
+
+Changes in 2.5.0-alpha2
+-----------------------
+OpenSRF 2.5.0-alpha2 is a security release; testers of OpenSRF 2.5.x
+are strongly urged to upgrade as soon as possible.
+
+The second alpha release of OpenSRF 2.5 includes the following changes:
+
+* LP#1652382: improve normalization of memcache keys to avoid potential
+denial of service and privilege escalation attacks.
+* LP#1652122: fix an infinite recursion bug in opensrf.system.method.all.
+* LP#1655449: propagate bundling/chunking limits to subrequests.
 
 New features in 2.5.0-alpha
 ---------------------------
@@ -132,5 +144,7 @@ We would like to thank the following people who contributed to OpenSRF 2.5:
   * Galen Charlton 
   * Jason Etheridge 
   * Jason Stephenson 
+  * Jeff Davis
+  * Kathy Lussier
   * Mike Rylander 
   * Remington Steed 
