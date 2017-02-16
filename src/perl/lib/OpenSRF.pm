@@ -16,7 +16,7 @@ Version 2.4.1
 
 =cut
 
-our $VERSION = "2.41";
+our $VERSION = "2.42";
 
 =head1 METHODS
 
