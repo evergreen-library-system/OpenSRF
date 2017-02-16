@@ -9,6 +9,34 @@ The following Linux distributions are supported:
   * Fedora 17, 18
   * Ubuntu 12.04 LTS (Precise Pangolin) and 14.04 (Trusty Tahr)
 
+OpenSRF 2.4.2
+-------------
+OpenSRF 2.4.2 is a security release. Users of 2.4.1 and earlier are strongly
+urged to upgrade as soon as possible.
+
+Bugfixes in 2.4.2
+~~~~~~~~~~~~~~~~~
+
+* LP#1652382: improve normalization of memcache keys to avoid potential
+denial of service and privilege escalation attacks.
+* LP#1652122: fix an infinite recursion bug in opensrf.system.method.all.
+* LP#1655449: propagate bundling/chunking limits to subrequests.
+* LP#1559121: remove support for Debian Squeeze
+* LP#1350457: pass caller's session to subrequests called via method_lookup
+* LP#1494486: limit damage caused by dropped drone XMPP socket
+* LP#1474507: fix interval_to_seconds for weeks and seconds
+
+Acknowledgments
+~~~~~~~~~~~~~~
+We would like to acknowledge the following people who contributed to
+OpenSRF 2.4.2:
+
+* Galen Charlton
+* Jason Etheridge
+* Jeff Davis
+* Kathy Lussier
+* Mike Rylander
+
 OpenSRF 2.4.1
 -------------
 
