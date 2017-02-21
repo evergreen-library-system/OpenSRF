@@ -1,135 +1,79 @@
-commit 88c8970c3dea26c72bc3173b18041e29538c4d8c
+commit cf6a373f0c3f5e60dc72f4de44b11866d5b986af
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Thu Feb 16 15:16:21 2017 -0500
+Date:   Tue Feb 21 17:26:20 2017 -0500
 
-    update version numbers for 2.5.0-alpha2
+    udpate version stamps for 2.5.0-beta
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
 7	7	README
-1	1	src/perl/lib/OpenSRF.pm
+2	2	src/perl/lib/OpenSRF.pm
 1	1	src/python/setup.py
 1	1	version.m4
 
-commit 9df9c484031e313d3c6f1f85951d6b67b931f536
+commit 5d552226c08385bda3ece8ac308329ba423af76b
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Thu Feb 16 15:13:17 2017 -0500
+Date:   Tue Feb 21 17:25:00 2017 -0500
 
-    update release notes for 2.5.0-alpha2
+    update release notes for 2.5-beta
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-16	2	doc/RELEASE_NOTES.txt
+13	2	doc/RELEASE_NOTES.txt
 
-commit 4744d1a42b709a2c7aa778565c0c32a1962e0e2c
+commit 3d1aae3f88a547fb76754085e062de3f139246ba
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Feb 15 16:58:06 2017 -0500
+Date:   Tue Feb 21 16:21:23 2017 -0500
 
-    LP#1652382: more improvements to cache key munging
+    LP#1666706: add --with-websockets-port configure option
     
-    - teach osrfCacheRemove to clean keys
-    - fix implict declaration compilation warning
-    - account for fact that iscntrl('\0') returns true
+    This patch adds the ability to specify the WebSockets
+    port as a configure option, avoiding the need to manually
+    edit a couple JavaScript files if one chooses to proxy
+    WS traffic.
     
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Jeff Davis <jdavis@sitka.bclibraries.ca>
-
-5	2	src/libopensrf/osrf_cache.c
-
-commit 7ec6c1a4b3fc99f10bd1b3c9b07a0008672cf3f6
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Feb 15 14:12:34 2017 -0500
-
-    LP#1652382: handle cases where supplied key is longer than 250 bytes
-    
-    With this patch, if cache clients want to use a key longer
-    than the memcached text protocol limit of 250 bytes, the
-    key is normalized to 'shortened_' + md5_hex(normalized_key).
+    This patch also cleans up the set of JavaScript files that
+    are installed so that some test case files are not installed
+    by default.
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Jeff Davis <jdavis@sitka.bclibraries.ca>
 
-10	1	src/libopensrf/osrf_cache.c
-4	0	src/perl/lib/OpenSRF/Utils/Cache.pm
+2	0	.gitignore
+7	1	README
+8	0	configure.ac
+1	2	src/Makefile.am
+0	104	src/javascript/opensrf_ws.js
+104	0	src/javascript/opensrf_ws.js.in
+0	248	src/javascript/opensrf_ws_shared.js
+248	0	src/javascript/opensrf_ws_shared.js.in
+ delete mode 100644 src/javascript/opensrf_ws.js
+ create mode 100644 src/javascript/opensrf_ws.js.in
+ delete mode 100644 src/javascript/opensrf_ws_shared.js
+ create mode 100644 src/javascript/opensrf_ws_shared.js.in
 
-commit e58f20fd69b1fb2e94765a2bf9067ba1cbb9d2d9
+commit 21c1412b408943cc4425dce2e9cc9222faf4fa78
 Author: Mike Rylander <mrylander@gmail.com>
-Date:   Mon Jan 30 12:54:10 2017 -0500
+Date:   Thu Aug 4 08:57:44 2016 -0400
 
-    LP#1652382: Make use of the clean key just created
+    LP#1616501: teach mod_perl handlers how to detect client disconnects
+    
+    This patch provides an API so that mod_perl handlers
+    that act as OpenSRF clients have a way to specify that
+    if the browser disconnects, to stop trying to receive
+    results from an XMPP request.
+    
+    To invoke it, mod_perl handlers can add the following:
+    
+    use OpenSRF;
+    ...
+    sub hander {
+    ...
+        my $r = shift;
+        OpenSRF->OSRF_APACHE_REQUEST_OBJ($r);
+    ...
     
     Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Kathy Lussier <klussier@masslnc.org>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Jeff Davis <jdavis@sitka.bclibraries.ca>
 
-1	1	src/libopensrf/osrf_cache.c
-
-commit 8f31413ba4334ee3f695f84a810eccbe94351f77
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Fri Jan 27 15:25:05 2017 -0500
-
-    LP#1652382: normalization of memcache keys in C code
-    
-    Memcache does not allow spaces in keys, so here we will actively strip them
-    from any key we get from a caller.  Some callers are not very proactive about
-    sending clean keys, and this patch prevents issues that can poison C-based
-    OpenSRF service backends.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Kathy Lussier <klussier@masslnc.org>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Jeff Davis <jdavis@sitka.bclibraries.ca>
-
-20	2	src/libopensrf/osrf_cache.c
-
-commit 22e2c7729b6caf265b27ff14126fe5595e87cdca
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Tue Jan 10 15:30:18 2017 -0500
-
-    LP#1655449: Bundling/chunking limits for SubRquests
-    
-    We need to teach subrequests to inherit parent request bundling/chunking
-    parameters so they don't cause overruns in dispatch mode.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-5	1	src/perl/lib/OpenSRF/AppSession.pm
-17	3	src/perl/lib/OpenSRF/Application.pm
-
-commit b6fe0b1c9917d3d188ff8053f5fc3611ef878b3a
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Thu Dec 22 15:53:12 2016 +0500
-
-    LP#1652122: fix infinite recursion in opensrf.system.method.all
-    
-    Under certain circumstances, calling opensrf.system.method.all on a
-    Perl service can result in an infinite recursion when attempting to
-    serialize an OpenSRF::Application object to JSON.  In particular,
-    this was observed to happen when doing an introspection of
-    the opensrf.settings service.
-    
-    This patch avoids the infinite recursion (and consequent memory
-    leak) by ensuring that the 'session' key is slated for exclusion
-    from serialization from OpenSRF::Application objects during
-    bootstrapping.
-    
-    Note that the problem does not affect all Perl services; if a
-    Perl service declares at least one streaming method, the auto-registration
-    of the .atomic method will result in 'session'-stripping.
-    
-    This patch fixes a regression introduced in bug 1350457.
-    
-    To test
-    -------
-    [1] Run 'introspect opensrf.settings' via srfsh; observe
-        that it never returns and that the opensrf.settings drone
-        will grow in memory sized until killed.
-    [2] Apply the patch, then repeat step 1. This time, the
-        request should succeed.
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-1	1	src/perl/lib/OpenSRF/System.pm
+17	0	src/perl/lib/OpenSRF.pm
+25	1	src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
