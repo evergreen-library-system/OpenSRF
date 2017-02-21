@@ -15,7 +15,7 @@
 
 
 var WEBSOCKET_URL_PATH = '/osrf-websocket-translator';
-var WEBSOCKET_PORT_SSL = 7682;
+var WEBSOCKET_PORT_SSL = @WS_PORT@;
 
 OpenSRF.WebSocket = function() {
     this.pending_messages = [];

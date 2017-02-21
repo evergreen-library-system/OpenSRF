@@ -25,7 +25,7 @@
  */
 
 var WEBSOCKET_URL_PATH = '/osrf-websocket-translator';
-var WEBSOCKET_PORT_SSL = 7682;
+var WEBSOCKET_PORT_SSL = @WS_PORT@;
 var WEBSOCKET_MAX_THREAD_PORT_CACHE_SIZE = 1000;
 
 /**

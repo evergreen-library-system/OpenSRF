@@ -123,6 +123,11 @@ By default, OpenSRF includes C, Perl, and JavaScript support.
 You can add the `--enable-python` option to the configure command
 to build Python support and `--enable-java` for Java support.
 
+If you are planning on proxying WebSockets traffic (see below), you
+can add `--with-websockets-port=443` to specify that WebSockets traffic
+will be going through port 443. Without that option, the default port
+is 7682.
+
 Installation instructions
 -------------------------
 
@@ -557,7 +562,8 @@ ln -s /etc/nginx/sites-available/osrf-ws-http-proxy /etc/nginx/sites-enabled/osr
 /etc/init.d/nginx start
 ---------------------------------------------------------------------------
 +
-6. Edit `<PREFIX>/javascript/opensrf_ws.js` and `<PREFIX>/javascript/opensrf_ws_shared.js`
+6. If you didn't run `configure` with the `--with-websockets-port=443` option,
+edit `<PREFIX>/javascript/opensrf_ws.js` and `<PREFIX>/javascript/opensrf_ws_shared.js`
    and change
 +
 [source, javascript]

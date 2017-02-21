@@ -36,7 +36,7 @@ endif
 if INSTALLJAVASCRIPT
 MAYBE_JAVASCRIPT = javascript
 jsdir = $(prefix)/lib/javascript
-js_SCRIPTS = javascript/DojoSRF.js javascript/JSON_v1.js javascript/md5.js javascript/opensrf.js javascript/opensrf_xhr.js javascript/opensrf_xmpp.js javascript/opensrf_ws_shared.js
+js_SCRIPTS = javascript/DojoSRF.js javascript/JSON_v1.js javascript/md5.js javascript/opensrf.js javascript/opensrf_xhr.js javascript/opensrf_xmpp.js javascript/opensrf_ws.js javascript/opensrf_ws_shared.js
 endif
 
 if BUILDCORE
@@ -68,7 +68,6 @@ install-exec-hook:
 			rm "$(DESTDIR)@sysconfdir@/$${f}.bak" ; \
 		done; \
 	fi
-	cp -r @srcdir@/javascript/* $(DESTDIR)$(jsdir)/
 	if [ ! -e @bindir@/osrf_control ]; then \
 		ln -s @bindir@/opensrf-perl.pl @bindir@/osrf_control; \
 	fi
