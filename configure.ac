@@ -208,6 +208,12 @@ AC_ARG_WITH([perlbase],
 [PERL_BASE=x])
 AC_SUBST([PERL_BASE])
 
+AC_ARG_WITH([websockets-port],
+[  --with-websockets-port=path             WebSockets port to use (default is 7682)],
+[WS_PORT=${withval}],
+[WS_PORT=7682])
+AC_SUBST([WS_PORT])
+
 # The following Apache version detection code is adapted from
 # http://www.gnu.org/software/autoconf-archive/ax_prog_apache.html
 # licensed under version 2 of the GNU General Public License, or
@@ -373,6 +379,8 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 			 examples/multisession-test.pl
 			 src/c-apps/Makefile
 			 src/gateway/Makefile
+			 src/javascript/opensrf_ws.js
+			 src/javascript/opensrf_ws_shared.js
 			 src/libopensrf/Makefile
 			 src/perl/Makefile
 			 src/ports/strn_compat/Makefile
