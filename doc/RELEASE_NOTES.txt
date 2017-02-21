@@ -1,5 +1,5 @@
-Release notes for OpenSRF 2.5.0-alpha2
-======================================
+Release notes for OpenSRF 2.5.0-beta
+====================================
 
 Supported platforms
 -------------------
@@ -8,6 +8,17 @@ The following Linux distributions are supported:
   * Debian 7 (Wheezy) and 8 (Jessie)
   * Fedora 17, 18
   * Ubuntu 14.04 (Trusty Tahr) and 16.04 LTS (Xenial Xerus)
+
+Changes in 2.5.0-beta
+---------------------
+OpenSRF 2.5.0-beta includes the following additions since 2.5.0-alpha2:
+
+* LP#1666706: a new configure option, `--with-websockets-port`, to allow
+installers to specify the WebSockets port that clients should use.
+* LP#1616501: add a way for mod_perl handlers that are OpenSRF clients
+to detect when the web browser has disconnected, and in turn stop listening
+for results from XMPP requests pending when the browser disconnect
+happened.
 
 Changes in 2.5.0-alpha2
 -----------------------
