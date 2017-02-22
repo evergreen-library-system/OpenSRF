@@ -35,7 +35,7 @@ server {
     }
 
     location /osrf-websocket-translator {
-        proxy_pass http://localhost:7680;
+        proxy_pass https://localhost:7682;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
