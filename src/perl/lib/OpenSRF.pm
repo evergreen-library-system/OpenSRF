@@ -12,11 +12,11 @@ OpenSRF - Top level class for OpenSRF perl modules.
 
 =head1 VERSION
 
-Version 2.5.0-beta
+Version 2.5.0-rc
 
 =cut
 
-our $VERSION = "2.50_3";
+our $VERSION = "2.50_4";
 
 =head1 METHODS
 
