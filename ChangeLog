@@ -1,8 +1,8 @@
-commit cf6a373f0c3f5e60dc72f4de44b11866d5b986af
+commit caf15e949d339fc2125185888431109c9a1f0ccc
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Feb 21 17:26:20 2017 -0500
+Date:   Wed Mar 1 10:59:56 2017 -0500
 
-    udpate version stamps for 2.5.0-beta
+    update version stamp for 2.5.0-rc
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
@@ -11,69 +11,27 @@ Date:   Tue Feb 21 17:26:20 2017 -0500
 1	1	src/python/setup.py
 1	1	version.m4
 
-commit 5d552226c08385bda3ece8ac308329ba423af76b
+commit ac8125b786d779e044e145bb8b6aa4f5576fbd85
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Feb 21 17:25:00 2017 -0500
+Date:   Wed Mar 1 10:55:40 2017 -0500
 
-    update release notes for 2.5-beta
+    update release notes for 2.5.0-rc
+
+10	2	doc/RELEASE_NOTES.txt
+
+commit 838aed4e78a69f5fef7a55f018f2659b0236f5ac
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Wed Feb 22 16:05:25 2017 -0500
+
+    LP#1667091 Remove non-SSL websockets sample configs
     
+    All WebSockets communication occurs via SSL in the sample configuration
+    files.  Non-SSL communication is still an option if required with local
+    configuration.
+    
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-13	2	doc/RELEASE_NOTES.txt
-
-commit 3d1aae3f88a547fb76754085e062de3f139246ba
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Feb 21 16:21:23 2017 -0500
-
-    LP#1666706: add --with-websockets-port configure option
-    
-    This patch adds the ability to specify the WebSockets
-    port as a configure option, avoiding the need to manually
-    edit a couple JavaScript files if one chooses to proxy
-    WS traffic.
-    
-    This patch also cleans up the set of JavaScript files that
-    are installed so that some test case files are not installed
-    by default.
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-2	0	.gitignore
-7	1	README
-8	0	configure.ac
-1	2	src/Makefile.am
-0	104	src/javascript/opensrf_ws.js
-104	0	src/javascript/opensrf_ws.js.in
-0	248	src/javascript/opensrf_ws_shared.js
-248	0	src/javascript/opensrf_ws_shared.js.in
- delete mode 100644 src/javascript/opensrf_ws.js
- create mode 100644 src/javascript/opensrf_ws.js.in
- delete mode 100644 src/javascript/opensrf_ws_shared.js
- create mode 100644 src/javascript/opensrf_ws_shared.js.in
-
-commit 21c1412b408943cc4425dce2e9cc9222faf4fa78
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Thu Aug 4 08:57:44 2016 -0400
-
-    LP#1616501: teach mod_perl handlers how to detect client disconnects
-    
-    This patch provides an API so that mod_perl handlers
-    that act as OpenSRF clients have a way to specify that
-    if the browser disconnects, to stop trying to receive
-    results from an XMPP request.
-    
-    To invoke it, mod_perl handlers can add the following:
-    
-    use OpenSRF;
-    ...
-    sub hander {
-    ...
-        my $r = shift;
-        OpenSRF->OSRF_APACHE_REQUEST_OBJ($r);
-    ...
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-17	0	src/perl/lib/OpenSRF.pm
-25	1	src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
+0	9	examples/apache2/websockets/apache2.conf
+0	8	examples/apache_24/websockets/apache2.conf
+1	1	examples/nginx/osrf-ws-http-proxy
