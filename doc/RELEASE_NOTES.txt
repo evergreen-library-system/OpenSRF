@@ -1,5 +1,5 @@
-Release notes for OpenSRF 2.5.0-beta
-====================================
+Release notes for OpenSRF 2.5.0-rc
+==================================
 
 Supported platforms
 -------------------
@@ -8,6 +8,14 @@ The following Linux distributions are supported:
   * Debian 7 (Wheezy) and 8 (Jessie)
   * Fedora 17, 18
   * Ubuntu 14.04 (Trusty Tahr) and 16.04 LTS (Xenial Xerus)
+
+Changes in 2.5.0-rc
+-------------------
+The OpenSRF 2.5 release candidate includes the following addition
+since 2.5.0-beta:
+
+* LP#1667091: the default configuration files shipped with OpenSRF
+  no longer include support for insecure WebSockets.
 
 Changes in 2.5.0-beta
 ---------------------
