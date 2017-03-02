@@ -11,7 +11,7 @@ follows:
     ** The *user* Linux account is the account that you use to log onto the
        Linux system as a regular user.
     ** The *root* Linux account is an account that has system administrator
-       privileges. On Debian and Fedora you can switch to this account from
+       privileges. On Debian you can switch to this account from
        your *user* account by issuing the `su -` command and entering the
        password for the *root* account when prompted. On Ubuntu you can switch
        to this account from your *user* account using the `sudo su -` command
@@ -68,7 +68,6 @@ Well-tested values for <osname> include:
   * `debian-wheezy` for Debian 7.0
   * `ubuntu-trusty` for Ubuntu 14.04
   * `ubuntu-xenial` for Ubuntu 16.04
-  * `fedora` for Fedora 17 and later
 
 Patches and suggestions for improvement from users of these distributions,
 or others, are welcome!
@@ -182,7 +181,7 @@ Adjust the system dynamic library path
 Add `<PREFIX>/lib/` to the system's dynamic library path, and then run
 `ldconfig` as the *root* Linux account.
 
-On Debian, Ubuntu, and Fedora systems, run the following commands as the *root*
+On Debian and Ubuntu systems, run the following commands as the *root*
 Linux account:
 
 .Adjusting the system dynamic library path
@@ -213,7 +212,7 @@ work for OpenSRF.
 /etc/init.d/ejabberd stop
 ---------------------------------------------------------------------------
 +
-.(Fedora / Ubuntu Xenial) Stopping ejabberd
+.(Ubuntu Xenial) Stopping ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl stop ejabberd.service
@@ -291,7 +290,7 @@ hosts:
 /etc/init.d/ejabberd start
 ---------------------------------------------------------------------------
 +
-.(Fedora / Ubuntu Xenial) Starting ejabberd
+.(Ubuntu Xenial) Starting ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl start ejabberd.service
