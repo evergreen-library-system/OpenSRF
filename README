@@ -534,16 +534,17 @@ administration and network tasks.  The steps should be run as the *root*
 Linux account, and assume that you already followed the instructions
 for installing WebSockets support.
 
-1. Install NGINX if not already present:
+1. Configure the main Apache instance to listen on port 7080 for HTTP and
+   port 7443 for HTTPS and ensure that it is not listening on ports 80
+   and 443, then restart Apache.
++
+2. Install NGINX if not already present:
 +
 [source, bash]
 ---------------------------------------------------------------------------
 apt-get install nginx
 ---------------------------------------------------------------------------
 +
-2. Configure the main Apache instance to listen on port 7080 for HTTP and
-   port 7443 for HTTPS and ensure that it is not listening on ports 80
-   and 443, then restart Apache.
 3. Copy the example NGINX configuration file into place.
 +
 [source, bash]
