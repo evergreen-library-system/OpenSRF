@@ -544,13 +544,14 @@ for installing WebSockets support.
 apt-get install nginx
 ---------------------------------------------------------------------------
 +
-3. Copy the example NGINX configuration file into place.
+3. Copy the example NGINX configuration file into place and remove default.
 +
 [source, bash]
 ---------------------------------------------------------------------------
 cd /path/to/opensrf-OSRFVERSION
 cp examples/nginx/osrf-ws-http-proxy /etc/nginx/sites-available/
 ln -s /etc/nginx/sites-available/osrf-ws-http-proxy /etc/nginx/sites-enabled/osrf-ws-http-proxy
+rm /etc/nginx/sites-enabled/default
 ---------------------------------------------------------------------------
 +
 4. Edit `/etc/nginx/sites-available/osrf-ws-http-proxy` to set the location
