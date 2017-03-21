@@ -1,47 +1,15 @@
-Release notes for OpenSRF 2.5.0-rc
-==================================
+Release notes for OpenSRF 2.5.0
+===============================
 
 Supported platforms
 -------------------
-The following Linux distributions are supported:
+The following Linux distributions are well-tested:
 
   * Debian 7 (Wheezy) and 8 (Jessie)
-  * Fedora 17, 18
   * Ubuntu 14.04 (Trusty Tahr) and 16.04 LTS (Xenial Xerus)
 
-Changes in 2.5.0-rc
--------------------
-The OpenSRF 2.5 release candidate includes the following addition
-since 2.5.0-beta:
-
-* LP#1667091: the default configuration files shipped with OpenSRF
-  no longer include support for insecure WebSockets.
-
-Changes in 2.5.0-beta
+New features in 2.5.0
 ---------------------
-OpenSRF 2.5.0-beta includes the following additions since 2.5.0-alpha2:
-
-* LP#1666706: a new configure option, `--with-websockets-port`, to allow
-installers to specify the WebSockets port that clients should use.
-* LP#1616501: add a way for mod_perl handlers that are OpenSRF clients
-to detect when the web browser has disconnected, and in turn stop listening
-for results from XMPP requests pending when the browser disconnect
-happened.
-
-Changes in 2.5.0-alpha2
------------------------
-OpenSRF 2.5.0-alpha2 is a security release; testers of OpenSRF 2.5.x
-are strongly urged to upgrade as soon as possible.
-
-The second alpha release of OpenSRF 2.5 includes the following changes:
-
-* LP#1652382: improve normalization of memcache keys to avoid potential
-denial of service and privilege escalation attacks.
-* LP#1652122: fix an infinite recursion bug in opensrf.system.method.all.
-* LP#1655449: propagate bundling/chunking limits to subrequests.
-
-New features in 2.5.0-alpha
----------------------------
 
 Chunking and bundling (LP#1612771)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,7 +46,7 @@ operates, and provide that information to the business logic layer of
 applications built on the framework.
 
 Client
-^^^^^
+^^^^^^
 
 As most clients that have time zones which differ from that of the server on
 which the OpenSRF processes run are, in fact, web browsers, it is necessary
@@ -123,13 +91,17 @@ Instead, we can now call `dispatch()` instead of `run()` and have OpenSRF sessio
 control completely passed to the delegate code.  This way, the delegate code
 need not know anything about its caller, and vice versa.
 
-Example proxy server configurations (LP#1638651 and LP#1648188)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Example proxy server configurations (LP#1638651, LP#1648188, and LP#1666706)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 OpenSRF 2.5 comes with example configurations for using HAProxy or
 NGINX as a reverse proxy for HTTP, HTTPS, and WebSockets traffic. This
 can be useful for Evergreen systems that wish to use port 443 for both
 HTTPS and secure WebSockets traffic.
+
+Along with the example configuration files, there is now a new configure option,
+`--with-websockets-port`, to allow installers to specify the WebSockets port
+that JavaScript clients should use.
 
 Allow admin to specify where perl modules will be installed (LP#1631520)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -150,16 +122,29 @@ Other changes
   * Add support for Ubuntu Xenial (LP#1551090)
   * Fix a bug with syslog configuration (LP#1473479)
   * Fix OpenSRF debian_sys_config order for Debian (LP#1585041)
-  * Improvements to the installation documentation (LP#1382038)
+  * Improvements to the installation documentation (LP#1382038 and LP#1670045)
+  * Improve normalization of memcache keys to avoid potential
+    denial of service and privilege escalation attacks. (LP#1652382)
+  * Fix an infinite recursion bug in opensrf.system.method.all. (LP#1652122)
+  * Propagate bundling/chunking limits to subrequests. (LP#1655449)
+  * Add a way for mod_perl handlers that are OpenSRF clients
+    to detect when the web browser has disconnected, and in turn stop listening
+    for results from XMPP requests pending when the browser disconnect
+    happened. (LP#1616501)
+  * Remove Fedora from the list of well-tested platforms. The
+    installation target for Fedora still exists, but needs work.
+  * The default configuration files shipped with OpenSRF
+    no longer include support for insecure WebSockets. (LP#1667091)
 
 Acknowledgements
 ----------------
 
-We would like to thank the following people who contributed to OpenSRF 2.5:
+We would like to thank the following people who contributed to OpenSRF 2.5.0:
 
   * Ben Shum 
   * Bill Erickson 
   * Chris Sharp 
+  * Dan Scott
   * Galen Charlton 
   * Jason Etheridge 
   * Jason Stephenson 
