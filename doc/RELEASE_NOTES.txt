@@ -122,7 +122,7 @@ Other changes
   * Add support for Ubuntu Xenial (LP#1551090)
   * Fix a bug with syslog configuration (LP#1473479)
   * Fix OpenSRF debian_sys_config order for Debian (LP#1585041)
-  * Improvements to the installation documentation (LP#1382038 and LP#1670045)
+  * Improvements to the installation documentation (LP#1382038, LP#1670045, and LP#1672926)
   * Improve normalization of memcache keys to avoid potential
     denial of service and privilege escalation attacks. (LP#1652382)
   * Fix an infinite recursion bug in opensrf.system.method.all. (LP#1652122)

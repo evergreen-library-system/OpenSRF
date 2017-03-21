@@ -1,3 +1,27 @@
+commit 8843aecde3f6312b7b6ef3e03efe4d9202972821
+Author: Ben Shum <ben@evergreener.net>
+Date:   Tue Mar 14 23:00:56 2017 -0400
+
+    LP#1672926: Disable/remove default nginx config in REAMDE steps
+    
+    Since we will be adding our own custom nginx config, disable/remove the
+    default one that is installed so there's no confusion later on.
+    
+    Signed-off-by: Ben Shum <ben@evergreener.net>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+2	1	README
+
+commit f9818694ccc95d7b305e6173d01cf7ba73f99968
+Author: Galen Charlton <gmc@equinoxinitiative.org>
+Date:   Tue Mar 21 09:28:54 2017 -0400
+
+    update ChangeLog for 2.5.0
+    
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+1215	0	ChangeLog
+
 commit dab92ad2da878490c12ba94d1614a5059400617a
 Author: Galen Charlton <gmc@equinoxinitiative.org>
 Date:   Tue Mar 21 09:28:35 2017 -0400
