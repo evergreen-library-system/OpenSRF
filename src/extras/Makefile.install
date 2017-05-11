@@ -200,12 +200,6 @@ debian_sys_config:
 	# link the apache modules in
 	for m in $(DEB_APACHE_MODS); do a2enmod $$m; done;
 
-	# adds a placeholder module so apxs will be happy
-	if [ ! "$$(grep mod_placeholder /etc/apache2/httpd.conf)" ]; then \
-		echo -e "#\n#LoadModule mod_placeholder /usr/lib/apache2/modules/mod_placeholder.so" \
-			>> /etc/apache2/httpd.conf; \
-	fi;
-
 # Install the debian-specific dependencies
 install_debs:
 	$(APT_TOOL) install $(DEBS)
