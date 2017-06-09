@@ -303,6 +303,19 @@ sub write_child {
         $self->{sig_pipe} = 0;
         local $SIG{'PIPE'} = sub { $self->{sig_pipe} = 1; };
 
+        # In rare cases a child can die between creation and first
+        # write, typically a result of a jabber connect error.  Before
+        # sending data to each child, confirm it's still alive.  If it's
+        # not, log the error and drop the message to prevent the parent
+        # process from dying.
+        # When a child dies, all of its attributes are deleted,
+        # so the lack of a pid means the child is dead.
+        if (!$child->{pid}) {
+            $logger->error("server: child is dead in write_child(). ".
+                "unable to send message: $xml");
+            return; # avoid syswrite crash
+        }
+
         # send message to child data pipe
         syswrite($child->{pipe_to_child}, $write_size . $xml);
 
