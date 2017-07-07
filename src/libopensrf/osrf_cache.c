@@ -98,20 +98,19 @@ jsonObject* osrfCacheGetObject( const char* key, ... ) {
 	memcached_return rc;
 	jsonObject* obj = NULL;
 	if( key ) {
-		VA_LIST_TO_STRING(key);
-		char* clean_key = _clean_key( VA_BUF );
+		char* clean_key = _clean_key( key );
 		const char* data = (const char*) memcached_get(_osrfCache, clean_key, strlen(clean_key), &val_len, &flags, &rc);
 		free(clean_key);
 		if (rc != MEMCACHED_SUCCESS) {
 			osrfLogDebug(OSRF_LOG_MARK, "Failed to get key [%s] - %s",
-				VA_BUF, memcached_strerror(_osrfCache, rc));
+				key, memcached_strerror(_osrfCache, rc));
 		}
 		if( data ) {
-			osrfLogInternal( OSRF_LOG_MARK, "osrfCacheGetObject(): Returning object (key=%s): %s", VA_BUF, data);
+			osrfLogInternal( OSRF_LOG_MARK, "osrfCacheGetObject(): Returning object (key=%s): %s", key, data);
 			obj = jsonParse( data );
 			return obj;
 		}
-		osrfLogDebug(OSRF_LOG_MARK, "No cache data exists with key %s", VA_BUF);
+		osrfLogDebug(OSRF_LOG_MARK, "No cache data exists with key %s", key);
 	}
 	return NULL;
 }
@@ -121,16 +120,15 @@ char* osrfCacheGetString( const char* key, ... ) {
 	uint32_t flags;
 	memcached_return rc;
 	if( key ) {
-		VA_LIST_TO_STRING(key);
-		char* clean_key = _clean_key( VA_BUF );
+		char* clean_key = _clean_key( key );
 		char* data = (char*) memcached_get(_osrfCache, clean_key, strlen(clean_key), &val_len, &flags, &rc);
 		free(clean_key);
 		if (rc != MEMCACHED_SUCCESS) {
 			osrfLogDebug(OSRF_LOG_MARK, "Failed to get key [%s] - %s",
-				VA_BUF, memcached_strerror(_osrfCache, rc));
+				key, memcached_strerror(_osrfCache, rc));
 		}
-		osrfLogInternal( OSRF_LOG_MARK, "osrfCacheGetString(): Returning object (key=%s): %s", VA_BUF, data);
-		if(!data) osrfLogDebug(OSRF_LOG_MARK, "No cache data exists with key %s", VA_BUF);
+		osrfLogInternal( OSRF_LOG_MARK, "osrfCacheGetString(): Returning object (key=%s): %s", key, data);
+		if(!data) osrfLogDebug(OSRF_LOG_MARK, "No cache data exists with key %s", key);
 		return data;
 	}
 	return NULL;
@@ -140,13 +138,12 @@ char* osrfCacheGetString( const char* key, ... ) {
 int osrfCacheRemove( const char* key, ... ) {
 	memcached_return rc;
 	if( key ) {
-		VA_LIST_TO_STRING(key);
-		char* clean_key = _clean_key( VA_BUF );
+		char* clean_key = _clean_key( key );
 		rc = memcached_delete(_osrfCache, clean_key, strlen(clean_key), 0 );
 		free(clean_key);
 		if (rc != MEMCACHED_SUCCESS && rc != MEMCACHED_BUFFERED) {
 			osrfLogDebug(OSRF_LOG_MARK, "Failed to delete key [%s] - %s",
-				VA_BUF, memcached_strerror(_osrfCache, rc));
+				key, memcached_strerror(_osrfCache, rc));
 		}
 		return 0;
 	}
@@ -156,10 +153,9 @@ int osrfCacheRemove( const char* key, ... ) {
 
 int osrfCacheSetExpire( time_t seconds, const char* key, ... ) {
 	if( key ) {
-		VA_LIST_TO_STRING(key);
-		jsonObject* o = osrfCacheGetObject( VA_BUF );
-		//osrfCacheRemove(VA_BUF);
-		int rc = osrfCachePutObject( VA_BUF, o, seconds );
+		char* clean_key = _clean_key( key );
+		jsonObject* o = osrfCacheGetObject( clean_key );
+		int rc = osrfCachePutObject( clean_key, o, seconds );
 		jsonObjectFree(o);
 		return rc;
 	}
