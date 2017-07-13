@@ -100,6 +100,7 @@ opensrf_c_SOURCES = opensrf.c
 opensrf_c_DEPENDENCIES = libopensrf.la
 
 osrf_json_test_SOURCES = osrf_json_test.c $(JSON_TARGS) $(JSON_DEP) $(JSON_TARGS_HEADS) $(JSON_DEP_HEADS)
+osrf_json_test_DEPENDENCIES = libopensrf.la
 
 noinst_LTLIBRARIES = libosrf_json.la
 lib_LTLIBRARIES = libopensrf.la
