@@ -653,9 +653,15 @@ sub run {
             OpenSRF::Transport::SlimJabber::XMPPMessage->new(xml => $data)
         );
 
-        $self->keepalive_loop($session);
+        my $recycle = $self->keepalive_loop($session);
 
         last if ++$self->{num_requests} == $self->{parent}->{max_requests};
+
+        if ($recycle) {
+            $chatty && $logger->internal(
+                "server: child exiting early on force_recycle");
+            last;
+        }
 
         # Tell the parent process we are available to process requests
         $self->send_status;
@@ -772,7 +778,15 @@ sub keepalive_loop {
     }
 
     $chatty and $logger->internal("server: child done with request(s)");
+
+    # Capture the recycle option value before it's clobbered.
+    # The option may be set at any point along the life of the 
+    # session.  Once set, it remains set unless 
+    # $session->force_recycle(0) is explicitly called.
+    my $recycle = $session->force_recycle;
+
     $session->kill_me;
+    return $recycle;
 }
 
 # ----------------------------------------------------------------

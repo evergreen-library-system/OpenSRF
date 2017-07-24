@@ -146,6 +146,7 @@ sub server_build {
 
 	my $self = bless { recv_queue  => [],
 			   request_queue  => [],
+               force_recycle => 0,
 			   requests  => 0,
 			   session_data  => {},
 			   callbacks  => {},
@@ -226,6 +227,15 @@ sub stateless {
 	my $state = shift;
 	$self->{stateless} = $state if (defined $state);
 	return $self->{stateless};
+}
+
+# When true, indicates the server drone should be killed (recycled)
+# after the current session has completed.  This overrides the
+# configured max_request value.
+sub force_recycle {
+    my ($self, $force) = @_;
+    $self->{force_recycle} = $force if defined $force;
+    return $self->{force_recycle};
 }
 
 # When we're a client and we want to connect to a remote service
