@@ -35,8 +35,13 @@ install-exec-local:
 	$(APXS2) -c $(DEF_LDLIBS) $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_http_translator.c apachetools.c apachetools.h libopensrf.so
 	$(APXS2) -c $(DEF_LDLIBS) $(AM_CFLAGS) $(AM_LDFLAGS) @srcdir@/osrf_websocket_translator.c apachetools.c apachetools.h libopensrf.so
 	$(MKDIR_P) $(DESTDIR)$(AP_LIBEXECDIR)
-	$(APXS2) -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) -a @srcdir@/osrf_json_gateway.la
-	$(APXS2) -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) -a @srcdir@/osrf_http_translator.la
+	if [ "$(DESTDIR)" ]; then \
+		$(APXS2) -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) @srcdir@/osrf_json_gateway.la; \
+		$(APXS2) -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) @srcdir@/osrf_http_translator.la; \
+	else \
+		$(APXS2) -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) -a @srcdir@/osrf_json_gateway.la; \
+		$(APXS2) -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) -a @srcdir@/osrf_http_translator.la; \
+	fi
 	$(APXS2) -n osrf_websocket_translator -i -S LIBEXECDIR=$(DESTDIR)$(AP_LIBEXECDIR) @srcdir@/osrf_websocket_translator.la
 
 clean-local:
