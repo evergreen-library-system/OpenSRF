@@ -68,10 +68,10 @@ install-exec-hook:
 			rm "$(DESTDIR)@sysconfdir@/$${f}.bak" ; \
 		done; \
 	fi
-	if [ ! -e @bindir@/osrf_control ]; then \
-		ln -s @bindir@/opensrf-perl.pl @bindir@/osrf_control; \
+	if [ ! -e "$(DESTDIR)@bindir@/osrf_control" ]; then \
+		ln -s "opensrf-perl.pl" "$(DESTDIR)@bindir@/osrf_control"; \
 	fi
 
 uninstall-hook:
-	rm -f @includedir@/opensrf/apachetools.h
+	rm -f "$(DESTDIR)@includedir@/opensrf/apachetools.h"
 
