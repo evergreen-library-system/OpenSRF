@@ -10,6 +10,8 @@
 # Installs Perl prereqs, libjs with Perl wrapper
 #
 # usage:
+# 	make -f Makefile.install debian-stretch
+# 	- or -
 # 	make -f Makefile.install debian-jessie
 # 	- or -
 # 	make -f Makefile.install debian-wheezy
@@ -163,6 +165,11 @@ EXTRA_DEBS_JESSIE = \
 	apache2-prefork-dev \
 	libncurses5-dev
 
+EXTRA_DEBS_DEBIAN_STRETCH = \
+	apache2 \
+	apache2-dev \
+	libncurses5-dev
+
 EXTRA_DEBS_UBUNTU_TRUSTY = \
 	apache2-mpm-prefork \
 	apache2-prefork-dev \
@@ -179,8 +186,10 @@ all:
 	@echo "please specify an OS" && exit 0
 
 
+debian-stretch: generic_debian stretch apache_mpm_prefork_mods apache_perl_mod
 debian-jessie: generic_debian jessie apache_mpm_prefork_mods
 debian-wheezy: generic_debian wheezy
+stretch: install_extra_debs install_extra_debs_stretch debian_sys_config
 jessie: install_extra_debs_jessie debian_sys_config
 wheezy: install_extra_debs_wheezy debian_sys_config
 generic_debian: install_debs
@@ -207,6 +216,9 @@ install_debs:
 # Install the debian-specific dependencies for more modern distros
 install_extra_debs:
 	$(APT_TOOL) install $(EXTRA_DEBS)
+
+install_extra_debs_stretch:
+	$(APT_TOOL) install $(EXTRA_DEBS_DEBIAN_STRETCH)
 
 install_extra_debs_jessie: install_extra_debs
 	$(APT_TOOL) install $(EXTRA_DEBS_JESSIE)

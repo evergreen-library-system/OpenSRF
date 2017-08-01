@@ -64,8 +64,9 @@ make -f src/extras/Makefile.install <osname>
 
 Well-tested values for <osname> include:
 
-  * `debian-jessie` for Debian 8.0
-  * `debian-wheezy` for Debian 7.0
+  * `debian-stretch` for Debian 9
+  * `debian-jessie` for Debian 8
+  * `debian-wheezy` for Debian 7
   * `ubuntu-trusty` for Ubuntu 14.04
   * `ubuntu-xenial` for Ubuntu 16.04
 
@@ -212,7 +213,7 @@ work for OpenSRF.
 /etc/init.d/ejabberd stop
 ---------------------------------------------------------------------------
 +
-.(Ubuntu Xenial) Stopping ejabberd
+.(Debian Stretch / Ubuntu Xenial) Stopping ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl stop ejabberd.service
@@ -258,7 +259,7 @@ hosts:
     ##access_max_user_messages: max_user_offline_messages
 -----------------------
 +
-(Ubuntu Xenial) Ejabberd 16.x::
+(Debian Stretch / Ubuntu Xenial) Ejabberd 16.x::
 Open `/etc/ejabberd/ejabberd.yml` and make the following
 changes:
   a. Define your public and private domains in the `hosts` directive. For
@@ -290,7 +291,7 @@ hosts:
 /etc/init.d/ejabberd start
 ---------------------------------------------------------------------------
 +
-.(Ubuntu Xenial) Starting ejabberd
+.(Debian Stretch / Ubuntu Xenial) Starting ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl start ejabberd.service
@@ -449,7 +450,7 @@ apxs2 -i -a -c mod_websocket.c
 sh /usr/share/doc/apache2.2-common/examples/setup-instance websockets
 ---------------------------------------------------------------------------
 +
-.(Debian Jessie / Ubuntu Trusty / Xenial)
+.(Debian Jessie/Stretch, Ubuntu Trusty/Xenial)
 [source, bash]
 ---------------------------------------------------------------------------
 sh /usr/share/doc/apache2/examples/setup-instance websockets
@@ -472,7 +473,7 @@ cd /path/to/opensrf-OSRFVERSION
 cp examples/apache2/websockets/apache2.conf /etc/apache2-websockets/
 ---------------------------------------------------------------------------
 +
-.(Debian Jessie / Ubuntu Trusty / Xenial)
+.(Debian Jessie/Stretch, Ubuntu Trusty/Xenial)
 [source, bash]
 ---------------------------------------------------------------------------
 cd /path/to/opensrf-OSRFVERSION
