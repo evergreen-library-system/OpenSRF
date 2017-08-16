@@ -65,6 +65,7 @@ my $opt_ignore_orphans = 0;
 my $sclient;
 my @perl_services;
 my @nonperl_services;
+my %max_children_map;
 my $hostname = $ENV{OSRF_HOSTNAME} || hostfqdn();
 
 GetOptions(
@@ -264,7 +265,10 @@ sub do_diagnostic {
                 msg($str);
             } else {
                 my @drones = `pgrep -f "Drone \\[$svc\\]"`;
-                $str .= "#drones=".scalar(@drones);
+                my $dcount = scalar(@drones);
+                my $dmax = $max_children_map{$svc};
+                $str .= "#drones=$dcount/$dmax ";
+                $str .= sprintf('%3d%%', (int(($dcount / $dmax) * 100)));
                 msg($str);
                 msg("\tERR $svc has no running drones.") unless @drones;
             }
@@ -332,6 +336,10 @@ sub do_init {
                 next;
             }
             my $lang = $sclient->config_value('apps', $app, 'language') || '';
+
+            $max_children_map{$app} = $sclient->config_value(
+                'apps', $app, 'unix_config', 'max_children');
+
             if ($lang =~ /perl/i) {
                 push(@perl_services, $app);
             } else {
