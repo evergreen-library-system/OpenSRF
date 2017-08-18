@@ -267,8 +267,12 @@ sub do_diagnostic {
                 my @drones = `pgrep -f "Drone \\[$svc\\]"`;
                 my $dcount = scalar(@drones);
                 my $dmax = $max_children_map{$svc};
-                $str .= "#drones=$dcount/$dmax ";
-                $str .= sprintf('%3d%%', (int(($dcount / $dmax) * 100)));
+                if (defined($dmax) && $dmax > 0) {
+                    $str .= "#drones=$dcount/$dmax ";
+                    $str .= sprintf('%3d%%', (int(($dcount / $dmax) * 100)));
+                } else {
+                    $str .= "#drones=$dcount";
+                }
                 msg($str);
                 msg("\tERR $svc has no running drones.") unless @drones;
             }
