@@ -1051,10 +1051,28 @@ sub respond {
 
         if ($self->max_chunk_size > 0) { # we might need to chunk
             my $str = OpenSRF::Utils::JSON->perl2JSON($msg);
-            if (length($str) > $self->max_chunk_size) { # send partials ("chunking")
-                for (my $i = 0; $i < length($str); $i += $self->max_chunk_size) {
+
+            # XML can add a lot of length to a chunk due to escaping, so we
+            # calculate chunk size based on an XML-escaped version of the message.
+            # Example: If escaping doubles the length of the string then $ratio
+            # will be 0.5 and we'll cut the chunk size for this message in half.
+
+            my $raw_length = length($str);
+            my $escaped_length = $raw_length;
+            $escaped_length += 11 * (() = ( $str =~ /"/g)); # 7 \s and &quot;
+            $escaped_length += 4 * (() = ( $str =~ /&/g)); # &amp;
+            $escaped_length += 3 * (() = ( $str =~ /[<>]/g)); # &lt; / &gt;
+
+            my $chunk_size = $self->max_chunk_size;
+
+            if ($escaped_length > $self->max_chunk_size) {
+                $chunk_size = ($raw_length / $escaped_length) * $self->max_chunk_size;
+            }
+
+            if ($raw_length > $chunk_size) { # send partials ("chunking")
+                for (my $i = 0; $i < length($str); $i += $chunk_size) {
                     $response = new OpenSRF::DomainObject::oilsResult::Partial;
-                    $response->content( substr($str, $i, $self->max_chunk_size) );
+                    $response->content( substr($str, $i, $chunk_size) );
                     $self->session->send($type, $response, $self->threadTrace);
                 }
                 # This triggers reconstruction on the remote end

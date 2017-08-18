@@ -781,3 +781,26 @@ int osrfUtilsCheckFileDescriptor( int fd ) {
 	return 0;
 }
 
+size_t osrfXmlEscapingLength ( const char* str ) {
+	int extra = 0;
+	const char* s;
+	for (s = str; *s; ++s) {
+		switch (*s) {
+			case '>':
+			case '<':
+				extra += 3;
+				break;
+			case '&':
+				extra += 4;
+				break;
+			case '"':
+				extra += 11;
+				break;
+			default:
+				break;
+		}
+	}
+
+	return extra;
+}
+
