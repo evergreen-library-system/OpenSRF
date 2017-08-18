@@ -377,6 +377,12 @@ char* md5sum( const char* text, ... );
 */
 int osrfUtilsCheckFileDescriptor( int fd );
 
+/*
+	Returns the approximate additional length of
+	a string after XML escaping <, >, &, and ".
+*/
+size_t osrfXmlEscapingLength ( const char* str );
+
 #ifdef __cplusplus
 }
 #endif

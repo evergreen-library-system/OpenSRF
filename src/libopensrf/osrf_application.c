@@ -734,15 +734,20 @@ static int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int 
 
 		if( data ) {
             char* data_str = jsonObjectToJSON(data); // free me (below)
-            size_t data_size = strlen(data_str);
+            size_t raw_size = strlen(data_str);
+            size_t extra_size = osrfXmlEscapingLength(data_str);
+            size_t data_size = raw_size + extra_size;
             size_t chunk_size = ctx->method->max_chunk_size;
 
-            if (chunk_size > 0 && chunk_size < data_size) {
+            if (data_size > chunk_size) // calculate an escape-scaled chunk size
+                chunk_size = ((double)raw_size / (double)data_size) * (double)chunk_size;
+
+            if (chunk_size > 0 && chunk_size < raw_size) {
                 // chunking -- response message exceeds max message size.
                 // break it up into chunks for partial delivery
 
 				osrfSendChunkedResult(ctx->session, ctx->request,
-									  data_str, data_size, chunk_size);
+									  data_str, raw_size, chunk_size);
 
             } else {
 
