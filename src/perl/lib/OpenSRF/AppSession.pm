@@ -10,6 +10,7 @@ use OpenSRF::Utils::Config;
 use OpenSRF::EX;
 use OpenSRF;
 use Exporter;
+use Encode;
 use base qw/Exporter OpenSRF/;
 use Time::HiRes qw( time usleep );
 use warnings;
@@ -1057,7 +1058,7 @@ sub respond {
             # Example: If escaping doubles the length of the string then $ratio
             # will be 0.5 and we'll cut the chunk size for this message in half.
 
-            my $raw_length = length($str);
+            my $raw_length = length(Encode::encode_utf8($str)); # count bytes
             my $escaped_length = $raw_length;
             $escaped_length += 11 * (() = ( $str =~ /"/g)); # 7 \s and &quot;
             $escaped_length += 4 * (() = ( $str =~ /&/g)); # &amp;
@@ -1070,7 +1071,8 @@ sub respond {
             }
 
             if ($raw_length > $chunk_size) { # send partials ("chunking")
-                for (my $i = 0; $i < length($str); $i += $chunk_size) {
+                my $num_bytes = length(Encode::encode_utf8($str));
+                for (my $i = 0; $i < $num_bytes; $i += $chunk_size) {
                     $response = new OpenSRF::DomainObject::oilsResult::Partial;
                     $response->content( substr($str, $i, $chunk_size) );
                     $self->session->send($type, $response, $self->threadTrace);
@@ -1088,7 +1090,8 @@ sub respond {
 
     if ($self->{max_bundle_count} > 0 or $self->{max_bundle_size} > 0) { # we are bundling, and we need to test the size or count
 
-        $self->{current_bundle_size} += length(OpenSRF::Utils::JSON->perl2JSON($response));
+        $self->{current_bundle_size} += length(
+            Encode::encode_utf8(OpenSRF::Utils::JSON->perl2JSON($response)));
         push @{$self->{current_bundle}}, $type, $response;  
         $self->{current_bundle_count}++;
 
