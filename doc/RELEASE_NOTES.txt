@@ -1,5 +1,5 @@
-Release notes for OpenSRF 2.5.0
-===============================
+OpenSRF 2.5 release notes
+=========================
 
 Supported platforms
 -------------------
@@ -8,14 +8,18 @@ The following Linux distributions are well-tested:
   * Debian 7 (Wheezy) and 8 (Jessie)
   * Ubuntu 14.04 (Trusty Tahr) and 16.04 LTS (Xenial Xerus)
 
+OpenSRF 2.5.0
+-------------
+OpenSRF 2.5.0 was released on 21 March 2017.
+
 New features in 2.5.0
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 Chunking and bundling (LP#1612771)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Message Bundling and Chunking
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++++++++
 
 OpenSRF now supports message chunking, i.e., breaking up large OpenSRF
 messages across multiple XMPP envelopes. This is implemented with a
@@ -35,7 +39,7 @@ With this change, it is no longer necessary to change the `max_stanza_size`
 setting for ejabberd when installing OpenSRF.
 
 Pass client timezone to server (LP#1485371)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 OpenSRF has long inspected the envelope of incoming requests for information
 about the client's locale and made this information available to business
@@ -79,7 +83,7 @@ to set the time zone in which the database interprets timestamps to that of
 the client.
 
 Dispatch mode for method_lookup subrequests (LP#1631522)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There is a pattern in the wild of using OpenSRF's `method_lookup()` facility
 to decide between one of several local methods when delegating to pre-existing
@@ -92,7 +96,7 @@ control completely passed to the delegate code.  This way, the delegate code
 need not know anything about its caller, and vice versa.
 
 Example proxy server configurations (LP#1638651, LP#1648188, and LP#1666706)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 OpenSRF 2.5 comes with example configurations for using HAProxy or
 NGINX as a reverse proxy for HTTP, HTTPS, and WebSockets traffic. This
@@ -104,7 +108,7 @@ Along with the example configuration files, there is now a new configure option,
 that JavaScript clients should use.
 
 Allow admin to specify where perl modules will be installed (LP#1631520)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Add `--with-perlbase` option to the `configure` to specify
 an alternative location for installing the Perl modules. This
 can be useful for setups that want to run the Perl modules
@@ -115,7 +119,7 @@ Users of `--with-perlbase` are responsible for ensuring that
 `PERL5LIB` is set appropriately.
 
 Other changes
--------------
+~~~~~~~~~~~~~
 
   * Drop support for Debian Squeeze (LP#1559121)
   * Drop support for Ubuntu Precise (LP#1603708)
@@ -137,7 +141,7 @@ Other changes
     no longer include support for insecure WebSockets. (LP#1667091)
 
 Acknowledgements
-----------------
+~~~~~~~~~~~~~~~~
 
 We would like to thank the following people who contributed to OpenSRF 2.5.0:
 
