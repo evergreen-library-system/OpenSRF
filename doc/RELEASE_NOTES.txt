@@ -8,6 +8,71 @@ The following Linux distributions are well-tested:
   * Debian 7 (Wheezy) and 8 (Jessie)
   * Ubuntu 14.04 (Trusty Tahr) and 16.04 LTS (Xenial Xerus)
 
+OpenSRF 2.5.1
+-------------
+
+OpenSRF 2.5.1 was released on 11 September 2017. It is a major bugfix
+release that also includes a minor enhancement. All users of OpenSRF 2.5.0
+are advised to upgrade as soon as possible.
+
+Enhancements in 2.5.1
+~~~~~~~~~~~~~~~~~~~~~
+
+`osrf_control --diagnostic` now reports `max_children` values (LP#1711194)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`osrf_control --diagnostic` now includes the maximum number of drones allowed
+per service, making it easier to determine if drone usage is hitting limits.
+
+For example:
+
+----
+* opensrf.math             [436] uptime=07:31:42    cputime=00:00:00    #drones=1/15   6%
+* opensrf.settings         [32712] uptime=07:31:46    cputime=00:00:00    #drones=5/15  33%
+----
+
+Major bugfixes in 2.5.1
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Fixes to bundling and chunking (LP#1709710)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The calculations of whether to split a large message into multiple chunks
+now take into account additional overhead added by the JSON- and XML-escaping
+of certain characters. As a consequence, large messages are now much less
+likely to overflow typical ejabberd `max_stanza_size` values.
+
+Premature drone shutdown now less likely to take down listener (LP#1697029)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The premature failure of a drone process that was just starting up, as might
+happen if certain ejabberd limits are reached, is now less likely to cause
+a listener process (and thus the entire service) to abort.
+
+Other improvements in 2.5.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Several improvements were made to the installation process:
+
+  * Remove check of `httpd.conf` from `Makefile.install` (LP#1690206)
+  * Ensure `make install` respects `DESTDIR` (LP#1704090)
+  * Update WebSockets instructions for Debian Jessie (LP#1703958)
+  * Fix intermittant failure of parallel buidling (LP#1704116)
+
+Graham Billiau has also been working on a new port of OpenSRF to Gentoo.
+
+Acknowledgements
+~~~~~~~~~~~~~~~~
+
+We would like to thank the following people who contributed to OpenSRF 2.5.1:
+
+  * Bill Erickson 
+  * Chris Sharp 
+  * Galen Charlton 
+  * Graham Billiau
+  * Jason Stephenson 
+  * Mike Rylander 
+
 OpenSRF 2.5.0
 -------------
 OpenSRF 2.5.0 was released on 21 March 2017.
