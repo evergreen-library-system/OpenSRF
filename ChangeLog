@@ -1,32 +1,8 @@
-commit 8843aecde3f6312b7b6ef3e03efe4d9202972821
-Author: Ben Shum <ben@evergreener.net>
-Date:   Tue Mar 14 23:00:56 2017 -0400
-
-    LP#1672926: Disable/remove default nginx config in REAMDE steps
-    
-    Since we will be adding our own custom nginx config, disable/remove the
-    default one that is installed so there's no confusion later on.
-    
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-2	1	README
-
-commit f9818694ccc95d7b305e6173d01cf7ba73f99968
+commit 7e8571b44ffaca74b89d8b53e8ef45ff8b7d6744
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Mar 21 09:28:54 2017 -0400
+Date:   Mon Sep 11 17:23:52 2017 -0400
 
-    update ChangeLog for 2.5.0
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1215	0	ChangeLog
-
-commit dab92ad2da878490c12ba94d1614a5059400617a
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Mar 21 09:28:35 2017 -0400
-
-    update version stamp for 2.5.0
+    update version stamp for 2.5.1
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
@@ -35,1242 +11,200 @@ Date:   Tue Mar 21 09:28:35 2017 -0400
 1	1	src/python/setup.py
 1	1	version.m4
 
-commit 7bb3df17205b88cd959d0018a919f33b5a2e7790
+commit 1451c548e5a37c2ff228f2dfccf55d069a408f82
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Mar 21 09:18:38 2017 -0400
+Date:   Mon Sep 11 17:20:13 2017 -0400
 
-    update release notes for 2.5.0
+    release notes for 2.5.1
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-26	41	doc/RELEASE_NOTES.txt
+65	0	doc/RELEASE_NOTES.txt
 
-commit 828efee972241d54b49d9a3bdf7466d3c9c1b39a
-Author: Dan Scott <dscott@laurentian.ca>
-Date:   Thu Mar 2 10:31:02 2017 -0500
+commit a901fa5e4d3ca8cb17362f1e0e5548ee46cf6a7d
+Author: Galen Charlton <gmc@equinoxinitiative.org>
+Date:   Mon Sep 11 17:01:58 2017 -0400
 
-    Remove Fedora as a well-tested target
+    convert release notes to multi-release format
     
-    The Fedora install target requires a number of updates and is now
-    far from a "well-tested target".
-    
-    Signed-off-by: Dan Scott <dscott@laurentian.ca>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-4	5	README
+15	11	doc/RELEASE_NOTES.txt
 
-commit f5ba231bd2df5a9d4a827e38d4ddfbc02cb29cec
+commit 0ae68c0ec5ce4a66e83093d47263e76a0af31746
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Fri Sep 8 17:53:52 2017 -0400
+
+    LP#1709710 Count Perl chunk/bundle sizes in bytes
+    
+    For the purposes of bundling/chunking, count the number of bytes in each
+    affected string instead of the number of characters.
+    
+    See also https://perldoc.perl.org/bytes.html and 'perldoc -f length'
+    
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+6	3	src/perl/lib/OpenSRF/AppSession.pm
+
+commit 53565494dbf613faa873139d7a8078d27b9066b4
+Author: Galen Charlton <gmc@equinoxinitiative.org>
+Date:   Fri Sep 8 15:34:29 2017 -0400
+
+    LP#1709710: write unit tests for osrfXmlEscapingLength()
+    
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+6	2	tests/Makefile.am
+43	0	tests/check_osrf_utils.c
+ create mode 100644 tests/check_osrf_utils.c
+
+commit 3f7abf68aeb553f6fd6289935980d01d86f13b66
+Author: Mike Rylander <miker@esilibrary.com>
+Date:   Fri Aug 18 11:43:31 2017 -0400
+
+    LP#1709710: Make chunk sizing smart about XML quoting
+    
+    XML inside JSON as a quoted string that's itself inside XML causes quite the
+    pile up of nested excaping of certain characters in OpenSRF PARTIAL_RESPONSE
+    messages.  Here we check for the worst offenders (<, >, &, and ") and account
+    for the cost of escaping them in chunked response stanzas.
+    
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+6	0	include/opensrf/utils.h
+11	4	src/libopensrf/osrf_app_session.c
+8	3	src/libopensrf/osrf_application.c
+23	0	src/libopensrf/utils.c
+21	3	src/perl/lib/OpenSRF/AppSession.pm
+
+commit 5c94e88fb6b7fafd578fe1e5fb1e844dfbfa0350
 Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Sat Mar 4 15:22:20 2017 -0500
+Date:   Thu May 11 14:47:32 2017 -0400
 
-    LP#1670045 - Correct Nginx README instructions
+    LP#1690206 - remove check of httpd.conf from OpenSRF Makefile.install
     
-    Previously, following the optional Nginx server setup
-    instructions resulted in failure for nginx to install
-    because Apache is already using ports 80 and 443.  Switch
-    the steps so that we change Apache's listening ports before
-    APT installation.
+    The original src/extras/Makefile.install included a grep of the
+    file /etc/apache2/httpd.conf, which is no longer installed by default
+    on supported Debian and Ubuntu releases.  As this check results in
+    an error message, it makes sense to remove the check altogether.
     
     Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-5	4	README
-
-commit f626531f9b4101c03365ce2f9cae219b350564c2
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Mar 1 11:00:11 2017 -0500
-
-    update ChangeLog for 2.5.0-rc
-    
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-18	60	ChangeLog
+0	6	src/extras/Makefile.install
 
-commit caf15e949d339fc2125185888431109c9a1f0ccc
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Mar 1 10:59:56 2017 -0500
-
-    update version stamp for 2.5.0-rc
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-7	7	README
-2	2	src/perl/lib/OpenSRF.pm
-1	1	src/python/setup.py
-1	1	version.m4
-
-commit ac8125b786d779e044e145bb8b6aa4f5576fbd85
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Mar 1 10:55:40 2017 -0500
-
-    update release notes for 2.5.0-rc
-
-10	2	doc/RELEASE_NOTES.txt
-
-commit 838aed4e78a69f5fef7a55f018f2659b0236f5ac
+commit a9cd1241be01b42aaccc1a0c4a875eba8a9d37ca
 Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed Feb 22 16:05:25 2017 -0500
+Date:   Fri Jun 9 13:01:46 2017 -0400
 
-    LP#1667091 Remove non-SSL websockets sample configs
+    LP#1697029 Log and exit on write to dead child
     
-    All WebSockets communication occurs via SSL in the sample configuration
-    files.  Non-SSL communication is still an option if required with local
-    configuration.
+    Confirm that a child process is alive just before attempting to write to
+    its pipe.  If the child process is dead, log the error, then drop the
+    message and move on.  This allows the parent to continue servicing
+    future requests.
     
     Signed-off-by: Bill Erickson <berickxx@gmail.com>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-0	9	examples/apache2/websockets/apache2.conf
-0	8	examples/apache_24/websockets/apache2.conf
-1	1	examples/nginx/osrf-ws-http-proxy
+13	0	src/perl/lib/OpenSRF/Server.pm
 
-commit b9b50e4802e9c6aad257d1ed6085c7ab252062f4
+commit dc3bfa4771e5e5b139d31c73b42562917f100688
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Feb 21 17:27:33 2017 -0500
+Date:   Fri Aug 18 11:11:29 2017 -0400
 
-    update changelog for 2.5.0-beta
+    LP#1711194: avoid division by zero errors
+    
+    Under some circumstances, osrf_control --diagnostic may not
+    be able to deduce the correct max_children setting for a service,
+    e.g., if it's run without --localhost on a system that doesn't
+    have a opensrf.xml config section specifying active apps for a
+    specific hostname. When that happens, just display the count
+    of running drones rather than displaying error messages about
+    undefined $dmax values and divisions by zero.
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
 
-49	105	ChangeLog
+6	2	bin/opensrf-perl.pl.in
 
-commit cf6a373f0c3f5e60dc72f4de44b11866d5b986af
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Feb 21 17:26:20 2017 -0500
+commit 2c7b9787c63c8477fc7f1e7b46f1262a62abf6f0
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Wed Aug 16 14:10:13 2017 -0400
 
-    udpate version stamps for 2.5.0-beta
+    LP#1711194 osrf_config --diagnostic reports max-children
     
+    --diagnostic output shows the maximum number of allowed drones per
+    service along with the active drone count.  Additionally, a usage
+    percentage value is displayed.
+    
+    E.g.
+    
+    $ /openils/bin/osrf_control -l --diagnostic
+    
+    * open-ils.acq   [1581] uptime=00:35 cputime=00:00:00 #drones=1/15 6%
+    * open-ils.actor [1629] uptime=00:35 cputime=00:00:00 #drones=2/15 13%
+    
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-7	7	README
-2	2	src/perl/lib/OpenSRF.pm
-1	1	src/python/setup.py
-1	1	version.m4
+9	1	bin/opensrf-perl.pl.in
 
-commit 5d552226c08385bda3ece8ac308329ba423af76b
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Feb 21 17:25:00 2017 -0500
+commit dab68778d6064b3ff5688ea3c622b38f07b4f993
+Author: Graham Billiau <graham@geeksinthegong.net>
+Date:   Mon Jul 31 11:00:25 2017 -0400
 
-    update release notes for 2.5-beta
+    LP#1704090: ensure make install respects DESTDIR
     
+    This patch ensures that 'make install' uses DESTDIR consistently,
+    making life easier for packagers.
+    
+    Signed-off-by: Graham Billiau <graham@geeksinthegong.net>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-13	2	doc/RELEASE_NOTES.txt
+3	3	src/Makefile.am
+7	2	src/gateway/Makefile.am
 
-commit 3d1aae3f88a547fb76754085e062de3f139246ba
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Feb 21 16:21:23 2017 -0500
+commit f9344c8d7792bfe233881756ebe4f41896f93916
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Wed Jul 12 15:24:48 2017 -0400
 
-    LP#1666706: add --with-websockets-port configure option
+    LP 1703958: Update Websockets Intructions for Debian Jessie
     
-    This patch adds the ability to specify the WebSockets
-    port as a configure option, avoiding the need to manually
-    edit a couple JavaScript files if one chooses to proxy
-    WS traffic.
+    Modify the Websockets installation instructions so that users will
+    have a working installation on Debian Jessie.  We change the "Debian"
+    instructions to say "Debian Wheezy" and add "Debian Jessie" to the
+    list with "Ubuntu Trusty / Xenial" where necessary.
     
-    This patch also cleans up the set of JavaScript files that
-    are installed so that some test case files are not installed
-    by default.
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-2	0	.gitignore
-7	1	README
-8	0	configure.ac
-1	2	src/Makefile.am
-0	104	src/javascript/opensrf_ws.js
-104	0	src/javascript/opensrf_ws.js.in
-0	248	src/javascript/opensrf_ws_shared.js
-248	0	src/javascript/opensrf_ws_shared.js.in
- delete mode 100644 src/javascript/opensrf_ws.js
- create mode 100644 src/javascript/opensrf_ws.js.in
- delete mode 100644 src/javascript/opensrf_ws_shared.js
- create mode 100644 src/javascript/opensrf_ws_shared.js.in
-
-commit 21c1412b408943cc4425dce2e9cc9222faf4fa78
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Thu Aug 4 08:57:44 2016 -0400
-
-    LP#1616501: teach mod_perl handlers how to detect client disconnects
-    
-    This patch provides an API so that mod_perl handlers
-    that act as OpenSRF clients have a way to specify that
-    if the browser disconnects, to stop trying to receive
-    results from an XMPP request.
-    
-    To invoke it, mod_perl handlers can add the following:
-    
-    use OpenSRF;
-    ...
-    sub hander {
-    ...
-        my $r = shift;
-        OpenSRF->OSRF_APACHE_REQUEST_OBJ($r);
-    ...
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-17	0	src/perl/lib/OpenSRF.pm
-25	1	src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
-
-commit f12ae3fab235a35127e79d0a16dadf8967d2bed2
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Thu Feb 16 15:16:34 2017 -0500
-
-    update ChangeLog for 2.5.0-alpha2
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-80	668	ChangeLog
-
-commit 88c8970c3dea26c72bc3173b18041e29538c4d8c
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Thu Feb 16 15:16:21 2017 -0500
-
-    update version numbers for 2.5.0-alpha2
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-7	7	README
-1	1	src/perl/lib/OpenSRF.pm
-1	1	src/python/setup.py
-1	1	version.m4
-
-commit 9df9c484031e313d3c6f1f85951d6b67b931f536
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Thu Feb 16 15:13:17 2017 -0500
-
-    update release notes for 2.5.0-alpha2
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-16	2	doc/RELEASE_NOTES.txt
-
-commit 4744d1a42b709a2c7aa778565c0c32a1962e0e2c
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Feb 15 16:58:06 2017 -0500
-
-    LP#1652382: more improvements to cache key munging
-    
-    - teach osrfCacheRemove to clean keys
-    - fix implict declaration compilation warning
-    - account for fact that iscntrl('\0') returns true
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Jeff Davis <jdavis@sitka.bclibraries.ca>
-
-5	2	src/libopensrf/osrf_cache.c
-
-commit 7ec6c1a4b3fc99f10bd1b3c9b07a0008672cf3f6
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Feb 15 14:12:34 2017 -0500
-
-    LP#1652382: handle cases where supplied key is longer than 250 bytes
-    
-    With this patch, if cache clients want to use a key longer
-    than the memcached text protocol limit of 250 bytes, the
-    key is normalized to 'shortened_' + md5_hex(normalized_key).
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Jeff Davis <jdavis@sitka.bclibraries.ca>
-
-10	1	src/libopensrf/osrf_cache.c
-4	0	src/perl/lib/OpenSRF/Utils/Cache.pm
-
-commit e58f20fd69b1fb2e94765a2bf9067ba1cbb9d2d9
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Mon Jan 30 12:54:10 2017 -0500
-
-    LP#1652382: Make use of the clean key just created
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Kathy Lussier <klussier@masslnc.org>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Jeff Davis <jdavis@sitka.bclibraries.ca>
-
-1	1	src/libopensrf/osrf_cache.c
-
-commit 8f31413ba4334ee3f695f84a810eccbe94351f77
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Fri Jan 27 15:25:05 2017 -0500
-
-    LP#1652382: normalization of memcache keys in C code
-    
-    Memcache does not allow spaces in keys, so here we will actively strip them
-    from any key we get from a caller.  Some callers are not very proactive about
-    sending clean keys, and this patch prevents issues that can poison C-based
-    OpenSRF service backends.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Kathy Lussier <klussier@masslnc.org>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Jeff Davis <jdavis@sitka.bclibraries.ca>
-
-20	2	src/libopensrf/osrf_cache.c
-
-commit 22e2c7729b6caf265b27ff14126fe5595e87cdca
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Tue Jan 10 15:30:18 2017 -0500
-
-    LP#1655449: Bundling/chunking limits for SubRquests
-    
-    We need to teach subrequests to inherit parent request bundling/chunking
-    parameters so they don't cause overruns in dispatch mode.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
     Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-5	1	src/perl/lib/OpenSRF/AppSession.pm
-17	3	src/perl/lib/OpenSRF/Application.pm
-
-commit b6fe0b1c9917d3d188ff8053f5fc3611ef878b3a
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Thu Dec 22 15:53:12 2016 +0500
-
-    LP#1652122: fix infinite recursion in opensrf.system.method.all
-    
-    Under certain circumstances, calling opensrf.system.method.all on a
-    Perl service can result in an infinite recursion when attempting to
-    serialize an OpenSRF::Application object to JSON.  In particular,
-    this was observed to happen when doing an introspection of
-    the opensrf.settings service.
-    
-    This patch avoids the infinite recursion (and consequent memory
-    leak) by ensuring that the 'session' key is slated for exclusion
-    from serialization from OpenSRF::Application objects during
-    bootstrapping.
-    
-    Note that the problem does not affect all Perl services; if a
-    Perl service declares at least one streaming method, the auto-registration
-    of the .atomic method will result in 'session'-stripping.
-    
-    This patch fixes a regression introduced in bug 1350457.
-    
-    To test
-    -------
-    [1] Run 'introspect opensrf.settings' via srfsh; observe
-        that it never returns and that the opensrf.settings drone
-        will grow in memory sized until killed.
-    [2] Apply the patch, then repeat step 1. This time, the
-        request should succeed.
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-1	1	src/perl/lib/OpenSRF/System.pm
-
-commit 318ec1ad8f15184be46de3ef6d564e43d0139b79
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Wed Dec 7 17:12:49 2016 -0500
-
-    changelog for 2.5.0-alpha
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-481	1082	ChangeLog
-
-commit fb50a71d11bb2865722a1625bad075ca7eaf2ef3
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Wed Dec 7 16:55:23 2016 -0500
-
-    update version numbers for 2.5.0-alpha
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-7	7	README
-1	1	src/perl/lib/OpenSRF.pm
-1	1	src/python/setup.py
-1	1	version.m4
-
-commit fbfde6f6ca1fe8fed8b86c93f315a1110fb74512
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Wed Dec 7 16:52:08 2016 -0500
-
-    release notes for 2.5-alpha
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-136	0	doc/RELEASE_NOTES.txt
- create mode 100644 doc/RELEASE_NOTES.txt
-
-commit b1d19c8b9ff0bee77a3c98e793bf8efa67693a4e
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Wed Dec 7 13:34:15 2016 -0500
-
-    LP#1648188: example HAProxy configuration
-    
-    Add an example configuration for using HAProxy.
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-53	1	README
-25	0	examples/haproxy/osrf-ws-http-proxy
- create mode 100644 examples/haproxy/osrf-ws-http-proxy
-
-commit 93da6fb07c8b613011028f577b55fa8ba940f1ee
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Wed Dec 7 12:54:05 2016 -0500
-
-    LP#1638651: add instructions for using NGINX
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-58	0	README
-
-commit ededc269eacb9e69e30074bba2cff35a3148e62e
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Mon Oct 31 15:56:32 2016 -0400
-
-    LP#1638651: example Nginx websockets/http(s) proxy config
-    
-    Example using Nginx to proxy all websocket, http, and https Apache
-    traffic.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-56	0	examples/nginx/osrf-ws-http-proxy
- create mode 100644 examples/nginx/osrf-ws-http-proxy
-
-commit a3b2a15f27709815155eb9dbb8026343000753d5
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Wed Dec 7 11:58:35 2016 -0500
-
-    LP#1382038: clarify one step of installing websockets support
-    
-    Specify directory to be in before copying the Apache websockets
-    configuration file.
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-4	1	README
-
-commit a1fe6e1c1ccb7b3efab386a7f34c0555d07bd7e7
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Wed Dec 7 11:53:49 2016 -0500
-
-    LP#1382038: adjustments to download instructions
-    
-    - Use "OSRFVERSION" in the master branch rather than
-      a specific version number; this is meant to be changed
-      during the release process.
-    - Update references to the OpenSRF downloads index
-      page.
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
 4	4	README
 
-commit cd06277c3972437e676f51744749009c0d7eeb60
-Author: Remington Steed <rjs7@calvin.edu>
-Date:   Mon Nov 21 10:58:33 2016 -0500
+commit 22b5bf2b7606787dedac82c4eaae59b9bf2c7746
+Author: Graham Billiau <graham@geeksinthegong.net>
+Date:   Thu Jul 13 11:29:43 2017 -0400
 
-    LP#1382038: Add instructions for implied download/unpack step
+    LP#1704116: fix intermittant failure of parallel building
     
-    Occasionally, new users have complained that the installation
-    instructions making too many assumptions about what a user knows. This
-    commit explicitly instructs users in downloading the source tarball,
-    unpacking it, and changing the working directory so they will be ready
-    for the next instructions.
+    Running make to do a parallel build (e.g., 'make -j 4' or
+    the like) could fail because of an undeclared dependency; this
+    patch fixes the issue.
     
-    Signed-off-by: Remington Steed <rjs7@calvin.edu>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-24	0	README
-
-commit 5aa8a398e01e2642fd4b08c93fe9c719039dbedf
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Thu Nov 3 18:08:54 2016 -0400
-
-    LP#1612771: fix chunking for atomic C methods
-    
-    This patch also refactors the code that actually does the
-    splitting and sending of chunked responses into a new
-    public function, osrfSendChunkedResult().
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    Signed-off-by: Mike Rylander <miker@esilibrary.com>
-
-4	0	include/opensrf/osrf_app_session.h
-96	10	src/libopensrf/osrf_app_session.c
-2	58	src/libopensrf/osrf_application.c
-
-commit 168b4cafe766ec976e075ec2ea496c00a27dc7d0
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Tue Nov 1 17:22:48 2016 -0400
-
-    LP#1631522: add release notes for ->dispatch
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-12	0	doc/Dispatch-Mode-for-Subrequests.txt
- create mode 100644 doc/Dispatch-Mode-for-Subrequests.txt
-
-commit 31a0bfea9911f24f563d70bfdea6ba7759071842
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Tue Nov 1 17:20:49 2016 -0400
-
-    LP#1631522: dev doc now describes ->dispatch
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-5	1	doc/Application-HOWTO.txt
-
-commit 1431100b4737a61b1a294bbf66f9a5867dec358b
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Tue Nov 1 17:03:03 2016 -0400
-
-    LP#1631522: include example of ->dispatch in example app
-    
-    This patch also makes the Perl opensrf.math demo app work
-    correctly, as it hadn't been constructing opensrf.dbmath
-    method names correctly.
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-4	5	src/perl/lib/OpenSRF/Application/Demo/Math.pm
-
-commit 9d106aef9ab0a8d5af75977ffb4cc5f8f3fe5c79
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Thu Aug 25 17:42:31 2016 -0400
-
-    LP#1631522: Dispatch mode for method_lookup subrequests
-    
-    There is a pattern in the wild of using OpenSRF's method_lookup() facility
-    to decide between one of several local methods when delegating to pre-existing
-    logic.  Often times, we want to simply hand control over to another method,
-    but the output of a subrequest's run() is an array of results.  The caller has
-    to know if, and how, to restructure the result for the client.
-    
-    Instead, we can now call dispatch() instead of run() and have OpenSRF session
-    control completely passed to the delegate code.  This way, the delegate code
-    need not know anything about its caller, and vice versa.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-28	3	src/perl/lib/OpenSRF/AppSession.pm
-8	1	src/perl/lib/OpenSRF/Application.pm
-
-commit dbf9ec150dfa6a5b87028aa890a80b529dfe5683
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Tue Nov 1 16:30:26 2016 -0400
-
-    LP#1612771: add release notes
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-19	0	doc/Bundling-and-Chunking.txt
- create mode 100644 doc/Bundling-and-Chunking.txt
-
-commit 76a5fd0055b2af25f0783825c951021a32a5f17d
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Tue Nov 1 16:22:10 2016 -0400
-
-    LP#1612771: fix error in POD
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-1	1	src/perl/lib/OpenSRF/DomainObject/oilsResponse.pm
-
-commit 4f73f38bae3892fa4f6b3980c5724af521a31fde
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Tue Nov 1 16:03:50 2016 -0400
-
-    LP#1612771: update protocol documentation
-    
-    Now that we have PARTIAL and NOCONTENT statuses, let's
-    mention them in the documentation for the benefit of
-    folks writing future clients.
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-9	1	doc/OpenSRF-Messaging-Protocol.html
-
-commit d79c7eee6ce44bd3b38bd712d487cb31752c3a31
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Tue Nov 1 15:46:13 2016 -0400
-
-    LP#1612771: don't adjust max_stanza_size during installation
-    
-    As the typical max_stanza_size for ejabberd installations
-    is larger than what OpenSRF now needs, this patch adjusts
-    the installation instructions to remove the step to change
-    max_stanza_size.
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-10	13	README
-
-commit fd1ce3521553d6ddbc42762090be8ecdbc0b39f2
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Sun Feb 23 15:55:52 2014 -0500
-
-    LP#1612771: Add chunking support to JS implementation
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Bill Erickson <berick@esilibrary.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-3	0	include/opensrf/osrf_message.h
-57	6	src/javascript/opensrf.js
-
-commit 75a9906d5a5e90c60c8e0614e0c71796c511ec18
-Author: Bill Erickson <berick@esilibrary.com>
-Date:   Fri Feb 28 12:44:11 2014 -0500
-
-    LP#1612771: implement C max_chunk_size server support
-    
-    Signed-off-by: Bill Erickson <berick@esilibrary.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-94	23	src/libopensrf/osrf_application.c
-7	1	src/libopensrf/osrf_message.c
-
-commit 18be4a4cf242a274cf5a3143c2063d75331ec7c0
-Author: Bill Erickson <berick@esilibrary.com>
-Date:   Thu Feb 27 15:18:15 2014 -0500
-
-    LP#1612771: set Perl / C max_chunk_size default sizes
-    
-    default max bundle size == 25K
-    default max chunk size  == 50K
-    
-    Note with Ejabberd using 65536 as the default max stanza size, these
-    new OpenSRF defaults mean that all messages will fit the default
-    message size constraints -- i.e. no more need to raise the
-    max_stanza_size.
-    
-    Signed-off-by: Bill Erickson <berick@esilibrary.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-6	1	include/opensrf/osrf_app_session.h
-0	5	src/libopensrf/osrf_application.c
-2	2	src/perl/lib/OpenSRF/Application.pm
-
-commit b3b6b4211472e4897581a93d9615d8544f29779f
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Sun Feb 23 16:35:17 2014 -0500
-
-    LP#1612771: C support for receiving chunked responses
-    
-    * client parsing
-    * consistent w/ Perl, we now have "bundling" and "chunking"
-    
-    Signed-off-by: Bill Erickson <berick@esilibrary.com>
-
-1	0	include/opensrf/osrf_app_session.h
-3	2	include/opensrf/osrf_application.h
-56	0	src/libopensrf/osrf_app_session.c
-9	8	src/libopensrf/osrf_application.c
-
-commit 56e65d1e6fb4ee72b28b4e008b9461d5bac55b8d
-Author: Bill Erickson <berick@esilibrary.com>
-Date:   Mon Feb 24 15:14:19 2014 -0500
-
-    LP#1612771: Perl max_chunk_size additions
-    
-    * Added missing max_chunk_size method to AppSession
-    * Copy API max_chunk_size value into the handler AppRequest
-    * Fix error where no-chunking resulted in empty responses
-    
-    Signed-off-by: Bill Erickson <berick@esilibrary.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-25	14	src/perl/lib/OpenSRF/AppSession.pm
-2	1	src/perl/lib/OpenSRF/Application.pm
-12	4	src/perl/lib/OpenSRF/DomainObject/oilsResponse.pm
-
-commit 01f95834835bed94df93a7fdad59e38486e6485a
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Sun Feb 23 14:51:13 2014 -0500
-
-    LP#1612771: bundling and chunking
-    
-    This patch is first in a series of patches that provides the following
-    features:
-    
-    * OpenSRF message bundling -- Pack multiple OpenSRF messages together
-    in a single XMPP envelope, as long as we believe more messages will be
-    sent in the future and we are below some threshold of combined message size.
-    The default for that threshold is 25Kb.
-    
-     * OpenSRF message chunking -- Break up large OpenSRF messages across
-    multiple XMPP envelopes. This is implemented with a new OpenSRF message type.
-    C, Perl, and Javascript libraries are taught how to reconstruct chunked
-    messages. The default chunking threshold is 50Kb, just a bit below the default
-    ejabberd max stanza size of 64Kb.
-    
-    This patch in particular renames "chunking" to "bundling", then
-    implements message splitting ("chunking") in Perl using two new
-    oilsResult subclasses
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-80	43	src/perl/lib/OpenSRF/AppSession.pm
-13	6	src/perl/lib/OpenSRF/Application.pm
-83	1	src/perl/lib/OpenSRF/DomainObject/oilsResponse.pm
-
-commit 784233808062dbc599b649ce9858759ab0a8dff3
-Author: Ben Shum <ben@evergreener.net>
-Date:   Tue Jul 5 12:53:13 2016 -0400
-
-    LP#1603708: Remove support for Ubuntu 12.04 Precise
-    
-    With support for Ubuntu 16.04 Xenial in place, remove the oldest LTS, which is
-    Ubuntu 12.04 Precise.
-    
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-2	3	README
-3	13	src/extras/Makefile.install
-
-commit 15f8c538af5469545fabab9e21252f49555ae131
-Author: Ben Shum <ben@evergreener.net>
-Date:   Tue Jul 5 12:50:34 2016 -0400
-
-    Docs: Change 14.04 to Trusty in README
-    
-    For consistency, change references from numbered "Ubuntu 14.04" to "Ubuntu Trusty"
-    
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-3	3	README
-
-commit e3f9b6a3adb8391e83221909575554ab1ec8c74c
-Author: Ben Shum <ben@evergreener.net>
-Date:   Tue Jul 5 12:44:17 2016 -0400
-
-    Docs: Add Xenial references in the websocket setup instructions
-    
-    We were missing Xenial references for the websocket setup instructions.
-    
-    They are the same as Trusty, so group together for now.
-    
-    Also, change references to "Ubuntu 16.04" to read "Ubuntu Xenial" too.
-    
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-5	5	README
-
-commit 34038f2e3dd9a2ad6842f3593938955143213b11
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Fri Jul 10 10:52:20 2015 -0400
-
-    LP#1473479 Syslog configuration adoption
-    
-    When an OpenSRF client is run with syslog enabled and with the
-    OSRF_ADOPT_SYSLOG environment variable set to a true value, no attempt
-    is made to modify the syslog configuration, including no calls to
-    openlog()/closelog() and no modification of the syslog facility when
-    calling syslog().
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-9	3	src/perl/lib/OpenSRF/Utils/Logger.pm
-
-commit b6557d6a781fe7f7e16d0c5df5707ce5f8f49d48
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Fri Oct 7 12:19:52 2016 -0400
-
-    LP#1631520: configure install location of Perl modules
-    
-    Add --with-perlbase configure option to specify
-    an alternative location for installing the Perl modules. This
-    can be useful for setups that want to run the Perl modules
-    from a shared filesystem or environments that need to run
-    multiple versions of OpenSRF simultaneously.
-    
-    Users of --with-perlbase are responsible for ensuring that
-    PERL5LIB is set appropriately.
-    
-    To test
-    -------
-    [1] Use --with-perlbase during the configure step, e.g.,
-    
-        ./configure --perl-base /tmp/perl
-    
-    [2] Run make; make check; sudo make install
-    [3] Verify that the Perl modules are installed under
-        /tmp/perl.
-    [4] Make a change to a Perl source file, then
-        go to src/perl, then run sudo ./Build install. Verify
-        that it remembers the --with-perlbase directory
-        and installs the updated module there.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-1	0	Makefile.am
-6	0	configure.ac
-1	1	src/perl/Makefile.am
-
-commit 1c8a7dcb24d4ea3a8aa7dc718d2e1f0b12430cb1
-Author: Ben Shum <ben@evergreener.net>
-Date:   Tue May 24 01:24:09 2016 -0400
-
-    LP#1585041: Move debian_sys_config target for Debian distributions
-    
-    Similar to how things were reordered for Ubuntu, let's move debian_sys_config
-    for Debian distributions.
-    
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-4	4	src/extras/Makefile.install
-
-commit f3ac7f14ec675e99784b9a5037be66f8c90c22f2
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Tue Feb 23 11:22:34 2016 -0500
-
-    LP#1485371: Release notes for TZ handling in OpenSRF
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-44	0	doc/TZ-handling.txt
- create mode 100644 doc/TZ-handling.txt
-
-commit 91a8f051220ba1b29e76068a58cbb400ae521834
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Mon Aug 3 13:27:56 2015 -0400
-
-    LP#1485371: Use client-supplied TZ
-    
-    Currently, there is no protocol-level mechanism for passing the client's
-    desired timezone to the server. In much the same way we pass the locale,
-    we can let the server know what timezone it should use when interpreting
-    time stamps.
-    
-    To do this we:
-    
-     * Teach perl server code to live in the client TZ, if supplied
-     * Teach perl client code to send the current $ENV{TZ}
-     * Teach javascript library to include client TZ in
-       gateway/translator/websocket communication
-     * Teach C code to pull the incoming TZ and apply it to outgoing messages
-     * Teach srfsh to pull TZ from the environment and pass it with requests
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-5	0	include/opensrf/osrf_app_session.h
-7	0	include/opensrf/osrf_message.h
-21	0	src/javascript/opensrf.js
-32	0	src/libopensrf/osrf_app_session.c
-33	0	src/libopensrf/osrf_message.c
-5	0	src/libopensrf/osrf_stack.c
-25	1	src/perl/lib/OpenSRF/DomainObject/oilsMessage.pm
-4	0	src/srfsh/srfsh.c
-
-commit e7fe347408b52295f2f820f9527ccf00952b71e8
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Wed May 4 13:05:31 2016 -0400
-
-    LP#1551090: Update README for Ubuntu 16.04 (Xenial Xerus).
-    
-    Add installation steps for Ubuntu 16.04.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-31	5	README
-
-commit 032a964795df73053d09dca37e62e3e276ce343e
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Apr 19 16:56:15 2016 -0400
-
-    LP#1551090: Enable mod_perl2 on Ubuntu 16.04 (Xenial Xerus).
-    
-    Ubuntu Xenial Xerus does not automatically enable mod_perl2 for
-    Apache2 when the package is installed, so we enable it via the
-    Makefile.install.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-5	1	src/extras/Makefile.install
-
-commit 1fca796c47c9e9c06e65b91085c13ad2cbe52954
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Thu Feb 18 20:12:40 2016 -0500
-
-    LP#1551090: Adding apache2-dev dependency to xenial and fixing whitespace
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    
-    Conflicts:
-    	src/extras/Makefile.install
-
-5	4	src/extras/Makefile.install
-
-commit e91074cf23eeca5da7e9c00977448dcc19b779cc
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Thu Feb 18 18:10:34 2016 -0500
-
-    LP#1551090: Since we move apache to the "install_extra_debs*" targets,
-    
-    we need to move debian_sys_config further down to compensate.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-4	4	src/extras/Makefile.install
-
-commit 46dfeaf7245f81c1a8c9833b8cac87a997b23433
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Wed Feb 17 19:35:02 2016 -0500
-
-    LP#1551090: Adding necessary connectivity for xenial deb installation.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-4	1	src/extras/Makefile.install
-
-commit 334b6644ac319403f2095cff6f3cef992a9148ae
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Wed Feb 17 19:26:01 2016 -0500
-
-    LP#1551090: Adding apache2 package to Makefile.install deb list.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-1	0	src/extras/Makefile.install
-
-commit c59b54a7c4f1d1561d23393f6122669d50f41166
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Wed Feb 17 15:28:05 2016 -0500
-
-    LP#1551090: Updating Makefile to accommodate ubuntu-xenial target.
-    
-    Removing some redundancy in the extra debs lists.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    
-    Conflicts:
-    	src/extras/Makefile.install
-
-17	16	src/extras/Makefile.install
-
-commit c9174e7372b0c14091035617f0689f3719f7506b
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Fri Mar 18 10:59:11 2016 -0400
-
-    LP#1559121: remove Debian Squeeze support
-    
-    Now that Debian Squeeze's LTS (long-term support) period
-    has ended, Evergreen no longer offers community support
-    for that distribution. This patch removes references
-    to Squeeze from the installation scripts and documentation.
-    
-    To test:
-    
-    [1] Verify that Debian Squeeze is no longer referenced in
-        the installation documentation.
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-0	1	README
-1	14	src/extras/Makefile.install
-
-commit b6cf3eb912fa501a23f4a3f5664f1a12228e731b
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Thu Feb 4 13:09:48 2016 -0500
-
-    LP#1350457: add test case for perl2JSONObject change
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-4	1	src/perl/t/09-Utils-JSON.t
-
-commit e1581d4248a6fd42f6ebee233387777f63e25022
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Wed Jul 30 13:29:46 2014 -0400
-
-    LP#1350457: Pass caller's session to subrequests called via method_lookup
-    
-    In the process of looking up a method for an internal subrequest, we lose
-    session info. This is a problem when the subrequest makes a remote request,
-    because then the subrequest can't look up the proper locale, among other
-    things. The forthcoming branch passes the caller's session to the subrequest.
-    
-    This patch also teaches OpenSRF object registration how to strip certain
-    object members -- in particular, the session -- so that introspection
-    continues to work.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-9	4	src/perl/lib/OpenSRF/Application.pm
-8	1	src/perl/lib/OpenSRF/Utils/JSON.pm
-
-commit 69cbe8000a5123aab33fcb2441c1e136506964a0
-Author: Jason Etheridge <jason@esilibrary.com>
-Date:   Tue Jul 14 14:54:27 2015 -0400
-
-    LP#1474507: fix interval_to_seconds for weeks and seconds
-    
-    This patch fixes an issue where OpenSRF::Utils::interval_to_seconds()
-    was not recognizing intervals expressed as seconds or weeks.
-    
-    Signed-off-by: Jason Etheridge <jason@esilibrary.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-2	2	src/perl/lib/OpenSRF/Utils.pm
-
-commit 7a714ae480f238211b37fcdb248aecea93ece234
-Author: Jason Etheridge <jason@esilibrary.com>
-Date:   Tue Jul 14 15:10:15 2015 -0400
-
-    LP#1474507: tests for interval_to_seconds
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-16	0	src/perl/t/09-Utils-interval_to_seconds.t
- create mode 100644 src/perl/t/09-Utils-interval_to_seconds.t
-
-commit 55807240854d0d532a5f70f1f483ed8086eb9d95
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Thu Sep 10 16:56:13 2015 -0400
-
-    LP#1494486: Limit damage caused by dropped drone XMPP sockets
-    
-    It is apparently possible for drones to get into a state where their XMPP
-    socket is closed but they don't notice. This is bad because the drone can
-    continue to receive requests from its listener but can no longer respond
-    to them. To limit the pain this can cause, we should kill the drone as soon
-    as we notice this condition.
-    
-    To avoid overhead, this commit notices when the socket returns an error (or
-    raises a signal, in Perl) upon write, and exits immediately.  One message
-    will be lost, but the drone will no longer be a black hole that does nothing
-    but absorb requests it can never fill.
-    
-    To test
-    -------
-    [1] Start an OpenSRF stack and look for a drone process.
-    [2] Use lsof to identify which socket that drone is using
-        to talk to XMPP.
-    [3] Use gdb to attach to the process and close the socket, e.g.,
-    
-        $ gdb -p $PID
-        (gdb) p close(11) # or whatever the socket number was
-        (gdb) c
-    
-    [4] Use srfsh to make requests of that service. Eventually, one
-        of them will hit the drone.
-    [5] Sans patch, the request will get handled by the drone, but
-        the results will never get sent, and the drone will remain
-        available to handle other requests.
-    [6] With the patch, the drone will exit when it discovers that it
-        can no longer write to the XMPP socket.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-4	2	src/libopensrf/osrf_app_session.c
-5	0	src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
-
-commit 33a5e60ee8f4c539d5bf3dc1d1ff1b62d5715d65
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Wed Jun 3 18:35:35 2015 +0000
-
-    LP#1152272: do not log batch invocation of srfsh in .srfsh_history
-    
-    When running srfsh to process a script, do not log
-    the requests in .srfsh_history.
-    
-    To test
-    -------
-    [1] Run the following command:
-    
-        echo 'request opensrf.math opensrf.system.echo "foo"' | srfsh
-    
-    [2] Note that the last line of ~/.srfsh_history should be
-        'request opensrf.math opensrf.system.echo "foo"'
-    
-    [3] Apply the patch, compile, and run
-    
-        echo 'request opensrf.math opensrf.system.echo "bar"' | srfsh
-    
-    [4] This time, no additional line should have been added to
-        ~/.srfsh_history
-    
-    [5] Another variation to try:
-    
-        srfsh test.srfsh
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-7	3	src/srfsh/srfsh.c
-
-commit 6f1daba1493011a8b01cd80d29a68976c24c7010
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Wed Jun 3 17:42:06 2015 +0000
-
-    LP#1461625: ensure srfsh doesn't close STDOUT prematurely
-    
-    Ensure that when running srfsh in non-interactive mode
-    that reads commands directly from a file, (i.e.,
-    "srfsh script.srfsh" or as a shebang script), it does
-    not close STDOUT after handling the first request.
-    
-    To test
-    -------
-    [1] Create a srfsh script containing:
-    
-        request opensrf.math opensrf.system.echo "foo"
-        request opensrf.math opensrf.system.echo "bar"
-    
-    [2] Run "srfsh script.srfsh". Note that only the
-        results of the first echo request are output.
-    [3] Apply the patch and recompile, then run
-        "srfsh script.srfsh" again.  This time, the
-        output of both requests is displayed.
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-1	1	src/srfsh/srfsh.c
-
-commit cc1f6ee9349584f7ec7b6f16861805a43f7161d6
-Author: Dan Scott <dscott@laurentian.ca>
-Date:   Thu Jun 18 11:52:00 2015 -0400
-
-    LP#1409055 Support specific protocols for OpenSRF gateway requests
-    
-    If the user passes in a gateway hostname that contains a specific HTTP or HTTPS
-    protocol, let's just use that.
-    
-    Signed-off-by: Dan Scott <dscott@laurentian.ca>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-
-12	0	src/python/osrf/gateway.py
-
-commit 42f14c919d82abbf5927775b933ff8c5d4070d2e
-Author: Galen Charlton <gmc@esilibrary.com>
-Date:   Tue Mar 24 21:00:57 2015 +0000
-
-    LP#1436047: make srfsh --safe act as if "! command" doesn't exist
-    
-    This patch make srfsh treat attempting to run an external
-    command via "! command" as a parsing error if --safe is
-    supplied.  It also suppress mention of "! commands" from
-    the internal help.
-    
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-10	4	src/srfsh/srfsh.c
-
-commit d9cbdfd1deb13932720ddffc7f01e976e8efaeda
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Tue Mar 24 16:22:16 2015 -0400
-
-    LP#1436047: Allow disabling of "bang commands" in srfsh
-    
-    srfsh has the ability to execute commands via system() calls using
-    the common "!command" syntax.  This is very useful, but it would
-    be nice to be able to turn that functionality off in some cases.
-    
-    This branch adds argument parsing to detect a new '--safe' command
-    line parameter, which disables the "!command" syntax.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@esilibrary.com>
-
-24	12	src/srfsh/srfsh.c
-
-commit 966fb05ed6b47b9a8982cbef2b665f8bab4f75d1
-Author: Ben Shum <bshum@biblio.org>
-Date:   Mon May 4 17:16:29 2015 -0400
-
-    Docs: Fix mailing list link for help in README
-    
-    Signed-off-by: Ben Shum <bshum@biblio.org>
-
-2	2	README
-
-commit e421bb3dd7096ac36989bf687f303c16983d7e58
-Author: Josh Stompro <github@stompro.org>
-Date:   Tue Apr 21 09:50:49 2015 -0500
-
-    LP#1445503 - Updated Ejabberd setup steps for Ejabberd 14.x for Debian Jessie
-    
-    Signed-off-by: Josh Stompro <github@stompro.org>
-    Signed-off-by: Ben Shum <bshum@biblio.org>
-
-29	2	README
-
-commit 86e6d8438bd751820aff59a6183ae3c37d7fd09c
-Author: Ben Shum <bshum@biblio.org>
-Date:   Mon May 4 17:01:23 2015 -0400
-
-    Docs: Emphasize variables and paths consistently in README
-    
-    Some variables and paths were not emphasized when the instructions for
-    websockets was added. Maintain consistency in the document and emphasize
-    them.
-    
-    Signed-off-by: Ben Shum <bshum@biblio.org>
-
-6	6	README
-
-commit 52b6ecab0b382da55073c37d9646055c57ec8070
-Author: Ben Shum <bshum@biblio.org>
-Date:   Mon May 4 16:57:38 2015 -0400
-
-    Docs: Add [source, bash] to code blocks that were not defined in README
-    
-    For consistency, add [source, bash] to all the blocks of code or script
-    commands in the README
-    
-    Signed-off-by: Ben Shum <bshum@biblio.org>
-
-6	0	README
-
-commit ef80e4c260a6a994dea6e8b7856e45c92bf60fcc
-Author: Ben Shum <bshum@biblio.org>
-Date:   Mon May 4 16:49:08 2015 -0400
-
-    Docs: Keep all source syntax consistent in README
-    
-    Change occurrences of [source,bash] to [source, bash] for consistency
-    throughout README.
-    
-    Signed-off-by: Ben Shum <bshum@biblio.org>
-
-11	11	README
-
-commit 2cf93448e2ba2540b7fc3ea2f939f62621488420
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Thu Feb 5 10:34:40 2015 -0500
-
-    LP#1418613 per-tab websocket send() JS thinko repair
-    
-    Avoid referencing variable defined somewhere outside the send_ws()
-    function.  Doing so happened to result in re-sending the same message
-    twice in some cases.
+    The issue can be reproduced by repeating "make clean; make -j 4"
+    until the build fails.
     
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+    Signed-off-by: Graham Billiau <graham@geeksinthegong.net>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-1	1	src/javascript/opensrf.js
+1	0	src/libopensrf/Makefile.am
