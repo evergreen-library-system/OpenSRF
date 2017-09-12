@@ -18,19 +18,19 @@ AM_LDFLAGS = $(DEF_LDFLAGS) -L@top_builddir@/src/libopensrf
 DISTCLEANFILES = Makefile.in Makefile
 
 noinst_PROGRAMS = timejson
-lib_LTLIBRARIES = osrf_dbmath.la osrf_math.la osrf_version.la
+lib_LTLIBRARIES = libosrf_dbmath.la libosrf_math.la libosrf_version.la
 
 timejson_SOURCES = timejson.c
 timejson_LDADD = @top_builddir@/src/libopensrf/libopensrf.la
 
-osrf_dbmath_la_SOURCES = osrf_dbmath.c 
-osrf_dbmath_la_LDFLAGS = $(AM_LDFLAGS) -module -version-info 2:0:2
-osrf_dbmath_la_LIBADD = @top_builddir@/src/libopensrf/libopensrf.la
+libosrf_dbmath_la_SOURCES = osrf_dbmath.c 
+libosrf_dbmath_la_LDFLAGS = $(AM_LDFLAGS) -module -version-info 2:0:2
+libosrf_dbmath_la_LIBADD = @top_builddir@/src/libopensrf/libopensrf.la
 
-osrf_math_la_SOURCES = osrf_math.c
-osrf_math_la_LDFLAGS = $(AM_LDFLAGS) -module -version-info 2:0:2
-osrf_math_la_LIBADD =  @top_builddir@/src/libopensrf/libopensrf.la
+libosrf_math_la_SOURCES = osrf_math.c
+libosrf_math_la_LDFLAGS = $(AM_LDFLAGS) -module -version-info 2:0:2
+libosrf_math_la_LIBADD =  @top_builddir@/src/libopensrf/libopensrf.la
 
-osrf_version_la_SOURCES = osrf_version.c 
-osrf_version_la_LDFLAGS = $(AM_LDFLAGS) -module -version-info 2:0:2
-osrf_version_la_LIBADD = @top_builddir@/src/libopensrf/libopensrf.la
+libosrf_version_la_SOURCES = osrf_version.c 
+libosrf_version_la_LDFLAGS = $(AM_LDFLAGS) -module -version-info 2:0:2
+libosrf_version_la_LIBADD = @top_builddir@/src/libopensrf/libopensrf.la

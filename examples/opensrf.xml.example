@@ -135,7 +135,7 @@ vim:et:ts=2:sw=2:
         <keepalive>3</keepalive>
         <stateless>1</stateless>
         <language>c</language>
-        <implementation>osrf_math.so</implementation>
+        <implementation>libosrf_math.so</implementation>
         <unix_config>
           <unix_sock>opensrf.math_unix.sock</unix_sock>
           <unix_pid>opensrf.math_unix.pid</unix_pid>
@@ -152,7 +152,7 @@ vim:et:ts=2:sw=2:
         <keepalive>3</keepalive>
         <stateless>1</stateless>
         <language>c</language>
-        <implementation>osrf_dbmath.so</implementation>
+        <implementation>libosrf_dbmath.so</implementation>
         <unix_config>
           <max_requests>1000</max_requests>
           <unix_log>opensrf.dbmath_unix.log</unix_log>
