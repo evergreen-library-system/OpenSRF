@@ -13,6 +13,7 @@ use Exporter;
 use Encode;
 use base qw/Exporter OpenSRF/;
 use Time::HiRes qw( time usleep );
+use POSIX ();
 use warnings;
 use strict;
 
@@ -1067,7 +1068,7 @@ sub respond {
             my $chunk_size = $self->max_chunk_size;
 
             if ($escaped_length > $self->max_chunk_size) {
-                $chunk_size = ($raw_length / $escaped_length) * $self->max_chunk_size;
+                $chunk_size = POSIX::floor(($raw_length / $escaped_length) * $self->max_chunk_size);
             }
 
             if ($raw_length > $chunk_size) { # send partials ("chunking")
