@@ -1,8 +1,8 @@
-commit 7e8571b44ffaca74b89d8b53e8ef45ff8b7d6744
+commit e82b9edd077058b252e9e64bccf4fffb0a4fe29e
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Mon Sep 11 17:23:52 2017 -0400
+Date:   Fri Sep 15 10:01:33 2017 -0400
 
-    update version stamp for 2.5.1
+    update version stamps for 2.5.2
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
@@ -11,200 +11,39 @@ Date:   Mon Sep 11 17:23:52 2017 -0400
 1	1	src/python/setup.py
 1	1	version.m4
 
-commit 1451c548e5a37c2ff228f2dfccf55d069a408f82
+commit ff0e2ba7fe2247575ab4f545f90a297fe2f56439
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Mon Sep 11 17:20:13 2017 -0400
+Date:   Fri Sep 15 10:01:10 2017 -0400
 
-    release notes for 2.5.1
+    release notes for 2.5.2
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-65	0	doc/RELEASE_NOTES.txt
+23	0	doc/RELEASE_NOTES.txt
 
-commit a901fa5e4d3ca8cb17362f1e0e5548ee46cf6a7d
+commit e7eee4bd383797c3cf7f99ec4da1b9bdcf4c94e0
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Mon Sep 11 17:01:58 2017 -0400
+Date:   Thu Sep 14 17:36:40 2017 -0400
 
-    convert release notes to multi-release format
+    LP#1717350: fix chunking messages sent from Perl services
+    
+    The chunk size adjustments introduced by the patches for bug 1709710
+    could result in calculating non-integral chunk sizes for Perl services.
+    This in turn led to fractional offsets and lengths being passed to
+    Perl's substr() function; rounding in turn can lead to characters
+    in the response getting silently dropped, which in turn broke
+    parsing the reconstituted response.
+    
+    To test
+    -------
+    The problem can be reproduced by invoking
+    
+      open-ils.storage open-ils.storage.actor.org_unit.descendants.atomic 1, 0
+    
+    in Evergreen databases with org unit trees large enough that the
+    response gets chunked.
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-15	11	doc/RELEASE_NOTES.txt
-
-commit 0ae68c0ec5ce4a66e83093d47263e76a0af31746
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Fri Sep 8 17:53:52 2017 -0400
-
-    LP#1709710 Count Perl chunk/bundle sizes in bytes
-    
-    For the purposes of bundling/chunking, count the number of bytes in each
-    affected string instead of the number of characters.
-    
-    See also https://perldoc.perl.org/bytes.html and 'perldoc -f length'
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
     Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-6	3	src/perl/lib/OpenSRF/AppSession.pm
-
-commit 53565494dbf613faa873139d7a8078d27b9066b4
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Fri Sep 8 15:34:29 2017 -0400
-
-    LP#1709710: write unit tests for osrfXmlEscapingLength()
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-6	2	tests/Makefile.am
-43	0	tests/check_osrf_utils.c
- create mode 100644 tests/check_osrf_utils.c
-
-commit 3f7abf68aeb553f6fd6289935980d01d86f13b66
-Author: Mike Rylander <miker@esilibrary.com>
-Date:   Fri Aug 18 11:43:31 2017 -0400
-
-    LP#1709710: Make chunk sizing smart about XML quoting
-    
-    XML inside JSON as a quoted string that's itself inside XML causes quite the
-    pile up of nested excaping of certain characters in OpenSRF PARTIAL_RESPONSE
-    messages.  Here we check for the worst offenders (<, >, &, and ") and account
-    for the cost of escaping them in chunked response stanzas.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-6	0	include/opensrf/utils.h
-11	4	src/libopensrf/osrf_app_session.c
-8	3	src/libopensrf/osrf_application.c
-23	0	src/libopensrf/utils.c
-21	3	src/perl/lib/OpenSRF/AppSession.pm
-
-commit 5c94e88fb6b7fafd578fe1e5fb1e844dfbfa0350
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Thu May 11 14:47:32 2017 -0400
-
-    LP#1690206 - remove check of httpd.conf from OpenSRF Makefile.install
-    
-    The original src/extras/Makefile.install included a grep of the
-    file /etc/apache2/httpd.conf, which is no longer installed by default
-    on supported Debian and Ubuntu releases.  As this check results in
-    an error message, it makes sense to remove the check altogether.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-0	6	src/extras/Makefile.install
-
-commit a9cd1241be01b42aaccc1a0c4a875eba8a9d37ca
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Fri Jun 9 13:01:46 2017 -0400
-
-    LP#1697029 Log and exit on write to dead child
-    
-    Confirm that a child process is alive just before attempting to write to
-    its pipe.  If the child process is dead, log the error, then drop the
-    message and move on.  This allows the parent to continue servicing
-    future requests.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-13	0	src/perl/lib/OpenSRF/Server.pm
-
-commit dc3bfa4771e5e5b139d31c73b42562917f100688
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Fri Aug 18 11:11:29 2017 -0400
-
-    LP#1711194: avoid division by zero errors
-    
-    Under some circumstances, osrf_control --diagnostic may not
-    be able to deduce the correct max_children setting for a service,
-    e.g., if it's run without --localhost on a system that doesn't
-    have a opensrf.xml config section specifying active apps for a
-    specific hostname. When that happens, just display the count
-    of running drones rather than displaying error messages about
-    undefined $dmax values and divisions by zero.
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-
-6	2	bin/opensrf-perl.pl.in
-
-commit 2c7b9787c63c8477fc7f1e7b46f1262a62abf6f0
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed Aug 16 14:10:13 2017 -0400
-
-    LP#1711194 osrf_config --diagnostic reports max-children
-    
-    --diagnostic output shows the maximum number of allowed drones per
-    service along with the active drone count.  Additionally, a usage
-    percentage value is displayed.
-    
-    E.g.
-    
-    $ /openils/bin/osrf_control -l --diagnostic
-    
-    * open-ils.acq   [1581] uptime=00:35 cputime=00:00:00 #drones=1/15 6%
-    * open-ils.actor [1629] uptime=00:35 cputime=00:00:00 #drones=2/15 13%
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-9	1	bin/opensrf-perl.pl.in
-
-commit dab68778d6064b3ff5688ea3c622b38f07b4f993
-Author: Graham Billiau <graham@geeksinthegong.net>
-Date:   Mon Jul 31 11:00:25 2017 -0400
-
-    LP#1704090: ensure make install respects DESTDIR
-    
-    This patch ensures that 'make install' uses DESTDIR consistently,
-    making life easier for packagers.
-    
-    Signed-off-by: Graham Billiau <graham@geeksinthegong.net>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-3	3	src/Makefile.am
-7	2	src/gateway/Makefile.am
-
-commit f9344c8d7792bfe233881756ebe4f41896f93916
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Wed Jul 12 15:24:48 2017 -0400
-
-    LP 1703958: Update Websockets Intructions for Debian Jessie
-    
-    Modify the Websockets installation instructions so that users will
-    have a working installation on Debian Jessie.  We change the "Debian"
-    instructions to say "Debian Wheezy" and add "Debian Jessie" to the
-    list with "Ubuntu Trusty / Xenial" where necessary.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-4	4	README
-
-commit 22b5bf2b7606787dedac82c4eaae59b9bf2c7746
-Author: Graham Billiau <graham@geeksinthegong.net>
-Date:   Thu Jul 13 11:29:43 2017 -0400
-
-    LP#1704116: fix intermittant failure of parallel building
-    
-    Running make to do a parallel build (e.g., 'make -j 4' or
-    the like) could fail because of an undeclared dependency; this
-    patch fixes the issue.
-    
-    The issue can be reproduced by repeating "make clean; make -j 4"
-    until the build fails.
-    
-    Signed-off-by: Graham Billiau <graham@geeksinthegong.net>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	0	src/libopensrf/Makefile.am
+2	1	src/perl/lib/OpenSRF/AppSession.pm
