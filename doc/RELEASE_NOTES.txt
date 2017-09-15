@@ -8,6 +8,29 @@ The following Linux distributions are well-tested:
   * Debian 7 (Wheezy) and 8 (Jessie)
   * Ubuntu 14.04 (Trusty Tahr) and 16.04 LTS (Xenial Xerus)
 
+OpenSRF 2.5.2
+-------------
+OpenSRF 2.5.2 was released on 15 September 2017. It fixes a significant
+bug introduced in OpenSRF 2.5.1.  All users of OpenSRF 2.5.1 are advised
+to upgrade as soon as possible.
+
+In particular, it fixes LP#1717350; an error in how large messages were
+split during the chunking process resulted in characters sometimes getting
+dropped at the divison points.
+
+Acknowledgements
+~~~~~~~~~~~~~~~~
+
+We would like to thank the following people who contributed to OpenSRF 2.5.2
+and to the reporting and analysis of the bug:
+
+  * Bill Erickson
+  * Dan Wells
+  * Galen Charlton
+  * Jason Stephenson
+  * Jeff Davis
+  * Mike Rylander
+
 OpenSRF 2.5.1
 -------------
 
