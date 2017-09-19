@@ -60,7 +60,7 @@ char* _clean_key( const char* key ) {
     char* clean_key = (char*)strdup(key);
     char* d = clean_key;
     char* s = clean_key;
-    do while(isspace(*s) || ((*s != '\0') && iscntrl(*s))) s++; while(*d++ = *s++);
+    do while( (isspace(*s) || ((*s != '\0') && iscntrl(*s))) ) s++; while( (*d++ = *s++) );
     if (strlen(clean_key) > MAX_KEY_LEN) {
         char *hashed = md5sum(clean_key);
         clean_key[0] = '\0';
