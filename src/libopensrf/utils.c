@@ -667,16 +667,16 @@ int daemonizeWithCallback( void (*callback)(pid_t, int), int callback_arg ) {
 		// Change directories.  Otherwise whatever directory
 		// we're in couldn't be deleted until the program
 		// terminated -- possibly causing some inconvenience.
-		chdir( "/" );
+		(void) (chdir( "/" )+1);
 
 		/* create new session */
 		setsid();
 
 		// Now that we're no longer attached to a terminal,
 		// we don't want any traffic on the standard streams
-		freopen( "/dev/null", "r", stdin );
-		freopen( "/dev/null", "w", stdout );
-		freopen( "/dev/null", "w", stderr );
+		(void) (freopen( "/dev/null", "r", stdin )+1);
+		(void) (freopen( "/dev/null", "w", stdout )+1);
+		(void) (freopen( "/dev/null", "w", stderr )+1);
 		
 		return 0;
 
