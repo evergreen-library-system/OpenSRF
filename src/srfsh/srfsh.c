@@ -383,7 +383,7 @@ static int process_request( const char* request ) {
 
 	else if ( request[0] == '!') {
 		if (!no_bang) {
-			system( request + 1 );
+			(void) (system( request + 1 )+1);
 			ret_val = 1;
 		}
 	}
