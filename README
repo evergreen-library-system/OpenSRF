@@ -66,7 +66,6 @@ Well-tested values for <osname> include:
 
   * `debian-stretch` for Debian 9
   * `debian-jessie` for Debian 8
-  * `debian-wheezy` for Debian 7
   * `ubuntu-trusty` for Ubuntu 14.04
   * `ubuntu-xenial` for Ubuntu 16.04
 
@@ -207,13 +206,13 @@ work for OpenSRF.
 1. Stop ejabberd before making any changes to its configuration by issuing the
    following command as the *root* Linux account:
 +
-.(Debian / Ubuntu Trusty) Stopping ejabberd
+.(Ubuntu Trusty) Stopping ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 /etc/init.d/ejabberd stop
 ---------------------------------------------------------------------------
 +
-.(Debian Stretch / Ubuntu Xenial) Stopping ejabberd
+.(Debian / Ubuntu Xenial) Stopping ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl stop ejabberd.service
@@ -221,7 +220,7 @@ systemctl stop ejabberd.service
 +
 2. Edit the ejabberd config file.
 +
-(Debian Wheezy / Ubuntu Trusty) Ejabberd 2.x.x::
+(Ubuntu Trusty) Ejabberd 2.x.x::
 Open `/etc/ejabberd/ejabberd.cfg` and make the following
 changes:
   a. Define your public and private domains in the `hosts` directive. For
@@ -285,13 +284,13 @@ hosts:
 +
 3. Restart the ejabberd server to make the changes take effect:
 +
-.(Debian / Ubuntu Trusty) Starting ejabberd
+.(Ubuntu Trusty) Starting ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 /etc/init.d/ejabberd start
 ---------------------------------------------------------------------------
 +
-.(Debian Stretch / Ubuntu Xenial) Starting ejabberd
+.(Debian / Ubuntu Xenial) Starting ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl start ejabberd.service
@@ -444,13 +443,6 @@ apxs2 -i -a -c mod_websocket.c
 3. Create the websocket Apache instance (more information about this in 
    `/usr/share/doc/apache2/README.multiple-instances`)
 +
-.(Debian Wheezy)
-[source, bash]
----------------------------------------------------------------------------
-sh /usr/share/doc/apache2.2-common/examples/setup-instance websockets
----------------------------------------------------------------------------
-+
-.(Debian Jessie/Stretch, Ubuntu Trusty/Xenial)
 [source, bash]
 ---------------------------------------------------------------------------
 sh /usr/share/doc/apache2/examples/setup-instance websockets
@@ -466,14 +458,6 @@ a2dismod websocket
 5. Change to the directory into which you unpacked OpenSRF, then copy into
    place the config files
 +
-.(Debian Wheezy)
-[source, bash]
----------------------------------------------------------------------------
-cd /path/to/opensrf-OSRFVERSION
-cp examples/apache2/websockets/apache2.conf /etc/apache2-websockets/
----------------------------------------------------------------------------
-+
-.(Debian Jessie/Stretch, Ubuntu Trusty/Xenial)
 [source, bash]
 ---------------------------------------------------------------------------
 cd /path/to/opensrf-OSRFVERSION
@@ -691,7 +675,7 @@ you need to install the `dnsmasq` package, configure it to serve up a DNS
 entry for localhost, and point your local DNS resolver to `dnsmasq`. For example,
 on Ubuntu you can issue the following commands as the *root* Linux account:
 
-.(Debian / Ubuntu) Installing and starting `dnsmasq`
+.Installing and starting `dnsmasq`
 [source, bash]
 ---------------------------------------------------------------------------
 aptitude install dnsmasq
