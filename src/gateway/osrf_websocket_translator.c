@@ -622,7 +622,7 @@ int child_init(const WebSocketServer *server) {
         }
 
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, 
-            "WS: timeout set to %d", idle_timeout_interval);
+            "WS: timeout set to %ld", idle_timeout_interval);
 
         timeout = getenv("OSRF_WEBSOCKET_MAX_REQUEST_WAIT_TIME");
         if (timeout) {
@@ -637,7 +637,7 @@ int child_init(const WebSocketServer *server) {
         }
 
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, 
-            "WS: max request wait time set to %d", max_request_wait_time);
+            "WS: max request wait time set to %ld", max_request_wait_time);
 
         char* interval = getenv("OSRF_WEBSOCKET_IDLE_CHECK_INTERVAL");
         if (interval) {
@@ -652,7 +652,7 @@ int child_init(const WebSocketServer *server) {
         } 
 
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, 
-            "WS: idle check interval set to %d", idle_check_interval);
+            "WS: idle check interval set to %ld", idle_check_interval);
 
       
         char* cfile = getenv("OSRF_WEBSOCKET_CONFIG_FILE");
