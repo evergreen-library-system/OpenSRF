@@ -1,5 +1,5 @@
-OpenSRF 3.0.0-alpha release notes
-=================================
+OpenSRF 3.0.0 release notes
+===========================
 
 Supported platforms
 -------------------
@@ -8,9 +8,9 @@ The following Linux distributions are well-tested:
   * Debian 7 (Wheezy), 8 (Jessie), and 9 (Stretch)
   * Ubuntu 14.04 (Trusty Tahr) and 16.04 LTS (Xenial Xerus)
 
-OpenSRF 3.0.0-alpha
--------------------
-OpenSRF 3.0.0-alpha was released on 21 September 2017. It adds support
+OpenSRF 3.0.0
+-------------
+OpenSRF 3.0.0 was released on 2 October 2017. It adds support
 for Debian 9 (Stretch).
 
 Upgrade Notes
@@ -38,12 +38,12 @@ should be changed to:
 
 Note for Evergreen Users
 ~~~~~~~~~~~~~~~~~~~~~~~~
-OpenSRF 3.0.0 will be the minimum version required to run Evergreen 3.0.
+OpenSRF 3.0.0 is the minimum version required to run Evergreen 3.0.
 
 Acknowledgements
 ~~~~~~~~~~~~~~~~
 
-We would like to thank the following people who contributed to OpenSRF 3.0.0-alpha:
+We would like to thank the following people who contributed to OpenSRF 3.0.0:
 
   * Galen Charlton
   * Ben Shum
