@@ -169,6 +169,9 @@ sub run {
         $from_network = $wait_time = -1 if (!$msg);
         $msg ||= $self->{osrf_handle}->process($wait_time);
 
+        !$from_network and $chatty and $logger->debug("server: attempting to process previously queued message");
+        $from_network and $chatty and $logger->internal("server: no queued messages, processing due to network or signal");
+
         # we woke up for any reason, reset the wait time to allow
         # for idle maintenance as necessary
         $wait_time = 1;
@@ -198,10 +201,14 @@ sub run {
                     "in the OpenSRF configuration if this message occurs frequently");
 
                 if ($from_network) {
+                    $chatty and $logger->debug("server: queuing new message");
                     push @max_children_msg_queue, $msg;
                 } else {
+                    $chatty and $logger->debug("server: re-queuing old message");
                     unshift @max_children_msg_queue, $msg;
                 }
+
+                $logger->warn("server: backlog queue size is now ". scalar(@max_children_msg_queue));
 
                 if (@max_children_msg_queue < $self->{max_backlog_queue}) {
                     # We still have room on the queue. Set the wait time to
