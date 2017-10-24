@@ -379,9 +379,8 @@ sub flush_socket {
 	my $self = shift;
     return 0 unless $self->connected;
 
-    while ($self->wait(0)) {
-        # TODO remove this log line
-        $logger->info("flushing data from socket...");
+    while (my $excess = $self->wait(0)) {
+        $logger->info("flushing data from socket... $excess");
     }
 
     return $self->connected;
