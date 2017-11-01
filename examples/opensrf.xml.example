@@ -183,6 +183,24 @@ vim:et:ts=2:sw=2:
         </unix_config>
       </opensrf.settings>
 
+      <opensrf.slooooooow>
+        <keepalive>1</keepalive>
+        <stateless>1</stateless>
+        <language>perl</language>
+        <implementation>OpenSRF::Application::Slooooooow</implementation>
+        <max_requests>100</max_requests>
+        <unix_config>
+          <unix_sock>opensrf.slooooooow_unix.sock</unix_sock>
+          <unix_pid>opensrf.slooooooow_unix.pid</unix_pid>
+          <max_requests>1000</max_requests>
+          <unix_log>opensrf.slooooooow_unix.log</unix_log>
+          <min_children>2</min_children>
+          <max_children>5</max_children>
+          <min_spare_children>1</min_spare_children>
+          <max_spare_children>2</max_spare_children>
+        </unix_config>
+      </opensrf.slooooooow>
+
       <opensrf.validator>
         <keepalive>1</keepalive>
         <stateless>1</stateless>
@@ -242,6 +260,7 @@ vim:et:ts=2:sw=2:
         <appname>opensrf.math</appname>
         <appname>opensrf.dbmath</appname>
         <appname>opensrf.validator</appname>
+        <appname>opensrf.slooooooow</appname>
       </activeapps>
 
       <apps>
