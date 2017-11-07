@@ -297,7 +297,7 @@ static char* osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
                         else
                             OSRF_BUFFER_ADD(act, ", ");
                         OSRF_BUFFER_ADD(act, str);
-                        free(str);
+                        free((void *)str);
                     }
                 }
                 osrfLogActivity(OSRF_LOG_MARK, "%s", act->buf);

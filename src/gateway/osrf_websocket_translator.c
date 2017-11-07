@@ -554,7 +554,7 @@ static int build_startup_data(const WebSocketServer *server) {
     // the only data entering this pools are the session strings.
     if (apr_pool_create(&stateful_session_pool, trans->main_pool) != APR_SUCCESS) {
         osrfLogError(OSRF_LOG_MARK, "WS Unable to create apr_pool");
-        return NULL;
+        return 0;
     }
     trans->stateful_session_pool = stateful_session_pool;
 
