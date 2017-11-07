@@ -603,8 +603,6 @@ int json_eat_comment(char* string, unsigned long* index, char** buffer, int pars
 
 	int first_dash		= 0;
 	int second_dash	= 0;
-	int third_dash		= 0;
-	int fourth_dash	= 0;
 
 	int in_hint			= 0;
 	int done				= 0;
@@ -619,9 +617,7 @@ int json_eat_comment(char* string, unsigned long* index, char** buffer, int pars
 
 			case '-':
 				on_star = 0;
-				if(third_dash)			fourth_dash = 1;
-				else if(in_hint)		third_dash	= 1;
-				else if(first_dash)	second_dash = 1;
+				if(first_dash)	second_dash = 1;
 				else						first_dash = 1;
 				break;
 
@@ -833,7 +829,9 @@ jsonObjectNode* jsonObjectIteratorNext( jsonObjectIterator* itr ) {
         itr->done = 1;
         return NULL;
     }
-    itr->current = makeNode(next, itr->iterator->index, itr->iterator->key);
+    /* Lp 1243841: Remove compiler const warning. */
+    char *k = (char *) itr->iterator->key;
+    itr->current = makeNode(next, itr->iterator->index, k);
     return itr->current;
 }
 
