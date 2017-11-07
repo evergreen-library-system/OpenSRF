@@ -113,8 +113,7 @@ int init_proc_title( int argc, char* argv[] ) {
 		provide values to be formatted and inserted into the format string.
 	@return Length of the resulting string (or what the length would be if the
 		receiving buffer were big enough to hold it), or -1 in case of an encoding
-		error.  Note: because some older versions of snprintf() don't work correctly,
-		this function may return -1 if the string is truncated for lack of space.
+		error.
 
 	Formats a string as directed, and uses it to replace the name of the
 	currently running executable.  This replacement string is what will
@@ -130,7 +129,11 @@ int init_proc_title( int argc, char* argv[] ) {
 int set_proc_title( const char* format, ... ) {
 	VA_LIST_TO_STRING(format);
 	osrf_clearbuf( *(global_argv), global_argv_size);
-	return snprintf( *(global_argv), global_argv_size, VA_BUF );
+	(void) strncpy( *(global_argv), VA_BUF, global_argv_size - 1 );
+	if (strlen(VA_BUF) >= global_argv_size) {
+		*(global_argv)[global_argv_size - 1] = '\0';
+	}
+	return (strlen(VA_BUF) > strlen(*(global_argv))) ? strlen(VA_BUF) : strlen(*(global_argv));
 }
 
 /**
