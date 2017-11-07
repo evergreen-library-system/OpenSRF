@@ -176,7 +176,7 @@ int crossOriginHeaders(request_rec* r, osrfStringArray* allowedOrigins) {
 		return 0;
 
 	/* remove scheme from address */
-	char *host = origin;
+	const char *host = origin;
 	if ( !strncmp(origin, "http://", 7) )
 		host = origin + 7;
 	if ( !strncmp(origin, "https://", 8) )
