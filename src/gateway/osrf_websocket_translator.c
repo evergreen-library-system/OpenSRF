@@ -911,8 +911,12 @@ static size_t on_message_handler_body(void *data,
         msg_body, NULL, thread, recipient, NULL);
 
     message_set_osrf_xid(tmsg, osrfLogGetXid());
-    client_send_message(osrf_handle, tmsg);
 
+    size_t stat = OK;
+    if (client_send_message(osrf_handle, tmsg) != 0) {
+        osrfLogError(OSRF_LOG_MARK, "WS failed sending data to OpenSRF");
+        stat = HTTP_INTERNAL_SERVER_ERROR;
+    }
 
     osrfLogClearXid();
     message_free(tmsg);                                                         
@@ -920,7 +924,7 @@ static size_t on_message_handler_body(void *data,
     free(msg_body);
 
     last_activity_time = time(NULL);
-    return OK;
+    return stat;
 }
 
 static size_t CALLBACK on_message_handler(void *data,
@@ -929,14 +933,23 @@ static size_t CALLBACK on_message_handler(void *data,
 
     if (apr_thread_mutex_lock(trans->mutex) != APR_SUCCESS) {
         osrfLogError(OSRF_LOG_MARK, "WS error locking thread mutex");
-        return 1; // TODO: map to apr_status_t value?
+        return 1;
     }
 
-    apr_status_t stat = on_message_handler_body(data, server, type, buffer, buffer_size);
+    size_t stat = on_message_handler_body(data, server, type, buffer, buffer_size);
 
     if (apr_thread_mutex_unlock(trans->mutex) != APR_SUCCESS) {
         osrfLogError(OSRF_LOG_MARK, "WS error locking thread mutex");
         return 1;
+    }
+
+    if (stat != OK) {
+        // Returning a non-OK status alone won't force a disconnect.
+        // Once disconnected, the on_disconnect_handler() handler
+        // will run, clean it all up, and kill the process.
+        osrfLogError(OSRF_LOG_MARK,
+            "Error relaying message, forcing client disconnect");
+        trans->server->close(trans->server);
     }
 
     return stat;
