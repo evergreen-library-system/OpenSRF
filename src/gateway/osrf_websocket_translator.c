@@ -344,10 +344,26 @@ void* APR_THREAD_FUNC osrf_responder_thread_main(apr_thread_t *thread, void *dat
             return NULL;
         }
 
-        // wait for a response
+        // wait indefinitely for a response
         tmsg = client_recv(osrf_handle, -1);
 
-        if (!tmsg) continue; // interrupt
+        if (!tmsg) {
+            // tmsg can only be NULL if the underlying select() call is
+            // interrupted or the jabber socket connection was severed.
+
+            if (client_connected(osrf_handle) &&
+                socket_connected(osrf_handle->session->sock_id)) {
+                continue; // interrupted.  restart loop.
+            }
+
+            // Socket connection was broken.  Send disconnect to client,
+            // causing on_disconnect_handler to run and cleanup.
+            osrfLogWarning(OSRF_LOG_MARK, 
+                "WS: Jabber socket disconnected. Sending close() to client");
+
+            trans->server->close(trans->server);
+            return NULL; // exit thread
+        }
 
         if (trans->client_connected) {
 
