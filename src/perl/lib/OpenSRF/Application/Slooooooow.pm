@@ -34,7 +34,7 @@ __PACKAGE__->register_method(
     argc            => 1,
     signature       => {
         params => [
-            {name => "pause", type => "number", desc => "Seconds to sleep, can be fractional"},
+            {name => "pause", type => "int", desc => "Seconds to sleep (integer, default is 1)"},
             {name => "extra", type => "string", desc => "Extra optional parameter used to inflate the payload size"}
         ],
         return => {
