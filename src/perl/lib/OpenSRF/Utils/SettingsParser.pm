@@ -126,7 +126,7 @@ sub XML2perl {
 			return _check_for_int($kids[0]->textContent);
 	} else {
 		for my $kid ( @kids ) {
-			next if ($kid->nodeName eq 'comment');
+			next if ($kid->nodeName =~ /^#?comment$/);
 			if (exists $output{$kid->nodeName}) {
 				if (ref $output{$kid->nodeName} ne 'ARRAY') {
 					$output{$kid->nodeName} = [$output{$kid->nodeName}, XML2perl($kid)];
