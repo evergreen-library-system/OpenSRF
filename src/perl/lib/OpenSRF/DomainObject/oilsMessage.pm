@@ -244,6 +244,7 @@ sub handler {
 
 	if( $val ) {
 		local $ENV{TZ} = $tz || $ENV{TZ}; # automatic revert at the end of this scope
+		delete $ENV{TZ} unless $ENV{TZ}; # avoid UTC fall-back
 		tzset();
 		return OpenSRF::Application->handler($session, $self->payload);
 	} else {
