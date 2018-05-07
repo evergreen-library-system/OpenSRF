@@ -1065,7 +1065,7 @@ static int check_children( prefork_simple* forker, int forever ) {
 	}
 
     if( select_ret <= 0 ) // we're done here
-        return select_ret;
+		return select_ret;
 
 	// Check each child in the active list.
 	// If it has responded, move it to the idle list.
