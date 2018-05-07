@@ -1,4 +1,4 @@
-OpenSRF 3.0.0 release notes
+OpenSRF 3.0.1 release notes
 ===========================
 
 Supported platforms
@@ -7,6 +7,42 @@ The following Linux distributions are well-tested:
 
   * Debian 7 (Wheezy), 8 (Jessie), and 9 (Stretch)
   * Ubuntu 14.04 (Trusty Tahr) and 16.04 LTS (Xenial Xerus)
+
+OpenSRF 3.0.1
+-------------
+OpenSRF 3.0.1 was released on 25 May 2018 and fixes a number of
+bugs. All users of OpenSRF 3.0.0 are advised to upgrade as soon
+as possible.
+
+The following bugs are fixed:
+
+  * LP#1744158: If the WebSockets translator lost its XMPP connection,
+    it could continue to accept requests but would never respond to
+    them. Now, when a WS translator backend gets disconnected from
+    XMPP, it will close the client connection and terminate.
+  * LP#1746577: Under other conditions, a WebSockets translator backend
+    that had lost its XMPP connection could busy-loop, uselessly
+    consuming CPU. This no longer happens.
+  * LP#1762815: This release Fixes an issue in the Perl client time zone
+    handling that resulted in the server defaulting to UTC time instead
+    of the server time zone when no time zone value was received from
+    the client.
+  * LP#1340892: `opensrf.settings` now properly ignores XML comments
+    in `opensrf.xml`, thereby resolving an Evergreen bug where
+    XML comments in the `<marctemplates>` section could break the
+    ability to load MARC templates.
+  * LP#1243841: A number of compilation warnings showing up on newer
+    releases of Debian and Ubuntu are now resolved.
+
+Acknowledgements
+~~~~~~~~~~~~~~~~
+We would like to thank the following people who contributed to coding
+and testing for OpenSRF 3.0.1:
+
+  * Galen Charlton
+  * Bill Erickson
+  * Chris Sharp
+  * Jason Stephenson
 
 OpenSRF 3.0.0
 -------------
