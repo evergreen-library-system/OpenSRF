@@ -1,8 +1,8 @@
-commit 0bd6c1ed609a3e5d07fd2f7029f20eab3265417d
+commit ae7d4165ffbcfb35f98700c061e02714b9f3ebee
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Mon Oct 2 15:19:39 2017 -0400
+Date:   Mon May 7 19:30:24 2018 -0400
 
-    update version numbers for 3.0.0
+    update version numbers for OpenSRF 3.0.1
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
@@ -11,12 +11,251 @@ Date:   Mon Oct 2 15:19:39 2017 -0400
 1	1	src/python/setup.py
 1	1	version.m4
 
-commit d1dd618995ac404d47153d956f8b4d31fba9b7a7
+commit b5c03e9036a58acfe3099730d98666af7578472e
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Mon Oct 2 15:15:08 2017 -0400
+Date:   Mon May 7 19:25:45 2018 -0400
 
-    update release notes for OpenSRF 3.0.0
+    update release notes for OpenSRF 3.0.1
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-7	7	doc/RELEASE_NOTES.txt
+37	1	doc/RELEASE_NOTES.txt
+
+commit b704d6ad373ed581b4f8caa2bd156161a0aa1bbd
+Author: Galen Charlton <gmc@equinoxinitiative.org>
+Date:   Mon May 7 16:03:16 2018 -0400
+
+    LP#1243841: quiet a misleading indentation warning
+    
+    Adjusts a spaces-vs-tabs issue to fix the following compilation
+    warning:
+    
+    osrf_prefork.c: In function ‘check_children’:
+    osrf_prefork.c:1067:5: warning: this ‘if’ clause does not
+    guard... [-Wmisleading-indentation]
+         if( select_ret <= 0 ) // we're done here
+         ^~
+    osrf_prefork.c:1072:2: note: ...this statement, but the latter is
+    misleadingly indented as if it is guarded by the ‘if’
+      cur_child = forker->first_child;
+      ^~~~~~~~~
+    
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+1	1	src/libopensrf/osrf_prefork.c
+
+commit 62a29dafa4b978d3bc6f4ef8d2dddebe1b319ebb
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Tue Nov 7 16:39:39 2017 -0500
+
+    LP#1243841 - Quiet remaining Make install warnings.
+    
+    We silence the following warnings:
+    
+    apachetools.c:179:15: warning: initialization discards 'const' qualifier
+    from pointer target type [enabled by default]
+    
+    apachetools.c:181:8: warning: assignment discards 'const' qualifier from
+    pointer target type [enabled by default]
+    
+    apachetools.c:183:8: warning: assignment discards 'const' qualifier from
+    pointer target type [enabled by default]
+    
+    ./osrf_websocket_translator.c:541:9: warning: return makes integer from
+    pointer without a cast [enabled by default]
+    
+    ./osrf_http_translator.c:300:25: warning: passing argument 1 of 'free'
+    discards 'const' qualifier from pointer target type [enabled by default]
+    
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+1	1	src/gateway/apachetools.c
+1	1	src/gateway/osrf_http_translator.c
+1	1	src/gateway/osrf_websocket_translator.c
+
+commit 35c7bb1b81bd41d99ad0a0756bf669a13e6ef63b
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Tue Nov 7 15:58:05 2017 -0500
+
+    LP#1243841 - Quiet additional Make warnings and some code cleanup.
+    
+    We make the following warnings go away:
+    
+    osrf_legacy_json.c:607:6: warning: variable ‘fourth_dash’ set but
+    not used [-Wunused-but-set-variable]
+    
+    osrf_legacy_json.c:836:5: warning: passing argument 3 of ‘makeNode’
+    discards ‘const’ qualifier from pointer target type [enabled by
+    default]
+    
+    utils.c:133:2: warning: format not a string literal and no format
+    arguments [-Wformat-security]
+    
+    We also cleanup the while block nested in a do while block around line
+    63 of osrf_cache.c to be more readable by adding braces and breaking
+    it across 3 lines.
+    
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+3	1	src/libopensrf/osrf_cache.c
+4	6	src/libopensrf/osrf_legacy_json.c
+6	3	src/libopensrf/utils.c
+
+commit 4dadb76c5b7e73615de4a1ff923aa46b77b95330
+Author: Chris Sharp <csharp@georgialibraries.org>
+Date:   Tue Sep 19 21:25:12 2017 -0400
+
+    LP#1243841 - Quiet wrong format warnings during make install.
+    
+    During make install, the compiler warns that %d expects an int when the
+    actual value is a long int.  Changing %d to %ld fixes the issue.
+    
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+3	3	src/gateway/osrf_websocket_translator.c
+
+commit c298ab7017627c3502a1b185e2d5871dd0b671ee
+Author: Chris Sharp <csharp@georgialibraries.org>
+Date:   Tue Sep 19 20:46:28 2017 -0400
+
+    LP#1243841 - Quiet unused return value warning in srfsh.c
+    
+    Using the technique described here: https://stackoverflow.com/a/13999461.
+    
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+1	1	src/srfsh/srfsh.c
+
+commit 3994a17e604f32dc184e9f01afac1b3c573b9927
+Author: Chris Sharp <csharp@georgialibraries.org>
+Date:   Tue Sep 19 20:37:13 2017 -0400
+
+    LP#1243841 - Quiet unused return value warnings.
+    
+    Using advice given here: https://stackoverflow.com/a/13999461, "The
+    only good (if ugly) way to suppress these is to convert the return
+    value into something that the compiler agrees that you can ignore."
+    
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+4	4	src/libopensrf/utils.c
+
+commit f50772c5726b1655d67bfefaaa5cd7d4d8892b47
+Author: Chris Sharp <csharp@georgialibraries.org>
+Date:   Tue Sep 19 18:10:00 2017 -0400
+
+    LP#1243841 - Wrap truth test using "=" in an extra set of parens.
+    
+    Referring to https://stackoverflow.com/questions/5476759/compiler-warning-suggest-parentheses-around-assignment-used-as-truth-value,
+    it is recommended to wrap variable assignments that are used as a truth
+    test within an extra set of parentheses.
+    
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+1	1	src/libopensrf/osrf_cache.c
+
+commit 2f7688068af65cbe44c460daf0835b25344e6cca
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Sun Feb 18 12:12:13 2018 -0500
+
+    LP1340982: Ignore both 'comment' and '#comment' nodes in Settings Parse.
+    
+    Modify the XML2perl helper function in OpenSRF::Utils::SettingsParser
+    to ignore comment nodes that have names of comment and #comment.
+    
+    To reproduce the bug:
+    
+    1. Stop OpenSRF services.
+    
+    2. Add a XML comment, any text betwen <!-- and -->, in the list of
+    MARC templates in the opensrf.xml file.
+    
+    3. Restart OpenSRF services.
+    
+    4. In the staff client, go to Cataloging->Create New MARC Record.
+    
+    5. In the list of templates, you will #comment where you added the
+    comment. (NOTE: I only tested with 1 comment.  Things may get worse
+    with more than 1 comment.)
+    
+    6. There will be an error like the following in the
+    open-ils.cat_stderr.log if you attempt to choose the #comment entry:
+    
+       Caught error from 'run' method: Exception: OpenSRF::EX::ERROR
+       2018-02-18T11:24:30 OpenSRF::Application
+       /usr/local/share/perl/5.22.1/OpenSRF/Application.pm:240 System
+       ERROR: Unable to open MARC template file: HASH(0x2249928) :
+    
+    To test the fix:
+    
+    1. Leave the comments in the opensrf.xml file from before.
+    
+    2. Apply this commit, do make and make install for OpenSRF.
+    
+    3. Just to make sure, do make and make install for Evergreen.
+    
+    4. Repeat steps 3 and 4 from above.
+    
+    5. You should NOT see any templates named #comment.
+    
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+1	1	src/perl/lib/OpenSRF/Utils/SettingsParser.pm
+
+commit 24a14a104c2a216664ab52311eb9f90955b75e31
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Tue Apr 10 15:06:56 2018 -0400
+
+    LP#1762815 Empty client TZ defaults to server TZ (Perl)
+    
+    Fixes an issue in the Perl client time zone handling that resulted in
+    the server defaulting to UTC time instead of the server time zone when
+    no time zone value was received from the client.
+    
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+
+1	0	src/perl/lib/OpenSRF/DomainObject/oilsMessage.pm
+
+commit 0c7f94abf5911cdf042c1162705e721a4fd2899f
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Wed Jan 24 15:16:14 2018 -0500
+
+    LP#1744158 Websocket proc exits on ejabberd disconnect
+    
+    Any errors relaying websocket messages to OpenSRF now result in the WS
+    client being disconnected, allowing the WS process to exit.  This
+    prevents the WS gateway from accepting requests it cannot process and
+    allows the client to connect to a new WS process.
+    
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+
+17	4	src/gateway/osrf_websocket_translator.c
+
+commit 0cb4209fa03091b62df2793a7b273e0c981798d3
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Wed Jan 31 13:07:41 2018 -0500
+
+    LP#1746577 Websocket responder exits on jabber disconnect
+    
+    Regularly check for Jabber socket disconnects in the websocket gateway
+    "responder" thread (that relays messages from opensrf to the WS client)
+    and force a client disconnect when a broken jabber socket is detected.
+    
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+
+18	2	src/gateway/osrf_websocket_translator.c
