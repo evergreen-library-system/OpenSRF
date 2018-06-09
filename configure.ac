@@ -387,6 +387,7 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 			 src/python/opensrf.py
 			 src/router/Makefile
 			 src/srfsh/Makefile
+			 src/websocket-stdio/Makefile
              tests/Makefile
 			 bin/opensrf-perl.pl
 			 bin/osrf_config])

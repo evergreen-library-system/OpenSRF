@@ -417,8 +417,8 @@ srfsh# request opensrf.math add 2,2
 +
 You should receive the value `4`.
 
-Optional: Websockets installation instructions
-----------------------------------------------
+Websockets installation instructions: Option #1 Apache
+-------------------------------------------------------
 Websockets are new to OpenSRF 2.4+ and are required for operating the new web-based
 staff client for Evergreen.  Complete the following steps as the *root* Linux 
 account:
@@ -518,6 +518,36 @@ export OSRF_WEBSOCKET_MAX_REQUEST_WAIT_TIME=600
 [source, bash]
 ---------------------------------------------------------------------------
 /etc/init.d/apache2-websockets start
+---------------------------------------------------------------------------
+
+Websockets installation instructions: Option #2 Websocketd
+----------------------------------------------------------
+
+1. Install websocketd (latest stable release from http://websocketd.com/)
++
+.(Debian, Ubuntu)
+[source,bash]
+---------------------------------------------------------------------------
+cd /tmp
+wget 'https://github.com/joewalnes/websocketd/releases/download/v0.3.0/websocketd-0.3.0-linux_amd64.zip'
+unzip websocketd-0.3.0-linux_amd64.zip
+sudo cp websocketd /usr/local/bin/
+---------------------------------------------------------------------------
++
+2. Run websocketd as 'opensrf'
++
+.(Debian, Ubuntu)
+[source,bash]
+---------------------------------------------------------------------------
+/usr/local/bin/websocketd --port 7682 /openils/bin/osrf-websocket-stdio &
+
+# Other useful command line parameters include:
+# --loglevel debug|trace|access|info|error|fatal
+# --maxforks <n>
+# --sameorigin=true
+# --origin=host[:port][,host[:port]...]
+
+# See https://github.com/joewalnes/websocketd/blob/master/help.go
 ---------------------------------------------------------------------------
 
 Optional: Using NGINX as a proxy
