@@ -361,6 +361,29 @@ OpenSRF.Session.prototype.setup_single_ws = function() {
                 "Error parsing JSON in shared WS response: " + msg);
             throw E;
         }
+
+        if (msg.transport_error) {
+            // Websockets gateway returns bounced messages (e.g. for
+            // requets to unavailable services) with a transport_error
+            // flag set.  
+            console.error(
+                'Websocket request failed with a transport error', msg);
+
+            var ses = OpenSRF.Session.find_session(msg.thread); 
+            if (ses) {
+                if (msg.osrf_msg && msg.osrf_msg[0]) {
+                    var req = ses.find_request(msg.osrf_msg[0].threadTrace());
+                    if (req) {
+                        var handler = req.ontransporterror || req.onerror;
+                        if (handler) {
+                            handler('Service ' + ses.service + ' unavailable');
+                        }
+                    }
+                }
+            }
+            return; // No viable error handlers
+        }
+
         OpenSRF.Stack.push(                                                        
             new OpenSRF.NetMessage(                                                
                null, null, msg.thread, null, msg.osrf_msg)                        
