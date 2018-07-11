@@ -556,14 +556,22 @@ rm /etc/nginx/sites-enabled/default
 +
 4. Edit `/etc/nginx/sites-available/osrf-ws-http-proxy` to set the location
    of the SSL certificate and private key.
-5. Start NGINX
+5. Generate a dhparam file in the directory specified in the nginx config.
++
+[source, bash]
+---------------------------------------------------------------------------
+# Default config stores dhparam.pem in the Apache2 ssl directory.
+openssl dhparam -out /etc/apache2/ssl/dhparam.pem 2048
+---------------------------------------------------------------------------
++
+6. Start NGINX
 +
 [source, bash]
 ---------------------------------------------------------------------------
 /etc/init.d/nginx start
 ---------------------------------------------------------------------------
 +
-6. If you didn't run `configure` with the `--with-websockets-port=443` option,
+7. If you didn't run `configure` with the `--with-websockets-port=443` option,
 edit `<PREFIX>/javascript/opensrf_ws.js` and `<PREFIX>/javascript/opensrf_ws_shared.js`
    and change
 +
