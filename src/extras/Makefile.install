@@ -17,6 +17,8 @@
 # 	make -f Makefile.install ubuntu-trusty
 # 	- or -
 # 	make -f Makefile.install ubuntu-xenial
+#   - or -
+#   make -f Makefile.install ubuntu-bionic
 # 	- or -
 # 	make -f Makefile.install fedora
 #
@@ -175,6 +177,11 @@ EXTRA_DEBS_UBUNTU_XENIAL = \
 	apache2-dev \
 	libncurses5-dev
 
+EXTRA_DEBS_UBUNTU_BIONIC = \
+	apache2 \
+	apache2-dev \
+	libncurses5-dev
+
 # ----------------------------------------------------------------------------
 
 all: 
@@ -191,8 +198,10 @@ fedora: install_fedora_rpms
 
 ubuntu-trusty: generic_ubuntu trusty apache_mpm_prefork_mods
 ubuntu-xenial: generic_ubuntu xenial apache_mpm_prefork_mods apache_perl_mod
+ubuntu-bionic: generic_ubuntu bionic apache_mpm_prefork_mods apache_perl_mod
 trusty: install_extra_debs install_extra_debs_trusty debian_sys_config
 xenial: install_extra_debs install_extra_debs_xenial debian_sys_config
+bionic: install_extra_debs install_extra_debs_bionic debian_sys_config
 generic_ubuntu: install_debs
 
 # ------------------------------------------------------------------
@@ -222,6 +231,10 @@ install_extra_debs_trusty:
 
 install_extra_debs_xenial:
 	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_XENIAL)
+
+install_extra_debs_bionic:
+	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_BIONIC)
+
 
 # Some OSes activate the Apache mpm_event module by default.
 # OpenSRF requires prefork.
