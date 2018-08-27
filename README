@@ -519,6 +519,23 @@ export OSRF_WEBSOCKET_MAX_REQUEST_WAIT_TIME=600
 /etc/init.d/apache2-websockets start
 ---------------------------------------------------------------------------
 
+Optional: Using a web proxy (Apache 2.4 and above)
+--------------------------------------------------
+When the OpenSRF HTTP Translator runs behind a proxy, Apache must be 
+configured to read the IP address of the originating client instead
+of the proxy IP address.  
+
+1. Enable mod_remoteip
++
+[source,bash]
+---------------------------------------------------------------------------
+sudo a2enmod remoteip
+---------------------------------------------------------------------------
++
+2. Enable remote IP settings by uncommenting and modifying as needed the 
+Apache configuration variables starting with RemoteIP* in the sample Apache
+configuration file opensrf.conf.
+
 Optional: Using NGINX as a proxy
 --------------------------------
 NGINX can be used to proxy HTTP, HTTPS, and WebSockets traffic. Among other
