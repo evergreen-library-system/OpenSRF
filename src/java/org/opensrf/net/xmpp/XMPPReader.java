@@ -248,6 +248,14 @@ public class XMPPReader implements Runnable {
             return;
         }
 
+        if("opensrf".equals(name)) {
+            /** add a special case for the opensrf "router_from" attribute */
+            String rf = reader.getAttributeValue(null, "router_from");
+            if( rf != null )
+                msgFrom = rf;
+            return;
+        }
+
         if("body".equals(name)) {
             xmlState = XMLState.IN_BODY;
             return;

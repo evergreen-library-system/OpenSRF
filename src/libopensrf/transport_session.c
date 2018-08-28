@@ -573,19 +573,24 @@ static void startElementHandler(
 		ses->state_machine->in_message = 1;
 		buffer_add( ses->from_buffer, get_xml_attr( atts, "from" ) );
 		buffer_add( ses->recipient_buffer, get_xml_attr( atts, "to" ) );
-		buffer_add( ses->router_from_buffer, get_xml_attr( atts, "router_from" ) );
-		buffer_add( ses->osrf_xid_buffer, get_xml_attr( atts, "osrf_xid" ) );
-		buffer_add( ses->router_to_buffer, get_xml_attr( atts, "router_to" ) );
-		buffer_add( ses->router_class_buffer, get_xml_attr( atts, "router_class" ) );
-		buffer_add( ses->router_command_buffer, get_xml_attr( atts, "router_command" ) );
-		const char* broadcast = get_xml_attr( atts, "broadcast" );
-		if( broadcast )
-			ses->router_broadcast = atoi( broadcast );
 
 		return;
 	}
 
 	if( ses->state_machine->in_message ) {
+
+		if( strcmp( (char*) name, "opensrf" ) == 0 ) {
+			buffer_add( ses->router_from_buffer, get_xml_attr( atts, "router_from" ) );
+			buffer_add( ses->osrf_xid_buffer, get_xml_attr( atts, "osrf_xid" ) );
+			buffer_add( ses->router_to_buffer, get_xml_attr( atts, "router_to" ) );
+			buffer_add( ses->router_class_buffer, get_xml_attr( atts, "router_class" ) );
+			buffer_add( ses->router_command_buffer, get_xml_attr( atts, "router_command" ) );
+			const char* broadcast = get_xml_attr( atts, "broadcast" );
+			if( broadcast )
+				ses->router_broadcast = atoi( broadcast );
+
+			return;
+		}
 
 		if( strcmp( (char*) name, "body" ) == 0 ) {
 			ses->state_machine->in_message_body = 1;
