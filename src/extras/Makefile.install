@@ -84,6 +84,8 @@ DEBS =  \
 	python-setuptools\
 	python-simplejson\
 	tar\
+	unzip\
+	zip\
 	zlib1g-dev
 
 FEDORAS = \
