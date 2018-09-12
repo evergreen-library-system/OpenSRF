@@ -534,7 +534,16 @@ unzip websocketd-0.3.0-linux_amd64.zip
 sudo cp websocketd /usr/local/bin/
 ---------------------------------------------------------------------------
 +
-2. Run websocketd as 'opensrf'
+2. Run websocketd
++
+Choose option a or b, below.
++
+a. Run websocketd as 'opensrf'
++
+[NOTE]
+===========================================================================
+This choice requires one of the proxy configurations mentioned below.
+===========================================================================
 +
 .(Debian, Ubuntu)
 [source,bash]
@@ -548,6 +557,15 @@ sudo cp websocketd /usr/local/bin/
 # --origin=host[:port][,host[:port]...]
 
 # See https://github.com/joewalnes/websocketd/blob/master/help.go
+---------------------------------------------------------------------------
++
+b. Run websocketd without a proxy
++
+.(Debian, Ubuntu)
+[source,bash]
+---------------------------------------------------------------------------
+sudo -b /usr/local/bin/websocketd --port 7682 --ssl --sslcert=/etc/apache2/ssl/server.crt \
+     --sslkey=/etc/apache2/ssl/server.key /openils/bin/osrf-websocket-stdio
 ---------------------------------------------------------------------------
 
 Optional: Using NGINX as a proxy
