@@ -63,7 +63,16 @@ server {
     }
 
     location /osrf-websocket-translator {
+
+        # apache2-websockets:
+        # Defaults to HTTPS with or without a proxy.
         proxy_pass https://localhost:7682;
+
+        # websocketd:
+        # websocketd may be run with or without SSL.  When used with
+        # NGINX, the assumption is it runs w/o SSL.  Change to taste.
+        #proxy_pass http://localhost:7682;
+
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
@@ -72,12 +81,20 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
 
-        # Raise the default nginx proxy timeout values to an arbitrarily
-        # high value so that we can leverage osrf-websocket-translator's 
-        # timeout settings.
         proxy_connect_timeout 5m;
+
+        # apache2-websockets:
+        # Raise the default nginx proxy timeout settings to
+        # an arbitrarily high value so that we can leverage
+        # osrf-websocket-translator's native timeout settings.
         proxy_send_timeout 1h;
         proxy_read_timeout 1h;
+
+        # websocketd:
+        # websocketd connections persist indefinitely. Leverage nginx
+        # timeouts to periodically disconnect long-idle clients.
+        #proxy_send_timeout 5m;
+        #proxy_read_timeout 5m;
     }
 }
 
