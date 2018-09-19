@@ -6,7 +6,7 @@ use strict; use warnings;
 use XML::LibXML;
 
 use constant JABBER_MESSAGE =>
-    "<message to='%s' from='%s>".
+    "<message to='%s' from='%s'>".
     "<opensrf router_command='%s' router_class='%s' osrf_xid='%s'/>".
     "<thread>%s</thread><body>%s</body></message>";
 
@@ -121,7 +121,7 @@ sub parse_xml {
     throw $err if $err;
 
     my $root = $doc->documentElement;
-    my $osrf_node = $root->findnodes('/opensrf')->shift;
+    my $osrf_node = $root->findnodes('/message/opensrf')->shift;
 
     $self->{body} = $root->findnodes('/message/body').'';
     $self->{thread} = $root->findnodes('/message/thread').'';
@@ -131,7 +131,7 @@ sub parse_xml {
 
     $self->{to} = $root->getAttribute('to');
 
-    $self->{type} = $osrf_node->getAttribute('type');
+    $self->{type} = $root->getAttribute('type');
     $self->{osrf_xid} = $osrf_node->getAttribute('osrf_xid');
 }
 

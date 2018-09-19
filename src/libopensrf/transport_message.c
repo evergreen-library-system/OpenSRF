@@ -120,25 +120,16 @@ transport_message* new_message_from_xml( const char* msg_xml ) {
 	xmlChar* recipient      = xmlGetProp( root, BAD_CAST "to");
 	xmlChar* subject        = xmlGetProp( root, BAD_CAST "subject");
 	xmlChar* thread         = xmlGetProp( root, BAD_CAST "thread" );
-	xmlChar* router_from    = xmlGetProp( root, BAD_CAST "router_from" );
-	xmlChar* router_to      = xmlGetProp( root, BAD_CAST "router_to" );
-	xmlChar* router_class   = xmlGetProp( root, BAD_CAST "router_class" );
-	xmlChar* router_command = xmlGetProp( root, BAD_CAST "router_command" );
-	xmlChar* broadcast      = xmlGetProp( root, BAD_CAST "broadcast" );
-	xmlChar* osrf_xid       = xmlGetProp( root, BAD_CAST "osrf_xid" );
+	xmlChar* router_from    = NULL;
+	xmlChar* router_to      = NULL;
+	xmlChar* router_class   = NULL;
+	xmlChar* router_command = NULL;
+	xmlChar* broadcast      = NULL;
+	xmlChar* osrf_xid       = NULL;
 
-	if( osrf_xid ) {
-		message_set_osrf_xid( new_msg, (char*) osrf_xid);
-		xmlFree(osrf_xid);
-	}
-
-	if( router_from ) {
-		new_msg->sender     = strdup((const char*)router_from);
-	} else {
-		if( sender ) {
-			new_msg->sender = strdup((const char*)sender);
-			xmlFree(sender);
-		}
+	if( sender ) {
+		new_msg->sender = strdup((const char*)sender);
+		xmlFree(sender);
 	}
 
 	if( recipient ) {
@@ -156,34 +147,8 @@ transport_message* new_message_from_xml( const char* msg_xml ) {
 		xmlFree(thread);
 	}
 
-	if(router_from) {
-		new_msg->router_from = strdup((const char*)router_from);
-		xmlFree(router_from);
-	}
-
-	if(router_to) {
-		new_msg->router_to  = strdup((const char*)router_to);
-		xmlFree(router_to);
-	}
-
-	if(router_class) {
-		new_msg->router_class = strdup((const char*)router_class);
-		xmlFree(router_class);
-	}
-
-	if(router_command) {
-		new_msg->router_command = strdup((const char*)router_command);
-		xmlFree(router_command);
-	}
-
-	if(broadcast) {
-		if(strcmp((const char*) broadcast,"0") )
-			new_msg->broadcast = 1;
-		xmlFree(broadcast);
-	}
-
-	/* Within the message element, find the child nodes for "thread", "subject", and */
-	/* "body".  Extract their textual content into the corresponding members. */
+	/* Within the message element, find the child nodes for "thread", "subject" */
+	/* "body", and "opensrf".  Extract their textual content into the corresponding members. */
 	xmlNodePtr search_node = root->children;
 	while( search_node != NULL ) {
 
@@ -211,15 +176,13 @@ transport_message* new_message_from_xml( const char* msg_xml ) {
 			}
 
 			if( router_from ) {
-				new_msg->sender     = strdup((const char*)router_from);
-			} else {
-				if( sender ) {
-					new_msg->sender = strdup((const char*)sender);
-					xmlFree(sender);
+				if (new_msg->sender) {
+					// Sender value applied above.  Clear it and
+					// use the router value instead.
+					free(new_msg->sender);
 				}
-			}
 
-			if(router_from) {
+				new_msg->sender = strdup((const char*)router_from);
 				new_msg->router_from = strdup((const char*)router_from);
 				xmlFree(router_from);
 			}

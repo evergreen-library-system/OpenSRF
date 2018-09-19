@@ -307,14 +307,14 @@ sub start_element {
         my $msg = $self->{message};
         $msg->{to} = $attrs{'to'};
         $msg->{from} = $attrs{from};
+        $msg->{type} = $attrs{type};
 
     } elsif($name eq 'opensrf') {
 
         # These will be authoritative if they exist
         my $msg = $self->{message};
-        $msg->{from} = $attrs{router_from};
+        $msg->{from} = $attrs{router_from} if $attrs{router_from};
         $msg->{osrf_xid} = $attrs{'osrf_xid'};
-        $msg->{type} = $attrs{type};
 
     } elsif($name eq 'body') {
         $self->{xml_state} = IN_BODY;
