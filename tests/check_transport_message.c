@@ -111,7 +111,7 @@ END_TEST
 
 START_TEST(test_transport_message_new_message_from_xml_populated)
   const char* xml_jabber_msg =
-    "<message from=\"sender\" to=\"receiver\" router_from=\"routerfrom\" router_to=\"routerto\" router_class=\"class\" broadcast=\"1\" osrf_xid=\"xid\"><thread>thread_value</thread><subject>subject_value</subject><body>body_value</body></message>";
+    "<message from=\"sender\" to=\"receiver\"><opensrf router_from=\"routerfrom\" router_to=\"routerto\" router_class=\"class\" broadcast=\"1\" osrf_xid=\"xid\"/><thread>thread_value</thread><subject>subject_value</subject><body>body_value</body></message>";
 
   transport_message *my_msg = new_message_from_xml(xml_jabber_msg);
   fail_if(my_msg == NULL, "new_message_from_xml failed to create a transport_message");
@@ -199,7 +199,8 @@ START_TEST(test_transport_message_prepare_xml)
       "message_prepare_xml should return 1 upon success");
   fail_if(a_message->msg_xml == NULL,
       "message_prepare_xml should store the returned xml in msg->msg_xml");
-  fail_unless(strcmp(a_message->msg_xml, "<message to=\"recipient\" from=\"sender\" router_from=\"routerfrom\" router_to=\"routerto\" router_class=\"routerclass\" router_command=\"routercommand\" osrf_xid=\"osrfxid\" broadcast=\"1\"><error type=\"errortype\" code=\"123\"/><thread>thread</thread><subject>subject</subject><body>body</body></message>") == 0,
+
+  fail_unless(strcmp(a_message->msg_xml, "<message to=\"recipient\" from=\"sender\"><error type=\"errortype\" code=\"123\"/><opensrf router_from=\"routerfrom\" router_to=\"routerto\" router_class=\"routerclass\" router_command=\"routercommand\" osrf_xid=\"osrfxid\" broadcast=\"1\"/><thread>thread</thread><subject>subject</subject><body>body</body></message>") == 0,
       "message_prepare_xml should store the correct xml in msg->msg_xml");
 END_TEST
 
