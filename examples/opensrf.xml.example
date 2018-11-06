@@ -198,6 +198,7 @@ vim:et:ts=2:sw=2:
           <max_children>5</max_children>
           <min_spare_children>1</min_spare_children>
           <max_spare_children>2</max_spare_children>
+          <max_backlog_queue>10</max_backlog_queue>
         </unix_config>
       </opensrf.slooooooow>
 
