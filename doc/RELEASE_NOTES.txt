@@ -1,4 +1,4 @@
-OpenSRF 3.0.1 release notes
+OpenSRF 3.0.2 release notes
 ===========================
 
 Supported platforms
@@ -7,6 +7,66 @@ The following Linux distributions are well-tested:
 
   * Debian 7 (Wheezy), 8 (Jessie), and 9 (Stretch)
   * Ubuntu 14.04 (Trusty Tahr) and 16.04 LTS (Xenial Xerus)
+
+OpenSRF 3.0.2
+-------------
+OpenSRF 3.0.2 was released on 6 November 2018 and fixes several
+bugs. All users of OpenSRF 3.0.x are advised to upgrade as soon
+as possible.
+
+The following bugs are fixed:
+
+  * LP#1684970: When running behind a proxy such as NGINX, the HTTP
+    translator was not getting the IP address of the user agent. As
+    a consequence, it was possible that two different HTTP translator
+    clients could end up talking to the same OpenSRF worker process.
+    This issue is resolved by using the `remoteip` Apache module
+    to extract the user agent's IP address from the X-Real-IP
+    HTTP header.
+  * LP#1702978: OpenSRF could fail to retrieve memcached values whose
+    keys contain the '%' character. This resulted in breaking
+    authentication in Evergreen when the username or barcode contained
+    a '%'.
+  * LP#1711145: The sample NGINX configuration file shipped with
+    OpenSRF had weak SSL settings. As of this release, it now
+    ** Enables http2
+    ** Adds a commented section on enabling SSL everywhere.
+    ** Apply a 5-minute proxy read timeout to avoid too-short timeouts on
+      long API calls.
+    ** Adds a commented section on sending NGINX logs to syslog.
+    ** Includes INSTALL notes on generating the dhparam file.
+  * LP#1776510: The JavaScript client code was not detecting when
+    the WebSockets gateway threw a transport error, e.g. when a request
+    was made of a nonexistent service. This situation can now be
+    caught by error-handling callbacks.
+
+Upgrade Notes
+~~~~~~~~~~~~~
+Users of NGINX should adjust their configuration to match the revisions
+in `examples/nginx/osrf-ws-http-proxy`.
+
+Users of Apache 2.4 and a proxy such as NGINX should enable the `remoteip`
+Apache module and apply the following configuration change to the Apache
+configuration:
+
+[source,sh]
+---------------------------------------------------------------------
+    RemoteIPInternalProxy 127.0.0.1/24 # adjust for actual internal
+                                       # address of proxy
+    RemoteIPInternalProxy ::1
+    RemoteIPHeader X-Real-IP
+---------------------------------------------------------------------
+
+Acknowledgments
+~~~~~~~~~~~~~~~
+We would like to thank the following people who contributed to coding
+and testing for OpenSRF 3.0.2:
+
+  * Galen Charlton
+  * Bill Erickson
+  * Mike Rylander
+  * Jason Stephenson
+  * Cesar Velez
 
 OpenSRF 3.0.1
 -------------
