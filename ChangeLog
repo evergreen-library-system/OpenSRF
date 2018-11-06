@@ -1,8 +1,8 @@
-commit ae7d4165ffbcfb35f98700c061e02714b9f3ebee
+commit e574cdf4321f01fa1ae6777e38dadd4e04895932
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Mon May 7 19:30:24 2018 -0400
+Date:   Tue Nov 6 11:36:57 2018 -0500
 
-    update version numbers for OpenSRF 3.0.1
+    update version numbers for 3.0.2
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
@@ -11,251 +11,94 @@ Date:   Mon May 7 19:30:24 2018 -0400
 1	1	src/python/setup.py
 1	1	version.m4
 
-commit b5c03e9036a58acfe3099730d98666af7578472e
+commit e0f49880d6d844aae1e6b31d7e4743ad596402d5
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Mon May 7 19:25:45 2018 -0400
+Date:   Tue Nov 6 11:35:11 2018 -0500
 
-    update release notes for OpenSRF 3.0.1
+    update release notes for OpenSRF 3.0.2
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-37	1	doc/RELEASE_NOTES.txt
+61	1	doc/RELEASE_NOTES.txt
 
-commit b704d6ad373ed581b4f8caa2bd156161a0aa1bbd
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Mon May 7 16:03:16 2018 -0400
+commit 7866a18c7455f8243e9f1076ebdff230f5905357
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Mon Aug 27 10:12:57 2018 -0400
 
-    LP#1243841: quiet a misleading indentation warning
+    LP#1684970 Translator compatible with mod_remoteip
     
-    Adjusts a spaces-vs-tabs issue to fix the following compilation
-    warning:
+    Teach the OSRF Translator to request the IP address of the user agent
+    (e.g. web browser) instead of the IP address of the up stream client,
+    which may be a proxy, using the Apache 2.4 request_rec->useragent_ip
+    value.
     
-    osrf_prefork.c: In function ‘check_children’:
-    osrf_prefork.c:1067:5: warning: this ‘if’ clause does not
-    guard... [-Wmisleading-indentation]
-         if( select_ret <= 0 ) // we're done here
-         ^~
-    osrf_prefork.c:1072:2: note: ...this statement, but the latter is
-    misleadingly indented as if it is guarded by the ‘if’
-      cur_child = forker->first_child;
-      ^~~~~~~~~
+    http://httpd.apache.org/docs/2.4/developer/new_api_2_4.html
     
+    This make is possible for the translator to access the client IP with
+    Apache's mod_remoteip enabled and configured.
+    
+    Includes sample config and install documentation.
+    
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-1	1	src/libopensrf/osrf_prefork.c
-
-commit 62a29dafa4b978d3bc6f4ef8d2dddebe1b319ebb
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Nov 7 16:39:39 2017 -0500
-
-    LP#1243841 - Quiet remaining Make install warnings.
-    
-    We silence the following warnings:
-    
-    apachetools.c:179:15: warning: initialization discards 'const' qualifier
-    from pointer target type [enabled by default]
-    
-    apachetools.c:181:8: warning: assignment discards 'const' qualifier from
-    pointer target type [enabled by default]
-    
-    apachetools.c:183:8: warning: assignment discards 'const' qualifier from
-    pointer target type [enabled by default]
-    
-    ./osrf_websocket_translator.c:541:9: warning: return makes integer from
-    pointer without a cast [enabled by default]
-    
-    ./osrf_http_translator.c:300:25: warning: passing argument 1 of 'free'
-    discards 'const' qualifier from pointer target type [enabled by default]
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	src/gateway/apachetools.c
+17	0	README
+10	0	examples/apache2/opensrf.conf
 1	1	src/gateway/osrf_http_translator.c
-1	1	src/gateway/osrf_websocket_translator.c
 
-commit 35c7bb1b81bd41d99ad0a0756bf669a13e6ef63b
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Nov 7 15:58:05 2017 -0500
-
-    LP#1243841 - Quiet additional Make warnings and some code cleanup.
-    
-    We make the following warnings go away:
-    
-    osrf_legacy_json.c:607:6: warning: variable ‘fourth_dash’ set but
-    not used [-Wunused-but-set-variable]
-    
-    osrf_legacy_json.c:836:5: warning: passing argument 3 of ‘makeNode’
-    discards ‘const’ qualifier from pointer target type [enabled by
-    default]
-    
-    utils.c:133:2: warning: format not a string literal and no format
-    arguments [-Wformat-security]
-    
-    We also cleanup the while block nested in a do while block around line
-    63 of osrf_cache.c to be more readable by adding braces and breaking
-    it across 3 lines.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-3	1	src/libopensrf/osrf_cache.c
-4	6	src/libopensrf/osrf_legacy_json.c
-6	3	src/libopensrf/utils.c
-
-commit 4dadb76c5b7e73615de4a1ff923aa46b77b95330
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Tue Sep 19 21:25:12 2017 -0400
-
-    LP#1243841 - Quiet wrong format warnings during make install.
-    
-    During make install, the compiler warns that %d expects an int when the
-    actual value is a long int.  Changing %d to %ld fixes the issue.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-3	3	src/gateway/osrf_websocket_translator.c
-
-commit c298ab7017627c3502a1b185e2d5871dd0b671ee
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Tue Sep 19 20:46:28 2017 -0400
-
-    LP#1243841 - Quiet unused return value warning in srfsh.c
-    
-    Using the technique described here: https://stackoverflow.com/a/13999461.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	src/srfsh/srfsh.c
-
-commit 3994a17e604f32dc184e9f01afac1b3c573b9927
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Tue Sep 19 20:37:13 2017 -0400
-
-    LP#1243841 - Quiet unused return value warnings.
-    
-    Using advice given here: https://stackoverflow.com/a/13999461, "The
-    only good (if ugly) way to suppress these is to convert the return
-    value into something that the compiler agrees that you can ignore."
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-4	4	src/libopensrf/utils.c
-
-commit f50772c5726b1655d67bfefaaa5cd7d4d8892b47
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Tue Sep 19 18:10:00 2017 -0400
-
-    LP#1243841 - Wrap truth test using "=" in an extra set of parens.
-    
-    Referring to https://stackoverflow.com/questions/5476759/compiler-warning-suggest-parentheses-around-assignment-used-as-truth-value,
-    it is recommended to wrap variable assignments that are used as a truth
-    test within an extra set of parentheses.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	src/libopensrf/osrf_cache.c
-
-commit 2f7688068af65cbe44c460daf0835b25344e6cca
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Sun Feb 18 12:12:13 2018 -0500
-
-    LP1340982: Ignore both 'comment' and '#comment' nodes in Settings Parse.
-    
-    Modify the XML2perl helper function in OpenSRF::Utils::SettingsParser
-    to ignore comment nodes that have names of comment and #comment.
-    
-    To reproduce the bug:
-    
-    1. Stop OpenSRF services.
-    
-    2. Add a XML comment, any text betwen <!-- and -->, in the list of
-    MARC templates in the opensrf.xml file.
-    
-    3. Restart OpenSRF services.
-    
-    4. In the staff client, go to Cataloging->Create New MARC Record.
-    
-    5. In the list of templates, you will #comment where you added the
-    comment. (NOTE: I only tested with 1 comment.  Things may get worse
-    with more than 1 comment.)
-    
-    6. There will be an error like the following in the
-    open-ils.cat_stderr.log if you attempt to choose the #comment entry:
-    
-       Caught error from 'run' method: Exception: OpenSRF::EX::ERROR
-       2018-02-18T11:24:30 OpenSRF::Application
-       /usr/local/share/perl/5.22.1/OpenSRF/Application.pm:240 System
-       ERROR: Unable to open MARC template file: HASH(0x2249928) :
-    
-    To test the fix:
-    
-    1. Leave the comments in the opensrf.xml file from before.
-    
-    2. Apply this commit, do make and make install for OpenSRF.
-    
-    3. Just to make sure, do make and make install for Evergreen.
-    
-    4. Repeat steps 3 and 4 from above.
-    
-    5. You should NOT see any templates named #comment.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	src/perl/lib/OpenSRF/Utils/SettingsParser.pm
-
-commit 24a14a104c2a216664ab52311eb9f90955b75e31
+commit 7d144fbdb50b3d91c8fd9429f35838b37f3cd83c
 Author: Bill Erickson <berickxx@gmail.com>
-Date:   Tue Apr 10 15:06:56 2018 -0400
+Date:   Wed Jul 11 12:27:05 2018 -0400
 
-    LP#1762815 Empty client TZ defaults to server TZ (Perl)
+    LP#1711145 NGINX sample config security improvements
     
-    Fixes an issue in the Perl client time zone handling that resulted in
-    the server defaulting to UTC time instead of the server time zone when
-    no time zone value was received from the client.
+    * Adds security recommendations from
+    https://mozilla.github.io/server-side-tls/ssl-config-generator/
+    * Enables http2
+    * Apply a 5-minute proxy read timeout to avoid too-short timeouts on
+      long API calls.
+    * Adds a (commented) section on sending nginx logs to syslog
+    
+    Includes INSTALL notes on generating the dhparam file.
     
     Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-1	0	src/perl/lib/OpenSRF/DomainObject/oilsMessage.pm
+10	2	README
+30	2	examples/nginx/osrf-ws-http-proxy
 
-commit 0c7f94abf5911cdf042c1162705e721a4fd2899f
+commit d2683cd6d552fdbc6dc25e24cc2aa6c047243b4c
 Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed Jan 24 15:16:14 2018 -0500
+Date:   Tue Jun 12 12:12:45 2018 -0400
 
-    LP#1744158 Websocket proc exits on ejabberd disconnect
+    LP#1776510 JS libs handle transport errors
     
-    Any errors relaying websocket messages to OpenSRF now result in the WS
-    client being disconnected, allowing the WS process to exit.  This
-    prevents the WS gateway from accepting requests it cannot process and
-    allows the client to connect to a new WS process.
+    Teach the websocket client code to look for the transport_error flag
+    applied to the websocket wrapper message by the websocket gateway when a
+    request for an unavilable service is made.
+    
+    When encountered, fire the transport or generic error handler callbacks,
+    if available.  Avoid any attempts to further process the message.
     
     Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+23	0	src/javascript/opensrf.js
+
+commit 0df7943369cbd5416276de84b428cd0a27a2b1eb
+Author: Mike Rylander <mrylander@gmail.com>
+Date:   Fri Jul 7 15:22:21 2017 -0400
+
+    LP#1702978: memcache Get methods use key as va_list format
+    
+    And, when a key (composed of, say, a username or barcode) has a % in it,
+    bad things happen.  We will stop acting as if these are variadic functions
+    now, and also update Evergreen so that it does not do that either.
+    
+    TODO: Make these actually non-variadic, but that breaks ABI.
+    
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+    Signed-off-by: Cesar Velez <cesar.velez@equinoxinitiative.org>
     Signed-off-by: Jason Stephenson <jason@sigio.com>
 
-17	4	src/gateway/osrf_websocket_translator.c
-
-commit 0cb4209fa03091b62df2793a7b273e0c981798d3
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed Jan 31 13:07:41 2018 -0500
-
-    LP#1746577 Websocket responder exits on jabber disconnect
-    
-    Regularly check for Jabber socket disconnects in the websocket gateway
-    "responder" thread (that relays messages from opensrf to the WS client)
-    and force a client disconnect when a broken jabber socket is detected.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-18	2	src/gateway/osrf_websocket_translator.c
+13	17	src/libopensrf/osrf_cache.c
