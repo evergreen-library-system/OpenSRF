@@ -21,6 +21,7 @@ use OpenSRF::Utils::Config;
 use OpenSRF::Transport::PeerHandle;
 use OpenSRF::Utils::SettingsClient;
 use OpenSRF::Utils::Logger qw($logger);
+use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use OpenSRF::Transport::SlimJabber::Client;
 use Encode;
 use POSIX qw/:sys_wait_h :errno_h/;
@@ -227,8 +228,47 @@ sub run {
                         }
                     }
                 } else {
-                    # We'll just have to wait
-                    $self->check_status(1); # block until child is available
+
+                    if (!$from_network) {
+                        # The queue is full, and we just requeued a message. We'll
+                        # now see if there is a request available from the network;
+                        # if so, we'll see if a child is available again or else
+                        # drop it
+                        $msg = $self->{osrf_handle}->process($wait_time);
+                        if ($msg) {
+                            $self->check_status();
+                            if (@{$self->{idle_list}}) {
+                                # child now available, so we'll go ahead and queue it
+                                $chatty and $logger->debug("server: queuing new message after a re-queue with a full queue");
+                                push @max_children_msg_queue, $msg;
+                            } else {
+                                # ok, need to drop this one
+                                my $resp = OpenSRF::DomainObject::oilsMessage->new();
+                                $resp->type('STATUS');
+                                $resp->payload(
+                                    OpenSRF::DomainObject::oilsMethodException->new(
+                                        status => "Service unavailable: no available children and backlog queue at limit",
+                                        statusCode => STATUS_SERVICEUNAVAILABLE
+                                    )
+                                );
+                                $resp->threadTrace(1);
+
+                                $logger->set_osrf_xid($msg->osrf_xid);
+                                $self->{osrf_handle}->send(
+                                    to => $msg->from,
+                                    osrf_xid => $msg->osrf_xid, # Note that this is ignored, which
+                                                                # is why we called $logger->set_osrf_xid above.
+                                                                # We probably don't want that to be necessary
+                                                                # if osrf_xid is explicitly set here, but that'll
+                                                                # be a FIXME for later
+                                    thread => $msg->thread,
+                                    body => OpenSRF::Utils::JSON->perl2JSON([ $resp ])
+                                );
+                                $logger->warn("Backlog queue full for $self->{service}; forced to drop message " .
+                                              $msg->thread . " from " . $msg->from);
+                            }
+                        }
+                    }
                 }
             }
 
