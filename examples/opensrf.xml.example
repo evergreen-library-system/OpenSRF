@@ -165,6 +165,24 @@ vim:et:ts=2:sw=2:
         </unix_config>
       </opensrf.dbmath>
 
+      <opensrf.cslow>
+        <keepalive>3</keepalive>
+        <stateless>1</stateless>
+        <language>c</language>
+        <implementation>libosrf_cslow.so</implementation>
+        <unix_config>
+          <max_requests>1000</max_requests>
+          <unix_log>opensrf.cslow_unix.log</unix_log>
+          <unix_sock>opensrf.cslow_unix.sock</unix_sock>
+          <unix_pid>opensrf.cslow_unix.pid</unix_pid>
+          <min_children>5</min_children>
+          <max_children>15</max_children>
+          <min_spare_children>2</min_spare_children>
+          <max_spare_children>5</max_spare_children>
+          <max_backlog_queue>10</max_backlog_queue>
+        </unix_config>
+      </opensrf.cslow>
+
       <opensrf.settings>
         <keepalive>1</keepalive>
         <stateless>1</stateless>
@@ -262,6 +280,7 @@ vim:et:ts=2:sw=2:
         <appname>opensrf.dbmath</appname>
         <appname>opensrf.validator</appname>
         <appname>opensrf.slooooooow</appname>
+        <appname>opensrf.cslow</appname>
       </activeapps>
 
       <apps>
