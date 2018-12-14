@@ -4,8 +4,8 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (jessie/stretch), Ubuntu (trusty/xenial)
-# and Fedora (16).
+# Currently supports Debian (jessie/stretch) and Ubuntu
+# (xenial/bionic)
 #
 # Installs Perl prereqs, libjs with Perl wrapper
 #
@@ -13,8 +13,6 @@
 # 	make -f Makefile.install debian-stretch
 # 	- or -
 # 	make -f Makefile.install debian-jessie
-# 	- or -
-# 	make -f Makefile.install ubuntu-trusty
 # 	- or -
 # 	make -f Makefile.install ubuntu-xenial
 #   - or -
@@ -167,11 +165,6 @@ EXTRA_DEBS_DEBIAN_STRETCH = \
 	apache2-dev \
 	libncurses5-dev
 
-EXTRA_DEBS_UBUNTU_TRUSTY = \
-	apache2-mpm-prefork \
-	apache2-prefork-dev \
-	ncurses-dev
-
 EXTRA_DEBS_UBUNTU_XENIAL = \
 	apache2 \
 	apache2-dev \
@@ -196,10 +189,8 @@ generic_debian: install_debs
 
 fedora: install_fedora_rpms
 
-ubuntu-trusty: generic_ubuntu trusty apache_mpm_prefork_mods
 ubuntu-xenial: generic_ubuntu xenial apache_mpm_prefork_mods apache_perl_mod
 ubuntu-bionic: generic_ubuntu bionic apache_mpm_prefork_mods apache_perl_mod
-trusty: install_extra_debs install_extra_debs_trusty debian_sys_config
 xenial: install_extra_debs install_extra_debs_xenial debian_sys_config
 bionic: install_extra_debs install_extra_debs_bionic debian_sys_config
 generic_ubuntu: install_debs
@@ -226,9 +217,6 @@ install_extra_debs_jessie: install_extra_debs
 	$(APT_TOOL) install $(EXTRA_DEBS_JESSIE)
 
 # Install even more packaged dependencies on modern distros
-install_extra_debs_trusty:
-	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_TRUSTY)
-
 install_extra_debs_xenial:
 	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_XENIAL)
 

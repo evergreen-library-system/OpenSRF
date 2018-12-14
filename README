@@ -66,7 +66,6 @@ Well-tested values for <osname> include:
 
   * `debian-stretch` for Debian 9
   * `debian-jessie` for Debian 8
-  * `ubuntu-trusty` for Ubuntu 14.04
   * `ubuntu-xenial` for Ubuntu 16.04
   * `ubuntu-bionic` for Ubuntu 18.04
 
@@ -207,12 +206,6 @@ work for OpenSRF.
 1. Stop ejabberd before making any changes to its configuration by issuing the
    following command as the *root* Linux account:
 +
-.(Ubuntu Trusty) Stopping ejabberd
-[source, bash]
----------------------------------------------------------------------------
-/etc/init.d/ejabberd stop
----------------------------------------------------------------------------
-+
 .(Debian / Ubuntu Xenial / Ubuntu Bionic) Stopping ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
@@ -220,21 +213,6 @@ systemctl stop ejabberd.service
 ---------------------------------------------------------------------------
 +
 2. Edit the ejabberd config file.
-+
-(Ubuntu Trusty) Ejabberd 2.x.x::
-Open `/etc/ejabberd/ejabberd.cfg` and make the following
-changes:
-  a. Define your public and private domains in the `hosts` directive. For
-   example:
-+
-[source, bash]
----------------------------------------------------------------------------
-{hosts, ["localhost", "private.localhost", "public.localhost"]}.
----------------------------------------------------------------------------
-+
-  b. Change all `maxrate` values to 500000
-  c. Increase the `max_user_sessions` value to 10000
-  d. Comment out the `mod_offline` directive
 +
 (Debian Jessie) Ejabberd 13.x and 14.x::
 Open `/etc/ejabberd/ejabberd.yml` and make the following
@@ -310,12 +288,6 @@ hosts:
 +
   g. Uncomment the `mod_legacy_auth` directive
 3. Restart the ejabberd server to make the changes take effect:
-+
-.(Ubuntu Trusty) Starting ejabberd
-[source, bash]
----------------------------------------------------------------------------
-/etc/init.d/ejabberd start
----------------------------------------------------------------------------
 +
 .(Debian / Ubuntu Xenial / Ubuntu Bionic) Starting ejabberd
 [source, bash]
