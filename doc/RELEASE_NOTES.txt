@@ -1,0 +1,154 @@
+OpenSRF 3.1-beta
+----------------
+OpenSRF 3.1-beta was released on 9 January 2019. This is a major
+release adding several new features and fixing serveral bugs.
+
+New Features and Major Bugfixes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Support for Websocketd (LP#1777180)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OpenSRF 3.1 adds support for https://github.com/joewalnes/websocketd[websocketd]
+as a backend providing a WebSocket gateway for OpenSRF requests.
+`websocketd` offers significant reliability improvements over Apache's
+`mod_websocket`, which is no longer recommended for production use.
+
+Request Backlog Queues (LP#1729610)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Perl and C service listeners now have the ability to queue requests
+that cannot be immediately handled because no drones are available.
+This allows services to handle transitory spikes in incoming requests
+while conserving expensive resources such as database connections.
+
+The request backlog queue is used when a service has reached the drone
+count set by its `max_children` setting and all of its drones are
+handling other requests. The backlog queue is FIFO, so Once a drone
+becomes available, it will process the oldest queued request.
+
+Each service's backlog queue can contain 1,000 requests by default;
+this limit can be adjusted using the `max_backlog_queue` service
+setting.
+
+If the backlog queue would grow beyond its limit, incoming requests
+that would be added to it are instead dropped. When a request
+is dropped, an OpenSRF method exception response is sent back
+to the client. This exception has a status code of 503 ("service
+unavailable") and is provided to give clients the opportunity to
+pause sending requests or display a useful error message to the
+user.
+
+This feature includes two new example services, `opensrf.cslow` and
+`opensrf.slooooooow`, written in C and Perl respectively. Both services
+have a "wait" method that waits for a specified number of seconds, then
+returns that number. These services can be used for testing the backlog
+queue and simulating long-running methods during performance testing
+of OpenSRF applications.
+
+Ability to Force-Recyle Drones (LP#1706147)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Perl applications now allow a method to indicate that the drone
+running it be recycled upon completion of that method. This allows
+methods that are known to require a long time to run or consume
+(or leak) significant amounts of memory to force system resources
+to be returned upon completion.
+
+Perl methods that wish to force drone-reycling can do so like this:
+
+[source,perl]
+----
+sub some_api_method {
+    my ($self, $client, ...) = @_;
+    $self->session->force_recycle(1);
+    ...
+}
+----
+
+Changes to Supported Linux Distributions (LP#1793585 and LP#1718459)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Support for Ubuntu 18.04 "Bionic Beaver" has been added, while support
+for Debian Wheezy has been dropped.
+
+Users of Ubuntu 14.04 ("Trusty Tahr") should note that Trusty will
+reach end of life in April 2019 and that OpenSRF support for
+Tahr will end in a subsequent release in the 3.1.x series.
+
+Support Modern Ejabberd (LP#1703411)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Modern versions of Ejabberd strip custom XML attributes which appear
+outside of custom elements.  To support OpenSRF's custom router and
+osrf_xid commands, these attribute are now moved into a new custom XML element
+`<opensrf>`.
+
+Improved Example NGINX Configuration (LP#1711145)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The example NGINX reverse proxy configuration file that ships with
+OpenSRF is significantly improved:
+
+* Implements HTTPS security recommendations from Mozilla
+* Enables http2
+* Applies a 5-minute proxy read timeout to avoid too-short timeouts on
+  long API calls.
+* Adds a (commented) section on sending NGINX logs to syslog
+
+OpenSRF HTTP Translator Can Now Access User Agent IP Address (LP#1684970)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The OpenSRF HTTP translator can now obtain the user agent's IP address
+(as opposed to the IP address of the proxy) when running behind a
+reverse proxy. This fixes a problem where it is theoretically possible
+for two clients to access the same OpenSRF worker process over the
+HTTP translator. This also fixes a problem where proxied requests
+could various see the IPv4 and IPv6 forms of the proxy's address,
+potentially breaking long-running transactions made through the
+translator.
+
+This fix requires use of the `mod_remoteip` Apache module.
+
+Other Bugs Fixed
+^^^^^^^^^^^^^^^^
+* The JavaScript client library now detects when a transport error
+  occurs when making a WebSocket request and invokes either
+  the transport or generic error handler, depending on what has
+  been set by the client. (LP#1776510)
+* OpenSRF could fail to retrieve memcached values whose keys contain
+  the % character. This resulted in breaking authentication in
+  Evergreen when the username or barcode contained a %. (LP#1684970)
+
+Upgrade Notes
+~~~~~~~~~~~~~
+OpenSRF 3.1 introduces changes to the application binary interface
+(ABI) for C applications. Consequently, Evergreen users should plan on
+recompiling Evergreen after installing OpenSRF 3.1.
+
+Users of NGINX should review the `examples/nginx/osrf-ws-http-proxy`
+example configuration file and make adjustments to their example
+configuration accordingly, including generating a new DH Group
+using the `openssl dhparam` command.
+
+Users of a reverse proxy such as NGINX should install and enable
+the Apache `mod_remoteip` module, then adjust the Apache configuration
+to include lines like this:
+
+[source]
+----
+    RemoteIPInternalProxy 127.0.0.1/24 # or whatever the proxy IP address is
+    RemoteIPInternalProxy ::1          # or whatever the proxy IP address is
+    RemoteIPHeader X-Real-IP
+----
+
+Note for Evergreen Users
+~~~~~~~~~~~~~~~~~~~~~~~
+OpenSRF 3.1 can be used by Evergreen 3.0.x, 3.1.x, and 3.2.x.
+
+Acknowledgements
+~~~~~~~~~~~~~~~
+
+We would like to thank the following people who contributed to OpenSRF 3.0.0:
+
+  * Galen Charlton
+  * Jeff Davis
+  * Bill Erickson
+  * Mike Rylander
+  * Chris Sharp
+  * Ben Shum
+  * Remington Steed
+  * Jason Stephenson
