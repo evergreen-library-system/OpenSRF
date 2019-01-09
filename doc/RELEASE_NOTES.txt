@@ -128,7 +128,7 @@ Users of a reverse proxy such as NGINX should install and enable
 the Apache `mod_remoteip` module, then adjust the Apache configuration
 to include lines like this:
 
-[source]
+[source,bash]
 ----
     RemoteIPInternalProxy 127.0.0.1/24 # or whatever the proxy IP address is
     RemoteIPInternalProxy ::1          # or whatever the proxy IP address is
