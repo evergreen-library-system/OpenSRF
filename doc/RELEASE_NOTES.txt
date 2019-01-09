@@ -1,6 +1,6 @@
-OpenSRF 3.1-beta
-----------------
-OpenSRF 3.1-beta was released on 9 January 2019. This is a major
+OpenSRF 3.1.0-beta
+------------------
+OpenSRF 3.1.0-beta was released on 9 January 2019. This is a major
 release adding several new features and fixing serveral bugs.
 
 New Features and Major Bugfixes

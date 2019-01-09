@@ -29,7 +29,7 @@ Issue the following commands as the *user* Linux account.
 +
 [source, bash]
 ------------------------------------------------------------------------------
-wget https://evergreen-ils.org/downloads/opensrf-OSRFVERSION.tar.gz
+wget https://evergreen-ils.org/downloads/opensrf-3.1.0-beta.tar.gz
 ------------------------------------------------------------------------------
 +
 [NOTE]
@@ -40,8 +40,8 @@ http://git.evergreen-ils.org/?p=OpenSRF.git
 +
 [source, bash]
 ------------------------------------------------------------------------------
-tar -xvf opensrf-OSRFVERSION.tar.gz
-cd opensrf-OSRFVERSION/
+tar -xvf opensrf-3.1.0-beta.tar.gz
+cd opensrf-3.1.0-beta/
 ------------------------------------------------------------------------------
 
 Installing prerequisites
@@ -487,7 +487,7 @@ a2dismod websocket
 +
 [source, bash]
 ---------------------------------------------------------------------------
-cd /path/to/opensrf-OSRFVERSION
+cd /path/to/opensrf-3.1.0-beta
 cp examples/apache_24/websockets/apache2.conf /etc/apache2-websockets/
 ---------------------------------------------------------------------------
 +
@@ -625,7 +625,7 @@ apt-get install nginx
 +
 [source, bash]
 ---------------------------------------------------------------------------
-cd /path/to/opensrf-OSRFVERSION
+cd /path/to/opensrf-3.1.0-beta
 cp examples/nginx/osrf-ws-http-proxy /etc/nginx/sites-available/
 ln -s /etc/nginx/sites-available/osrf-ws-http-proxy /etc/nginx/sites-enabled/osrf-ws-http-proxy
 rm /etc/nginx/sites-enabled/default
@@ -689,7 +689,7 @@ apt-get install haproxy
 +
 [source, bash]
 ---------------------------------------------------------------------------
-cd /path/to/opensrf-OSRFVERSION
+cd /path/to/opensrf-3.1.0-beta
 cat examples/haproxy/osrf-ws-http-proxy >> /etc/haproxy/haproxy.cfg
 ---------------------------------------------------------------------------
 +
