@@ -1,7 +1,7 @@
-OpenSRF 3.1.0-beta
+OpenSRF 3.1.0
 ------------------
-OpenSRF 3.1.0-beta was released on 9 January 2019. This is a major
-release adding several new features and fixing serveral bugs.
+OpenSRF 3.1.0 was released on 17 January 2019. This is a major
+release adding several new features and fixing several bugs.
 
 New Features and Major Bugfixes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -44,15 +44,15 @@ returns that number. These services can be used for testing the backlog
 queue and simulating long-running methods during performance testing
 of OpenSRF applications.
 
-Ability to Force-Recyle Drones (LP#1706147)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ability to Force-Recycle Drones (LP#1706147)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Perl applications now allow a method to indicate that the drone
 running it be recycled upon completion of that method. This allows
 methods that are known to require a long time to run or consume
 (or leak) significant amounts of memory to force system resources
 to be returned upon completion.
 
-Perl methods that wish to force drone-reycling can do so like this:
+Perl methods that wish to force drone-recycling can do so like this:
 
 [source,perl]
 ----
@@ -139,7 +139,7 @@ Note for Evergreen Users
 ~~~~~~~~~~~~~~~~~~~~~~~
 OpenSRF 3.1 can be used by Evergreen 3.0.x, 3.1.x, and 3.2.x.
 
-Acknowledgements
+Acknowledgments
 ~~~~~~~~~~~~~~~
 
 We would like to thank the following people who contributed to OpenSRF 3.0.0:
