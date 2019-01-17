@@ -1,5 +1,5 @@
 OpenSRF 3.1.0
-------------------
+-------------
 OpenSRF 3.1.0 was released on 17 January 2019. This is a major
 release adding several new features and fixing several bugs.
 
@@ -142,7 +142,7 @@ OpenSRF 3.1 can be used by Evergreen 3.0.x, 3.1.x, and 3.2.x.
 Acknowledgments
 ~~~~~~~~~~~~~~~
 
-We would like to thank the following people who contributed to OpenSRF 3.0.0:
+We would like to thank the following people who contributed to OpenSRF 3.1.0:
 
   * Galen Charlton
   * Jeff Davis
