@@ -239,6 +239,9 @@ sub _log_message {
     my( $msg, $level ) = @_;
     return if $level > $loglevel;
 
+    # Allow $msg to be either a normal string or a delayed exec subroutine
+    $msg = &$msg if (ref($msg) eq 'CODE');
+
     # apply a sane default service name/tag
     $logger->set_service($0) unless $service;
 
