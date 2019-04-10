@@ -423,7 +423,7 @@ sub kill_me {
 	}
 
 	$self->disconnect;
-	$logger->transport( "AppSession killing self: " . $self->session_id(), DEBUG );
+	$logger->transport(sub{return "AppSession killing self: " . $self->session_id() }, DEBUG );
 	delete $_CACHE{$self->session_id};
 	delete($$self{$_}) for (keys %$self);
 }
@@ -546,8 +546,8 @@ sub send {
 		push @doc, $msg;
 
 	
-		$logger->debug( "AppSession sending ".$msg->type." to ".$self->remote_id.
-			" with threadTrace [".$msg->threadTrace."]");
+		$logger->debug(sub{return "AppSession sending ".$msg->type." to ".$self->remote_id.
+			" with threadTrace [".$msg->threadTrace."]" });
 
 	}
 	
@@ -743,7 +743,7 @@ sub recv {
 		}
 	}
 
-	#$logger->debug( ref($self). " recv_queue before wait: " . $self->_print_queue(), INTERNAL );
+	#$logger->debug(sub{return ref($self). " recv_queue before wait: " . $self->_print_queue() }, INTERNAL );
 
 	if( exists( $args{timeout} ) ) {
 		$args{timeout} = int($args{timeout});
@@ -788,7 +788,7 @@ sub recv {
 		last if (scalar(@list) >= $args{count});
 	}
 
-	$logger->debug( "Number of matched responses: " . @list, DEBUG );
+	$logger->debug(sub{return "Number of matched responses: " . @list }, DEBUG );
 	$self->queue_wait(0); # check for statuses
 	
 	return $list[0] if (!wantarray);
@@ -809,7 +809,7 @@ sub push_resend {
 
 sub flush_resend {
 	my $self = shift;
-	$logger->debug( "Resending..." . @_RESEND_QUEUE, INTERNAL );
+	$logger->debug(sub{return "Resending..." . @_RESEND_QUEUE }, INTERNAL );
 	while ( my $req = shift @OpenSRF::AppSession::_RESEND_QUEUE ) {
 		$req->resend unless $req->complete;
 	}
@@ -1028,7 +1028,7 @@ sub payload { return shift()->{payload}; }
 sub resend {
 	my $self = shift;
 	return unless ($self and $self->session and !$self->complete);
-	OpenSRF::Utils::Logger->debug( "I'm resending the request for threadTrace ". $self->threadTrace, DEBUG);
+	OpenSRF::Utils::Logger->debug(sub{return "I'm resending the request for threadTrace ". $self->threadTrace }, DEBUG);
 	return $self->session->send('REQUEST', $self->payload, $self->threadTrace );
 }
 
