@@ -163,7 +163,7 @@ sub initialize {
 	    unless ( $self->reader->connected );
 
     $self->xmpp_id("$username\@$host/$resource");
-    $logger->debug("Created XMPP connection " . $self->xmpp_id);
+    $logger->debug(sub{return "Created XMPP connection " . $self->xmpp_id });
 	return $self;
 }
 

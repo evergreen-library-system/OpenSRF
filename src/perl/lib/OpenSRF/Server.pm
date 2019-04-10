@@ -296,7 +296,7 @@ sub run {
 sub perform_idle_maintenance {
     my $self = shift;
 
-    $chatty and $logger->internal(
+    $chatty and $logger->internal(sub{return
         sprintf(
             "server: %d idle, %d active, %d min_spare, %d max_spare in idle maintenance",
             scalar(@{$self->{idle_list}}), 
@@ -304,7 +304,7 @@ sub perform_idle_maintenance {
             $self->{min_spare_children},
             $self->{max_spare_children}
         )
-    );
+    });
 
     # spawn 1 spare child per maintenance loop if necessary
     if( $self->{min_spare_children} and
@@ -437,7 +437,7 @@ sub check_status {
 
     return unless @pids;
 
-    $chatty and $logger->internal("server: ".scalar(@pids)." children reporting for duty: (@pids)");
+    $chatty and $logger->internal(sub{return "server: ".scalar(@pids)." children reporting for duty: (@pids)" });
 
     my $child;
     my @new_actives;
@@ -453,9 +453,9 @@ sub check_status {
 
     $self->{active_list} = [@new_actives];
 
-    $chatty and $logger->internal(sprintf(
+    $chatty and $logger->internal(sub{return sprintf(
         "server: %d idle and %d active children after status update",
-            scalar(@{$self->{idle_list}}), scalar(@{$self->{active_list}})));
+            scalar(@{$self->{idle_list}}), scalar(@{$self->{active_list}})) });
 
     # some children just went from active to idle. let's see 
     # if any of them need to be killed from a previous sighup.
@@ -509,9 +509,9 @@ sub reap_children {
 
     $self->spawn_children unless $shutdown;
 
-    $chatty and $logger->internal(sprintf(
+    $chatty and $logger->internal(sub{return sprintf(
         "server: %d idle and %d active children after reap_children",
-            scalar(@{$self->{idle_list}}), scalar(@{$self->{active_list}})));
+            scalar(@{$self->{idle_list}}), scalar(@{$self->{active_list}})) });
 }
 
 # ----------------------------------------------------------------
@@ -555,7 +555,7 @@ sub spawn_child {
             push(@{$self->{idle_list}}, $child);
         }
 
-        $chatty and $logger->internal("server: server spawned child $child with ".$self->{num_children}." total children");
+        $chatty and $logger->internal(sub{return "server: server spawned child $child with ".$self->{num_children}." total children" });
 
         return $child;
 
@@ -567,7 +567,7 @@ sub spawn_child {
 
         if($self->{stderr_log}) {
 
-            $chatty and $logger->internal("server: redirecting STDERR to " . $self->{stderr_log});
+            $chatty and $logger->internal(sub{return "server: redirecting STDERR to " . $self->{stderr_log} });
 
             close STDERR;
             unless( open(STDERR, '>>' . $self->{stderr_log}) ) {

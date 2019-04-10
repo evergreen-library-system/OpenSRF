@@ -230,8 +230,8 @@ sub handler {
 	$session->last_threadTrace($tT);
 	$session->session_locale($locale);
 
-	$log->debug(" Received api_level => [$api_level], MType => [$mtype], ".
-			"from [".$session->remote_id."], threadTrace[".$self->threadTrace."]");
+	$log->debug(sub{return " Received api_level => [$api_level], MType => [$mtype], ".
+			"from [".$session->remote_id."], threadTrace[".$self->threadTrace."]" });
 
 	my $val;
 	if ( $session->endpoint == $session->SERVER() ) {
@@ -320,7 +320,7 @@ sub do_client {
 
 		if ($self->payload->statusCode == STATUS_OK) {
 			$session->state($session->CONNECTED);
-			$log->debug("We connected successfully to ".$session->app);
+			$log->debug(sub{return "We connected successfully to ".$session->app });
 			return 0;
 		}
 
@@ -372,7 +372,7 @@ sub do_client {
 		}
 	}
 
-	$log->debug("oilsMessage passing to Application: " . $self->type." : ".$session->remote_id );
+	$log->debug(sub{return "oilsMessage passing to Application: " . $self->type." : ".$session->remote_id });
 
 	return 1;
 
