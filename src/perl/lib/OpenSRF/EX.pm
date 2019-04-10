@@ -60,10 +60,10 @@ sub throw() {
 				$self->class->isa( "OpenSRF::EX::NOTICE" ) ||
 				$self->class->isa( "OpenSRF::EX::WARN" ) ) {
 
-		$log->debug( $self->stringify(), $log->DEBUG );
+		$log->debug(sub{return $self->stringify() }, $log->DEBUG );
 	}
 
-	else{ $log->debug( $self->stringify(), $log->ERROR ); }
+	else{ $log->debug(sub{return $self->stringify() }, $log->ERROR ); }
 	
 	$self->SUPER::throw;
 }

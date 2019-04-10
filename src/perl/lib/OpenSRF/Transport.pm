@@ -176,7 +176,7 @@ sub handler {
 		} else { 
 
 			if( ! $msg->handler( $app_session ) ) { return 0; } 
-			$logger->debug(sprintf("Response processing duration: %.3f", (time() - $start_time)));
+			$logger->debug(sub{return sprintf("Response processing duration: %.3f", (time() - $start_time)) });
 
 		}
 	}

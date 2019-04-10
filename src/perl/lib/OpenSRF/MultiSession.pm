@@ -46,7 +46,7 @@ sub new {
 				1
 			);
 		#print "Creating connection ".$self->{sessions}->[-1]->session_id." ...\n";
-		$log->debug("Creating connection ".$self->{sessions}->[-1]->session_id." ...");
+		$log->debug(sub{return "Creating connection ".$self->{sessions}->[-1]->session_id." ..." });
 	}
 
 	return $self;
@@ -200,7 +200,7 @@ sub request {
 			  params => [@params]
 			};
 
-		$log->debug("Making request [$method] ".$self->running."...");
+		$log->debug(sub{return "Making request [$method] ".$self->running."..." });
 
 		return $req;
 	} elsif (!$self->adaptive) {
@@ -274,7 +274,7 @@ sub _session_reap {
 			push @done, $req;
 
 		} else {
-			#$log->debug("Still running ".$req->{meth}." in session ".$req->{req}->session->session_id);
+			#$log->debug(sub{return "Still running ".$req->{meth}." in session ".$req->{req}->session->session_id });
 			push @running, $req;
 		}
 	}
