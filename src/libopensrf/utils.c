@@ -732,18 +732,16 @@ int stringisnum(const char* s) {
 	This function is a wrapper for some public domain routines written by David Madore,
 	Ron Rivest, and Colin Plumb.
 */
-char* md5sum( const char* text, ... ) {
+char* md5sum( const char* text ) {
 
 	struct md5_ctx ctx;
 	unsigned char digest[16];
 
 	MD5_start (&ctx);
 
-	VA_LIST_TO_STRING(text);
-
 	int i;
-	for ( i=0 ; i != strlen(VA_BUF) ; i++ )
-		MD5_feed (&ctx, VA_BUF[i]);
+	for ( i=0 ; i != strlen(text) ; i++ )
+		MD5_feed (&ctx, text[i]);
 
 	MD5_stop (&ctx, digest);
 

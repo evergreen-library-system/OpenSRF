@@ -367,7 +367,7 @@ int stringisnum(const char* s);
 	Calculates the md5 of the text provided.
 	The returned string must be freed by the caller.
 */
-char* md5sum( const char* text, ... );
+char* md5sum( const char* text );
 
 
 /*
