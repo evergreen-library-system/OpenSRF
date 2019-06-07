@@ -1,3 +1,46 @@
+OpenSRF 3.1.1 release notes
+===========================
+
+Supported platforms
+-------------------
+The following Linux distributions are well-tested:
+
+  * Debian 8 (Jessie) and 9 (Stretch)
+  * Ubuntu 16.04 LTS (Xenial Xerus) and 18.04 LTS (Bionic Beaver)
+
+OpenSRF 3.1.1
+-------------
+OpenSRF 3.1.1 was released on 7 June 2019. This is a bugfix release
+that improves performance. All users of OpenSRF 3.1.x are advised to
+upgrade as soon as possible.
+
+The following bugs are fixed:
+
+  * LP#1824181 and LP#1824184: Improve the performance of certain
+    logging statements. OpenSRF application code written in Perl
+    can now pass a subroutine reference to a logging statement
+    instead of a string. This allows complicated expressions to
+    generate text for a log message to not be run unless actually
+    needed for the current logging level.  For example, a logging
+    statement of `$logger->debug('message')` can
+    now be alternatively be represented as
+    `$logger->debug(sub { return 'message' })`. OpenSRF now uses this
+    mechanism for a debug logging statement in `method_lookup()`. This
+    has the effect of reducing the time to run some methods in
+    Evergreen's `open-ils.storage` service by 90%.
+  * LP#1808580: Remove formal installation support for Ubuntu 14.04
+    "Trusty Tahr", which is no longer supported by Ubuntu.
+
+Acknowledgments
+~~~~~~~~~~~~~~~
+
+We would like to thank the following people who contributed to OpenSRF 3.1.1:
+
+  * Galen Charlton
+  * John Merriam
+  * Ben Shum
+  * Jason Stephenson
+
 OpenSRF 3.1.0
 -------------
 OpenSRF 3.1.0 was released on 17 January 2019. This is a major
