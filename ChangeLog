@@ -1,8 +1,8 @@
-commit 66103eb652fccf9b847d6ce295c62e1562e47964
+commit 9a3ef18779c1421f533347ad2e9326ae8d1d7cdc
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Thu Jan 17 17:22:40 2019 -0500
+Date:   Fri Jun 7 17:03:45 2019 -0400
 
-    update versions for 3.1.0
+    update versions for 3.1.1
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
@@ -11,1096 +11,127 @@ Date:   Thu Jan 17 17:22:40 2019 -0500
 1	1	src/python/setup.py
 1	1	version.m4
 
-commit 6045fdaa42c5581a9a32cf9dea27f1a4e80bffb8
+commit 76d8a71df79a227b6e18b94b0fa571b47c7f940e
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Thu Jan 17 17:20:20 2019 -0500
+Date:   Fri Jun 7 17:01:43 2019 -0400
 
-    update release notes to 3.1.0 and fix typos
+    update release notes for OpenSRF 3.1.1
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-7	7	doc/RELEASE_NOTES.txt
+43	0	doc/RELEASE_NOTES.txt
 
-commit b35e8538351b8c6c1e0bddb7678435d62b996c31
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Jan 9 17:35:12 2019 -0500
+commit 28b5d6d8ac25bc350ac3ea64466e7a422c6fa28e
+Author: John Merriam <jmerriam@biblio.org>
+Date:   Wed Apr 10 11:06:14 2019 -0400
 
-    fix formatting issue in release notes
+    LP#1824184: Change potentially slow log statements to subroutines
     
+    The OpenSRF code was searched for potentially slow logging statements at
+    log level info or above. We then changed those logging statements to be
+    delayed execution subroutines. This is in reaction to LP1823338 where a
+    slow debug logging statement was slowing down SIP checkins even though
+    debug logging was not turned on.
+    
+    Here is some pseudocode that shows what is being done here:
+    
+    $log->debug("Some text " . $some->slow_method);
+    
+    would be changed to:
+    
+    $log->debug(sub{return "Some text " . $some->slow_method });
+    
+    With this change, an unnamed sub is passed to the OpenSRF logger module
+    and it will not be executed unless the global logging level is set to
+    debug or higher (the slow_method will not be called unless it is needed
+    for that logging level).
+    
+    ********
+    If/when this is committed, please use delayed execution subroutines for
+    any logging statements that could be slow in the future. It is recommend
+    that any logging statements that do not consist entirely of quoted text
+    and/or already available scalar variables use delayed execution
+    subroutines.
+    ********
+    
+    Testing notes
+    -------------
+    [1] This patch reduced the duration of open-ils.storage.actor.user.total_owed
+        calls on a test system from an average of 0.13 seconds to an overage
+        of 0.009 seconds.
+    [2] It didn't materially affect the duration of calls to
+        open-ils.actor.user.opac.vital_stats.
+    [3] This make sense: open-ils.storage has far more generated methods
+        than open-ils.actor.
+    [4] There are enough instances in Evergreen of using method_lookup to find
+        routines in open-ils.storage that the speed improvement may well be
+        perceptible to humans, not just SIP sorters.
+    
+    Signed-off-by: John Merriam <jmerriam@biblio.org>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-1	1	doc/RELEASE_NOTES.txt
+7	7	src/perl/lib/OpenSRF/AppSession.pm
+9	9	src/perl/lib/OpenSRF/Application.pm
+4	4	src/perl/lib/OpenSRF/DomainObject/oilsMessage.pm
+2	2	src/perl/lib/OpenSRF/EX.pm
+3	3	src/perl/lib/OpenSRF/MultiSession.pm
+9	9	src/perl/lib/OpenSRF/Server.pm
+1	1	src/perl/lib/OpenSRF/Transport.pm
+1	1	src/perl/lib/OpenSRF/Transport/SlimJabber/Client.pm
 
-commit 5c8b62f209a62a0ad2bf2a05b9e8fd34fda50630
+commit 840fadcf0eee864dbedde9750346d4835af13f6b
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Jan 9 17:23:01 2019 -0500
+Date:   Fri Jun 7 11:30:42 2019 -0400
 
-    update ChangeLog for 3.1.0-beta
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-746	1007	ChangeLog
-
-commit b74533255c61937b96fb4326b9f94c18aaa37d4d
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Jan 9 17:18:48 2019 -0500
-
-    bump up version numbers for 3.1.0-beta release
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-6	6	README
-3	3	doc/RELEASE_NOTES.txt
-2	2	src/perl/lib/OpenSRF.pm
-1	1	src/python/setup.py
-1	1	version.m4
-
-commit 0ed43a65d9f814540a9b0ec087ca29bf8090f7b2
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Jan 9 17:04:24 2019 -0500
-
-    draft 3.1.x release notes for 3.1-beta
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-154	0	doc/RELEASE_NOTES.txt
- create mode 100644 doc/RELEASE_NOTES.txt
-
-commit d7e9df6838f1c9a72db3fd41556d178cfe7f6700
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Dec 12 14:35:56 2018 -0500
-
-    LP#1729610: extend backlog queue to C apps
-    
-    This patch extends the notion of a backlog queue to C apps and
-    offers the same functionality as the Perl side of the patch series:
-    
-    - max_backlog_queue configuration setting
-    - ability to queue messages up to the configured limit
-    - ability to drop requests that would overflow the backlog
-      queue and send status 503 exceptions back to the client.
-    
-    This patch also adds a new service, opensrf.cslow, that implements
-    a opensrf.cslow.wait method similar to the Perl opensrf.slooooooow
-    service.
+    LP#1824181: add test cases
     
     To test
     -------
-    [1] Set a low max_backlog_queue for opensrf.cslow and a low
-        max_children.
-    [2] Arrange for srfsh to fire off a bunch of opensrf.cslow.wait
-        requests.
-    [3] Verify that requests that come in after the backlog queue fills
-        up immediately get 503 exceptions.
+    [1] Verify that 'make check' (or prove src/perl/t/09-Utils-Logger.t)
+        passes.
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
 
-19	0	examples/opensrf.xml.example
-5	1	src/c-apps/Makefile.am
-58	0	src/c-apps/osrf_cslow.c
-117	40	src/libopensrf/osrf_prefork.c
- create mode 100644 src/c-apps/osrf_cslow.c
+10	1	src/perl/t/09-Utils-Logger.t
 
-commit efa9b713d5341458a3afaa26d1cf9e750fa78654
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Nov 7 12:03:17 2018 -0500
+commit 37dcdcab5a97e06259a859a1721f243978f35a66
+Author: John Merriam <jmerriam@biblio.org>
+Date:   Wed Apr 10 09:51:54 2019 -0400
 
-    LP#1729610: return new OpenSRF status if backlog queue fills up
+    LP#1824181: Allow 1st arg to logger to be string or subroutine
     
-    This patch teaches Perl services how to return a new OpenSRF status,
-    OSRF_STATUS_SERVICEUNAVAILABLE (code 503) if the backlog queue
-    for a service gets full.
+    This simple change allows the $msg passed to _log_message in Logger.pm
+    to be either a regular string or a delayed exec subroutine. This is in
+    reaction to LP1823338 where a slow debug logging statement was slowing
+    down SIP checkins even though debug logging was not turned on.
     
-    To test
-    -------
-    [1] Set a low max_backlog_queue for opensrf.sloooow and a low
-        max_children.
-    [2] Arrange for srfsh to fire off a bunch of opensrf.sloooow.wait
-        requests.
-    [3] Verify that requests that come in after the backlog queue fills
-        up immediately get 503 exceptions.
+    With this change you can take this:
     
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-1	0	include/opensrf/osrf_message.h
-1	0	src/javascript/opensrf.js
-3	0	src/perl/lib/OpenSRF/DomainObject/oilsResponse.pm
-42	2	src/perl/lib/OpenSRF/Server.pm
-1	0	src/python/osrf/const.py
-
-commit 848843b1cda6d79d3aec589746abf7a8efdc313d
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Nov 6 15:14:55 2018 -0500
-
-    LP#1729610: make it possible to set max_backlog_queue in opensrf.xml
+    $log->debug("Available methods\n\t".join("\n\t", keys %{ $_METHODS[$proto] }), INTERNAL);
     
-    This patch adds a new service configuration option, max_backlog_queue,
-    to allow controlling the size of the backlog queue.
+    and change it to this:
     
-    If not otherwise specified in opensrf.xml, max_backlog_queue defaults
-    to 1000.
+    $log->debug(sub{return "Available methods\n\t".join("\n\t", keys %{ $_METHODS[$proto] }) }, INTERNAL);
     
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-1	0	examples/opensrf.xml.example
-1	0	src/perl/lib/OpenSRF/System.pm
-
-commit 60bcf74ecc5a5c7d0740d7054e829eef19828091
-Author: Remington Steed <rjs7@calvin.edu>
-Date:   Wed Jan 31 16:05:52 2018 -0500
-
-    LP#1729610: Fix incorrect param description
+    and then that slow debug logging line will not be executed unless
+    debug logging is turned on.
     
-    Mike confirmed that the code expects "pause" to be an integer. This
-    commit changes the description to reflect that, and to mention the
-    default value.
-    
-    Signed-off-by: Remington Steed <rjs7@calvin.edu>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-1	1	src/perl/lib/OpenSRF/Application/Slooooooow.pm
-
-commit a9da9c7b25ef90276d41ba84ba8ccf0ea856da1b
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Tue Oct 24 16:45:09 2017 -0400
-
-    LP#1729610: Add some debug/internal logging to backlog queue
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-7	0	src/perl/lib/OpenSRF/Server.pm
-
-commit 1abec0da61a46fa5a4a881c29a2e95a51e9013fa
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Wed Nov 1 11:11:08 2017 -0400
-
-    LP#1729610: Add a service useful for testing behavior in slow response conditions
-    
-    This service, opensrf.slooooooow, offers a opensrf.slooooooow.wait method
-    that waits for the number of seconds specified in its sole parameter.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-19	0	examples/opensrf.xml.example
-48	0	src/perl/lib/OpenSRF/Application/Slooooooow.pm
- create mode 100644 src/perl/lib/OpenSRF/Application/Slooooooow.pm
-
-commit 0201ca954002eb241d277c3068659bb1f8100bab
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Tue Oct 24 13:27:37 2017 -0400
-
-    LP#1729610: Allow queuing (for a while) during child backlog
-    
-    This patch teaches OpenSRF listeners for Perl services how to maintain
-    a queue of requests in case no drone process is immediately available
-    to process a requeust.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-35	5	src/perl/lib/OpenSRF/Server.pm
-2	3	src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
-
-commit f3eab1715079243d541dc12fd90db005630ffec9
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Tue Nov 13 17:21:18 2018 -0500
-
-    LP#1803182 Websocketd graceful shutdown support
-    
-    Give websocketd clients a chance to complete any requests that are
-    in-process at time of shutdown.
-    
-    Graceful shutdown is initiated by sending a SIGUSR1 signal to the
-    websocket-osrf child processes or to the parent process group.
-    
-    This can be done directly via:
-    
-    $ kill -s USR1 -$websocketd_parent_pid
-    
-    Or via systemd for systemd users:
-    
-    $ sudo systemctl kill -s USR1 websocketd-osrf
-    
-    Note the websocketd parent process ignores SIGUSR1.
-    
-    Once initiated, the websocketd backend goes into shutdown mode polling
-    for a graceful shutdown window, which occurs when all request up to now
-    have been completed.  Once that moment arrives, the client is kicked off
-    and must connect to a new websocketd instance to issue any new requests.
-    
-    The polling period lasts for SHUTDOWN_MAX_GRACEFUL_SECONDS seconds (in
-    osrf-websocket-stdio.c), which currently defaults to 2 minutes.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: John Merriam <jmerriam@biblio.org>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-91	13	src/websocket-stdio/osrf-websocket-stdio.c
+3	0	src/perl/lib/OpenSRF/Utils/Logger.pm
 
-commit 304365165e7ba0cc08bb6c5f0ba25f0b541fd27d
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Mon Jul 24 12:08:56 2017 -0400
-
-    LP#1706147 Perl Force-Recycle drone option
-    
-    Creates an API-level option to inform the OpenSRF drone management code
-    that the running drone should be recycled upon completion of the current
-    OpenSRF session.  This allows for quicker release of resources consumed
-    by the drone.
-    
-    To use:
-    
-    sub some_api_method {
-        my ($self, $client, ...) = @_;
-        $self->session->force_recycle(1);
-        ...
-    }
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-10	0	src/perl/lib/OpenSRF/AppSession.pm
-15	1	src/perl/lib/OpenSRF/Server.pm
-
-commit 51a4651186c94686051262a9255d165eadd4f049
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Mon Aug 27 10:12:57 2018 -0400
-
-    LP#1684970 Translator compatible with mod_remoteip
-    
-    Teach the OSRF Translator to request the IP address of the user agent
-    (e.g. web browser) instead of the IP address of the up stream client,
-    which may be a proxy, using the Apache 2.4 request_rec->useragent_ip
-    value.
-    
-    http://httpd.apache.org/docs/2.4/developer/new_api_2_4.html
-    
-    This make is possible for the translator to access the client IP with
-    Apache's mod_remoteip enabled and configured.
-    
-    Includes sample config and install documentation.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-17	0	README
-1	1	src/gateway/osrf_http_translator.c
-
-commit 1423787b6076daeb18176e907b1ed307255ffbcb
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Thu Sep 13 13:08:37 2018 -0400
-
-    LP#1711145 NGINX sample websocketd configs
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-20	3	examples/nginx/osrf-ws-http-proxy
-
-commit 3db305ba4329b4c93d16b03800755d5807de4de0
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed Jul 11 12:27:05 2018 -0400
-
-    LP#1711145 NGINX sample config security improvements
-    
-    * Adds security recommendations from
-    https://mozilla.github.io/server-side-tls/ssl-config-generator/
-    * Enables http2
-    * Apply a 5-minute proxy read timeout to avoid too-short timeouts on
-      long API calls.
-    * Adds a (commented) section on sending nginx logs to syslog
-    
-    Includes INSTALL notes on generating the dhparam file.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-10	2	README
-30	2	examples/nginx/osrf-ws-http-proxy
-
-commit 5c803ae4550bf0e4a992c217baeaffabee30c45a
+commit 1eff7ee443beda4037a3edb8e2cd6caa37ee6d85
 Author: Jason Stephenson <jason@sigio.com>
-Date:   Mon Nov 5 10:42:32 2018 -0500
+Date:   Fri Dec 14 15:35:49 2018 -0500
 
-    Reorder Ejabberd configuration steps for Ubuntu 18.04.
+    Lp 1808580: Remove Installation Support for Ubuntu 14.04
     
-    Rearrange the steps for modifying /etc/ejabberd/ejabberd.yml on Ubuntu
-    18.04 so that they are in the same order that they appear in the file.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-6	6	README
-
-commit 705599ff6aa29857e8ed1b3da11e6e8ba05e9aa9
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Tue Jun 12 12:12:45 2018 -0400
-
-    LP#1776510 JS libs handle transport errors
-    
-    Teach the websocket client code to look for the transport_error flag
-    applied to the websocket wrapper message by the websocket gateway when a
-    request for an unavilable service is made.
-    
-    When encountered, fire the transport or generic error handler callbacks,
-    if available.  Avoid any attempts to further process the message.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-23	0	src/javascript/opensrf.js
-
-commit 884e00c41abd33ed8785acc1bc5958fd027a0807
-Author: Ben Shum <ben@evergreener.net>
-Date:   Thu Sep 20 11:34:45 2018 -0400
-
-    Update README to include Bionic steps
-    
-    Note the use of mod_legacy_auth in ejabberd 18.x version for Ubuntu Bionic
-    
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-29	2	README
-
-commit f234372cb5f175c79ad9fe8279ae445b78fdaeb5
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Tue Aug 7 19:43:45 2018 -0400
-
-    Add support for Ubuntu 18.04 Bionic Beaver to Makefile.install
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-13	0	src/extras/Makefile.install
-
-commit 9682d15475485522812ac73ac10e283d11176f7e
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Thu Sep 20 18:04:09 2018 -0400
-
-    LP#1703411 XMPP opensrf element make check repairs
-    
-    Update the transport_message unit tests to check for the new <opensrf/>
-    element for relaying custom commands.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-3	2	tests/check_transport_message.c
-
-commit 744f0d1f2775bd5c51bfbf47d4d89a29001aafcf
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed Sep 19 15:34:49 2018 -0400
-
-    LP#1703411 XMPP opensrf sub-element repairs
-    
-    * Message template typo repair -- missing "'"
-    * XPath repair on path to opensrf sub-element for Perl
-    * Move 'type' attribute get/set back up to the <message> for Perl.
-    * Clean up code duplication in the C message building libs.
-    * Squash a centuries-old memory leak where xmlFree(sender) was only
-      called if a router_from was not supplied.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-17	54	src/libopensrf/transport_message.c
-3	3	src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPMessage.pm
-2	2	src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
-
-commit b44fb8675a3b9983d3d3c1f2586006520b6f7281
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Tue Aug 28 14:32:02 2018 -0400
-
-    LP#1703411: Move OpenSRF XMPP attrs to subelement
-    
-    Modern versions of Ejabberd strip custom XML attributes which appear
-    outside of custom elements.  To support OpenSRF's custom router and
-    osrf_xid commands, move these attributes into a new custom XML element
-    <opensrf>.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-8	0	src/java/org/opensrf/net/xmpp/XMPPReader.java
-70	8	src/libopensrf/transport_message.c
-13	8	src/libopensrf/transport_session.c
-9	4	src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPMessage.pm
-7	2	src/perl/lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
-
-commit 265aa9f8cc12472b347e34a62a8f2655dfb1c51b
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Wed Sep 20 11:56:34 2017 -0400
-
-    Lp#1718459: Remove Debian 7 Wheezy installation support.
-    
-    Remove references to Debian 7 Wheezy in the README.
-    
-    Remove src/extras/Makefile.install targets for Wheezy.
-    
-    Remove the examples/apache2 directory, since none of the supported
-    distros come with Apache 2.2 any longer.
-    
-    To test: Simply install on a supported distribution other than Debian
-    7 Wheezy and do the usual tests.
+    Remove references to Ubuntu 14.04 from the README and the
+    Makefile.install prerequisites.
     
     Signed-off-by: Jason Stephenson <jason@sigio.com>
     Signed-off-by: Ben Shum <ben@evergreener.net>
 
-6	22	README
-0	49	examples/apache2/opensrf.conf
-0	64	examples/apache2/websockets/apache2.conf
-1	13	src/extras/Makefile.install
- delete mode 100644 examples/apache2/opensrf.conf
- delete mode 100644 examples/apache2/websockets/apache2.conf
-
-commit da7e927c350c3c098b081f432b53cfb3a24ab480
-Author: Ben Shum <ben@evergreener.net>
-Date:   Wed Sep 12 13:07:18 2018 -0400
-
-    LP#1777180: Add zip/unzip to prerequisites
-    
-    Need unzip for new websocketd unpackaging. Also get zip just because.
-    
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-2	0	src/extras/Makefile.install
-
-commit d1c33b4b1e2305c4dbb9a54dec22f04f665a7a2c
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Wed Sep 12 10:58:58 2018 -0400
-
-    LP#1777180 Update README for websocketd
-    
-    Add optional command to run websocketd without using a proxy.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-19	1	README
-
-commit 21c9c76332b8a4b591e443d098a0fc78b6db0e9d
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Sat Jun 9 19:05:25 2018 -0400
-
-    LP#1777180 Websocketd gateway and test scripts
-    
-    Adds a new OpenSRF binary/program for relaying websockets messages
-    to and from a websocketd instance.  The new binary
-    (osrf-websocket-stdio) performs the same tasks as the
-    osrf_websocket_translator.c Apache module, minus the Apache module glue
-    and the extra threading required to run within the Apache module.
-    
-    Commit includes 2 test scripts (tester.pl and test-stateful.pl) for
-    generating large series of test messages to send to a websockets
-    instance. tester.pl sends echo requests only, test-stateful.pl sends
-    connect->echo-request->disconnect batches across a configurable number
-    of forked processes.
-    
-    INSTALL document updated to include websocketd setup as an alternative
-    to Apache websockets.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jeff Davis <jeff.davis@bc.libraries.coop>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-4	0	.gitignore
-32	2	README
-1	0	configure.ac
-1	1	src/Makefile.am
-22	0	src/websocket-stdio/Makefile.am
-609	0	src/websocket-stdio/osrf-websocket-stdio.c
-148	0	src/websocket-stdio/test-stateful.pl
-87	0	src/websocket-stdio/tester.pl
- create mode 100644 src/websocket-stdio/Makefile.am
- create mode 100644 src/websocket-stdio/osrf-websocket-stdio.c
- create mode 100755 src/websocket-stdio/test-stateful.pl
- create mode 100755 src/websocket-stdio/tester.pl
-
-commit 6414c2527f6b6857d9f163bdba6f071b09f710a3
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Fri Jul 7 15:22:21 2017 -0400
-
-    LP#1702978: memcache Get methods use key as va_list format
-    
-    And, when a key (composed of, say, a username or barcode) has a % in it,
-    bad things happen.  We will stop acting as if these are variadic functions
-    now, and also update Evergreen so that it does not do that either.
-    
-    TODO: Make these actually non-variadic, but that breaks ABI.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Cesar Velez <cesar.velez@equinoxinitiative.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-13	17	src/libopensrf/osrf_cache.c
-
-commit 71720f639e00d0e457bc8f967f8060b579bc2882
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Mon May 7 16:03:16 2018 -0400
-
-    LP#1243841: quiet a misleading indentation warning
-    
-    Adjusts a spaces-vs-tabs issue to fix the following compilation
-    warning:
-    
-    osrf_prefork.c: In function ‘check_children’:
-    osrf_prefork.c:1067:5: warning: this ‘if’ clause does not
-    guard... [-Wmisleading-indentation]
-         if( select_ret <= 0 ) // we're done here
-         ^~
-    osrf_prefork.c:1072:2: note: ...this statement, but the latter is
-    misleadingly indented as if it is guarded by the ‘if’
-      cur_child = forker->first_child;
-      ^~~~~~~~~
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	src/libopensrf/osrf_prefork.c
-
-commit 0f0a2281767a47c0ab4971d2b0dba5da10c6907b
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Nov 7 16:39:39 2017 -0500
-
-    LP#1243841 - Quiet remaining Make install warnings.
-    
-    We silence the following warnings:
-    
-    apachetools.c:179:15: warning: initialization discards 'const' qualifier
-    from pointer target type [enabled by default]
-    
-    apachetools.c:181:8: warning: assignment discards 'const' qualifier from
-    pointer target type [enabled by default]
-    
-    apachetools.c:183:8: warning: assignment discards 'const' qualifier from
-    pointer target type [enabled by default]
-    
-    ./osrf_websocket_translator.c:541:9: warning: return makes integer from
-    pointer without a cast [enabled by default]
-    
-    ./osrf_http_translator.c:300:25: warning: passing argument 1 of 'free'
-    discards 'const' qualifier from pointer target type [enabled by default]
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	src/gateway/apachetools.c
-1	1	src/gateway/osrf_http_translator.c
-1	1	src/gateway/osrf_websocket_translator.c
-
-commit f47f108e7a2af04360c872313978be6ce71c5c25
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Nov 7 15:58:05 2017 -0500
-
-    LP#1243841 - Quiet additional Make warnings and some code cleanup.
-    
-    We make the following warnings go away:
-    
-    osrf_legacy_json.c:607:6: warning: variable ‘fourth_dash’ set but
-    not used [-Wunused-but-set-variable]
-    
-    osrf_legacy_json.c:836:5: warning: passing argument 3 of ‘makeNode’
-    discards ‘const’ qualifier from pointer target type [enabled by
-    default]
-    
-    utils.c:133:2: warning: format not a string literal and no format
-    arguments [-Wformat-security]
-    
-    We also cleanup the while block nested in a do while block around line
-    63 of osrf_cache.c to be more readable by adding braces and breaking
-    it across 3 lines.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-3	1	src/libopensrf/osrf_cache.c
-4	6	src/libopensrf/osrf_legacy_json.c
-6	3	src/libopensrf/utils.c
-
-commit 9dd65c72e5bd114eb1e1d6c2b1388e01df02bbb8
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Tue Sep 19 21:25:12 2017 -0400
-
-    LP#1243841 - Quiet wrong format warnings during make install.
-    
-    During make install, the compiler warns that %d expects an int when the
-    actual value is a long int.  Changing %d to %ld fixes the issue.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-3	3	src/gateway/osrf_websocket_translator.c
-
-commit f8f1813bf17f745719c9dabbdfc5c7bed05c7138
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Tue Sep 19 20:46:28 2017 -0400
-
-    LP#1243841 - Quiet unused return value warning in srfsh.c
-    
-    Using the technique described here: https://stackoverflow.com/a/13999461.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	src/srfsh/srfsh.c
-
-commit 6aedae0b42434c95f22924ed4b93ba726353f034
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Tue Sep 19 20:37:13 2017 -0400
-
-    LP#1243841 - Quiet unused return value warnings.
-    
-    Using advice given here: https://stackoverflow.com/a/13999461, "The
-    only good (if ugly) way to suppress these is to convert the return
-    value into something that the compiler agrees that you can ignore."
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-4	4	src/libopensrf/utils.c
-
-commit 2e5c11c04c4db962aebf4b8632ce35a46434cd12
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Tue Sep 19 18:10:00 2017 -0400
-
-    LP#1243841 - Wrap truth test using "=" in an extra set of parens.
-    
-    Referring to https://stackoverflow.com/questions/5476759/compiler-warning-suggest-parentheses-around-assignment-used-as-truth-value,
-    it is recommended to wrap variable assignments that are used as a truth
-    test within an extra set of parentheses.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	src/libopensrf/osrf_cache.c
-
-commit e72473d9c43a579ea64cb79fd410d37df23c3445
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Sun Feb 18 12:12:13 2018 -0500
-
-    LP1340982: Ignore both 'comment' and '#comment' nodes in Settings Parse.
-    
-    Modify the XML2perl helper function in OpenSRF::Utils::SettingsParser
-    to ignore comment nodes that have names of comment and #comment.
-    
-    To reproduce the bug:
-    
-    1. Stop OpenSRF services.
-    
-    2. Add a XML comment, any text betwen <!-- and -->, in the list of
-    MARC templates in the opensrf.xml file.
-    
-    3. Restart OpenSRF services.
-    
-    4. In the staff client, go to Cataloging->Create New MARC Record.
-    
-    5. In the list of templates, you will #comment where you added the
-    comment. (NOTE: I only tested with 1 comment.  Things may get worse
-    with more than 1 comment.)
-    
-    6. There will be an error like the following in the
-    open-ils.cat_stderr.log if you attempt to choose the #comment entry:
-    
-       Caught error from 'run' method: Exception: OpenSRF::EX::ERROR
-       2018-02-18T11:24:30 OpenSRF::Application
-       /usr/local/share/perl/5.22.1/OpenSRF/Application.pm:240 System
-       ERROR: Unable to open MARC template file: HASH(0x2249928) :
-    
-    To test the fix:
-    
-    1. Leave the comments in the opensrf.xml file from before.
-    
-    2. Apply this commit, do make and make install for OpenSRF.
-    
-    3. Just to make sure, do make and make install for Evergreen.
-    
-    4. Repeat steps 3 and 4 from above.
-    
-    5. You should NOT see any templates named #comment.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	src/perl/lib/OpenSRF/Utils/SettingsParser.pm
-
-commit f8dfa10b7613799190524ae1bf635d6c90a97b98
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Tue Apr 10 15:06:56 2018 -0400
-
-    LP#1762815 Empty client TZ defaults to server TZ (Perl)
-    
-    Fixes an issue in the Perl client time zone handling that resulted in
-    the server defaulting to UTC time instead of the server time zone when
-    no time zone value was received from the client.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-1	0	src/perl/lib/OpenSRF/DomainObject/oilsMessage.pm
-
-commit 4163499191dfb511ba8646ae1c4748d88996558e
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed Jan 24 15:16:14 2018 -0500
-
-    LP#1744158 Websocket proc exits on ejabberd disconnect
-    
-    Any errors relaying websocket messages to OpenSRF now result in the WS
-    client being disconnected, allowing the WS process to exit.  This
-    prevents the WS gateway from accepting requests it cannot process and
-    allows the client to connect to a new WS process.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-17	4	src/gateway/osrf_websocket_translator.c
-
-commit 50a6bcad0b6d94e8edd15ee460b84466bc55c941
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed Jan 31 13:07:41 2018 -0500
-
-    LP#1746577 Websocket responder exits on jabber disconnect
-    
-    Regularly check for Jabber socket disconnects in the websocket gateway
-    "responder" thread (that relays messages from opensrf to the WS client)
-    and force a client disconnect when a broken jabber socket is detected.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-18	2	src/gateway/osrf_websocket_translator.c
-
-commit a90a1d9a99e510423b9fdc43afcb128ace79a24a
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Thu Sep 21 09:51:20 2017 -0400
-
-    and continue to bump up version numbers
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	version.m4
-
-commit f3775e2c750ce0119c1bb5c2bd286d356bca8467
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Sep 20 10:57:09 2017 -0400
-
-    bump up version numbers in master to reflect 3.0 as next major release branch
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-2	2	src/perl/lib/OpenSRF.pm
-1	1	src/python/setup.py
-
-commit cace46d9acd653234ffc298d8ea483ce3c08c54d
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Sep 12 11:29:41 2017 -0400
-
-    LP#1708048: Fix ld problems by renaming libraries.
-    
-    We add the lib... prefix to all C library names as expected by most
-    linkers.  This necessitates changes to the opensrf.xml configuration
-    file.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-2	2	examples/opensrf.xml.example
-10	10	src/c-apps/Makefile.am
-
-commit a85132ecc7760106a317fdd967236cef99835771
-Author: Ben Shum <ben@evergreener.net>
-Date:   Tue Aug 1 16:07:16 2017 -0400
-
-    LP#1708048: Add support for Debian 9 Stretch
-    
-      - Add new make target "debian-stretch"
-      - Add Stretch instructions to README
-    
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-8	7	README
-12	0	src/extras/Makefile.install
-
-commit 1f38166249e9f8fbb58ad21d1a00b935200a9278
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Thu Sep 14 17:36:40 2017 -0400
-
-    LP#1717350: fix chunking messages sent from Perl services
-    
-    The chunk size adjustments introduced by the patches for bug 1709710
-    could result in calculating non-integral chunk sizes for Perl services.
-    This in turn led to fractional offsets and lengths being passed to
-    Perl's substr() function; rounding in turn can lead to characters
-    in the response getting silently dropped, which in turn broke
-    parsing the reconstituted response.
-    
-    To test
-    -------
-    The problem can be reproduced by invoking
-    
-      open-ils.storage open-ils.storage.actor.org_unit.descendants.atomic 1, 0
-    
-    in Evergreen databases with org unit trees large enough that the
-    response gets chunked.
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-2	1	src/perl/lib/OpenSRF/AppSession.pm
-
-commit be2b2645f7da0907366eb0c99b5d6c231c366b30
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Fri Sep 8 17:53:52 2017 -0400
-
-    LP#1709710 Count Perl chunk/bundle sizes in bytes
-    
-    For the purposes of bundling/chunking, count the number of bytes in each
-    affected string instead of the number of characters.
-    
-    See also https://perldoc.perl.org/bytes.html and 'perldoc -f length'
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-6	3	src/perl/lib/OpenSRF/AppSession.pm
-
-commit 3d91aeb066c52213f2c82f04bdfc84b87ec8d1d0
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Fri Sep 8 15:34:29 2017 -0400
-
-    LP#1709710: write unit tests for osrfXmlEscapingLength()
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-6	2	tests/Makefile.am
-43	0	tests/check_osrf_utils.c
- create mode 100644 tests/check_osrf_utils.c
-
-commit cb4587be75bf9294d65c7173ff41c275a14e0f04
-Author: Mike Rylander <miker@esilibrary.com>
-Date:   Fri Aug 18 11:43:31 2017 -0400
-
-    LP#1709710: Make chunk sizing smart about XML quoting
-    
-    XML inside JSON as a quoted string that's itself inside XML causes quite the
-    pile up of nested excaping of certain characters in OpenSRF PARTIAL_RESPONSE
-    messages.  Here we check for the worst offenders (<, >, &, and ") and account
-    for the cost of escaping them in chunked response stanzas.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-6	0	include/opensrf/utils.h
-11	4	src/libopensrf/osrf_app_session.c
-8	3	src/libopensrf/osrf_application.c
-23	0	src/libopensrf/utils.c
-21	3	src/perl/lib/OpenSRF/AppSession.pm
-
-commit af4ab2355707083a22a2828202a541bf0e718bc0
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Thu May 11 14:47:32 2017 -0400
-
-    LP#1690206 - remove check of httpd.conf from OpenSRF Makefile.install
-    
-    The original src/extras/Makefile.install included a grep of the
-    file /etc/apache2/httpd.conf, which is no longer installed by default
-    on supported Debian and Ubuntu releases.  As this check results in
-    an error message, it makes sense to remove the check altogether.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-0	6	src/extras/Makefile.install
-
-commit ea72acaf798f3fc6cc0aae8d93771c6dc2a21a57
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Fri Jun 9 13:01:46 2017 -0400
-
-    LP#1697029 Log and exit on write to dead child
-    
-    Confirm that a child process is alive just before attempting to write to
-    its pipe.  If the child process is dead, log the error, then drop the
-    message and move on.  This allows the parent to continue servicing
-    future requests.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-13	0	src/perl/lib/OpenSRF/Server.pm
-
-commit 53e7f82b534eef2b513fe31bcb2a9c719a7ee746
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Fri Aug 18 11:11:29 2017 -0400
-
-    LP#1711194: avoid division by zero errors
-    
-    Under some circumstances, osrf_control --diagnostic may not
-    be able to deduce the correct max_children setting for a service,
-    e.g., if it's run without --localhost on a system that doesn't
-    have a opensrf.xml config section specifying active apps for a
-    specific hostname. When that happens, just display the count
-    of running drones rather than displaying error messages about
-    undefined $dmax values and divisions by zero.
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-
-6	2	bin/opensrf-perl.pl.in
-
-commit b198681669ed28a510fd0d18d3a89d4dd0837ebe
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed Aug 16 14:10:13 2017 -0400
-
-    LP#1711194 osrf_config --diagnostic reports max-children
-    
-    --diagnostic output shows the maximum number of allowed drones per
-    service along with the active drone count.  Additionally, a usage
-    percentage value is displayed.
-    
-    E.g.
-    
-    $ /openils/bin/osrf_control -l --diagnostic
-    
-    * open-ils.acq   [1581] uptime=00:35 cputime=00:00:00 #drones=1/15 6%
-    * open-ils.actor [1629] uptime=00:35 cputime=00:00:00 #drones=2/15 13%
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-9	1	bin/opensrf-perl.pl.in
-
-commit e88891bcdd9781c2d291057a802e4f751202fee9
-Author: Graham Billiau <graham@geeksinthegong.net>
-Date:   Mon Jul 31 11:00:25 2017 -0400
-
-    LP#1704090: ensure make install respects DESTDIR
-    
-    This patch ensures that 'make install' uses DESTDIR consistently,
-    making life easier for packagers.
-    
-    Signed-off-by: Graham Billiau <graham@geeksinthegong.net>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-3	3	src/Makefile.am
-7	2	src/gateway/Makefile.am
-
-commit 716b674a5197f9ec70091c9f3dfa3eabca3bbe9d
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Mon Jul 31 15:15:09 2017 -0400
-
-    Revert "LP#1635737 Add optional context to interval_to_seconds"
-    
-    This reverts commit a481100ef9d5bd9eaad5a87ce29776cb07a8687c.
-
-17	48	src/perl/lib/OpenSRF/Utils.pm
-
-commit 0484c673577c49a552af861364caac03ef187f5e
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Mon Jul 31 15:15:02 2017 -0400
-
-    Revert "LP#1635737: Unit tests for DST and date math"
-    
-    This reverts commit 316f58375c40087bfae32234c4dd3817260831e5.
-
-2	13	src/perl/t/09-Utils-interval_to_seconds.t
-
-commit 316f58375c40087bfae32234c4dd3817260831e5
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Mon Jul 31 12:53:59 2017 -0400
-
-    LP#1635737: Unit tests for DST and date math
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-13	2	src/perl/t/09-Utils-interval_to_seconds.t
-
-commit a481100ef9d5bd9eaad5a87ce29776cb07a8687c
-Author: Dan Wells <dbw2@calvin.edu>
-Date:   Fri Jul 21 14:17:34 2017 -0400
-
-    LP#1635737 Add optional context to interval_to_seconds
-    
-    Any given interval (e.g. "1 month") can be a different amount of
-    seconds depending on the context (i.e. "1 month" after February 1 is
-    March 1, but "1 month" after March 1 is April 1, yet March is longer
-    than February).  This affects months all the time, but also can affect
-    days, hours, and even seconds once you consider DST and "leap" times.
-    
-    By giving an optional context to interval_to_seconds, you can find the
-    true number of seconds in, for example, "1 month", when starting from
-    "February 1" (the context).
-    
-    Signed-off-by: Dan Wells <dbw2@calvin.edu>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-
-48	17	src/perl/lib/OpenSRF/Utils.pm
-
-commit 66acf02b800b6bb9b128c591e7ce480dc111b99d
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Wed Jul 12 15:24:48 2017 -0400
-
-    LP 1703958: Update Websockets Intructions for Debian Jessie
-    
-    Modify the Websockets installation instructions so that users will
-    have a working installation on Debian Jessie.  We change the "Debian"
-    instructions to say "Debian Wheezy" and add "Debian Jessie" to the
-    list with "Ubuntu Trusty / Xenial" where necessary.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-4	4	README
-
-commit 740e725fbb02d7d3476d39efbed0b382f13b880d
-Author: Graham Billiau <graham@geeksinthegong.net>
-Date:   Thu Jul 13 11:29:43 2017 -0400
-
-    LP#1704116: fix intermittant failure of parallel building
-    
-    Running make to do a parallel build (e.g., 'make -j 4' or
-    the like) could fail because of an undeclared dependency; this
-    patch fixes the issue.
-    
-    The issue can be reproduced by repeating "make clean; make -j 4"
-    until the build fails.
-    
-    Signed-off-by: Graham Billiau <graham@geeksinthegong.net>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	0	src/libopensrf/Makefile.am
+0	28	README
+2	14	src/extras/Makefile.install
