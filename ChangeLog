@@ -1,8 +1,8 @@
-commit e574cdf4321f01fa1ae6777e38dadd4e04895932
+commit 5002dd8de58a7f3e79a14bf2ca28cb4d2b7ae71a
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Nov 6 11:36:57 2018 -0500
+Date:   Fri Jun 7 17:10:11 2019 -0400
 
-    update version numbers for 3.0.2
+    update versions for OpenSRF 3.0.3
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
@@ -11,94 +11,112 @@ Date:   Tue Nov 6 11:36:57 2018 -0500
 1	1	src/python/setup.py
 1	1	version.m4
 
-commit e0f49880d6d844aae1e6b31d7e4743ad596402d5
+commit 9124bf3c82ad29e20a0a2607cb78d6b9db325efa
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Nov 6 11:35:11 2018 -0500
+Date:   Fri Jun 7 17:08:30 2019 -0400
 
-    update release notes for OpenSRF 3.0.2
+    update release notes for OpenSRF 3.0.3
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-61	1	doc/RELEASE_NOTES.txt
+29	0	doc/RELEASE_NOTES.txt
 
-commit 7866a18c7455f8243e9f1076ebdff230f5905357
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Mon Aug 27 10:12:57 2018 -0400
+commit ca876a9ae69ed49369d8722831f11c3876d893ad
+Author: John Merriam <jmerriam@biblio.org>
+Date:   Wed Apr 10 11:06:14 2019 -0400
 
-    LP#1684970 Translator compatible with mod_remoteip
+    LP#1824184: Change potentially slow log statements to subroutines
     
-    Teach the OSRF Translator to request the IP address of the user agent
-    (e.g. web browser) instead of the IP address of the up stream client,
-    which may be a proxy, using the Apache 2.4 request_rec->useragent_ip
-    value.
+    The OpenSRF code was searched for potentially slow logging statements at
+    log level info or above. We then changed those logging statements to be
+    delayed execution subroutines. This is in reaction to LP1823338 where a
+    slow debug logging statement was slowing down SIP checkins even though
+    debug logging was not turned on.
     
-    http://httpd.apache.org/docs/2.4/developer/new_api_2_4.html
+    Here is some pseudocode that shows what is being done here:
     
-    This make is possible for the translator to access the client IP with
-    Apache's mod_remoteip enabled and configured.
+    $log->debug("Some text " . $some->slow_method);
     
-    Includes sample config and install documentation.
+    would be changed to:
     
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    $log->debug(sub{return "Some text " . $some->slow_method });
+    
+    With this change, an unnamed sub is passed to the OpenSRF logger module
+    and it will not be executed unless the global logging level is set to
+    debug or higher (the slow_method will not be called unless it is needed
+    for that logging level).
+    
+    ********
+    If/when this is committed, please use delayed execution subroutines for
+    any logging statements that could be slow in the future. It is recommend
+    that any logging statements that do not consist entirely of quoted text
+    and/or already available scalar variables use delayed execution
+    subroutines.
+    ********
+    
+    Testing notes
+    -------------
+    [1] This patch reduced the duration of open-ils.storage.actor.user.total_owed
+        calls on a test system from an average of 0.13 seconds to an overage
+        of 0.009 seconds.
+    [2] It didn't materially affect the duration of calls to
+        open-ils.actor.user.opac.vital_stats.
+    [3] This make sense: open-ils.storage has far more generated methods
+        than open-ils.actor.
+    [4] There are enough instances in Evergreen of using method_lookup to find
+        routines in open-ils.storage that the speed improvement may well be
+        perceptible to humans, not just SIP sorters.
+    
+    Signed-off-by: John Merriam <jmerriam@biblio.org>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-17	0	README
-10	0	examples/apache2/opensrf.conf
-1	1	src/gateway/osrf_http_translator.c
+7	7	src/perl/lib/OpenSRF/AppSession.pm
+9	9	src/perl/lib/OpenSRF/Application.pm
+4	4	src/perl/lib/OpenSRF/DomainObject/oilsMessage.pm
+2	2	src/perl/lib/OpenSRF/EX.pm
+3	3	src/perl/lib/OpenSRF/MultiSession.pm
+9	9	src/perl/lib/OpenSRF/Server.pm
+1	1	src/perl/lib/OpenSRF/Transport.pm
+1	1	src/perl/lib/OpenSRF/Transport/SlimJabber/Client.pm
 
-commit 7d144fbdb50b3d91c8fd9429f35838b37f3cd83c
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed Jul 11 12:27:05 2018 -0400
+commit 07ae6134166a804a5ba86c379ef5dec00577a873
+Author: Galen Charlton <gmc@equinoxinitiative.org>
+Date:   Fri Jun 7 11:30:42 2019 -0400
 
-    LP#1711145 NGINX sample config security improvements
+    LP#1824181: add test cases
     
-    * Adds security recommendations from
-    https://mozilla.github.io/server-side-tls/ssl-config-generator/
-    * Enables http2
-    * Apply a 5-minute proxy read timeout to avoid too-short timeouts on
-      long API calls.
-    * Adds a (commented) section on sending nginx logs to syslog
+    To test
+    -------
+    [1] Verify that 'make check' (or prove src/perl/t/09-Utils-Logger.t)
+        passes.
     
-    Includes INSTALL notes on generating the dhparam file.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-10	2	README
-30	2	examples/nginx/osrf-ws-http-proxy
+10	1	src/perl/t/09-Utils-Logger.t
 
-commit d2683cd6d552fdbc6dc25e24cc2aa6c047243b4c
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Tue Jun 12 12:12:45 2018 -0400
+commit 327a272e1d5fa187f1c78afc963d125e3bb32860
+Author: John Merriam <jmerriam@biblio.org>
+Date:   Wed Apr 10 09:51:54 2019 -0400
 
-    LP#1776510 JS libs handle transport errors
+    LP#1824181: Allow 1st arg to logger to be string or subroutine
     
-    Teach the websocket client code to look for the transport_error flag
-    applied to the websocket wrapper message by the websocket gateway when a
-    request for an unavilable service is made.
+    This simple change allows the $msg passed to _log_message in Logger.pm
+    to be either a regular string or a delayed exec subroutine. This is in
+    reaction to LP1823338 where a slow debug logging statement was slowing
+    down SIP checkins even though debug logging was not turned on.
     
-    When encountered, fire the transport or generic error handler callbacks,
-    if available.  Avoid any attempts to further process the message.
+    With this change you can take this:
     
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    $log->debug("Available methods\n\t".join("\n\t", keys %{ $_METHODS[$proto] }), INTERNAL);
+    
+    and change it to this:
+    
+    $log->debug(sub{return "Available methods\n\t".join("\n\t", keys %{ $_METHODS[$proto] }) }, INTERNAL);
+    
+    and then that slow debug logging line will not be executed unless
+    debug logging is turned on.
+    
+    Signed-off-by: John Merriam <jmerriam@biblio.org>
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-23	0	src/javascript/opensrf.js
-
-commit 0df7943369cbd5416276de84b428cd0a27a2b1eb
-Author: Mike Rylander <mrylander@gmail.com>
-Date:   Fri Jul 7 15:22:21 2017 -0400
-
-    LP#1702978: memcache Get methods use key as va_list format
-    
-    And, when a key (composed of, say, a username or barcode) has a % in it,
-    bad things happen.  We will stop acting as if these are variadic functions
-    now, and also update Evergreen so that it does not do that either.
-    
-    TODO: Make these actually non-variadic, but that breaks ABI.
-    
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
-    Signed-off-by: Cesar Velez <cesar.velez@equinoxinitiative.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-13	17	src/libopensrf/osrf_cache.c
+3	0	src/perl/lib/OpenSRF/Utils/Logger.pm
