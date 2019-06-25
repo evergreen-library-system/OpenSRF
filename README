@@ -415,95 +415,7 @@ srfsh# request opensrf.math add 2,2
 +
 You should receive the value `4`.
 
-Websockets installation instructions: Option #1 Apache
--------------------------------------------------------
-Websockets are new to OpenSRF 2.4+ and are required for operating the new web-based
-staff client for Evergreen.  Complete the following steps as the *root* Linux 
-account:
-
-1. Install git if not already present:
-+
-[source, bash]
----------------------------------------------------------------------------
-apt-get install git-core
----------------------------------------------------------------------------
-+
-2. Install the apache-websocket module:
-+
-[source, bash]
----------------------------------------------------------------------------
-# Use a temporary directory
-cd /tmp
-git clone https://github.com/disconnect/apache-websocket
-cd apache-websocket
-apxs2 -i -a -c mod_websocket.c
----------------------------------------------------------------------------
-+
-3. Create the websocket Apache instance (more information about this in 
-   `/usr/share/doc/apache2/README.multiple-instances`)
-+
-[source, bash]
----------------------------------------------------------------------------
-sh /usr/share/doc/apache2/examples/setup-instance websockets
----------------------------------------------------------------------------
-+
-4. Remove from the main apache instance
-+
-[source, bash]
----------------------------------------------------------------------------
-a2dismod websocket
----------------------------------------------------------------------------
-+
-5. Change to the directory into which you unpacked OpenSRF, then copy into
-   place the config files
-+
-[source, bash]
----------------------------------------------------------------------------
-cd /path/to/opensrf-OSRFVERSION
-cp examples/apache_24/websockets/apache2.conf /etc/apache2-websockets/
----------------------------------------------------------------------------
-+
-6. OPTIONAL: add these configuration variables to `/etc/apache2-websockets/envvars`
-   and adjust as needed.
-+
-[source, bash]
----------------------------------------------------------------------------
-export OSRF_WEBSOCKET_IDLE_TIMEOUT=120
-export OSRF_WEBSOCKET_IDLE_CHECK_INTERVAL=5
-export OSRF_WEBSOCKET_CONFIG_FILE=/openils/conf/opensrf_core.xml
-export OSRF_WEBSOCKET_CONFIG_CTXT=gateway
-export OSRF_WEBSOCKET_MAX_REQUEST_WAIT_TIME=600
----------------------------------------------------------------------------
-+
-  * `IDLE_TIMEOUT` specifies how long we will allow a client to stay connected
-    while idle.  A longer timeout means less network traffic (from fewer
-    websocket CONNECT calls), but it also means more Apache processes are
-    tied up doing nothing.
-  * `IDLE_CHECK_INTERVAL` specifies how often we wake to check the idle status
-    of the connected client.
-  * `MAX_REQUEST_WAIT_TIME` is the maximum amount of time the gateway will
-    wait before declaring a client as idle when there is a long-running
-    outstanding request, yet no other activity is occurring.  This is
-    primarily a fail-safe to allow idle timeouts when one or more requests
-    died on the server, and thus no response was ever delivered to the gateway.
-  * `CONFIG_FILE / CTXT` are the standard opensrf core config options.
-
-7. Before you can start websockets, you must install a valid SSL certificate 
-   in `/etc/apache2/ssl/`.  It is possible, but not recommended, to generate a 
-   self-signed SSL certificate.  For example, if you need to test with a self-signed 
-   certicate on Chrome or Chromimum browsers, one workaround is to start the browser 
-   with `--ignore-certificate-errors`.
-
-8. After OpenSRF is up and running (or after any re-install),
-   fire up the secondary Apache instance. Errors will appear in
-   `/var/log/apache2-websockets/error.log`. Start apache2-websockets with:
-+
-[source, bash]
----------------------------------------------------------------------------
-/etc/init.d/apache2-websockets start
----------------------------------------------------------------------------
-
-Websockets installation instructions: Option #2 Websocketd
+Websockets installation instructions
 ----------------------------------------------------------
 
 1. Install websocketd (latest stable release from http://websocketd.com/)
@@ -520,6 +432,16 @@ sudo cp websocketd /usr/local/bin/
 2. Run websocketd
 +
 Choose option a or b, below.
++
+[NOTE]
+===========================================================================
+websocketd does not offer a configurable inactivity timeout, meaning
+websocket client connections will persist until each client disconnects
+or the service is restarted.  However, a timeout can be achieved with
+the use of a proxy (option 'a' below).  A proxy also allows websocketd
+to be exposed to web clients on port 443 instead of its internal port, 
+which may simplify firewall configuration.
+===========================================================================
 +
 a. Run websocketd as 'opensrf'
 +

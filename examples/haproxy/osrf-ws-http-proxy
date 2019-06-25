@@ -22,4 +22,4 @@ backend https_server
 
 backend ws
 	timeout server 300s
-	server ws1 localhost:7682 ssl verify none
+	server ws1 localhost:7682 verify none
