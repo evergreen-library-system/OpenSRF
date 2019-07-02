@@ -1,7 +1,7 @@
-listen web 0.0.0.0:80
+listen web
+	bind 0.0.0.0:80
 	mode http
 	option forwardfor
-	http-request set-header X-Client-IP %[src]
 	balance roundrobin
 	server web01 localhost:7080 check
 
