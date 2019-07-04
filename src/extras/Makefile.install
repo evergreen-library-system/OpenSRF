@@ -10,6 +10,8 @@
 # Installs Perl prereqs, libjs with Perl wrapper
 #
 # usage:
+# 	make -f Makefile.install debian-buster
+# 	- or -
 # 	make -f Makefile.install debian-stretch
 # 	- or -
 # 	make -f Makefile.install debian-jessie
@@ -49,7 +51,7 @@ DEBS =  \
 	liberror-perl\
 	libexpat1-dev\
 	libfile-find-rule-perl\
-	libgcrypt11-dev \
+	libgcrypt20-dev \
 	libgdbm-dev \
 	liblog-log4perl-perl\
 	libmemcached-dev \
@@ -160,6 +162,11 @@ EXTRA_DEBS_JESSIE = \
 	apache2-prefork-dev \
 	libncurses5-dev
 
+EXTRA_DEBS_DEBIAN_BUSTER = \
+	apache2 \
+	apache2-dev \
+	libncurses5-dev
+
 EXTRA_DEBS_DEBIAN_STRETCH = \
 	apache2 \
 	apache2-dev \
@@ -181,8 +188,10 @@ all:
 	@echo "please specify an OS" && exit 0
 
 
+debian-buster: generic_debian buster apache_mpm_prefork_mods apache_perl_mod
 debian-stretch: generic_debian stretch apache_mpm_prefork_mods apache_perl_mod
 debian-jessie: generic_debian jessie apache_mpm_prefork_mods
+buster: install_extra_debs install_extra_debs_buster debian_sys_config
 stretch: install_extra_debs install_extra_debs_stretch debian_sys_config
 jessie: install_extra_debs_jessie debian_sys_config
 generic_debian: install_debs
@@ -209,6 +218,9 @@ install_debs:
 # Install the debian-specific dependencies for more modern distros
 install_extra_debs:
 	$(APT_TOOL) install $(EXTRA_DEBS)
+
+install_extra_debs_buster:
+	$(APT_TOOL) install $(EXTRA_DEBS_DEBIAN_BUSTER)
 
 install_extra_debs_stretch:
 	$(APT_TOOL) install $(EXTRA_DEBS_DEBIAN_STRETCH)

@@ -64,6 +64,7 @@ make -f src/extras/Makefile.install <osname>
 
 Well-tested values for <osname> include:
 
+  * `debian-buster` for Debian 10
   * `debian-stretch` for Debian 9
   * `debian-jessie` for Debian 8
   * `ubuntu-xenial` for Ubuntu 16.04
@@ -261,7 +262,7 @@ hosts:
     ##access_max_user_messages: max_user_offline_messages
 -----------------------
 +
-(Ubuntu Bionic) Ejabberd 18.x::
+(Debian Buster / Ubuntu Bionic) Ejabberd 18.x::
 Open `/etc/ejabberd/ejabberd.yml` and make the following
 changes:
   a. Define your public and private domains in the `hosts` directive. For
@@ -286,7 +287,12 @@ hosts:
     ##access_max_user_messages: max_user_offline_messages
 -----------------------
 +
-  g. Uncomment the `mod_legacy_auth` directive
+  g. Uncomment or add the `mod_legacy_auth` directive
++
+-----------------------
+mod_legacy_auth: {}
+-----------------------
++
 3. Restart the ejabberd server to make the changes take effect:
 +
 .(Debian / Ubuntu Xenial / Ubuntu Bionic) Starting ejabberd
