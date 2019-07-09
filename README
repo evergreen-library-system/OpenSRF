@@ -487,8 +487,28 @@ sudo a2enmod remoteip
 ---------------------------------------------------------------------------
 +
 2. Enable remote IP settings by uncommenting and modifying as needed the 
-Apache configuration variables starting with RemoteIP* in the sample Apache
-configuration file opensrf.conf.
+   Apache configuration variables starting with RemoteIP* in the sample Apache
+   configuration file opensrf.conf.
++
+3. Configure Apache to listen on port 7080 for HTTP and port 7443 for HTTPS
+   and ensure that it is not listening on ports 80 and 443, then restart Apache.
++
+4. If you didn't run `configure` with the `--with-websockets-port=443` option,
+   edit `<PREFIX>/javascript/opensrf_ws.js` and `<PREFIX>/javascript/opensrf_ws_shared.js`
+   and change
++
+[source, javascript]
+---------------------------------------------------------------------------
+var WEBSOCKET_PORT_SSL = 7682;
+---------------------------------------------------------------------------
++
+to
++
+[source, javascript]
+---------------------------------------------------------------------------
+var WEBSOCKET_PORT_SSL = 443;
+---------------------------------------------------------------------------
+
 
 Optional: Using NGINX as a proxy
 --------------------------------
@@ -504,18 +524,14 @@ administration and network tasks.  The steps should be run as the *root*
 Linux account, and assume that you already followed the instructions
 for installing WebSockets support.
 
-1. Configure the main Apache instance to listen on port 7080 for HTTP and
-   port 7443 for HTTPS and ensure that it is not listening on ports 80
-   and 443, then restart Apache.
-+
-2. Install NGINX if not already present:
+1. Install NGINX if not already present:
 +
 [source, bash]
 ---------------------------------------------------------------------------
 apt-get install nginx
 ---------------------------------------------------------------------------
 +
-3. Copy the example NGINX configuration file into place and remove default.
+2. Copy the example NGINX configuration file into place and remove default.
 +
 [source, bash]
 ---------------------------------------------------------------------------
@@ -525,9 +541,9 @@ ln -s /etc/nginx/sites-available/osrf-ws-http-proxy /etc/nginx/sites-enabled/osr
 rm /etc/nginx/sites-enabled/default
 ---------------------------------------------------------------------------
 +
-4. Edit `/etc/nginx/sites-available/osrf-ws-http-proxy` to set the location
+3. Edit `/etc/nginx/sites-available/osrf-ws-http-proxy` to set the location
    of the SSL certificate and private key.
-5. Generate a dhparam file in the directory specified in the nginx config.
+4. Generate a dhparam file in the directory specified in the nginx config.
 +
 [source, bash]
 ---------------------------------------------------------------------------
@@ -535,27 +551,11 @@ rm /etc/nginx/sites-enabled/default
 openssl dhparam -out /etc/apache2/ssl/dhparam.pem 2048
 ---------------------------------------------------------------------------
 +
-6. Start NGINX
+5. Start NGINX
 +
 [source, bash]
 ---------------------------------------------------------------------------
 /etc/init.d/nginx start
----------------------------------------------------------------------------
-+
-7. If you didn't run `configure` with the `--with-websockets-port=443` option,
-edit `<PREFIX>/javascript/opensrf_ws.js` and `<PREFIX>/javascript/opensrf_ws_shared.js`
-   and change
-+
-[source, javascript]
----------------------------------------------------------------------------
-var WEBSOCKET_PORT_SSL = 7682;
----------------------------------------------------------------------------
-+
-to
-+
-[source, javascript]
----------------------------------------------------------------------------
-var WEBSOCKET_PORT_SSL = 443;
 ---------------------------------------------------------------------------
 
 Optional: Using HAProxy as a proxy
@@ -576,10 +576,7 @@ for installing WebSockets support.
 apt-get install haproxy
 ---------------------------------------------------------------------------
 +
-2. Configure the main Apache instance to listen on port 7080 for HTTP and
-   port 7443 for HTTPS and ensure that it is not listening on ports 80
-   and 443, then restart Apache.
-3. Append the example HAProxy to `haproxy.cfg`.
+2. Append the example HAProxy to `haproxy.cfg`.
 +
 [source, bash]
 ---------------------------------------------------------------------------
@@ -587,28 +584,13 @@ cd /path/to/opensrf-OSRFVERSION
 cat examples/haproxy/osrf-ws-http-proxy >> /etc/haproxy/haproxy.cfg
 ---------------------------------------------------------------------------
 +
-4. Edit `/etc/haproxy/haproxy.cfg` to set the location
+3. Edit `/etc/haproxy/haproxy.cfg` to set the location
    of the PEM file containing the SSL certificate and private key.
-5. Start HAProxy.
+4. Start HAProxy.
 +
 [source, bash]
 ---------------------------------------------------------------------------
 /etc/init.d/haproxy start
----------------------------------------------------------------------------
-+
-6. Edit `<PREFIX>/javascript/opensrf_ws.js` and `<PREFIX>/javascript/opensrf_ws_shared.js`
-   and change
-+
-[source, javascript]
----------------------------------------------------------------------------
-var WEBSOCKET_PORT_SSL = 7682;
----------------------------------------------------------------------------
-+
-to
-+
-[source, javascript]
----------------------------------------------------------------------------
-var WEBSOCKET_PORT_SSL = 443;
 ---------------------------------------------------------------------------
 
 Troubleshooting note for Python users
