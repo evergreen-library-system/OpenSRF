@@ -416,7 +416,7 @@ srfsh# request opensrf.math add 2,2
 You should receive the value `4`.
 
 Websockets installation instructions
-----------------------------------------------------------
+------------------------------------
 
 1. Install websocketd (latest stable release from http://websocketd.com/)
 +
