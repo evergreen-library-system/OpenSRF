@@ -1,0 +1,63 @@
+OpenSRF 3.2-beta
+----------------
+OpenSRF 3.2-beta was released on 1 October 2019. This release adds
+support for Debian 10 Buster and deprecates the Apache `mod_websocket`
+backend for the WebSockets gateway but does not add new features.
+
+Major Changes
+~~~~~~~~~~~~~
+
+Support for Debian 10 Buster (LP#1835458)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OpenSRF 3.2 adds support for Debian 10 Buster. Debian 10 comes with
+ejabberd 18.12 (as compared to ejabberd 16.09 in Debian 9), which
+means that a `mod_legacy_auth` directive will need to be uncommented
+or added to the ejabberd configuration. However, Debian 10 is
+otherwise not significantly different from Debian 9 as far as OpenSRF
+is concerned.
+
+Removal of Support for `mod_websocket` (LP#1834208)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OpenSRF 3.2 formally removes support for using the Apache
+`mod_websocket` module to act as the WebSockets gateway to OpenSRF
+in favor of requiring `websocketed`. OpenSRF 3.2 also includes tweaks
+to the example NGINX and HAProxy configurations.
+
+Folks upgrading from previous versions of OpenSRF who are using
+`mod_websocket` should follow the instructions for installing
+`websocketd`, then stop remove the `apache2-websockets` Apache
+instance before starting `websocketd`.
+
+Removal of Variable Arguments for `md5sum()` (LP#1830642)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The `md5sum()` utility function included in OpenSRF's C code
+no longer accepts variadic arguments, fixing a bug in Evergreen
+where a percent in a user password could prevent authentication
+from working.
+
+Upgrade Notes
+~~~~~~~~~~~~~
+OpenSRF 3.2 introduces changes to the application binary interface
+(ABI) for C applications. Consequently, Evergreen users should plan on
+recompiling Evergreen after installing OpenSRF 3.2.
+
+Users of NGINX or HAProxy should review the example configuration files
+(respectively `examples/nginx/osrf-ws-http-proxy`
+or `examples/haproxy/osrf-ws-http-proxy`) and make adjustments to
+their production configuration accordingly.
+
+Evergreen Compatibility
+~~~~~~~~~~~~~~~~~~~~~~~
+OpenSRF 3.2 can be used by Evergreen 3.1.x, 3.2.x, 3.3.x, and 3.4.x.
+
+Acknowledgements
+~~~~~~~~~~~~~~~
+
+We would like to thank the following people who contributed to OpenSRF 3.2-beta:
+
+  * Jason Boyer
+  * Galen Charlton
+  * Jeff Davis
+  * Bill Erickson
+  * Ben Shum
+  * Jason Stephenson
