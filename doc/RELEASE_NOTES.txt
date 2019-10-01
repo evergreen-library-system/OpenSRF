@@ -1,6 +1,6 @@
-OpenSRF 3.2-beta
-----------------
-OpenSRF 3.2-beta was released on 1 October 2019. This release adds
+OpenSRF 3.2.0-beta
+------------------
+OpenSRF 3.2.0-beta was released on 1 October 2019. This release adds
 support for Debian 10 Buster and deprecates the Apache `mod_websocket`
 backend for the WebSockets gateway but does not add new features.
 
@@ -53,7 +53,7 @@ OpenSRF 3.2 can be used by Evergreen 3.1.x, 3.2.x, 3.3.x, and 3.4.x.
 Acknowledgements
 ~~~~~~~~~~~~~~~
 
-We would like to thank the following people who contributed to OpenSRF 3.2-beta:
+We would like to thank the following people who contributed to OpenSRF 3.2.0-beta:
 
   * Jason Boyer
   * Galen Charlton
