@@ -1,3 +1,36 @@
+commit 79f0579cd9d5b28970fa39b7ced6ea57e47357b5
+Author: Galen Charlton <gmc@equinoxinitiative.org>
+Date:   Wed Oct 2 15:47:29 2019 -0400
+
+    bump up version numbers for 3.2.0 release
+    
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+5	5	README
+2	2	src/perl/lib/OpenSRF.pm
+1	1	src/python/setup.py
+1	1	version.m4
+
+commit 9f6e6ac71f4c8081022ac27f6922a6ad1a22aa6d
+Author: Galen Charlton <gmc@equinoxinitiative.org>
+Date:   Wed Oct 2 15:44:08 2019 -0400
+
+    update release notes for 3.2.0
+    
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+4	4	doc/RELEASE_NOTES.txt
+
+commit ecec8c069b7be137f0a72aa376fa37c6daa424a6
+Author: Galen Charlton <gmc@equinoxinitiative.org>
+Date:   Tue Oct 1 16:07:53 2019 -0400
+
+    update ChangeLog for 3.2.0-beta
+    
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+
+103	1275	ChangeLog
+
 commit ba9ab14a7882184da7fd7d8b000e1f06ce3d66cd
 Author: Galen Charlton <gmc@equinoxinitiative.org>
 Date:   Tue Oct 1 16:07:02 2019 -0400
