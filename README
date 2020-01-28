@@ -287,7 +287,7 @@ hosts:
     ##access_max_user_messages: max_user_offline_messages
 -----------------------
 +
-  g. Uncomment or add the `mod_legacy_auth` directive
+  g. Uncomment or add the `mod_legacy_auth` directive under the `modules:` section
 +
 -----------------------
 mod_legacy_auth: {}
