@@ -19,6 +19,11 @@
 # Initialization
 #-------------------------------
 
+libtoolize: Consider adding 'AC_CONFIG_MACRO_DIRS([m4])' to configure.ac,
+libtoolize: and rerunning libtoolize and aclocal.
+libtoolize: Consider adding '-I m4' to ACLOCAL_AMFLAGS in Makefile.am.
+
+
 export PATH=${PATH}:/usr/sbin
 AC_PREREQ(2.59)
 
@@ -26,11 +31,12 @@ AC_PREREQ(2.59)
 m4_include([version.m4])
 
 # Version number gets turned into @PACKAGE_VERSION@
-AC_INIT([OpenSRF],m4_defn([VERSION_NUMBER]),[open-ils-dev@list.georgialibraries.org])
-AM_INIT_AUTOMAKE([OpenSRF], m4_defn([VERSION_NUMBER]))
+AC_INIT([OpenSRF], [VERSION_NUMBER])
+AC_CONFIG_SRCDIR([configure.ac])
+AM_INIT_AUTOMAKE
+AC_CONFIG_MACRO_DIRS([m4])
 
 AC_REVISION($Revision: 0.1 $)
-AC_CONFIG_SRCDIR([configure.ac])
 
 # Enable $prefix to resolve to a reasonable value in substitutions in
 # scripts if no explict value was passed in to configure
@@ -267,12 +273,12 @@ IFS="${IFS}:"
 
 for dir in $EXTRA_USER_INCLUDES; do
 	if test -d "$dir"; then
-	  INCLUDES="$INCLUDES -I$dir"
+	  AM_CPPFLAGS="$AM_CPPFLAGS -I$dir"
 	else
 	  AC_MSG_WARN([*** Include directory $dir does not exist.])
 	fi
 done
-AC_SUBST(INCLUDES)
+AC_SUBST(AM_CPPFLAGS)
 
 for dir in $EXTRA_USER_LIBRARIES; do
 	if test -d "$dir"; then

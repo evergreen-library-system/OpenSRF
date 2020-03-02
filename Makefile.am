@@ -23,7 +23,7 @@ export APR_HEADERS              = @APR_HEADERS@
 export ETCDIR                   = @sysconfdir@
 export APXS2                    = @APXS2@
 export APACHE2_HEADERS          = @APACHE2_HEADERS@
-export DEF_CFLAGS               = -D_LARGEFILE64_SOURCE $(MAYBE_DEBUG) -pipe -g -Wall -O2 -fPIC -I@abs_top_srcdir@/include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS) @INCLUDES@
+export DEF_CFLAGS               = -D_LARGEFILE64_SOURCE $(MAYBE_DEBUG) -pipe -g -Wall -O2 -fPIC -I@abs_top_srcdir@/include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS) @AM_CPPFLAGS@
 export DEF_LDLIBS               = -lopensrf
 export VAR                      = @localstatedir@
 export PID                      = @localstatedir@/run/opensrf
@@ -34,6 +34,7 @@ export PERL_BASE                = @PERL_BASE@
 opensrfincludedir               = @includedir@/opensrf
 
 AM_CFLAGS = $(DEF_CFLAGS)
+ACLOCAL_AMFLAGS = -I m4
 
 DISTCLEANFILES = Makefile.in Makefile aclocal.m4 config.guess config.log config.sub config.status configure depcomp install-sh ltmain.sh missing
 
