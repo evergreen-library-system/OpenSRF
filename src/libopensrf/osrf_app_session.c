@@ -385,7 +385,11 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 			req->reset_timeout = 0;
 			osrfLogDebug( OSRF_LOG_MARK, "Received a timeout reset");
 		} else {
-			remaining -= (int) (time(NULL) - start);
+			// Subtract the amount of time taken during this loop 
+			// iteration, not the combined time of all iterations.
+			time_t tmp = time(NULL);
+			remaining -= (int) (tmp - start);
+			start = tmp;
 		}
 	}
 
