@@ -100,4 +100,3 @@ src/websocket-stdio/.deps/
 src/websocket-stdio/.libs/
 src/websocket-stdio/osrf-websocket-stdio
 src/websocket-stdio/*.o
-m4/*.m4
