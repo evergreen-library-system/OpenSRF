@@ -885,8 +885,11 @@ static void prefork_run( prefork_simple* forker ) {
 			cur_msg = client_recv( forker->connection, -1 );
 			received_from_network = 1;
 		} else {
-			// See if any messages are immediately available
-			cur_msg = client_recv( forker->connection, 0 );
+			// We have queued messages, which means all of our drones
+			// are occupied.  See if any new messages are available on the
+			// network while waiting up to 1 second to allow time for a drone
+			// to become available to handle the next request in the queue.
+			cur_msg = client_recv( forker->connection, 1 );
 			if ( cur_msg != NULL )
 				received_from_network = 1;
 		}
