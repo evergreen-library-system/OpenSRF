@@ -37,11 +37,6 @@ src/gateway/*.la
 src/gateway/*.lo
 src/gateway/*.o
 src/gateway/*.slo
-src/java/deps/
-src/java/.lib/
-src/java/Makefile
-src/java/Makefile.in
-src/java/opensrf.jar
 src/javascript/opensrf_ws.js
 src/javascript/opensrf_ws_shared.js
 src/jserver/.deps/

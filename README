@@ -120,7 +120,6 @@ make
 ---------------------------------------------------------------------------
 
 By default, OpenSRF includes C, Perl, and JavaScript support.
-You can add the `--enable-java` for Java support.
 
 If you are planning on proxying WebSockets traffic (see below), you
 can add `--with-websockets-port=443` to specify that WebSockets traffic

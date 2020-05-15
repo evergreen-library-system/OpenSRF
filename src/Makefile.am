@@ -17,17 +17,12 @@
 export OPENSRF	= opensrf
 export BINDIR	= @bindir@
 export LIBDIR	= @libdir@
-export OSRF_JAVA_DEPSDIR = @OSRF_JAVA_DEPSDIR@
 etcdir = $(ETCDIR)
 
 DISTCLEANFILES = Makefile.in Makefile
 
 AM_LDFLAGS = $(DEF_LDFLAGS)
 AM_CFLAGS = $(DEF_CFLAGS)
-
-if BUILDJAVA
-MAYBE_JA = java
-endif
 
 if INSTALLJAVASCRIPT
 MAYBE_JAVASCRIPT = javascript

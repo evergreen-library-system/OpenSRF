@@ -57,19 +57,6 @@ AC_SUBST(bindir)
 # Installation options
 #-------------------------------
 
-# build and install the java libs?
-AC_ARG_ENABLE([java],
-[  --enable-java    enable building and installing the java libraries],
-[case "${enableval}" in
-    yes) OSRF_INSTALL_JAVA=true ;;
-    no) OSRF_INSTALL_JAVA=false ;; 
-  *) AC_MSG_ERROR([please choose another value for --enable-java (supported values are yes or no)]) ;;
-esac],
-[OSRF_INSTALL_JAVA=false])
-
-AM_CONDITIONAL([BUILDJAVA], [test x$OSRF_INSTALL_JAVA = xtrue])
-AC_SUBST([OSRF_INSTALL_JAVA])
-
 # install the javascript files?
 AC_ARG_ENABLE([javascript],
 [  --disable-javascript    disable installing JavaScript libraries],
@@ -107,11 +94,6 @@ AC_ARG_ENABLE(debug,
 esac],[debug=false])
 AM_CONDITIONAL(DEBUG, test x$debug = xtrue)
  
-# path to the directory containing the java dependency jar files (included if java installs)
-if test $OSRF_INSTALL_JAVA; then
-	AC_SUBST([OSRF_JAVA_DEPSDIR], [deps])
-    AC_CONFIG_FILES([src/java/Makefile])
-fi
 
 #--------------------------------
 # Checks for programs.
@@ -357,14 +339,6 @@ AC_OUTPUT
 
 AC_MSG_RESULT([])
 AC_MSG_RESULT([--------------------- Configuration options:  -----------------------])
-
-if test "$OSRF_INSTALL_JAVA" = "true" ; then
-        AC_MSG_RESULT([OSRF install Java support?       yes])
-        AC_MSG_RESULT([Java support files               $OSRF_JAVA_DEPSDIR])
-else
-        AC_MSG_RESULT([OSRF install Java support?       no])
-fi
-
 
         AC_MSG_RESULT(Installation directory prefix:   ${prefix})
         AC_MSG_RESULT(Temporary directory:             ${TMP})

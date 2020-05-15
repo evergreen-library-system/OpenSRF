@@ -64,9 +64,6 @@ strn_compat_FILES = @srcdir@/src/ports/strn_compat/strndup.c \
 					@srcdir@/src/ports/strn_compat/strnlen.c \
 					@srcdir@/src/ports/strn_compat/strnlen.h
 
-java_FILES = @srcdir@/src/java/deps.inc \
-			 @srcdir@/src/java/deps.sh \
-			 @srcdir@/src/java/org
 
 libosrf_FILES = @srcdir@/src/libopensrf/basic_client.c \
 		@srcdir@/src/libopensrf/osrf_big_hash.c \
