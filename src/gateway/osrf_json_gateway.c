@@ -392,24 +392,24 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 			/* add a debug field if the request died */
 			ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r,
 					"OpenSRF JSON Request returned error: %s -> %s", statusname, statustext );
-			int l = strlen(statusname) + strlen(statustext) + 32;
-			char buf[l];
+			growing_buffer* buf = buffer_init(512);
 
 			if (isXML)
-				snprintf( buf, sizeof(buf), "<debug>\"%s : %s\"</debug>", statusname, statustext );
+				buffer_fadd(buf, "<debug>\"%s : %s\"</debug>", statusname, statustext);
 
 			else {
-				char bb[l];
-				snprintf(bb, sizeof(bb),  "%s : %s", statusname, statustext);
-				jsonObject* tmp = jsonNewObject(bb);
+				buffer_fadd(buf, "%s : %s", statusname, statustext);
+				jsonObject* tmp = jsonNewObject(buf->buf);
 				char* j = jsonToStringFunc(tmp);
-				snprintf( buf, sizeof(buf), ",\"debug\": %s", j);
+				buffer_reset(buf);
+				buffer_fadd(buf, ",\"debug\": %s", j);
 				free(j);
 				jsonObjectFree(tmp);
 			}
 
-			ap_rputs(buf, r);
+			ap_rputs(buf->buf, r);
 
+			buffer_free(buf);
 			free(statusname);
 			free(statustext);
 		}
