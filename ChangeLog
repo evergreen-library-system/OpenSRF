@@ -1,8 +1,8 @@
-commit 79f0579cd9d5b28970fa39b7ced6ea57e47357b5
+commit 52fd4eeb2067a3dea6cc8f37041140832772eaab
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Oct 2 15:47:29 2019 -0400
+Date:   Wed Sep 16 09:21:59 2020 -0400
 
-    bump up version numbers for 3.2.0 release
+    bump up version numbers for 3.2.1 release
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
@@ -11,175 +11,96 @@ Date:   Wed Oct 2 15:47:29 2019 -0400
 1	1	src/python/setup.py
 1	1	version.m4
 
-commit 9f6e6ac71f4c8081022ac27f6922a6ad1a22aa6d
+commit cab6edd1730a43e0457b0d436020165734523339
 Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Oct 2 15:44:08 2019 -0400
+Date:   Wed Sep 16 09:20:53 2020 -0400
 
-    update release notes for 3.2.0
+    update release notes for 3.2.1
     
     Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
-4	4	doc/RELEASE_NOTES.txt
+27	0	doc/RELEASE_NOTES.txt
 
-commit ecec8c069b7be137f0a72aa376fa37c6daa424a6
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Oct 1 16:07:53 2019 -0400
+commit 710d4063a380015fee636944de65ef9eefa0ab97
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Tue Jan 28 11:32:52 2020 -0500
 
-    update ChangeLog for 3.2.0-beta
+    Lp 1860068: Clarify README for Debian Buster
     
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-103	1275	ChangeLog
-
-commit ba9ab14a7882184da7fd7d8b000e1f06ce3d66cd
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Oct 1 16:07:02 2019 -0400
-
-    bump up version numbers for 3.2.0-beta release
+    Indicate that the mod_legacy_auth directive is foudn in the modules
+    section of the ejabberd configuration (ejabberd.yml) for Debian Buster
+    and/or Ubuntu Bionic.
     
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-5	5	README
-4	4	doc/RELEASE_NOTES.txt
-2	2	src/perl/lib/OpenSRF.pm
-1	1	src/python/setup.py
-1	1	version.m4
-
-commit 346abe35fba3f70f3692d88fe7c1458e36ae46b4
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Tue Oct 1 16:03:54 2019 -0400
-
-    release notes for OpenSRF 3.2-beta
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-63	0	doc/RELEASE_NOTES.txt
- create mode 100644 doc/RELEASE_NOTES.txt
-
-commit 3fb939657f350774f6b4216c9d416eff1745a1b3
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed May 29 12:36:24 2019 -0400
-
-    LP1830642 Remove variable args from md5sum()
-    
-    Remove support for passing variable args to the md5sum() function, since
-    no code currently uses this, and it causes problems processing strings
-    with '%' characters.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	include/opensrf/utils.h
-3	5	src/libopensrf/utils.c
-
-commit 1ec906ac50a06636a105450ce77b792a6e366ffb
-Author: Ben Shum <ben@evergreener.net>
-Date:   Thu Jul 4 15:35:53 2019 -0400
-
-    LP#1835458: Add install support for Debian 10 Buster
-    
-    Signed-off-by: Ben Shum <ben@evergreener.net>
     Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-8	2	README
-13	1	src/extras/Makefile.install
-
-commit 27950b7d180495f9c85f4aced40fd6f39d035388
-Author: Ben Shum <ben@evergreener.net>
-Date:   Fri Jul 19 14:24:23 2019 -0400
-
-    LP1834208 fix OpenSRF README asciidoc syntax
-    
-    Fixing the subheading so that it compiles properly.
-    
-    Signed-off-by: Ben Shum <ben@evergreener.net>
+    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
 
 1	1	README
 
-commit 502ecca0dafa6d258fba775d070d498715f9ae6c
-Author: Jason Boyer <jboyer@library.in.gov>
-Date:   Tue Jul 9 08:23:51 2019 -0400
-
-    LP1834208 Rearrange proxy instructions to reduce repetition
-    
-    The instructions for Apache configuration changes were repeated
-    multiple times throughout the README. This pulls them together,
-    allowing the Nginx and HAProxy sections to focus specifically on
-    the configuration of those packages.
-    
-    Signed-off-by: Jason Boyer <jboyer@library.in.gov>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-30	48	README
-
-commit c409bb7c6688d8f294375e1c549495e6dd637b04
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Jul 2 17:58:50 2019 -0400
-
-    LP1834208 Update proxy example configuration files
-    
-    The examples/haproxy/osrf-ws-http-proxy file needed a syntax
-    correction with the listen directive.
-    
-    Remove X-Real-IP lines from the examples/nginx/osrf-ws-http-proxy
-    configuration, and remove the X-Client-IP line from the
-    examples/haproxy/osrf-ws-http-proxy configuration.  These entries are
-    redundant when X-Forwarded-For is being used.
-    
-    This latter change also suggests changes in the Evergreen Apache 2
-    configuration examples.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Jason Boyer <jboyer@library.in.gov>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-2	2	examples/haproxy/osrf-ws-http-proxy
-0	3	examples/nginx/osrf-ws-http-proxy
-
-commit 81244409e61cb004f6451c5bece75633088e1880
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Fri Jun 28 08:58:40 2019 -0400
-
-    LP1834208 Remove example Apache Websockets configuration
-    
-    The examples/apache_24/websockets files were left behind by the
-    previous commit.  This commit deletes them.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Jason Boyer <jboyer@library.in.gov>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-
-0	64	examples/apache_24/websockets/apache2.conf
- delete mode 100644 examples/apache_24/websockets/apache2.conf
-
-commit a2522f25ed8d0c5b355838174e2aac20000c85e6
+commit cbf837440c96b4f767aaaed033478aa8c1aaab03
 Author: Bill Erickson <berickxx@gmail.com>
-Date:   Tue Jun 25 11:03:36 2019 -0400
+Date:   Thu Apr 23 15:32:50 2020 -0400
 
-    LP1834208 Removing apache2-websockets
+    LP1874510 libopensrf recv timeout cal repair
     
-    Remove code and build components for apache2-websockets.  Update
-    documentation to reflect the use of websocketd as the only supported
-    OpenSRF websockets implementation.
+    Fixes the message receive timeout calculation logic in OpenSRF C client
+    code.  The calculation is performed when multiple calls to receive are
+    needed to piece together a response message.
     
-    Add a note to the install documentation indicating websocketd does not
-    offer a configurable inactivity timeout, but this can be accomplished
-    by running it behind a proxy.
-    
-    Update NGINX and HAPROXY example configs to reflect the assumption that
-    websocketd is runs locally without SSL by default.
+    The logic previously calculated the time remaining as the time remaining
+    minus the total time taken for all iterations with each loop iteration,
+    leading to exhausting the timeout too quickly.  Now it calculates the
+    value as time remaining minus the time taken for the only most recent
+    loop iteration.
     
     Signed-off-by: Bill Erickson <berickxx@gmail.com>
     Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Jason Boyer <jboyer@library.in.gov>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
 
-11	89	README
-1	7	examples/apache_24/websockets/apache2.conf
-1	1	examples/haproxy/osrf-ws-http-proxy
-9	19	examples/nginx/osrf-ws-http-proxy
-2	5	src/gateway/Makefile.am
-0	993	src/gateway/osrf_websocket_translator.c
-0	130	src/gateway/websocket_plugin.h
- delete mode 100644 src/gateway/osrf_websocket_translator.c
- delete mode 100644 src/gateway/websocket_plugin.h
+5	1	src/libopensrf/osrf_app_session.c
+
+commit 747a59e1c6e8e75d4cae579459b76ee792602a2e
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Wed Apr 29 09:36:44 2020 -0400
+
+    Revert "LP#1272937 Followup: Remove m4/.gitignore"
+    
+    This reverts commit 06c8241b84fc9dbe6ec6a52fc98d469cd2bf0515.
+
+0	1	.gitignore
+1	0	m4/.gitignore
+ create mode 100644 m4/.gitignore
+
+commit 06c8241b84fc9dbe6ec6a52fc98d469cd2bf0515
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Wed Apr 29 09:32:57 2020 -0400
+
+    LP#1272937 Followup: Remove m4/.gitignore
+    
+    Remove m4/.gitignore and a line to .gitignore to ignore the m4 files
+    in the m4 subdirectory.
+    
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+
+1	0	.gitignore
+0	1	m4/.gitignore
+ delete mode 100644 m4/.gitignore
+
+commit bc79ff1e77cd99315fba72de336dfa164f491ce9
+Author: Chris Sharp <csharp@georgialibraries.org>
+Date:   Mon Mar 2 17:29:12 2020 -0500
+
+    LP#1272937 - Quiet warnings from autoreconf -i
+    
+    We change INCLUDES to AM_CPPFLAGS and change
+    the syntax for AM_INIT_AUTOMAKE to match current
+    recommendations.  Also, add an m4 directory.
+    
+    Thanks to Warren Layton for direction towards these
+    solutions.
+    
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+
+2	1	Makefile.am
+11	5	configure.ac
+1	0	m4/.gitignore
+ create mode 100644 m4/.gitignore
