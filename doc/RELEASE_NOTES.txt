@@ -1,3 +1,30 @@
+OpenSRF 3.2.1 release notes
+===========================
+
+OpenSRF 3.2.1
+-------------
+OpenSRF 3.2.1 was released on 16 September 2020. This is a bugfix
+release. All users of OpenSRF 3.2.0 are advised to upgrade.
+
+The following bugs are fixed:
+
+  * LP#1874510: prevent certain requests returning chunked messages
+    from timing out prematurely.
+  * LP#1272937: avoid some deprecation warnings when running
+    `autoreconf -i`.
+  * LP#1860068: improve the installation instructions for Debian
+    Buster.
+
+Acknowledgments
+~~~~~~~~~~~~~~~
+
+We would like to thank the following people who contributed to OpenSRF 3.1.1:
+
+  * Galen Charlton
+  * Bill Erickson
+  * Chris Sharp
+  * Jason Stephenson
+
 OpenSRF 3.2.0
 -------------
 OpenSRF 3.2.0 was released on 2 October 2019. This release adds
