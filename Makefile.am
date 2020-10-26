@@ -64,11 +64,6 @@ strn_compat_FILES = @srcdir@/src/ports/strn_compat/strndup.c \
 					@srcdir@/src/ports/strn_compat/strnlen.c \
 					@srcdir@/src/ports/strn_compat/strnlen.h
 
-python_FILES = @srcdir@/src/python/opensrf.py \
-			   @srcdir@/src/python/setup.py \
-			   @srcdir@/src/python/srfsh.py \
-			   @srcdir@/src/python/osrf
-
 java_FILES = @srcdir@/src/java/deps.inc \
 			 @srcdir@/src/java/deps.sh \
 			 @srcdir@/src/java/org
@@ -79,7 +74,7 @@ libosrf_FILES = @srcdir@/src/libopensrf/basic_client.c \
 		@srcdir@/src/libopensrf/osrfConfig.c
 
 
-EXTRA_DIST = $(DOC_FILES) $(EXAMPLES_FILES) $(libosrf_FILES) $(strn_compat_FILES) $(python_FILES) $(java_FILES) @srcdir@/autogen.sh @srcdir@/src/extras @srcdir@/COPYING @srcdir@/DCO-1.1.txt @srcdir@/LICENSE.txt @srcdir@/src/perl @srcdir@/src/javascript
+EXTRA_DIST = $(DOC_FILES) $(EXAMPLES_FILES) $(libosrf_FILES) $(strn_compat_FILES) $(java_FILES) @srcdir@/autogen.sh @srcdir@/src/extras @srcdir@/COPYING @srcdir@/DCO-1.1.txt @srcdir@/LICENSE.txt @srcdir@/src/perl @srcdir@/src/javascript
 
 OSRFINC=@srcdir@/include/opensrf
 

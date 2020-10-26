@@ -44,7 +44,7 @@ if test "$prefix" == "NONE"; then
    prefix=$ac_default_prefix
 fi
 
-# Perl and Python scripts don't want ${prefix} if no value was specified
+# Perl scripts don't want ${prefix} if no value was specified
 eval "eval CONF_DIR=$sysconfdir"
 eval "eval PID_DIR=$localstatedir"
 AC_SUBST([CONF_DIR])
@@ -52,24 +52,6 @@ AC_SUBST([PID_DIR])
 
 AC_SUBST(prefix)
 AC_SUBST(bindir)
-
-
-AC_DEFUN([AC_PYTHON_MOD],[
-    if test -z $PYTHON;
-    then
-        PYTHON="python"
-    fi
-    AC_MSG_CHECKING($PYTHON_NAME module: $1)
-        $PYTHON -c "import $1" 2>/dev/null
-        if test $? -eq 0;
-        then
-                AC_MSG_RESULT(yes)
-                eval AS_TR_CPP(HAVE_PYMOD_$1)=yes
-        else
-                AC_MSG_ERROR(failed to find required module $1)
-		exit 1
-        fi
-])
 
 #-------------------------------
 # Installation options
@@ -113,20 +95,6 @@ esac],
 
 AM_CONDITIONAL([BUILDCORE], [test x$OSRF_INSTALL_CORE = xtrue])
 AC_SUBST([OSRF_INSTALL_CORE])
-
-
-# build and install the python modules
-AC_ARG_ENABLE([python],
-[  --enable-python  enable building and installing python modules],
-[case "${enableval}" in
-  yes) OSRF_INSTALL_PYTHON=true ;;
-  no) OSRF_INSTALL_PYTHON=false ;;
-  *) AC_MSG_ERROR([please choose another value for --enable-python (supported values are yes or no)]) ;;
-esac],
-[OSRF_INSTALL_PYTHON=false])
-
-AM_CONDITIONAL([BUILDPYTHON], [test x$OSRF_INSTALL_PYTHON = xtrue])
-AC_SUBST([OSRF_INSTALL_PYTHON])
 
 # enable debug?
 
@@ -294,19 +262,6 @@ IFS=${IFSBAK}
 AC_CONFIG_FILES([Makefile
 	src/Makefile])
 
-#PYTHON TESTS
-if test x$OSRF_INSTALL_PYTHON = xtrue; then
-    AC_CHECK_PROG([HAVE_PYTHON],python,yes,no)
-    if test $HAVE_PYTHON = "no"; then
-        AC_MSG_ERROR([*** python not found, aborting])
-    fi
-    AC_PYTHON_MOD([setuptools])
-    AC_CONFIG_FILES([
-        examples/math_client.py
-        examples/simple_text.py
-        src/python/Makefile
-    ])
-fi
 # Check Unit test framework
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.0], [enable_tests=yes],
                   [enable_tests=no])
@@ -390,7 +345,6 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 			 src/libopensrf/Makefile
 			 src/perl/Makefile
 			 src/ports/strn_compat/Makefile
-			 src/python/opensrf.py
 			 src/router/Makefile
 			 src/srfsh/Makefile
 			 src/websocket-stdio/Makefile
@@ -411,11 +365,6 @@ else
         AC_MSG_RESULT([OSRF install Java support?       no])
 fi
 
-if test "$OSRF_INSTALL_PYTHON" = "true" ; then
-        AC_MSG_RESULT([OSRF install Python support?     yes])
-else
-        AC_MSG_RESULT([OSRF install Python support?     no])
-fi
 
         AC_MSG_RESULT(Installation directory prefix:   ${prefix})
         AC_MSG_RESULT(Temporary directory:             ${TMP})

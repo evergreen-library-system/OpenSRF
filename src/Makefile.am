@@ -25,10 +25,6 @@ DISTCLEANFILES = Makefile.in Makefile
 AM_LDFLAGS = $(DEF_LDFLAGS)
 AM_CFLAGS = $(DEF_CFLAGS)
 
-if BUILDPYTHON
-MAYBE_PY = python
-endif 
-
 if BUILDJAVA
 MAYBE_JA = java
 endif
@@ -41,11 +37,7 @@ endif
 
 if BUILDCORE
 MAYBE_CORE = libopensrf c-apps router srfsh gateway perl websocket-stdio
-if BUILDPYTHON
-dist_bin_SCRIPTS = @top_srcdir@/bin/opensrf-perl.pl @top_srcdir@/src/python/opensrf.py @top_srcdir@/src/python/srfsh.py
-else
 dist_bin_SCRIPTS = @top_srcdir@/bin/opensrf-perl.pl
-endif
 bin_SCRIPTS = @top_srcdir@/bin/osrf_config
 dist_sysconf_DATA = @top_srcdir@/examples/opensrf.xml.example @top_srcdir@/examples/opensrf_core.xml.example @top_srcdir@/examples/srfsh.xml.example 
 endif

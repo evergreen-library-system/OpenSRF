@@ -402,9 +402,6 @@ sub do_start {
             if ($svc->{lang} =~ /c/i) {
                 system("$C_COMMAND -a start -s $service");
                 return;
-            } elsif ($svc->{lang} =~ /python/i) {
-                system("$PY_COMMAND -a start -s $service");
-                return;
             }
         }
     }
