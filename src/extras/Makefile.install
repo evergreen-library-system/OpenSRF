@@ -5,7 +5,7 @@
 # Makefile to install prerequisites for OpenSRF
 #
 # Currently supports Debian (jessie/stretch) and Ubuntu
-# (xenial/bionic)
+# (xenial/bionic/focal)
 #
 # Installs Perl prereqs, libjs with Perl wrapper
 #
@@ -19,6 +19,8 @@
 # 	make -f Makefile.install ubuntu-xenial
 #   - or -
 #   make -f Makefile.install ubuntu-bionic
+# 	- or -
+#   make -f Makefile.install ubuntu-focal
 # 	- or -
 # 	make -f Makefile.install fedora
 #
@@ -158,12 +160,7 @@ EXTRA_DEBS_DEBIAN_STRETCH = \
 	apache2-dev \
 	libncurses5-dev
 
-EXTRA_DEBS_UBUNTU_XENIAL = \
-	apache2 \
-	apache2-dev \
-	libncurses5-dev
-
-EXTRA_DEBS_UBUNTU_BIONIC = \
+EXTRA_DEBS_UBUNTU = \
 	apache2 \
 	apache2-dev \
 	libncurses5-dev
@@ -184,11 +181,11 @@ generic_debian: install_debs
 
 fedora: install_fedora_rpms
 
-ubuntu-xenial: generic_ubuntu xenial apache_mpm_prefork_mods apache_perl_mod
-ubuntu-bionic: generic_ubuntu bionic apache_mpm_prefork_mods apache_perl_mod
-xenial: install_extra_debs install_extra_debs_xenial debian_sys_config
-bionic: install_extra_debs install_extra_debs_bionic debian_sys_config
-generic_ubuntu: install_debs
+ubuntu-xenial: generic_ubuntu
+ubuntu-bionic: generic_ubuntu
+ubuntu-focal: generic_ubuntu
+generic_ubuntu: install_debs install_extra_debs install_extra_debs_ubuntu \
+                debian_sys_config apache_mpm_prefork_mods apache_perl_mod
 
 # ------------------------------------------------------------------
 # - DEBIAN ---------------------------------------------------------
@@ -215,11 +212,8 @@ install_extra_debs_jessie: install_extra_debs
 	$(APT_TOOL) install $(EXTRA_DEBS_JESSIE)
 
 # Install even more packaged dependencies on modern distros
-install_extra_debs_xenial:
-	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_XENIAL)
-
-install_extra_debs_bionic:
-	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU_BIONIC)
+install_extra_debs_ubuntu:
+	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU)
 
 
 # Some OSes activate the Apache mpm_event module by default.
