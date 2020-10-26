@@ -120,8 +120,7 @@ make
 ---------------------------------------------------------------------------
 
 By default, OpenSRF includes C, Perl, and JavaScript support.
-You can add the `--enable-python` option to the configure command
-to build Python support and `--enable-java` for Java support.
+You can add the `--enable-java` for Java support.
 
 If you are planning on proxying WebSockets traffic (see below), you
 can add `--with-websockets-port=443` to specify that WebSockets traffic
@@ -614,26 +613,6 @@ cat examples/haproxy/osrf-ws-http-proxy >> /etc/haproxy/haproxy.cfg
 ---------------------------------------------------------------------------
 /etc/init.d/haproxy start
 ---------------------------------------------------------------------------
-
-Troubleshooting note for Python users
--------------------------------------
-
-If you are running a Python client and trying to connect to OpenSRF running on
-localhost rather than a hostname that can be resolved via DNS, you will
-probably receive exceptions about `dns.resolver.NXDOMAIN`. If this happens,
-you need to install the `dnsmasq` package, configure it to serve up a DNS
-entry for localhost, and point your local DNS resolver to `dnsmasq`. For example,
-on Ubuntu you can issue the following commands as the *root* Linux account:
-
-.Installing and starting `dnsmasq`
-[source, bash]
----------------------------------------------------------------------------
-aptitude install dnsmasq
-/etc/init.d/dnsmasq restart
----------------------------------------------------------------------------
-
-Then edit `/etc/resolv.conf` and ensure that `nameserver 127.0.0.1` is the
-first entry in the file.
 
 Getting help
 ------------

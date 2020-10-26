@@ -80,15 +80,7 @@ DEBS =  \
 	libxslt1-dev\
 	memcached\
 	pkg-config\
-	python-coverage\
 	psmisc\
-	python-dev\
-	python-libxml2\
-	python-memcache\
-	python-nose\
-	python-pyxmpp\
-	python-setuptools\
-	python-simplejson\
 	tar\
 	unzip\
 	zip\
@@ -113,7 +105,6 @@ FEDORAS = \
 	libxml-libxml-perl \
 	libxml-libxslt-perl \
 	libxml2-devel \
-	libxml2-python \
 	libxslt-devel \
 	make \
 	memcached \
@@ -147,11 +138,6 @@ FEDORAS = \
 	perl-XML-LibXSLT \
 	perl-XML-Simple \
 	psmisc \
-	python-devel \
-	python-dns \
-	python-memcached \
-	python-setuptools \
-	python-simplejson \
 	readline-devel \
 	tar
 
