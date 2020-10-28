@@ -5,7 +5,7 @@
 # Makefile to install prerequisites for OpenSRF
 #
 # Currently supports Debian (jessie/stretch) and Ubuntu
-# (xenial/bionic/focal)
+# (bionic/focal)
 #
 # Installs Perl prereqs, libjs with Perl wrapper
 #
@@ -16,8 +16,6 @@
 # 	- or -
 # 	make -f Makefile.install debian-jessie
 # 	- or -
-# 	make -f Makefile.install ubuntu-xenial
-#   - or -
 #   make -f Makefile.install ubuntu-bionic
 # 	- or -
 #   make -f Makefile.install ubuntu-focal
@@ -195,7 +193,6 @@ generic_debian: install_debs
 
 fedora: install_fedora_rpms
 
-ubuntu-xenial: generic_ubuntu
 ubuntu-bionic: generic_ubuntu
 ubuntu-focal: generic_ubuntu
 generic_ubuntu: install_debs install_extra_debs install_extra_debs_ubuntu \
