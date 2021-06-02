@@ -449,7 +449,12 @@ sub do_start_services {
 sub do_signal {
     my $service = shift;
     my $signal = shift;
-    return do_signal_all($signal, $service);
+    do_signal_send($service, $signal);
+
+    # if user passed a know non-shutdown signal, we're done.
+    return 1 if $signal =~ /HUP|USR1|USR2/;
+
+    return do_signal_wait($service);
 }
 
 # returns the list of running services based on presence of PID files.
