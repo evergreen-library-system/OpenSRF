@@ -4,21 +4,21 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (jessie/stretch) and Ubuntu
+# Currently supports Debian (stretch/bullseye) and Ubuntu
 # (bionic/focal)
 #
 # Installs Perl prereqs, libjs with Perl wrapper
 #
 # usage:
+# 	make -f Makefile.install debian-bullseye
+# 	- or -
 # 	make -f Makefile.install debian-buster
 # 	- or -
 # 	make -f Makefile.install debian-stretch
 # 	- or -
-# 	make -f Makefile.install debian-jessie
+#	make -f Makefile.install ubuntu-bionic
 # 	- or -
-#   make -f Makefile.install ubuntu-bionic
-# 	- or -
-#   make -f Makefile.install ubuntu-focal
+#	make -f Makefile.install ubuntu-focal
 # 	- or -
 # 	make -f Makefile.install fedora
 #
@@ -34,6 +34,8 @@ APT_TOOL=apt-get -yq
 
 # Debian dependencies
 DEBS =  \
+	apache2 \
+	apache2-dev \
 	autoconf\
 	automake\
 	build-essential\
@@ -45,6 +47,7 @@ DEBS =  \
 	libclass-dbi-abstractsearch-perl\
 	libclass-dbi-sqlite-perl\
 	libdatetime-format-builder-perl\
+	libdatetime-format-iso8601-perl \
 	libdatetime-format-mail-perl\
 	libdatetime-perl\
 	libdatetime-timezone-perl\
@@ -53,11 +56,14 @@ DEBS =  \
 	libfile-find-rule-perl\
 	libgcrypt20-dev \
 	libgdbm-dev \
+	libjson-xs-perl \
 	liblog-log4perl-perl\
 	libmemcached-dev \
 	libmemcached-tools \
 	libmodule-build-perl\
+	libncurses5-dev \
 	libnet-dns-perl\
+	libnet-server-perl \
 	libperl-dev\
 	libreadline-dev\
 	libtemplate-perl\
@@ -138,53 +144,27 @@ FEDORAS = \
 DEB_APACHE_MODS = \
 	ssl
 
-EXTRA_DEBS = \
-	libdatetime-format-iso8601-perl \
-	libjson-xs-perl \
-	libnet-server-perl
-
-EXTRA_DEBS_JESSIE = \
-	apache2-mpm-prefork \
-	apache2-prefork-dev \
-	libncurses5-dev
-
-EXTRA_DEBS_DEBIAN_BUSTER = \
-	apache2 \
-	apache2-dev \
-	libncurses5-dev
-
-EXTRA_DEBS_DEBIAN_STRETCH = \
-	apache2 \
-	apache2-dev \
-	libncurses5-dev
-
-EXTRA_DEBS_UBUNTU = \
-	apache2 \
-	apache2-dev \
-	libncurses5-dev
-
 # ----------------------------------------------------------------------------
 
 all: 
 	@echo "please specify an OS" && exit 0
 
 
-debian-buster: generic_debian buster apache_mpm_prefork_mods apache_perl_mod
-debian-stretch: generic_debian stretch apache_mpm_prefork_mods apache_perl_mod
-debian-jessie: generic_debian jessie apache_mpm_prefork_mods
-buster: install_extra_debs install_extra_debs_buster debian_sys_config
-stretch: install_extra_debs install_extra_debs_stretch debian_sys_config
-jessie: install_extra_debs_jessie debian_sys_config
-generic_debian: install_debs
+debian-bullseye: generic_debian
+debian-buster: generic_debian
+debian-stretch: generic_debian
 
-fedora: install_fedora_rpms
+generic_debian: install_debs debian_sys_config apache_mpm_prefork_mods apache_perl_mod
 
 ubuntu-bionic: generic_ubuntu
 ubuntu-focal: generic_ubuntu
-generic_ubuntu: install_debs install_extra_debs install_extra_debs_ubuntu \
-                debian_sys_config apache_mpm_prefork_mods apache_perl_mod
+
+generic_ubuntu: install_debs debian_sys_config apache_mpm_prefork_mods apache_perl_mod
+
+fedora: install_fedora_rpms
 
 # ------------------------------------------------------------------
+
 # - DEBIAN ---------------------------------------------------------
 
 debian_sys_config: 
@@ -194,24 +174,6 @@ debian_sys_config:
 # Install the debian-specific dependencies
 install_debs:
 	$(APT_TOOL) install $(DEBS)
-
-# Install the debian-specific dependencies for more modern distros
-install_extra_debs:
-	$(APT_TOOL) install $(EXTRA_DEBS)
-
-install_extra_debs_buster:
-	$(APT_TOOL) install $(EXTRA_DEBS_DEBIAN_BUSTER)
-
-install_extra_debs_stretch:
-	$(APT_TOOL) install $(EXTRA_DEBS_DEBIAN_STRETCH)
-
-install_extra_debs_jessie: install_extra_debs
-	$(APT_TOOL) install $(EXTRA_DEBS_JESSIE)
-
-# Install even more packaged dependencies on modern distros
-install_extra_debs_ubuntu:
-	$(APT_TOOL) install $(EXTRA_DEBS_UBUNTU)
-
 
 # Some OSes activate the Apache mpm_event module by default.
 # OpenSRF requires prefork.
@@ -223,6 +185,7 @@ apache_mpm_prefork_mods:
 apache_perl_mod:
 	a2enmod perl
 
+# - FEDORA ---------------------------------------------------------
 # Fedora
 install_fedora_rpms:
 	yum -y install $(FEDORAS)
