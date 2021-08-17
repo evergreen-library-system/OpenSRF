@@ -380,7 +380,6 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	#------------------------------------
 
 	AC_CONFIG_FILES([doc/dokuwiki-doc-stubber.pl
-			 examples/math_xul_client/Makefile
 			 examples/math_bench.pl
 			 examples/multisession-test.pl
 			 src/c-apps/Makefile
@@ -394,7 +393,7 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 			 src/router/Makefile
 			 src/srfsh/Makefile
 			 src/websocket-stdio/Makefile
-             tests/Makefile
+			 tests/Makefile
 			 bin/opensrf-perl.pl
 			 bin/osrf_config])
 fi
