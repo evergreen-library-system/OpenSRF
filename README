@@ -64,9 +64,9 @@ make -f src/extras/Makefile.install <osname>
 
 Well-tested values for <osname> include:
 
+  * `debian-bullseye` for Debian 11
   * `debian-buster` for Debian 10
   * `debian-stretch` for Debian 9
-  * `debian-jessie` for Debian 8
   * `ubuntu-bionic` for Ubuntu 18.04
   * `ubuntu-focal` for Ubuntu 20.04
 
@@ -207,36 +207,13 @@ work for OpenSRF.
 1. Stop ejabberd before making any changes to its configuration by issuing the
    following command as the *root* Linux account:
 +
-.(Debian / Ubuntu Bionic / Ubuntu Focal) Stopping ejabberd
+.Stopping ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl stop ejabberd.service
 ---------------------------------------------------------------------------
 +
 2. Edit the ejabberd config file.
-+
-(Debian Jessie) Ejabberd 13.x and 14.x::
-Open `/etc/ejabberd/ejabberd.yml` and make the following
-changes:
-  a. Define your public and private domains in the `hosts` directive. For
-   example:
-+
-[source, bash]
----------------------------------------------------------------------------
-hosts:
-  - "localhost"
-  - "private.localhost"
-  - "public.localhost"
----------------------------------------------------------------------------
-+
-  b. Change `shaper:` `normal` and `fast` values to 500000
-  c. Increase the `max_user_sessions:` `all:` value to 10000
-  d. Comment out the `mod_offline` directive
-+
------------------------
-##mod_offline:
-    ##access_max_user_messages: max_user_offline_messages
------------------------
 +
 (Debian Stretch) Ejabberd 16.x::
 Open `/etc/ejabberd/ejabberd.yml` and make the following
@@ -293,9 +270,48 @@ hosts:
 mod_legacy_auth: {}
 -----------------------
 +
+(Debian Bullseye) Ejabberd 21.x::
+Open `/etc/ejabberd/ejabberd.yml` and make the following
+changes:
+  a. Define your public and private domains in the `hosts` directive. For
+   example:
++
+[source, bash]
+---------------------------------------------------------------------------
+hosts:
+  - localhost
+  - private.localhost
+  - public.localhost
+---------------------------------------------------------------------------
++
+  b. Change `starttls_required` to false
+  c. Change `auth_password_format` to plain
+  d. Change all `shaper:` `normal` and `fast` values to 500000
+  e. Increase the `max_user_sessions:` `all:` value to 10000
+  f. Comment out the `max_user_offline_messages:` values
++
+-----------------------
+##max_user_offline_messages:
+  ##5000: admin
+  ##100: all
+-----------------------
++
+  g. Comment out the `mod_offline` directive
++
+-----------------------
+##mod_offline:
+    ##access_max_user_messages: max_user_offline_messages
+-----------------------
++
+  h. Add the `mod_legacy_auth` directive under the `modules:` section
++
+-----------------------
+mod_legacy_auth: {}
+-----------------------
++
 3. Restart the ejabberd server to make the changes take effect:
 +
-.(Debian / Ubuntu Bionic / Ubuntu Focal) Starting ejabberd
+.Starting ejabberd
 [source, bash]
 ---------------------------------------------------------------------------
 systemctl start ejabberd.service
