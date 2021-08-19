@@ -287,8 +287,8 @@ hosts:
   b. Change `starttls_required` to false
   c. Change `auth_password_format` to plain
   d. Change all `shaper:` `normal` and `fast` values to 500000
-  e. Increase the `max_user_sessions:` `all:` value to 10000
-  f. Comment out the `max_user_offline_messages:` values
+  e. Increase the `shaper_rules:` `max_user_sessions:` value to 10000
+  f. Comment out the `shaper_rules:` `max_user_offline_messages:` values
 +
 -----------------------
 ##max_user_offline_messages:
