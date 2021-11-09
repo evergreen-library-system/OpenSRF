@@ -12,7 +12,6 @@ depcomp
 doc/dokuwiki-doc-stubber.pl
 examples/math_bench.pl
 examples/math_client.py
-examples/math_xul_client/Makefile
 examples/multisession-test.pl
 examples/simple_text.py
 install-sh
