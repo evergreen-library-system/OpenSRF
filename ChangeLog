@@ -1,106 +1,170 @@
-commit 52fd4eeb2067a3dea6cc8f37041140832772eaab
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Sep 16 09:21:59 2020 -0400
+commit ee76ac1a005350290823affc66001edffd956883
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Tue Nov 9 12:08:03 2021 -0500
 
-    bump up version numbers for 3.2.1 release
+    bump up version numbers for 3.2.2 release
     
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
 
 5	5	README
 2	2	src/perl/lib/OpenSRF.pm
 1	1	src/python/setup.py
 1	1	version.m4
 
-commit cab6edd1730a43e0457b0d436020165734523339
-Author: Galen Charlton <gmc@equinoxinitiative.org>
-Date:   Wed Sep 16 09:20:53 2020 -0400
+commit 7d0af3f89bd57e8bccc6ce73a0dabeb5ec0f62a7
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Tue Nov 9 12:06:31 2021 -0500
 
-    update release notes for 3.2.1
+    update release notes for 3.2.2
     
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
 
-27	0	doc/RELEASE_NOTES.txt
+34	2	doc/RELEASE_NOTES.txt
 
-commit 710d4063a380015fee636944de65ef9eefa0ab97
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Jan 28 11:32:52 2020 -0500
+commit 23a7aaa03ddc8704fa19c135ce5eae52ceb6e8ca
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Tue Nov 9 11:55:54 2021 -0500
 
-    Lp 1860068: Clarify README for Debian Buster
+    LP1940146: (follow-up) remove a math_xul_client file from .gitignore
     
-    Indicate that the mod_legacy_auth directive is foudn in the modules
-    section of the ejabberd configuration (ejabberd.yml) for Debian Buster
-    and/or Ubuntu Bionic.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxinitiative.org>
-
-1	1	README
-
-commit cbf837440c96b4f767aaaed033478aa8c1aaab03
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Thu Apr 23 15:32:50 2020 -0400
-
-    LP1874510 libopensrf recv timeout cal repair
-    
-    Fixes the message receive timeout calculation logic in OpenSRF C client
-    code.  The calculation is performed when multiple calls to receive are
-    needed to piece together a response message.
-    
-    The logic previously calculated the time remaining as the time remaining
-    minus the total time taken for all iterations with each loop iteration,
-    leading to exhausting the timeout too quickly.  Now it calculates the
-    value as time remaining minus the time taken for the only most recent
-    loop iteration.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-5	1	src/libopensrf/osrf_app_session.c
-
-commit 747a59e1c6e8e75d4cae579459b76ee792602a2e
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Wed Apr 29 09:36:44 2020 -0400
-
-    Revert "LP#1272937 Followup: Remove m4/.gitignore"
-    
-    This reverts commit 06c8241b84fc9dbe6ec6a52fc98d469cd2bf0515.
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
 
 0	1	.gitignore
-1	0	m4/.gitignore
- create mode 100644 m4/.gitignore
 
-commit 06c8241b84fc9dbe6ec6a52fc98d469cd2bf0515
+commit c39f0561a2654a33a4cac052fc3c0097f7614ee2
 Author: Jason Stephenson <jason@sigio.com>
-Date:   Wed Apr 29 09:32:57 2020 -0400
+Date:   Thu Aug 19 14:13:10 2021 -0400
 
-    LP#1272937 Followup: Remove m4/.gitignore
+    LP1940146: Clarify README
     
-    Remove m4/.gitignore and a line to .gitignore to ignore the m4 files
-    in the m4 subdirectory.
+    Clarify Ejabberd shaper settings instructions for Debian 11, Bullseye
+    in the README.
     
     Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-1	0	.gitignore
-0	1	m4/.gitignore
- delete mode 100644 m4/.gitignore
-
-commit bc79ff1e77cd99315fba72de336dfa164f491ce9
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Mon Mar 2 17:29:12 2020 -0500
-
-    LP#1272937 - Quiet warnings from autoreconf -i
-    
-    We change INCLUDES to AM_CPPFLAGS and change
-    the syntax for AM_INIT_AUTOMAKE to match current
-    recommendations.  Also, add an m4 directory.
-    
-    Thanks to Warren Layton for direction towards these
-    solutions.
-    
     Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
 
-2	1	Makefile.am
-11	5	configure.ac
-1	0	m4/.gitignore
- create mode 100644 m4/.gitignore
+2	2	README
+
+commit dc748175b53a8a95a82bbc97c2ecebcd5a5bd95d
+Author: Jason Boyer <JBoyer@equinoxOLI.org>
+Date:   Tue Aug 17 14:01:55 2021 -0400
+
+    Remove XUL opensrf.math Client
+    
+    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+1	3	Makefile.am
+1	2	configure.ac
+0	19	examples/math_xul_client/Makefile.in
+0	98	examples/math_xul_client/install.js
+0	53	examples/math_xul_client/math/content/conf/client_config.xml
+0	17	examples/math_xul_client/math/content/contents.rdf
+0	38	examples/math_xul_client/math/content/math.xul
+0	50	examples/math_xul_client/math/content/math_app.js
+0	32	examples/math_xul_client/math/content/math_overlay.xul
+0	19	examples/math_xul_client/math/locale/en-US/contents.rdf
+0	7	examples/math_xul_client/math/locale/en-US/math.dtd
+0	23	examples/math_xul_client/math/skin/contents.rdf
+0	4	examples/math_xul_client/math/skin/math.css
+ delete mode 100644 examples/math_xul_client/Makefile.in
+ delete mode 100644 examples/math_xul_client/install.js
+ delete mode 100644 examples/math_xul_client/math/content/conf/client_config.xml
+ delete mode 100644 examples/math_xul_client/math/content/contents.rdf
+ delete mode 100644 examples/math_xul_client/math/content/math.xul
+ delete mode 100644 examples/math_xul_client/math/content/math_app.js
+ delete mode 100644 examples/math_xul_client/math/content/math_overlay.xul
+ delete mode 100644 examples/math_xul_client/math/locale/en-US/contents.rdf
+ delete mode 100644 examples/math_xul_client/math/locale/en-US/math.dtd
+ delete mode 100644 examples/math_xul_client/math/skin/contents.rdf
+ delete mode 100644 examples/math_xul_client/math/skin/math.css
+
+commit 7edcd9fb8dabf893ebb7dfd85f3c06b9c9f9b667
+Author: Jason Boyer <JBoyer@equinoxOLI.org>
+Date:   Tue Aug 17 14:00:20 2021 -0400
+
+    LP1940146: Update documentation
+    
+    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+35	19	README
+
+commit 12707b126fccbabcba31b004157cde1a63a27580
+Author: Jason Boyer <jboyer@bullseye.localdomain>
+Date:   Tue Aug 17 13:46:11 2021 -0400
+
+    LP1940146: Debian Bullseye Installation Support
+    
+    This commit also addresses LP 1940145: Remove Installation
+    Support for Debian Jessie. The individual distribution-specific
+    targets (stretch, buster, etc.) have also been removed since
+    they are now all the same, much like both Ubuntu targets just
+    call ubuntu_generic. The two generic targets have been left
+    in case they're necessary again in future.
+    
+    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+21	58	src/extras/Makefile.install
+
+commit dd209cdd837350a75f13f62f4fd7bb3cdb544bcf
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Wed Oct 28 11:32:45 2020 -0400
+
+    Lp 1901899: Remove References to Ubuntu 16.04
+    
+    Remove references to Ubuntu 16.04 Xenial Xerus in the README and
+    Makefile.install.
+    
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Ben Shum <ben@evergreener.net>
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+3	4	README
+1	4	src/extras/Makefile.install
+
+commit fb9cb5fa50968b36e928056e4b579f9035081ba4
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Mon Oct 26 13:41:44 2020 -0400
+
+    Lp 1875544: Add Installation Support for Ubuntu 20.04 Focal Fossa
+    
+    Update README and install prerequisites with ubuntu-focal target.
+    
+    Consolidate Ubuntu Makefile.install targets to remove redundant
+    "code."
+    
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Ben Shum <ben@evergreener.net>
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+4	3	README
+11	17	src/extras/Makefile.install
+
+commit 5a41d66a9215a7da7f0a2dd2b3dd23610ba6d01a
+Author: kenstir <kenstir@gmail.com>
+Date:   Sat Jun 13 21:43:57 2020 -0400
+
+    Fix LP#1883169 by using growing_buffer
+    
+    When presented with an error message that has more than 32 characters
+    that need to be escaped, the gateway fails to reserve enough space in
+    the memory allocation it uses to build the JSON message.  Instead of
+    guessing at how much space will be needed, and failing for some
+    messages, this commit uses growing_buffer to build the JSON.
+    growing_buffer is limited to 10Mb, so while large messages could be
+    generated, they won't cause an OOM on the server side.
+    
+    Signed-off-by: Ken Cox <kenstir@gmail.com>
+    Signed-off-by: Mike Rylander <mrylander@gmail.com>
+
+8	8	src/gateway/osrf_json_gateway.c
