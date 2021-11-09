@@ -1,5 +1,37 @@
-OpenSRF 3.2.1 release notes
+OpenSRF 3.2.2 release notes
 ===========================
+
+OpenSRF 3.2.2
+-------------
+OpenSRF 3.2.2 was released on 9 November 2021. This release fixes one
+bug and updates Linux distribution support. All users of OpenSRF 3.2.1
+are advised to upgrade.
+
+The following bug is fixed:
+
+  * LP#1883169: fix an issue where a response from the JSON
+    gateway that contains a debug element due to a cancelled
+    or failed request would overall not be valid JSON.
+
+The following improvements to Linux distribution support are included:
+
+  * LP#1875544: Add Ubuntu 20.04 (Focal Fossa) support
+  * LP#1940146: Add Debian 11 (Bullseye) support
+  * LP#1901899: Remove support for Ubuntu 16.04 (Xenial Xerus)
+
+Acknowledgments
+~~~~~~~~~~~~~~~
+
+We would like to thank the following people who contributed to OpenSRF 3.2.1:
+
+  * Jason Boyer
+  * Galen Charlton
+  * Ken Cox
+  * Bill Erickson
+  * Mike Rylander
+  * Chris Sharp
+  * Ben Shum
+  * Jason Stephenson
 
 OpenSRF 3.2.1
 -------------
@@ -18,7 +50,7 @@ The following bugs are fixed:
 Acknowledgments
 ~~~~~~~~~~~~~~~
 
-We would like to thank the following people who contributed to OpenSRF 3.1.1:
+We would like to thank the following people who contributed to OpenSRF 3.2.1:
 
   * Galen Charlton
   * Bill Erickson
