@@ -4,7 +4,7 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (stretch/bullseye) and Ubuntu
+# Currently supports Debian (buster/bullseye) and Ubuntu
 # (bionic/focal)
 #
 # Installs Perl prereqs, libjs with Perl wrapper
@@ -13,8 +13,6 @@
 # 	make -f Makefile.install debian-bullseye
 # 	- or -
 # 	make -f Makefile.install debian-buster
-# 	- or -
-# 	make -f Makefile.install debian-stretch
 # 	- or -
 #	make -f Makefile.install ubuntu-bionic
 # 	- or -
@@ -154,7 +152,6 @@ all:
 
 debian-bullseye: generic_debian
 debian-buster: generic_debian
-debian-stretch: generic_debian
 
 generic_debian: install_debs debian_sys_config apache_mpm_prefork_mods apache_perl_mod
 
