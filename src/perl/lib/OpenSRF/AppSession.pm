@@ -1082,6 +1082,18 @@ sub respond {
             }
 
             if ($raw_length > $chunk_size) { # send partials ("chunking")
+                # First, send out any messages queued up to be sent as
+                # a bundle; otherwise, the chunked message will get sent
+                # out of order
+                if ($self->{current_bundle_count} > 0) {
+                    # ignore any errors; if there's a problem, it presumably
+                    # will be reported when the partial-complete message
+                    # is sent
+                    $self->session->send( @{$self->{current_bundle}}, $self->threadTrace);
+                    $self->{current_bundle} = [];
+                    $self->{current_bundle_size} = 0;
+                    $self->{current_bundle_count} = 0;
+                }
                 my $num_bytes = length(Encode::encode_utf8($str));
                 for (my $i = 0; $i < $num_bytes; $i += $chunk_size) {
                     $response = new OpenSRF::DomainObject::oilsResult::Partial;

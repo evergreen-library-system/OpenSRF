@@ -746,6 +746,11 @@ static int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int 
                 // chunking -- response message exceeds max message size.
                 // break it up into chunks for partial delivery
 
+                // but first, send out any any messages that may have
+                // been queued for bundling
+                if( flush_responses( ctx->session, ctx->session->outbuf ))
+                    return -1;
+
 				osrfSendChunkedResult(ctx->session, ctx->request,
 									  data_str, raw_size, chunk_size);
 
