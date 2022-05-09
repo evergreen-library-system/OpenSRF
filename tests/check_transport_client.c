@@ -81,6 +81,7 @@ int session_wait(transport_session* session, int timeout) {
 // BEGIN TESTS
 
 START_TEST(test_transport_client_init)
+{
   fail_unless(client_init(NULL, 1234, "some_path", 123) == NULL,
       "When given a NULL client arg, client_init should return NULL");
   transport_client *test_client = client_init("server", 1234, "unixpath", 123);
@@ -95,32 +96,40 @@ START_TEST(test_transport_client_init)
   fail_unless(test_client->error == 0, "client->error should be false on new client creation");
   fail_unless(strcmp(test_client->host, "server") == 0, "client->host should be set to the host arg");
   fail_unless(test_client->xmpp_id == NULL, "xmpp_id should be NULL on new client creation");
+}
 END_TEST
 
 START_TEST(test_transport_client_connect)
+{
   fail_unless(client_connect(NULL, "user", "password", "resource", 10, AUTH_PLAIN) == 0,
       "Passing a NULL client to client_connect should return a failure");
   fail_unless(client_connect(a_client, "user", "password", "resource", 10, AUTH_PLAIN) == 1,
       "A successful call to client_connect should return a 1, provided session_connect is successful");
   fail_unless(strcmp(a_client->xmpp_id, "user@server/resource") == 0,
       "A successful call to client_connect should set the correct xmpp_id in the client");
+}
 END_TEST
 
 START_TEST(test_transport_client_disconnect)
+{
   fail_unless(client_disconnect(NULL) == 0,
       "client_disconnect should return 0 if no client arg is passed");
   fail_unless(client_disconnect(a_client) == 1,
       "client_disconnect should return 1 if successful");
+}
 END_TEST
 
 START_TEST(test_transport_client_connected)
+{
   fail_unless(client_connected(NULL) == 0,
       "client_connected should return 0 if no client arg is passed");
   fail_unless(client_connected(a_client) == 1,
       "client_connected should return 1 if successful");
+}
 END_TEST
 
 START_TEST(test_transport_client_send_message)
+{
   fail_unless(client_send_message(NULL, a_message) == -1,
       "client_send_message should return -1 if client arg is NULL");
   a_client->error = 1;
@@ -131,9 +140,11 @@ START_TEST(test_transport_client_send_message)
   //"client_send_message should return 0 on success");
   //fail_unless(strcmp(a_message->sender, "user") == 0,
   //"client_send_message shoud set msg->sender to the value of client->xmpp_id");
+}
 END_TEST
 
 START_TEST(test_transport_client_recv)
+{
   //NULL client case
   fail_unless(client_recv(NULL, 10) == NULL,
       "client_recv should return NULL if the client arg is NULL");
@@ -188,30 +199,37 @@ START_TEST(test_transport_client_recv)
   transport_message *msg5 = client_recv(other_client, 1); //only 1 sec again...
   fail_unless(msg5 == NULL,
       "client_recv should return NULL if there is an error");
+}
 END_TEST
 
 START_TEST(test_transport_client_free)
+{
   fail_unless(client_free(NULL) == 0,
       "client_free should retun 0 if passed a NULL arg");
   transport_client* client1 = client_init("server", 1234, "unixpath", 123);
   fail_unless(client_free(client1) == 1,
       "client_free should return 0 if successful");
+}
 END_TEST
 
 START_TEST(test_transport_client_discard)
+{
   fail_unless(client_discard(NULL) == 0,
       "client_discard should return 0 if passed a NULL arg");
   transport_client* client1 = client_init("server", 1234, "unixpath", 123);
   fail_unless(client_discard(client1) == 1,
       "client_discard should return 1 if successful");
+}
 END_TEST
 
 START_TEST(test_transport_client_sock_fd)
+{
   fail_unless(client_sock_fd(NULL) == 0,
       "client_sock_fd should return 0 if passed a NULL arg");
   a_client->session->sock_id = 1;
   fail_unless(client_sock_fd(a_client) == 1,
       "client_sock_fd should return client->session->sock_id");
+}
 END_TEST
 
 //END TESTS

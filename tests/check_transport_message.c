@@ -16,6 +16,7 @@ void teardown(void) {
 //BEGIN TESTS
 
 START_TEST(test_transport_message_init_empty)
+{
   transport_message* empty_message = message_init(NULL, NULL, NULL, NULL, NULL);
   fail_if(empty_message == NULL, "transport_message wasn't created");
   fail_unless(strcmp(empty_message->body, "") == 0,
@@ -50,9 +51,11 @@ START_TEST(test_transport_message_init_empty)
       "message_init should set the msg_xml field to NULL");
   fail_unless(empty_message->next == NULL,
       "message_init should set the next field to NULL");
+}
 END_TEST
 
 START_TEST(test_transport_message_init_populated)
+{
   fail_if(a_message == NULL, "transport_message wasn't created");
   fail_unless(strcmp(a_message->body, "body") == 0,
       "When calling message_init, an body arg should be stored in the body field");
@@ -64,9 +67,11 @@ START_TEST(test_transport_message_init_populated)
       "When calling message_init, a recipient arg should be stored in the recipient field");
   fail_unless(strcmp(a_message->sender, "sender") == 0,
       "When calling message_init, a sender arg should be stored in the sender field");
+}
 END_TEST
 
 START_TEST(test_transport_message_new_message_from_xml_empty)
+{
   fail_unless(new_message_from_xml(NULL) == NULL,
       "Passing NULL to new_message_from_xml should return NULL");
   fail_unless(new_message_from_xml("\0") == NULL,
@@ -107,9 +112,11 @@ START_TEST(test_transport_message_new_message_from_xml_empty)
   fail_unless(strcmp(t_msg->msg_xml, "<message/>") == 0,
       "msg->msg_xml should contain the contents of the original xml message");
   fail_unless(t_msg->next == NULL, "msg->next should be set to NULL");
+}
 END_TEST
 
 START_TEST(test_transport_message_new_message_from_xml_populated)
+{
   const char* xml_jabber_msg =
     "<message from=\"sender\" to=\"receiver\"><opensrf router_from=\"routerfrom\" router_to=\"routerto\" router_class=\"class\" broadcast=\"1\" osrf_xid=\"xid\"/><thread>thread_value</thread><subject>subject_value</subject><body>body_value</body></message>";
 
@@ -135,18 +142,22 @@ START_TEST(test_transport_message_new_message_from_xml_populated)
       "new_message_from_xml should populate the broadcast field");
   fail_unless(strcmp(my_msg->msg_xml, xml_jabber_msg) == 0,
       "new_message_from_xml should store the original xml msg in msg_xml");
+}
 END_TEST
 
 START_TEST(test_transport_message_set_osrf_xid)
+{
   message_set_osrf_xid(a_message, "abcd");
   fail_unless(strcmp(a_message->osrf_xid, "abcd") == 0,
       "message_set_osrf_xid should set msg->osrf_xid to the value of the osrf_xid arg");
   message_set_osrf_xid(a_message, NULL);
   fail_unless(strcmp(a_message->osrf_xid, "") == 0,
       "message_set_osrf_xid should set msg->osrf_xid to an empty string if osrf_xid arg is NULL");
+}
 END_TEST
 
 START_TEST(test_transport_message_set_router_info_empty)
+{
   message_set_router_info(a_message, NULL, NULL, NULL, NULL, 0);
   fail_unless(strcmp(a_message->router_from, "") == 0,
       "message_set_router_info should set msg->router_from to empty string if NULL router_from arg is passed");
@@ -158,9 +169,11 @@ START_TEST(test_transport_message_set_router_info_empty)
       "message_set_router_info should set msg->router_command to empty string if NULL router_command arg is passed");
   fail_unless(a_message->broadcast == 0,
       "message_set_router_info should set msg->broadcast to the content of the broadcast_enabled arg");
+}
 END_TEST
 
 START_TEST(test_transport_message_set_router_info_populated)
+{
   message_set_router_info(a_message, "routerfrom", "routerto", "routerclass", "routercmd", 1);
   fail_unless(strcmp(a_message->router_from, "routerfrom") == 0,
       "message_set_router_info should set msg->router_from to the value of the router_from arg");
@@ -172,17 +185,21 @@ START_TEST(test_transport_message_set_router_info_populated)
       "message_set_router_info should set msg->router_command to the value of the router_command arg");
   fail_unless(a_message->broadcast == 1,
       "message_set_router_info should set msg->broadcast to the value of the broadcast_enabled arg");
+}
 END_TEST
 
 START_TEST(test_transport_message_free)
+{
   fail_unless(message_free(NULL) == 0,
       "message_free should return 0 if passed a NULL msg arg");
   transport_message *msg = message_init("one", "two", "three", "four", "five");
   fail_unless(message_free(msg) == 1,
       "message_free should return 1 if successful");
+}
 END_TEST
 
 START_TEST(test_transport_message_prepare_xml)
+{
   fail_unless(message_prepare_xml(NULL) == 0,
       "Passing a NULL msg arg to message_prepare_xml should return 0");
 
@@ -202,17 +219,21 @@ START_TEST(test_transport_message_prepare_xml)
 
   fail_unless(strcmp(a_message->msg_xml, "<message to=\"recipient\" from=\"sender\"><error type=\"errortype\" code=\"123\"/><opensrf router_from=\"routerfrom\" router_to=\"routerto\" router_class=\"routerclass\" router_command=\"routercommand\" osrf_xid=\"osrfxid\" broadcast=\"1\"/><thread>thread</thread><subject>subject</subject><body>body</body></message>") == 0,
       "message_prepare_xml should store the correct xml in msg->msg_xml");
+}
 END_TEST
 
 START_TEST(test_transport_message_jid_get_username)
+{
   int buf_size = 15;
   char buffer[buf_size];
   jid_get_username("testuser@domain.com/stuff", buffer, buf_size);
   fail_unless(strcmp(buffer, "testuser") == 0,
       "jid_get_username should set the buffer to the username extracted from the jid arg");
+}
 END_TEST
 
 START_TEST(test_transport_message_jid_get_resource)
+{
   char buf_size = 15;
   char buffer[buf_size];
   jid_get_resource("testuser@domain.com/stuff", buffer, buf_size);
@@ -221,9 +242,11 @@ START_TEST(test_transport_message_jid_get_resource)
   jid_get_resource("testuser@domain.com", buffer, buf_size);
   fail_unless(strcmp(buffer, "") == 0,
       "jid_get_resource should set the buffer to an empty string if there is no resource");
+}
 END_TEST
 
 START_TEST(test_transport_message_jid_get_domain)
+{
   char buf_size = 15;
   char buffer[buf_size];
   jid_get_domain("testuser@domain.com/stuff", buffer, buf_size);
@@ -232,9 +255,11 @@ START_TEST(test_transport_message_jid_get_domain)
   jid_get_domain("ksdljflksd",  buffer, buf_size);
   fail_unless(strcmp(buffer, "") == 0,
       "jid_get_domain should set the buffer to an empty string if the jid is malformed");
+}
 END_TEST
 
 START_TEST(test_transport_message_set_msg_error)
+{
   set_msg_error(a_message, NULL, 111);
   fail_unless(a_message->is_error == 1,
       "set_msg_error called with a NULL error type should only set msg->is_error to 1");
@@ -245,6 +270,7 @@ START_TEST(test_transport_message_set_msg_error)
       "set_msg_error should set msg->error_type if error_type arg is passed");
   fail_unless(a_message->error_code == 123,
       "set_msg_error should set msg->error_code to the value of the err_code arg");
+}
 END_TEST
 //END TESTS
 

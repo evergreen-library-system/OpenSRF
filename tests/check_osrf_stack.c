@@ -14,9 +14,11 @@ void teardown(void){
 // BEGIN TESTS
 
 START_TEST(test_osrf_stack_process)
+{
   int *mr = 0;
   fail_unless(osrf_stack_process(NULL, 10, mr) == -1,
       "osrf_stack_process should return -1 if client arg is NULL");
+}
 END_TEST
 
 //END TESTS

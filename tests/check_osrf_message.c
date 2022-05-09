@@ -17,15 +17,20 @@ void teardown(void) {
 //Tests
 
 START_TEST(test_osrf_message_init)
+{
   fail_if (o == NULL, "osrfMessage not created");
+}
 END_TEST
 
 START_TEST(test_osrf_message_get_last_locale)
+{
     fail_unless(osrf_message_get_last_locale() == NULL,
         "osrf_message_get_last_locale should return the value of current_locale");
+}
 END_TEST
 
 START_TEST(test_osrf_message_set_locale)
+{
   const char* new_locale = "en-CA";
   fail_unless(osrf_message_set_locale(o, NULL) == NULL,
       "osrf_message_set_locale should return NULL if locale is NULL");
@@ -36,9 +41,11 @@ START_TEST(test_osrf_message_set_locale)
       "osrf_message_set_locale should return the new locale");
   fail_unless(strcmp(o->sender_locale, "en-CA") == 0,
       "osrf_message_set_locale should set osrfMessage->sender_locale to the new locale");
+}
 END_TEST
 
 START_TEST(test_osrf_message_set_default_locale)
+{
   fail_unless(osrf_message_set_default_locale(NULL) == NULL,
       "osrf_message_set_default_locale should return NULL if given a NULL arg");
   fail_unless(osrf_message_set_default_locale("This string is \
@@ -47,18 +54,22 @@ START_TEST(test_osrf_message_set_default_locale)
   fail_unless(strcmp(osrf_message_set_default_locale("fr-CA"),
       "fr-CA") == 0,
       "osrf_message_set_default_locale should return the new default locale if successful");
+}
 END_TEST
 
 START_TEST(test_osrf_message_set_method)
+{
   osrf_message_set_method(o, NULL);
   fail_unless(o->method_name == NULL,
       "osrf_message_set_method should return NULL if given a NULL method_name arg");
   osrf_message_set_method(o, "add");
   fail_unless(strcmp(o->method_name, "add") == 0,
       "osrf_message_set_method should set osrfMessage->method_name if successful");
+}
 END_TEST
 
 START_TEST(test_osrf_message_set_params)
+{
   osrf_message_set_params(o, NULL);
   fail_unless(o->_params == NULL,
       "osrf_message_set_params should set msg->_params to NULL when passed a NULL o arg");
@@ -69,6 +80,7 @@ START_TEST(test_osrf_message_set_params)
       "osrf_message_set_params should set msg->_params to an array containing the\
       jsonObject passed");
   jsonObjectFree(testJSONObject);
+}
 END_TEST
 
 //END Tests

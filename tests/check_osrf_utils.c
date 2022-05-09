@@ -14,11 +14,13 @@ void teardown(void){
 // BEGIN TESTS
 
 START_TEST(test_osrfXmlEscapingLength)
+{
   const char* ordinary = "12345";
   fail_unless(osrfXmlEscapingLength(ordinary) == 0,
       "osrfXmlEscapingLength should return 0 if string has no special characters");
   const char* special = "<tag attr=\"attribute value\">a &amp; b</tag>";
   ck_assert_int_eq(osrfXmlEscapingLength(special), 38);
+}
 END_TEST
 
 //END TESTS

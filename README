@@ -69,6 +69,7 @@ Well-tested values for <osname> include:
   * `debian-stretch` for Debian 9
   * `ubuntu-bionic` for Ubuntu 18.04
   * `ubuntu-focal` for Ubuntu 20.04
+  * `ubuntu-jammy` for Ubuntu 22.04
 
 Patches and suggestions for improvement from users of these distributions,
 or others, are welcome!
@@ -197,6 +198,19 @@ create a file within the `/etc/ld.so.conf.d/` directory, and then run
 Configure the ejabberd server
 -----------------------------
 
+[TIP]
+=====
+It is recommended to disable the apparmor profile for ejabberd on *Ubuntu* before
+continuing.  If you are installing on any version of *Ubuntu*, run the following
+commands as the *root* Linux account:
+
+[source,bash]
+---------------------------------------------------------------------------
+ln -s /etc/apparmor.d/usr.sbin.ejabberdctl /etc/apparmor.d/disable/
+apparmor_parser -R /etc/apparmor.d/usr.sbin.ejabberdctl
+---------------------------------------------------------------------------
+=====
+
 OpenSRF requires an XMPP (Jabber) server. For performance reasons, ejabberd is
 the Jabber server of choice for the OpenSRF project. In most cases, you only
 have to make a few changes to the default configuration file to make ejabberd
@@ -268,7 +282,7 @@ hosts:
 mod_legacy_auth: {}
 -----------------------
 +
-(Debian Bullseye) Ejabberd 21.x::
+(Debian Bullseye / Ubuntu Jammy) Ejabberd 21.x::
 Open `/etc/ejabberd/ejabberd.yml` and make the following
 changes:
   a. Define your public and private domains in the `hosts` directive. For

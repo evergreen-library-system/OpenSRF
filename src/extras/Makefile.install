@@ -20,6 +20,8 @@
 # 	- or -
 #	make -f Makefile.install ubuntu-focal
 # 	- or -
+#	make -f Makefile.install ubuntu-jammy
+# 	- or -
 # 	make -f Makefile.install fedora
 #
 # ---------------------------------------------------------------------
@@ -158,6 +160,7 @@ generic_debian: install_debs debian_sys_config apache_mpm_prefork_mods apache_pe
 
 ubuntu-bionic: generic_ubuntu
 ubuntu-focal: generic_ubuntu
+ubuntu-jammy: generic_ubuntu
 
 generic_ubuntu: install_debs debian_sys_config apache_mpm_prefork_mods apache_perl_mod
 
