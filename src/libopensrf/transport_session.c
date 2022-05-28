@@ -92,6 +92,7 @@ static const xmlSAXHandlerPtr SAXHandler = &SAXHandlerStruct;
 static void grab_incoming(void* blob, socket_manager* mgr, int sockid, char* data, int parent);
 static void reset_session_buffers( transport_session* session );
 static const char* get_xml_attr( const xmlChar** atts, const char* attr_name );
+static int get_xmpp_error_code( const xmlChar *name );
 
 /**
 	@brief Allocate and initialize a transport_session.
@@ -568,6 +569,12 @@ static void startElementHandler(
 	transport_session* ses = (transport_session*) session;
 	if( ! ses ) { return; }
 
+// --------------------------------------------------------------------------------
+// A static variable to indicate if we received a XMPP error message or not.
+// It's necessary because the session state machine's in_message_error variable
+// is not granular enough to distinguish a XMPP error from other stream errors.
+// --------------------------------------------------------------------------------
+	static int isXMPPError = 0;
 
 	if( strcmp( (char*) name, "message" ) == 0 ) {
 		ses->state_machine->in_message = 1;
@@ -647,11 +654,22 @@ static void startElementHandler(
 
 
 	if( strcmp( (char*) name, "error" ) == 0 ) {
+		char *code = NULL;
 		ses->state_machine->in_message_error = 1;
 		buffer_add( ses->message_error_type, get_xml_attr( atts, "type" ) );
-		ses->message_error_code = atoi( get_xml_attr( atts, "code" ) );
+		code = get_xml_attr( atts, "code" );
+		if (code)
+			ses->message_error_code = atoi( code );
+		else
+			isXMPPError = 1;
 		osrfLogInfo( OSRF_LOG_MARK, "Received <error> message with type %s and code %d",
 			OSRF_BUFFER_C_STR( ses->message_error_type ), ses->message_error_code );
+		return;
+	}
+
+	if ( ses->state_machine->in_message_error == 1 && isXMPPError == 1 ) {
+		ses->message_error_code = get_xmpp_error_code( name );
+		isXMPPError = 0;
 		return;
 	}
 
@@ -698,6 +716,63 @@ static const char* get_xml_attr( const xmlChar** atts, const char* attr_name ) {
 	return NULL;
 }
 
+/**
+	@brief Return the value of the legacy XMPP Error Code
+	@param name Pointer to the name of the tag
+
+	Look up the legacy XMPP Error Code from the error-condition element as
+	described in XEP-0086: https://xmpp.org/extensions/xep-0086.html.
+*/
+static int get_xmpp_error_code( const xmlChar* name ) {
+	const char *cname = (const char *) name;
+
+	if (strcmp( cname, "not-authorized" ) == 0)
+		return 401;
+	if (strcmp( cname, "service-unavailable" ) == 0)
+		return 503;
+	if (strcmp( cname, "bad-request" ) == 0)
+		return 400;
+	if (strcmp( cname, "conflict" ) == 0)
+		return 409;
+	if (strcmp( cname, "feature-not-implemented" ) == 0)
+		return 501;
+	if (strcmp( cname, "forbidden" ) == 0)
+		return 403;
+	if (strcmp( cname, "gone" ) == 0)
+		return 302;
+	if (strcmp( cname, "internal-server-error" ) == 0)
+		return 500;
+	if (strcmp( cname, "item-not-found" ) == 0)
+		return 404;
+	if (strcmp( cname, "jid-malformed" ) == 0)
+		return 400;
+	if (strcmp( cname, "not-acceptable" ) == 0)
+		return 406;
+	if (strcmp( cname, "not-allowed" ) == 0)
+		return 405;
+	if (strcmp( cname, "payment-required" ) == 0)
+		return 402;
+	if (strcmp( cname, "recipient-unavailable" ) == 0)
+		return 404;
+	if (strcmp( cname, "redirect" ) == 0)
+		return 302;
+	if (strcmp( cname, "registration-required" ) == 0)
+		return 407;
+	if (strcmp( cname, "remote-server-not-found" ) == 0)
+		return 404;
+	if (strcmp( cname, "remote-server-timeout" ) == 0)
+		return 504;
+	if (strcmp( cname, "resource-constraint" ) == 0)
+		return 500;
+	if (strcmp( cname, "subscription-required" ) == 0)
+		return 407;
+	if (strcmp( cname, "undefined-condition" ) == 0)
+		return 500;
+	if (strcmp( cname, "unexpected-request" ) == 0)
+		return 400;
+
+	return 500; // Assume undefined-condition.
+}
 
 /**
 	@brief React to the closing of an XML tag.
