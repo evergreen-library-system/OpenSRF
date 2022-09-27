@@ -66,7 +66,6 @@ Well-tested values for <osname> include:
 
   * `debian-bullseye` for Debian 11
   * `debian-buster` for Debian 10
-  * `ubuntu-bionic` for Ubuntu 18.04
   * `ubuntu-focal` for Ubuntu 20.04
   * `ubuntu-jammy` for Ubuntu 22.04
 
@@ -226,7 +225,7 @@ systemctl stop ejabberd.service
 +
 2. Edit the ejabberd config file.
 +
-(Debian Buster / Ubuntu Bionic / Ubuntu Focal) Ejabberd 18.x::
+(Debian Buster / Ubuntu Focal) Ejabberd 18.x::
 Open `/etc/ejabberd/ejabberd.yml` and make the following
 changes:
   a. Define your public and private domains in the `hosts` directive. For

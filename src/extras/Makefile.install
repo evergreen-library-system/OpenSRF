@@ -14,8 +14,6 @@
 # 	- or -
 # 	make -f Makefile.install debian-buster
 # 	- or -
-#	make -f Makefile.install ubuntu-bionic
-# 	- or -
 #	make -f Makefile.install ubuntu-focal
 # 	- or -
 #	make -f Makefile.install ubuntu-jammy
@@ -155,7 +153,6 @@ debian-buster: generic_debian
 
 generic_debian: install_debs debian_sys_config apache_mpm_prefork_mods apache_perl_mod
 
-ubuntu-bionic: generic_ubuntu
 ubuntu-focal: generic_ubuntu
 ubuntu-jammy: generic_ubuntu
 
