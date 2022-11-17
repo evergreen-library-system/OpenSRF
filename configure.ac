@@ -53,6 +53,21 @@ AC_SUBST([PID_DIR])
 AC_SUBST(prefix)
 AC_SUBST(bindir)
 
+OPENSRF_BUS_PASS=$(cat /proc/sys/kernel/random/uuid)
+GATEWAY_BUS_PASS=$(cat /proc/sys/kernel/random/uuid)
+ROUTER_BUS_PASS=$(cat /proc/sys/kernel/random/uuid)
+DEFAULT_BUS_PASS=$(cat /proc/sys/kernel/random/uuid)
+
+AC_DEFINE_UNQUOTED([OPENSRF_BUS_PASS], ["$OPENSRF_BUS_PASS"], [opensrf bus password])
+AC_DEFINE_UNQUOTED([GATEWAY_BUS_PASS], ["$GATEWAY_BUS_PASS"], [gateway bus password])
+AC_DEFINE_UNQUOTED([ROUTER_BUS_PASS], ["$ROUTER_BUS_PASS"], [router bus password])
+AC_DEFINE_UNQUOTED([DEFAULT_BUS_PASS], ["$DEFAULT_BUS_PASS"], [admin bus password])
+
+AC_SUBST([OPENSRF_BUS_PASS])
+AC_SUBST([GATEWAY_BUS_PASS])
+AC_SUBST([ROUTER_BUS_PASS])
+AC_SUBST([DEFAULT_BUS_PASS])
+
 #-------------------------------
 # Installation options
 #-------------------------------
@@ -208,6 +223,12 @@ AC_ARG_WITH([libxml],
 [LIBXML2_HEADERS=/usr/include/libxml2/])
 AC_SUBST([LIBXML2_HEADERS])
 
+AC_ARG_WITH([hiredis],
+[  --with-hiredis=path               location of the hiredis headers (default is /usr/include/hiredis/))],
+[HIREDIS_HEADERS=${withval}],
+[HIREDIS_HEADERS=/usr/include/hiredis/])
+AC_SUBST([HIREDIS_HEADERS])
+
 AC_ARG_WITH([includes],
 [  --with-includes=DIRECTORIES      a colon-separated list of directories that will be added to the list the compiler searches for header files (Example: --with-includes=/path/headers:/anotherpath/moreheaders)],
 [EXTRA_USER_INCLUDES=${withval}])
@@ -274,6 +295,7 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	AC_CHECK_LIB([ncurses], [initscr], [], AC_MSG_ERROR(***OpenSRF requires ncurses development headers))
 	AC_CHECK_LIB([readline], [readline], [], AC_MSG_ERROR(***OpenSRF requires readline development headers))
 	AC_CHECK_LIB([xml2], [xmlAddID], [], AC_MSG_ERROR(***OpenSRF requires xml2 development headers))
+    AC_CHECK_LIB([hiredis], [redisConnect], [], AC_MSG_ERROR(***OpenSRF requires libhiredis))
 	# Check for libmemcached and set flags accordingly
 	PKG_CHECK_MODULES(memcached, libmemcached >= 0.8.0)
 	AC_SUBST(memcached_CFLAGS)
@@ -314,6 +336,7 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 	#------------------------------------
 
 	AC_CONFIG_FILES([doc/dokuwiki-doc-stubber.pl
+			 examples/redis-accounts.txt.example
 			 examples/math_bench.pl
 			 examples/multisession-test.pl
 			 src/c-apps/Makefile
@@ -323,7 +346,7 @@ if test "x$OSRF_INSTALL_CORE" = "xtrue"; then
 			 src/libopensrf/Makefile
 			 src/perl/Makefile
 			 src/ports/strn_compat/Makefile
-			 src/router/Makefile
+             src/router/Makefile
 			 src/srfsh/Makefile
 			 src/websocket-stdio/Makefile
 			 tests/Makefile
@@ -343,5 +366,6 @@ AC_MSG_RESULT([--------------------- Configuration options:  -------------------
         AC_MSG_RESULT(APR headers location:            ${APR_HEADERS})
         AC_MSG_RESULT(Apache version:                  ${APACHE_READABLE_VERSION})
         AC_MSG_RESULT(libxml2 headers location:        ${LIBXML2_HEADERS})
+        AC_MSG_RESULT(libhiredis headers location:     ${HIREDIS_HEADERS})
 
 AC_MSG_RESULT([----------------------------------------------------------------------])

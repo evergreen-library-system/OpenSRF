@@ -304,7 +304,7 @@ void jsonObjectFree( jsonObject* o ) {
     unusedObjCapture++;
     currentListLen++;
     if (unusedObjCapture > 1 && !(unusedObjCapture % 1000))
-        osrfLogDebug( OSRF_LOG_MARK, "Objects malloc()'d: %d, "
+        osrfLogInternal( OSRF_LOG_MARK, "Objects malloc()'d: %d, "
 			"Reusable objects captured: %d, Objects reused: %d, "
 			"Current List Length: %d",
 			mallocObjCreate, unusedObjCapture, unusedObjRelease, currentListLen );

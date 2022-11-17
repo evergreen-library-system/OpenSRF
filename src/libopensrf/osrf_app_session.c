@@ -541,46 +541,11 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 		return NULL;
 	}
 
-	// Get a list of domain names from the config settings;
-	// ignore all but the first one in the list.
-	osrfStringArray* arr = osrfNewStringArray(8);
-	osrfConfigGetValueList(NULL, arr, "/domain");
-	const char* domain = osrfStringArrayGetString(arr, 0);
-	if (!domain) {
-		osrfLogWarning( OSRF_LOG_MARK, "No domains specified in the OpenSRF config file");
-		free( session );
-		osrfStringArrayFree(arr);
-		return NULL;
-	}
+    growing_buffer *buf = buffer_init(32);
+    buffer_add(buf, "opensrf:service:");
+    buffer_add(buf, remote_service);
 
-	// Get a router name from the config settings.
-	char* router_name = osrfConfigGetValue(NULL, "/router_name");
-	if (!router_name) {
-		osrfLogWarning( OSRF_LOG_MARK, "No router name specified in the OpenSRF config file");
-		free( session );
-		osrfStringArrayFree(arr);
-		return NULL;
-	}
-
-	char target_buf[512];
-	target_buf[ 0 ] = '\0';
-
-	// Using the router name, domain, and service name,
-	// build a Jabber ID for addressing the service.
-	int len = snprintf( target_buf, sizeof(target_buf), "%s@%s/%s",
-			router_name ? router_name : "(null)",
-			domain ? domain : "(null)",
-			remote_service ? remote_service : "(null)" );
-	osrfStringArrayFree(arr);
-	free(router_name);
-
-	if( len >= sizeof( target_buf ) ) {
-		osrfLogWarning( OSRF_LOG_MARK, "Buffer overflow for remote_id");
-		free( session );
-		return NULL;
-	}
-
-	session->remote_id = strdup(target_buf);
+    session->remote_id = buffer_release(buf);
 	session->orig_remote_id = strdup(session->remote_id);
 	session->remote_service = strdup(remote_service);
 	session->session_locale = NULL;
@@ -1168,11 +1133,21 @@ int osrfSendChunkedResult(
 	about it.
 */
 int osrfSendTransportPayload( osrfAppSession* session, const char* payload ) {
+
 	transport_message* t_msg = message_init(
 		payload, "", session->session_id, session->remote_id, NULL );
 	message_set_osrf_xid( t_msg, osrfLogGetXid() );
 
-	int retval = client_send_message( session->transport_handle, t_msg );
+    // When sending a message to a top-level service address, retain the
+    // message recipient, but deliver the message to the router instead.
+    char buf[1024 + 1];
+    char* recipient = session->remote_id;
+    if (strstr(recipient, "opensrf:service:")) {
+        snprintf(buf, 1024, "opensrf:router:%s", session->transport_handle->primary_domain);
+        recipient = buf;
+    }
+
+	int retval = client_send_message_to(session->transport_handle, t_msg, recipient);
 	if( retval ) {
 		osrfLogError( OSRF_LOG_MARK, "client_send_message failed, exit()ing immediately" );
 		exit(99);

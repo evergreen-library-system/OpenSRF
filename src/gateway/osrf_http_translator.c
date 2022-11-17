@@ -199,8 +199,7 @@ static int osrfHttpTranslatorSetTo(osrfHttpTranslator* trans) {
         } else {
             // service is specified, build a recipient address 
             // from the router, domain, and service
-            int size = snprintf(recipientBuf, 128, "%s@%s/%s", routerName,
-                domainName, trans->service);
+            int size = snprintf(recipientBuf, 128, "opensrf:service:%s", trans->service);
             recipientBuf[size] = '\0';
             osrfLogDebug(OSRF_LOG_MARK, "Set recipient to %s", recipientBuf);
             trans->recipient = recipientBuf;
@@ -424,7 +423,16 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
     transport_message* tmsg = message_init(
         jsonBody, NULL, trans->thread, trans->recipient, NULL);
     message_set_osrf_xid(tmsg, osrfLogGetXid());
-    client_send_message(trans->handle, tmsg);
+
+    // Message destined for a service
+    const char* send_to = trans->recipient;
+    if (strstr(send_to, "opensrf:service:")) {
+        char stbuf[1024 + 1];
+        snprintf(stbuf, 1024, "opensrf:router:%s", domainName);
+        send_to = stbuf;
+    }
+
+    client_send_message_to(trans->handle, tmsg, send_to);
     message_free(tmsg); 
     free(jsonBody);
 

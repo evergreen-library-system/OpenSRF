@@ -29,6 +29,7 @@ use OpenSRF::Utils::Config;
 my $opt_service = undef;
 my $opt_config = "@CONF_DIR@/opensrf_core.xml";
 my $opt_pid_dir = "@PID_DIR@/run/opensrf";
+my $opt_bus_accounts = "@CONF_DIR@/redis-accounts.txt";
 my $opt_no_daemon = 0;
 my $opt_settings_pause = 0;
 my $opt_localhost = 0;
@@ -62,6 +63,7 @@ my $opt_reload_all = 0;
 my $opt_quiet = 0;
 my $opt_diagnostic = 0;
 my $opt_ignore_orphans = 0;
+my $opt_reset_message_bus = 0;
 my $sclient;
 my @perl_services;
 my @nonperl_services;
@@ -71,6 +73,7 @@ my $hostname = $ENV{OSRF_HOSTNAME} || hostfqdn();
 GetOptions(
     'service=s' => \$opt_service,
     'config=s' => \$opt_config,
+    'bus-accounts=s' => \$opt_bus_accounts,
     'pid-dir=s' => \$opt_pid_dir,
     'no-daemon' => \$opt_no_daemon,
     'settings-startup-pause=i' => \$opt_settings_pause,
@@ -104,8 +107,10 @@ GetOptions(
     'reload' => \$opt_reload,
     'reload-all' => \$opt_reload_all,
     'diagnostic' => \$opt_diagnostic,
+    'reset-message-bus' => \$opt_reset_message_bus,
     'ignore-orphans' => \$opt_ignore_orphans
-);
+) || warn "\n$!\n" && exit(1);
+
 
 if ($opt_localhost) {
     $hostname = 'localhost';
@@ -295,7 +300,6 @@ sub do_diagnostic {
 
 
 sub do_start_router {
-
     my $pidfile = get_pid_file('router');
     `opensrf_router $opt_config routers $pidfile`;
 
@@ -328,7 +332,7 @@ sub do_init {
     my $apps = $sclient->config_value("activeapps", "appname");
 
     # disconnect the top-level network handle
-    OpenSRF::Transport::PeerHandle->retrieve->disconnect;
+    OpenSRF::Transport::PeerHandle->retrieve->reset;
 
     if($apps) {
         $apps = [$apps] unless ref $apps;
@@ -607,6 +611,58 @@ sub load_settings {
         $parser->get_server_config($conf->env->hostname);
 }
 
+# Clear and reset permissions on the bus'es linked to our domains.
+sub do_reset_message_bus {
+
+    OpenSRF::Utils::Config->load(config_file => $opt_config);
+    my $conf = OpenSRF::Utils::Config->current;
+
+    my $routers = $conf->bootstrap->routers;
+
+    my $bus_pass = `grep 'ACL SETUSER default on >' $opt_bus_accounts | cut -d'>' -f2`;
+
+    chomp($bus_pass);
+
+    die "No password for Redis 'default' account found in $opt_bus_accounts\n"
+        unless $bus_pass;
+
+    # Redis prefers the password be passed via ENV.
+    $ENV{REDISCLI_AUTH} = $bus_pass;
+
+    # Apply the bus accounts to all of our domains.
+    for my $router (@{$conf->bootstrap->routers}) {
+        my $domain = ref $router ? $router->{domain} : $router;
+        my $port = $conf->bootstrap->port;
+
+        # The first time this script runs after installing / rebooting Redis,
+        # the 'default' account will have no password.  Subsequent logins
+        # will use the password defined in our redis-accounts file.  See if
+        # we can figure where we are...
+        my $login = `echo "exit" | redis-cli -h $domain -p $port 2>&1`;
+
+        if ($login =~ /AUTH failed/) {
+            # Login failed.  Clear the password.
+            delete $ENV{REDISCLI_AUTH};
+        } else {
+            # Multiple OpenSRF domains may run on the same Redis instance.
+            # If so, make sure subsequent runs on the same redis instance 
+            # use the just-applied password.  In this case, our $login
+            # var above will be empty, becuase Redis will think we are
+            # trying to login with no authentication, and will later fail
+            # when we try to perform actions that are not allowed.
+            $ENV{REDISCLI_AUTH} = $bus_pass;
+        }
+
+        msg("Resetting bus accounts for domain $domain");
+
+        # Grep out some noise.  Avoid piping to /dev/null so we can 
+        # see failures.
+        my $command = "redis-cli -h $domain -p $port | grep -v OK | grep -v ^1";
+
+        system("cat $opt_bus_accounts | $command");
+    }
+}
+
 sub msg {
     my $m = shift;
     print "* $m\n" unless $opt_quiet;
@@ -753,9 +809,15 @@ sub do_help {
         and gracefully re-launch drone processes.  The -all variant sends
         the signal to all services.  The non-(-all) variant requires a
         --service.
+
+    --reset-message-bus
+        Clear ALL data from the message bus, create opensrf accounts w/ 
+        permission to access message queues.
 HELP
 exit;
 }
+
+do_reset_message_bus() if $opt_reset_message_bus;
 
 # we do not verify services for stop/signal actions, since those may
 # legitimately be used against services not (or no longer) configured
@@ -808,6 +870,7 @@ do_diagnostic() if $opt_diagnostic;
 
 # show help if no action was requested
 do_help() if $opt_help or not (
+    $opt_reset_message_bus or
     $opt_start or 
     $opt_start_all or 
     $opt_start_services or 

@@ -29,7 +29,6 @@ TARGS = 		osrf_message.c \
 			osrfConfig.c \
 			osrf_application.c \
 			osrf_cache.c \
-			osrf_transgroup.c \
 			osrf_list.c \
 			osrf_hash.c \
 			osrf_utf8.c \
@@ -37,6 +36,7 @@ TARGS = 		osrf_message.c \
 			transport_message.c\
 			transport_session.c\
 			transport_client.c\
+			transport_connection.c\
 			md5.c\
 			log.c\
 			utils.c\
@@ -47,6 +47,7 @@ TARGS = 		osrf_message.c \
 TARGS_HEADS = 	 $(OSRF_INC)/transport_message.h \
 		 $(OSRF_INC)/transport_session.h \
 		 $(OSRF_INC)/transport_client.h \
+		 $(OSRF_INC)/transport_connection.h \
 		 $(OSRF_INC)/osrf_message.h \
 		 $(OSRF_INC)/osrf_app_session.h \
 		 $(OSRF_INC)/osrf_stack.h \

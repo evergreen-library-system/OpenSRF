@@ -10,6 +10,7 @@ config.sub
 configure
 depcomp
 doc/dokuwiki-doc-stubber.pl
+examples/redis-accounts.txt.example
 examples/math_bench.pl
 examples/math_client.py
 examples/multisession-test.pl

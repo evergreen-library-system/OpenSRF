@@ -26,12 +26,10 @@ lib/OpenSRF/System.pm
 lib/OpenSRF/Transport.pm
 lib/OpenSRF/Transport/Listener.pm
 lib/OpenSRF/Transport/PeerHandle.pm
-lib/OpenSRF/Transport/SlimJabber.pm
-lib/OpenSRF/Transport/SlimJabber/Client.pm
-lib/OpenSRF/Transport/SlimJabber/MessageWrapper.pm
-lib/OpenSRF/Transport/SlimJabber/PeerConnection.pm
-lib/OpenSRF/Transport/SlimJabber/XMPPMessage.pm
-lib/OpenSRF/Transport/SlimJabber/XMPPReader.pm
+lib/OpenSRF/Transport/Redis/Client.pm
+lib/OpenSRF/Transport/Redis/Message.pm
+lib/OpenSRF/Transport/Redis/BusConnection.pm
+lib/OpenSRF/Transport/Redis/PeerConnection.pm
 lib/OpenSRF/Utils.pm
 lib/OpenSRF/Utils/Cache.pm
 lib/OpenSRF/Utils/Config.pm

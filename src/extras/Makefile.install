@@ -42,8 +42,11 @@ DEBS =  \
 	automake\
 	build-essential\
 	check\
-	ejabberd\
+	redis-server\
+	redis-tools\
 	less\
+	libredis-perl\
+	libhiredis-dev\
 	libapache2-mod-perl2\
 	libcache-memcached-perl\
 	libclass-dbi-abstractsearch-perl\
@@ -94,7 +97,7 @@ FEDORAS = \
 	automake \
 	check \
 	check-devel \
-	ejabberd \
+	redis \
 	expat-devel \
 	gcc \
 	gdbm-devel \

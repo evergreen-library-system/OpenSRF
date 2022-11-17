@@ -27,7 +27,7 @@
 #include "opensrf/osrfConfig.h"
 #include "osrf_router.h"
 
-static osrfRouter* router = NULL;
+static Router* router = NULL;
 
 static volatile sig_atomic_t stop_signal = 0;
 
@@ -50,7 +50,7 @@ void storeRouterDaemonPid( pid_t, int );
 void routerSignalHandler( int signo ) {
 
 	signal( signo, routerSignalHandler );
-	router_stop( router );
+	osrfRouterStop(router);
 	stop_signal = signo;
 }
 
@@ -248,7 +248,7 @@ static void setupRouter( const jsonObject* configChunk, int configPos ) {
 
 	const jsonObject* transport_cfg = jsonObjectGetKeyConst( configChunk, "transport" );
 
-	const char* server   = jsonObjectGetString( jsonObjectGetKeyConst( transport_cfg, "server" ));
+	const char* domain   = jsonObjectGetString( jsonObjectGetKeyConst( transport_cfg, "server" ));
 	const char* port     = jsonObjectGetString( jsonObjectGetKeyConst( transport_cfg, "port" ));
 	const char* username = jsonObjectGetString( jsonObjectGetKeyConst( transport_cfg, "username" ));
 	const char* password = jsonObjectGetString( jsonObjectGetKeyConst( transport_cfg, "password" ));
@@ -278,8 +278,8 @@ static void setupRouter( const jsonObject* configChunk, int configPos ) {
 		osrfLogSetFile( log_file );
 	}
 
-	osrfLogInfo( OSRF_LOG_MARK, "Router connecting as: server: %s port: %s "
-		"user: %s resource: %s", server, port, username, resource );
+	osrfLogInfo( OSRF_LOG_MARK, "Router connecting as: domain: %s port: %s "
+		"user: %s resource: %s", domain, port, username, resource );
 
 	int iport = 0;
 	if(port)
@@ -326,16 +326,14 @@ static void setupRouter( const jsonObject* configChunk, int configPos ) {
 		return;
 	}
 
-	router = osrfNewRouter( server,
-			username, resource, password, iport, tclients, tservers );
+	router = osrfNewRouter(domain, username, password, iport, tclients, tservers);
 
 	signal(SIGHUP,routerSignalHandler);
 	signal(SIGINT,routerSignalHandler);
 	signal(SIGTERM,routerSignalHandler);
 
 	if( (osrfRouterConnect(router)) != 0 ) {
-		osrfLogError( OSRF_LOG_MARK, "Unable to connect router to jabber server %s... exiting",
-			server );
+		osrfLogError(OSRF_LOG_MARK, "Unable to connect router to domain %s", domain);
 		osrfRouterFree(router);
 		return;
 	}

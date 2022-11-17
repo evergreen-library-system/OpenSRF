@@ -30,11 +30,11 @@ a new() method that takes a message and a message() method that returns that mes
 =head2 Synopsis
 
 
-	throw OpenSRF::EX::Jabber ("I Am Dying");
+	throw OpenSRF::EX::Transport ("I Am Dying");
 
 	OpenSRF::EX::InvalidArg->throw( "Another way" );
 
-	my $je = OpenSRF::EX::Jabber->new( "I Cannot Connect" );
+	my $je = OpenSRF::EX::Transport->new( "I Cannot Connect" );
 	$je->throw();
 
 
@@ -147,19 +147,6 @@ our $ex_msg_header = "System PANIC";
 # Some basic exceptions
 
 # -------------------------------------------------------------------
-package OpenSRF::EX::Jabber;
-use base 'OpenSRF::EX::ERROR';
-our $ex_msg_header = "Jabber Exception";
-
-package OpenSRF::EX::JabberDisconnected;
-use base 'OpenSRF::EX::ERROR';
-our $ex_msg_header = "JabberDisconnected Exception";
-
-=head2 OpenSRF::EX::Jabber
-
-Thrown when there is a problem using the Jabber service
-
-=cut
 
 package OpenSRF::EX::Transport;
 use base 'OpenSRF::EX::ERROR';

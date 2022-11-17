@@ -74,8 +74,9 @@ void osrfSystemIgnoreTransportClient() {
 
 	A thin wrapper for osrfSystemBootstrapClientResc, passing it NULL for a resource.
 */
-int osrf_system_bootstrap_client( char* config_file, char* contextnode ) {
-	return osrfSystemBootstrapClientResc(config_file, contextnode, NULL);
+
+int osrf_system_bootstrap_client(const char* config_file, const char* contextnode) {
+    return osrf_system_bootstrap_common(config_file, contextnode, "client", 0);
 }
 
 /**
@@ -185,7 +186,7 @@ int osrf_system_service_ctrl(
         const char* action, const char* service) {
     
     // Load the conguration, open the log, open a connection to Jabber
-    if (!osrfSystemBootstrapClientResc(config, context, "c_launcher")) {
+    if (!osrf_system_bootstrap_common(config, context, "client", 0)) {
         osrfLogError(OSRF_LOG_MARK,
             "Unable to bootstrap for host %s from configuration file %s",
             hostname, config);
@@ -336,8 +337,19 @@ int osrf_system_service_ctrl(
 	- Open the log.
 	- Open a connection to Jabber.
 */
-int osrfSystemBootstrapClientResc( const char* config_file,
-		const char* contextnode, const char* resource ) {
+int osrfSystemBootstrapClientResc(const char* config_file,
+    const char* contextnode, const char* appname) {
+    return osrf_system_bootstrap_common(config_file, contextnode, appname, 0);
+}
+
+int osrf_system_bootstrap_common(const char* config_file,
+		const char* contextnode, const char* appname, int is_service) {
+
+    if (contextnode == NULL) {
+        osrfLogError(OSRF_LOG_MARK,
+            "osrf_system_bootstrap_common() requires a connection type");
+        return -1;
+    }
 
 	int failure = 0;
 
@@ -352,7 +364,7 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 	}
 
 	if( config_file ) {
-		osrfConfig* cfg = osrfConfigInit( config_file, contextnode );
+		osrfConfig* cfg = osrfConfigInit(config_file, contextnode);
 		if(cfg)
 			osrfConfigSetDefaultConfig(cfg);
 		else
@@ -360,14 +372,15 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 
 		// fetch list of configured log redaction marker strings
 		log_protect_arr = osrfNewStringArray(8);
-		osrfConfig* cfg_shared = osrfConfigInit(config_file, "shared");
-		osrfConfigGetValueList( cfg_shared, log_protect_arr, "/log_protect/match_string" );
+        osrfConfig* cfg_shared = osrfConfigInit(config_file, "shared");
+        osrfConfigGetValueList( cfg_shared, log_protect_arr, "/log_protect/match_string" );
 	}
 
-	char* log_file      = osrfConfigGetValue( NULL, "/logfile");
-	if(!log_file) {
+
+    char* log_file = osrfConfigGetValue( NULL, "/logfile");
+	if (!log_file) {
 		fprintf(stderr, "No log file specified in configuration file %s\n",
-				config_file);
+		config_file);
 		return -1;
 	}
 
@@ -378,40 +391,38 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 	char* username       = osrfConfigGetValue( NULL, "/username" );
 	char* password       = osrfConfigGetValue( NULL, "/passwd" );
 	char* port           = osrfConfigGetValue( NULL, "/port" );
-	char* unixpath       = osrfConfigGetValue( NULL, "/unixpath" );
 	char* facility       = osrfConfigGetValue( NULL, "/syslog" );
 	char* actlog         = osrfConfigGetValue( NULL, "/actlog" );
 	char* logtag         = osrfConfigGetValue( NULL, "/logtag" );
 
 	/* if we're a source-client, tell the logger */
-	char* isclient = osrfConfigGetValue(NULL, "/client");
+    char* isclient = osrfConfigGetValue(NULL, "/client");
 	if( isclient && !strcasecmp(isclient,"true") )
 		osrfLogSetIsClient(1);
 	free(isclient);
 
 	int llevel = 0;
 	int iport = 0;
-	if(port) iport = atoi(port);
-	if(log_level) llevel = atoi(log_level);
+	if (port) iport = atoi(port);
+	if (log_level) llevel = atoi(log_level);
 
 	if(!strcmp(log_file, "syslog")) {
 		if(logtag) osrfLogSetLogTag(logtag);
-		osrfLogInit( OSRF_LOG_TYPE_SYSLOG, contextnode, llevel );
+		osrfLogInit( OSRF_LOG_TYPE_SYSLOG, appname, llevel );
 		osrfLogSetSyslogFacility(osrfLogFacilityToInt(facility));
 		if(actlog) osrfLogSetSyslogActFacility(osrfLogFacilityToInt(actlog));
 
 	} else {
-		osrfLogInit( OSRF_LOG_TYPE_FILE, contextnode, llevel );
+		osrfLogInit( OSRF_LOG_TYPE_FILE, appname, llevel );
 		osrfLogSetFile( log_file );
 	}
 
-
 	/* Get a domain, if one is specified */
 	const char* domain = osrfStringArrayGetString( arr, 0 ); /* just the first for now */
-	if(!domain) {
+	if (!domain) {
 		fprintf(stderr, "No domain specified in configuration file %s\n", config_file);
-		osrfLogError( OSRF_LOG_MARK, "No domain specified in configuration file %s\n",
-				config_file );
+		osrfLogError(OSRF_LOG_MARK, 
+			"No domain specified in configuration file %s\n", config_file );
 		failure = 1;
 	}
 
@@ -429,51 +440,37 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 		failure = 1;
 	}
 
-	if((iport <= 0) && !unixpath) {
-		fprintf(stderr, "No unixpath or valid port in configuration file %s\n", config_file);
-		osrfLogError( OSRF_LOG_MARK, "No unixpath or valid port in configuration file %s\n",
-			config_file);
-		failure = 1;
-	}
-
 	if (failure) {
-		osrfStringArrayFree(arr);
 		free(log_file);
 		free(log_level);
 		free(username);
 		free(password);
 		free(port);
-		free(unixpath);
 		free(facility);
 		free(actlog);
 		free(logtag);
 		return 0;
 	}
 
-	osrfLogInfo( OSRF_LOG_MARK, "Bootstrapping system with domain %s, port %d, and unixpath %s",
-		domain, iport, unixpath ? unixpath : "(none)" );
-	transport_client* client = client_init( domain, iport, unixpath, 0 );
+	osrfLogInfo(OSRF_LOG_MARK, 
+        "Bootstrapping system with domain %s, port %d", domain, iport);
 
-	char host[HOST_NAME_MAX + 1] = "";
-	gethostname(host, sizeof(host) );
-	host[HOST_NAME_MAX] = '\0';
+	transport_client* client = client_init(domain, iport, username, password);
 
-	char tbuf[32];
-	tbuf[0] = '\0';
-	snprintf(tbuf, 32, "%f", get_timestamp_millis());
+    if (is_service) {
+	    if (client_connect_as_service(client, appname)) {
+		    osrfGlobalTransportClient = client;
+	    }
+    } else if (appname != NULL && strcmp(appname, "client") != 0) {
+   	    if (client_connect_for_service(client, appname)) {
+		    osrfGlobalTransportClient = client;
+	    }
+    } else {
+	    if (client_connect(client)) {
+		    osrfGlobalTransportClient = client;
+	    }
+    }
 
-	if(!resource) resource = "";
-
-	int len = strlen(resource) + 256;
-	char buf[len];
-	buf[0] = '\0';
-	snprintf(buf, len - 1, "%s_%s_%s_%ld", resource, host, tbuf, (long) getpid() );
-
-	if(client_connect( client, username, password, buf, 10, AUTH_DIGEST )) {
-		osrfGlobalTransportClient = client;
-	}
-
-	osrfStringArrayFree(arr);
 	free(actlog);
 	free(facility);
 	free(log_level);
@@ -481,7 +478,6 @@ int osrfSystemBootstrapClientResc( const char* config_file,
 	free(username);
 	free(password);
 	free(port);
-	free(unixpath);
 
 	if(osrfGlobalTransportClient)
 		return 1;

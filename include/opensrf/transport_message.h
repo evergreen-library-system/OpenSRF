@@ -54,6 +54,7 @@ struct transport_message_struct {
 	int error_code;        /**< Value of the "code" attribute of &lt;error&gt;. */
 	int broadcast;         /**< Value of the "broadcast" attribute in the message element. */
 	char* msg_xml;         /**< The entire message as XML, complete with entity encoding. */
+	char* msg_json;         /**< The entire message as JSON*/
 	struct transport_message_struct* next;
 };
 typedef struct transport_message_struct transport_message;
@@ -62,6 +63,7 @@ transport_message* message_init( const char* body, const char* subject,
 		const char* thread, const char* recipient, const char* sender );
 
 transport_message* new_message_from_xml( const char* msg_xml );
+transport_message* new_message_from_json( const char* msg_json );
 
 void message_set_router_info( transport_message* msg, const char* router_from,
 		const char* router_to, const char* router_class, const char* router_command,
@@ -70,6 +72,7 @@ void message_set_router_info( transport_message* msg, const char* router_from,
 void message_set_osrf_xid( transport_message* msg, const char* osrf_xid );
 
 int message_prepare_xml( transport_message* msg );
+int message_prepare_json( transport_message* msg );
 
 int message_free( transport_message* msg );
 

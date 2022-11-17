@@ -19,11 +19,12 @@ endif
 export PREFIX                   = @prefix@
 export TMP                      = @TMP@
 export LIBXML2_HEADERS          = @LIBXML2_HEADERS@
+export HIREDIS_HEADERS          = @HIREDIS_HEADERS@
 export APR_HEADERS              = @APR_HEADERS@
 export ETCDIR                   = @sysconfdir@
 export APXS2                    = @APXS2@
 export APACHE2_HEADERS          = @APACHE2_HEADERS@
-export DEF_CFLAGS               = -D_LARGEFILE64_SOURCE $(MAYBE_DEBUG) -pipe -g -Wall -O2 -fPIC -I@abs_top_srcdir@/include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS) @AM_CPPFLAGS@
+export DEF_CFLAGS               = -D_LARGEFILE64_SOURCE $(MAYBE_DEBUG) -pipe -g -Wall -O2 -fPIC -I@abs_top_srcdir@/include/ -I$(LIBXML2_HEADERS) -I$(APACHE2_HEADERS) -I$(APR_HEADERS) -I$(HIREDIS_HEADERS) @AM_CPPFLAGS@
 export DEF_LDLIBS               = -lopensrf
 export VAR                      = @localstatedir@
 export PID                      = @localstatedir@/run/opensrf
@@ -99,6 +100,7 @@ opensrfinclude_HEADERS = $(OSRFINC)/log.h \
 	$(OSRFINC)/transport_client.h \
 	$(OSRFINC)/transport_message.h \
 	$(OSRFINC)/transport_session.h \
+	$(OSRFINC)/transport_connection.h \
 	$(OSRFINC)/utils.h \
 	$(OSRFINC)/xml_utils.h \
 	src/gateway/apachetools.h

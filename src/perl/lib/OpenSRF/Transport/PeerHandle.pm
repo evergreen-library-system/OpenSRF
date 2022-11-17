@@ -1,7 +1,7 @@
 package OpenSRF::Transport::PeerHandle;
 use OpenSRF::Utils::Logger qw(:level);
 use OpenSRF::EX;
-use base qw/OpenSRF::Transport::SlimJabber::PeerConnection/;
+use base qw/OpenSRF::Transport::Redis::PeerConnection/;
 use vars '@ISA';
 
 my $peer;

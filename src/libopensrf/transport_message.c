@@ -1,4 +1,5 @@
 #include <opensrf/transport_message.h>
+#include <opensrf/osrf_json.h>
 
 /**
 	@file transport_message.c
@@ -66,10 +67,77 @@ transport_message* message_init( const char* body, const char* subject,
 	msg->error_code     = 0;
 	msg->broadcast      = 0;
 	msg->msg_xml        = NULL;
+    msg->msg_json       = NULL;
 	msg->next           = NULL;
 
 	return msg;
 }
+
+transport_message* new_message_from_json(const char* msg_json) {
+
+    if (msg_json == NULL || *msg_json == '\0') { return NULL; }
+
+    transport_message* new_msg = safe_malloc(sizeof(transport_message));
+
+    new_msg->body           = NULL;
+    new_msg->subject        = NULL;
+    new_msg->thread         = NULL;
+    new_msg->recipient      = NULL;
+    new_msg->sender         = NULL;
+    new_msg->router_from    = NULL;
+    new_msg->router_to      = NULL;
+    new_msg->router_class   = NULL;
+    new_msg->router_command = NULL;
+    new_msg->osrf_xid       = NULL;
+    new_msg->is_error       = 0;
+    new_msg->error_type     = NULL;
+    new_msg->error_code     = 0;
+    new_msg->broadcast      = 0;
+    new_msg->msg_xml        = NULL;
+    new_msg->next           = NULL;
+
+    jsonObject* json_hash = jsonParse(msg_json);
+
+    if (json_hash == NULL || json_hash->type != JSON_HASH) {
+        osrfLogError(OSRF_LOG_MARK,  "new_message_from_json() received bad JSON");
+        jsonObjectFree(json_hash);
+        message_free(new_msg);
+        return NULL;
+    }
+
+    const char* router_class = jsonObjectGetString(jsonObjectGetKeyConst(json_hash, "router_class"));
+    if (router_class) { new_msg->router_class = strdup((const char*) router_class); }
+
+    const char* router_command = jsonObjectGetString(jsonObjectGetKeyConst(json_hash, "router_command"));
+    if (router_command) { new_msg->router_command = strdup((const char*) router_command); }
+
+    const char* sender = jsonObjectGetString(jsonObjectGetKeyConst(json_hash, "from"));
+    if (sender) { new_msg->sender = strdup((const char*) sender); }
+
+    const char* recipient = jsonObjectGetString(jsonObjectGetKeyConst(json_hash, "to"));
+    if (recipient) { new_msg->recipient = strdup((const char*) recipient); }
+
+    const char* thread = jsonObjectGetString(jsonObjectGetKeyConst(json_hash, "thread"));
+    if (thread == NULL) { thread = ""; }
+    new_msg->thread = strdup((const char*) thread);
+
+    const char* osrf_xid = jsonObjectGetString(jsonObjectGetKeyConst(json_hash, "osrf_xid"));
+    if (osrf_xid) { message_set_osrf_xid(new_msg, (char*) osrf_xid); }
+
+    // TODO
+    // Internally the mesage body is stored as a JSON string
+    // On the wire, it's just part of the message.  We could get
+    // rid if this extra json encode/decode step if we treated
+    // the body as a JSON object internally.
+    const char* body = jsonObjectToJSON(jsonObjectGetKeyConst(json_hash, "body"));
+    if (body == NULL) { body = ""; }
+    new_msg->body = strdup((const char*) body);
+
+    jsonObjectFree(json_hash);
+
+    return new_msg;
+}
+
 
 
 /**
@@ -308,8 +376,43 @@ int message_free( transport_message* msg ){
 	free(msg->osrf_xid);
 	if( msg->error_type != NULL ) free(msg->error_type);
 	if( msg->msg_xml != NULL ) free(msg->msg_xml);
+	if( msg->msg_json != NULL ) free(msg->msg_json);
 	free(msg);
 	return 1;
+}
+
+
+int message_prepare_json(transport_message* msg) {
+
+    if (!msg) { return 0; }
+    if (msg->msg_json) { return 1; }   /* already done */
+
+    jsonObject* json_hash = jsonNewObject(NULL);
+    jsonObjectSetKey(json_hash, "to", jsonNewObject(msg->recipient));
+    jsonObjectSetKey(json_hash, "from", jsonNewObject(msg->sender));
+    jsonObjectSetKey(json_hash, "thread", jsonNewObject(msg->thread));
+    jsonObjectSetKey(json_hash, "osrf_xid", jsonNewObject(msg->osrf_xid));
+
+    if (msg->router_to) {
+        jsonObjectSetKey(json_hash, "router_to", jsonNewObject(msg->router_to));
+    }
+    if (msg->router_class) {
+        jsonObjectSetKey(json_hash, "router_class", jsonNewObject(msg->router_class));
+    }
+    if (msg->router_command) {
+        jsonObjectSetKey(json_hash, "router_command", jsonNewObject(msg->router_command));
+    }
+
+    // TODO the various layers expect the message body to be a separate
+    // JSON string, but on the bus, the body is just another key 
+    // in the JSON object.
+    jsonObjectSetKey(json_hash, "body", jsonParse(msg->body));
+
+    msg->msg_json = jsonObjectToJSON(json_hash);
+
+    jsonObjectFree(json_hash);
+
+    return 1;
 }
 
 

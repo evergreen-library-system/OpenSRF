@@ -137,6 +137,7 @@ sub server_build {
 
 	my $config_client = OpenSRF::Utils::SettingsClient->new();
 	my $stateless = $config_client->config_value("apps", $service, "stateless");
+    $stateless = 1 if $service eq 'router';
 
 	#my $max_requests = $conf->$service->max_requests;
 	my $max_requests	= $config_client->config_value("apps",$service,"max_requests");
@@ -208,18 +209,7 @@ sub last_sent_type {
 
 sub get_app_targets {
 	my $app = shift;
-
-	my $conf = OpenSRF::Utils::Config->current;
-	my $router_name = $conf->bootstrap->router_name || 'router';
-	my $domain = $conf->bootstrap->domain;
-	$logger->error("use of <domains/> is deprecated") if $conf->bootstrap->domains;
-
-	unless($router_name and $domain) {
-		throw OpenSRF::EX::Config 
-			("Missing router config information 'router_name' and 'domain'");
-	}
-
-    return ("$router_name\@$domain/$app");
+    return ("opensrf:service:$app");
 }
 
 sub stateless {
@@ -259,6 +249,8 @@ sub create {
 	if($app ne "opensrf.settings" || $c->has_config()) { 
 		$stateless = $c->config_value("apps", $app, "stateless");
 	}
+
+    $stateless = 1 if $app eq 'router';
 
 	my $sess_id = time . rand( $$ );
 	while ( $class->find($sess_id) ) {
@@ -579,12 +571,24 @@ sub send {
 
 	} 
 	my $json = OpenSRF::Utils::JSON->perl2JSON(\@doc);
-	$logger->internal("AppSession sending doc: $json");
 
-	$self->{peer_handle}->send( 
-					to     => $self->remote_id,
-				   thread => $self->session_id,
-				   body   => $json );
+    my $recipient = $self->remote_id;
+
+    if ($self->endpoint == CLIENT and $self->state != CONNECTED) {
+        # Send new requests to our router
+        my $conf = OpenSRF::Utils::Config->current;
+        my $domain = $conf->bootstrap->domain;
+        $recipient = "opensrf:router:$domain";
+    }
+
+    $logger->internal("AppSession sending doc to=$recipient: $json");
+
+    $self->{peer_handle}->send_to( 
+        $recipient,
+        to     => $self->remote_id,
+        thread => $self->session_id,
+        body   => $json
+    );
 
 	if( $disconnect) {
 		$self->state( DISCONNECTED );

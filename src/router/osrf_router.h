@@ -1,50 +1,56 @@
 #ifndef OSRF_ROUTER_H
 #define OSRF_ROUTER_H
 
+#include "opensrf/string_array.h"
+
 /**
-	@file 
-	@brief Collection of routines for an OSRF router.
+    @file 
+    @brief Collection of routines for an OSRF router.
 
-	The router receives messages from clients and passes each one to a listener for the
-	targeted service.  Where there are multiple listeners for the same service, the router
-	picks one on a round-robin basis.  If a message bounces because the listener has died,
-	the router sends it to another listener for the same service, if one is available.
+    The router receives messages from clients and passes each one to a listener for the
+    targeted service.  Where there are multiple listeners for the same service, the router
+    picks one on a round-robin basis.  If a message bounces because the listener has died,
+    the router sends it to another listener for the same service, if one is available.
 
-	The server's response to the client, if any, bypasses the router.  If the server needs to
-	set up a stateful session with a client, it does so directly (well, via Jabber).  Only the
-	initial message from the client passes through the router.
+    The server's response to the client, if any, bypasses the router.  If the server needs to
+    set up a stateful session with a client, it does so directly (well, via Jabber).  Only the
+    initial message from the client passes through the router.
 
-	Thus the router serves two main functions:
-	- It spreads the load across multiple listeners for the same service.
-	- It reroutes bounced messages to alternative listeners.
+    Thus the router serves two main functions:
+    - It spreads the load across multiple listeners for the same service.
+    - It reroutes bounced messages to alternative listeners.
 
-	It also responds to requests for information about the number of messages routed to
-	different services and listeners.
+    It also responds to requests for information about the number of messages routed to
+    different services and listeners.
 */
 
 /*
-	Prerequisite:
+    Prerequisite:
 
-		string_array.h
+        string_array.h
 */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct osrfRouterStruct;
-typedef struct osrfRouterStruct osrfRouter;
+typedef struct RouterStruct Router;
 
-osrfRouter* osrfNewRouter( const char* domain, const char* name, const char* resource,
-	const char* password, int port, osrfStringArray* trustedClients,
-	osrfStringArray* trustedServers );
+Router* osrfNewRouter(
+    const char* domain, 
+    const char* username,
+    const char* password, 
+    int port, 
+    osrfStringArray* trusted_clients, 
+    osrfStringArray* trusted_servers
+);
 
-int osrfRouterConnect( osrfRouter* router );
+int osrfRouterConnect(Router* router);
 
-void osrfRouterRun( osrfRouter* router );
+void osrfRouterRun(Router* router);
 
-void router_stop( osrfRouter* router );
+void osrfRouterStop(Router* router);
 
-void osrfRouterFree( osrfRouter* router );
+void osrfRouterFree(Router* router);
 
 #ifdef __cplusplus
 }

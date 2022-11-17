@@ -7,7 +7,6 @@ use OpenSRF::Utils::JSON;
 use OpenSRF::Utils::Logger qw(:level);
 use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use OpenSRF::EX qw/:try/;
-use OpenSRF::Transport::SlimJabber::MessageWrapper;
 
 #------------------ 
 # --- These must be implemented by all Transport subclasses
@@ -34,32 +33,9 @@ sub get_msg_envelope { shift()->alert_abstract(); }
 our $message_envelope;
 my $logger = "OpenSRF::Utils::Logger"; 
 
-
-
-=head2 message_envelope( [$envelope] );
-
-Sets the message envelope class that will allow us to extract
-information from the messages we receive from the low 
-level transport
-
-=cut
-
-sub message_envelope {
-	my( $class, $envelope ) = @_;
-	if( $envelope ) {
-		$message_envelope = $envelope;
-		$envelope->use;
-		if( $@ ) {
-			$logger->error( 
-					"Error loading message_envelope: $envelope -> $@", ERROR);
-		}
-	}
-	return $message_envelope;
-}
-
 =head2 handler( $data )
 
-Creates a new MessageWrapper, extracts the remote_id, session_id, and message body
+Creates a new Message, extracts the remote_id, session_id, and message body
 from the message.  Then, creates or retrieves the AppSession object with the session_id and remote_id. 
 Finally, creates the message document from the body of the message and calls
 the handler method on the message document.
@@ -68,17 +44,16 @@ the handler method on the message document.
 
 sub handler {
 	my $start_time = time();
-	my( $class, $service, $data ) = @_;
+	my ($class, $service, $msg) = @_;
 
-	$logger->transport( "Transport handler() received $data", INTERNAL );
+	my $remote_id = $msg->from;
+	my $sess_id	= $msg->thread;
+	my $body = $msg->body;
+	my $type = $msg->type;
 
-	my $remote_id	= $data->from;
-	my $sess_id	= $data->thread;
-	my $body	= $data->body;
-	my $type	= $data->type;
+    $logger->internal("Transport:handler() received message with thread: $sess_id");
 
-	$logger->set_osrf_xid($data->osrf_xid);
-
+	$logger->set_osrf_xid($msg->osrf_xid);
 
 	if (defined($type) and $type eq 'error') {
 		throw OpenSRF::EX::Session ("$remote_id IS NOT CONNECTED TO THE NETWORK!!!");
@@ -104,8 +79,10 @@ sub handler {
         }
 	} 
 
+    $logger->internal(
+        "Building app session with ses=$sess_id remote=$remote_id service=$service");
+
 	# Retrieve or build the app_session as appropriate (server_build decides which to do)
-	$logger->transport( "AppSession is valid or does not exist yet", INTERNAL );
 	$app_session = OpenSRF::AppSession->server_build( $sess_id, $remote_id, $service );
 
 	if( ! $app_session ) {
@@ -128,8 +105,8 @@ sub handler {
 
 	$logger->transport( "Transport::handler() creating \n$body", INTERNAL );
 
-	# We need to disconnect the session if we got a jabber error on the client side.  For
-	# server side, we'll just tear down the session and go away.
+	# We need to disconnect the session if we got a bus error on the client 
+    # side.  For server side, we'll just tear down the session and go away.
 	if (defined($type) and $type eq 'error') {
 		# If we're a server
 		if( $app_session->endpoint == $app_session->SERVER() ) {
@@ -142,7 +119,7 @@ sub handler {
 			#$app_session->push_resend( $app_session->app_request( 
 			#		$doc->documentElement->firstChild->threadTrace ) );
 			$logger->debug(
-				"Got Jabber error on client connection $remote_id, nothing we can do..", ERROR );
+				"Got error on client connection $remote_id, nothing we can do..", ERROR );
 			return 1;
 		}
 	}

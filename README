@@ -158,7 +158,7 @@ chown -R opensrf:opensrf /<PREFIX>
 Define your public and private OpenSRF domains
 ----------------------------------------------
 
-For security purposes, OpenSRF uses Jabber domains to separate services
+For security purposes, OpenSRF uses Redis domains to separate services
 into public and private realms. Throughout these instructions, we will use
 the example domains `public.localhost` and `private.localhost`. 
 
@@ -194,137 +194,42 @@ On most other systems, you can add these entries to `/etc/ld.so.conf`, or
 create a file within the `/etc/ld.so.conf.d/` directory, and then run
 `ldconfig` as the *root* Linux account.
 
-Configure the ejabberd server
+Configure the Redis server
 -----------------------------
 
-[TIP]
-=====
-It is recommended to disable the apparmor profile for ejabberd on *Ubuntu 22.04* before
-continuing.  If you are installing on *Ubuntu 22.04*, run the following
-commands as the *root* Linux account:
 
-[source,bash]
----------------------------------------------------------------------------
-ln -s /etc/apparmor.d/usr.sbin.ejabberdctl /etc/apparmor.d/disable/
-apparmor_parser -R /etc/apparmor.d/usr.sbin.ejabberdctl
----------------------------------------------------------------------------
-=====
+OpenSRF requires a Redis server.
 
-OpenSRF requires an XMPP (Jabber) server. For performance reasons, ejabberd is
-the Jabber server of choice for the OpenSRF project. In most cases, you only
-have to make a few changes to the default configuration file to make ejabberd
-work for OpenSRF. 
-
-1. Stop ejabberd before making any changes to its configuration by issuing the
+1. Stop Redis before making any changes to its configuration by issuing the
    following command as the *root* Linux account:
 +
-.Stopping ejabberd
+.Stopping Redis
 [source, bash]
 ---------------------------------------------------------------------------
-systemctl stop ejabberd.service
+systemctl stop redis-server
 ---------------------------------------------------------------------------
 +
-2. Edit the ejabberd config file.
+2. Edit the Redis config file.
 +
-(Debian Buster) Ejabberd 18.x::
-Open `/etc/ejabberd/ejabberd.yml` and make the following
+Open `/etc/redis/redis.conf` and make the following
 changes:
-  a. Define your public and private domains in the `hosts` directive. For
+  a. Disable persistence by modifying the 'save' variable.
    example:
 +
 [source, bash]
 ---------------------------------------------------------------------------
-hosts:
-  - "localhost"
-  - "private.localhost"
-  - "public.localhost"
+# Snapshotting can be completely disabled with a single empty string argument
+# as in following example:
+#
+save ""
 ---------------------------------------------------------------------------
 +
-  b. Change `starttls_required` to false
-  c. Change `auth_password_format` to plain
-  d. Change `shaper:` `normal` and `fast` values to 500000
-  e. Increase the `max_user_sessions:` `all:` value to 10000
-  f. Comment out the `mod_offline` directive
+3. Restart the Redis server to make the changes take effect:
 +
------------------------
-##mod_offline:
-    ##access_max_user_messages: max_user_offline_messages
------------------------
-+
-  g. Uncomment or add the `mod_legacy_auth` directive under the `modules:` section
-+
------------------------
-mod_legacy_auth: {}
------------------------
-+
-(Debian Bullseye / Debian Bookworm / Ubuntu Jammy / Ubuntu Noble) Ejabberd 21.x/23.10::
-Open `/etc/ejabberd/ejabberd.yml` and make the following
-changes:
-  a. Define your public and private domains in the `hosts` directive. For
-   example:
-+
+.Starting Redis
 [source, bash]
 ---------------------------------------------------------------------------
-hosts:
-  - localhost
-  - private.localhost
-  - public.localhost
----------------------------------------------------------------------------
-+
-  b. Change `starttls_required` to false
-  c. Change `auth_password_format` to plain
-  d. Change all `shaper:` `normal` and `fast` values to 500000
-  e. Increase the `shaper_rules:` `max_user_sessions:` value to 10000
-  f. Comment out the `shaper_rules:` `max_user_offline_messages:` values
-+
------------------------
-##max_user_offline_messages:
-  ##5000: admin
-  ##100: all
------------------------
-+
-  g. Comment out the `mod_offline` directive
-+
------------------------
-##mod_offline:
-    ##access_max_user_messages: max_user_offline_messages
------------------------
-+
-  h. Add the `mod_legacy_auth` directive under the `modules:` section
-+
------------------------
-mod_legacy_auth: {}
------------------------
-+
-3. Restart the ejabberd server to make the changes take effect:
-+
-.Starting ejabberd
-[source, bash]
----------------------------------------------------------------------------
-systemctl start ejabberd.service
----------------------------------------------------------------------------
-
-Create the OpenSRF Jabber users
--------------------------------
-
-On each domain, you need two Jabber users to manage the OpenSRF communications:
-
-  * a `router` user, to whom all requests to connect to an OpenSRF service
-    will be routed; this Jabber user must be named `router`
-  * an `opensrf` user, which clients use to connect to OpenSRF services; this
-    user can be named anything you like
-
-Create the Jabber users by issuing the following commands as the *root* Linux
-account. Substitute `<password>` for your chosen passwords for each user
-respectively:
-
-.Creating the OpenSRF Jabber users
-[source, bash]
----------------------------------------------------------------------------
-ejabberdctl register router private.localhost <password>
-ejabberdctl register opensrf private.localhost <password>
-ejabberdctl register router public.localhost <password>
-ejabberdctl register opensrf public.localhost <password>
+systemctl start redis-server
 ---------------------------------------------------------------------------
 
 Update the OpenSRF configuration files
@@ -344,7 +249,7 @@ work. SYSCONFDIR is `/opensrf/etc` by default, or the value that you passed to
          to use `localhost`, so in most cases you will leave this section
          as-is.
     
-  * `SYSCONFDIR/opensrf_core.xml` - this file lists the Jabber connection
+  * `SYSCONFDIR/opensrf_core.xml` - this file lists the Redis connection
     information that will be used for the system, as well as determining
     logging verbosity and defining which services will be exposed on the
     HTTP gateway.
@@ -363,22 +268,48 @@ Updating the OpenSRF configuration files
 cd SYSCONFDIR
 cp opensrf_core.xml.example opensrf_core.xml
 cp opensrf.xml.example opensrf.xml
+cp redis-accounts.txt.example redis-accounts.txt
 ---------------------------------------------------------------------------
 +
   2. Edit the `SYSCONFDIR/opensrf_core.xml` file to update the four username
-     / password pairs to match the Jabber user accounts you just created:
+     / password pairs to match the Redis user accounts in `SYSCONFDIR/redis-accounts.txt`.
+     (Passwords in redis-accounts.txt are locally-genreated UUID values
+     in lines that look like: ACL SETUSER opensrf on >456fc340-beba-4489-9070-0d6b49e9952b.
+     The password here would be `456fc340-beba-4489-9070-0d6b49e9952b`):
 
-    a. `<config><opensrf>` = use the private Jabber `opensrf` user
-    b. `<config><gateway>` = use the public Jabber `opensrf` user
-    c. `<config><routers><router>` = use the public Jabber `router` user
-    d. `<config><routers><router>` = use the private Jabber `router` user
+    a. `<config><opensrf>` = use the private Redis `opensrf` user
+    b. `<config><gateway>` = use the public Redis `gateway` user
+    c. `<config><routers><router>` = use the public Redis `router` user
+    d. `<config><routers><router>` = use the private Redis `router` user
   3. Create a `.srfsh.xml` file in the home directory of each user
      that you want to use `srfsh` to communicate with OpenSRF services. For
      example, to enable the *opensrf* Linux account to use `srfsh`:
     a. `cp SYSCONFDIR/srfsh.xml.example ~/.srfsh.xml`
     b. Open `~/.srfsh.xml` in your text editor of choice and update the
-       password to match the password you set for the Jabber `opensrf` user
+       password to match the password you set for the Redis `opensrf` user
        at the `private.localhost` domain.
+
+Creating Redis Accounts
+--------------------------------------
+Before starting services, it's necessary to create Redis accounts.
+Issue the following command as the *opensrf* Linux account:
++
+[source, bash]
+---------------------------------------------------------------------------
+osrf_control --reset-message-bus
+---------------------------------------------------------------------------
++
+Accessing the Redis Command Line
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The script which creates Redis OpenSRF accounts also applies a password
+to the 'default' Redis account for security.  To access the Redis
+command line with full privileges, use the password for the 'default'
+user from the SYSCONFDIR/redis-accounts.txt file.  For example:
++
+[source,bash]
+---------------------------------------------------------------------------
+REDISCLI_AUTH=f0d2ebcc-5a52-49e4-a910-a515144b4141 redis-cli
+---------------------------------------------------------------------------
 
 Starting and stopping OpenSRF services
 --------------------------------------
