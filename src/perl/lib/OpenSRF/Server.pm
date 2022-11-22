@@ -21,7 +21,6 @@ use OpenSRF::Utils::Config;
 use OpenSRF::Transport::PeerHandle;
 use OpenSRF::Utils::SettingsClient;
 use OpenSRF::Utils::Logger qw($logger);
-use OpenSRF::DomainObject::oilsResponse qw/:status/;
 use OpenSRF::Transport::SlimJabber::Client;
 use Encode;
 use POSIX qw/:sys_wait_h :errno_h/;
@@ -53,7 +52,6 @@ sub new {
         if $self->{stderr_log_path};
 
     $self->{min_spare_children} ||= 0;
-    $self->{max_backlog_queue} ||= 1000;
 
     $self->{max_spare_children} = $self->{min_spare_children} + 1 if
         $self->{max_spare_children} and
@@ -156,24 +154,14 @@ sub run {
     $self->register_routers;
     my $wait_time = 1;
 
-    my @max_children_msg_queue;
-
     # main server loop
     while(1) {
-        my $from_network = 0;
 
         $self->check_status;
         $self->squash_zombies;
         $self->{child_died} = 0;
 
-        my $msg = shift(@max_children_msg_queue);
-
-        # no pending message, so wait for the next one forever
-        $from_network = $wait_time = -1 if (!$msg);
-        $msg ||= $self->{osrf_handle}->process($wait_time);
-
-        !$from_network and $chatty and $logger->debug("server: attempting to process previously queued message");
-        $from_network and $chatty and $logger->internal("server: no queued messages, processing due to network or signal");
+        my $msg = $self->{osrf_handle}->process($wait_time);
 
         # we woke up for any reason, reset the wait time to allow
         # for idle maintenance as necessary
@@ -202,76 +190,11 @@ sub run {
                 $logger->warn("server: no children available, waiting... consider increasing " .
                     "max_children for this application higher than $self->{max_children} ".
                     "in the OpenSRF configuration if this message occurs frequently");
+                $self->check_status(1); # block until child is available
 
-                if ($from_network) {
-                    $chatty and $logger->debug("server: queuing new message");
-                    push @max_children_msg_queue, $msg;
-                } else {
-                    $chatty and $logger->debug("server: re-queuing old message");
-                    unshift @max_children_msg_queue, $msg;
-                }
-
-                $logger->warn("server: backlog queue size is now ". scalar(@max_children_msg_queue));
-
-                if (@max_children_msg_queue < $self->{max_backlog_queue}) {
-                    # We still have room on the queue. Set the wait time to
-                    # 1s, waiting for a drone to be freed up and reprocess
-                    # this (and any other) queued messages.
-                    $wait_time = 1;
-                    if (!$from_network) {
-                        # if we got here, we had retrieved a message from the queue
-                        # but couldn't process it... but also hadn't fetched any
-                        # additional messages from the network. Doing so now,
-                        # as otherwise only one message will ever get queued
-                        $msg = $self->{osrf_handle}->process($wait_time);
-                        if ($msg) {
-                            $chatty and $logger->debug("server: queuing new message after a re-queue");
-                            push @max_children_msg_queue, $msg;
-                        }
-                    }
-                } else {
-
-                    if (!$from_network) {
-                        # The queue is full, and we just requeued a message. We'll
-                        # now see if there is a request available from the network;
-                        # if so, we'll see if a child is available again or else
-                        # drop it
-                        $msg = $self->{osrf_handle}->process($wait_time);
-                        if ($msg) {
-                            $self->check_status();
-                            if (@{$self->{idle_list}}) {
-                                # child now available, so we'll go ahead and queue it
-                                $chatty and $logger->debug("server: queuing new message after a re-queue with a full queue");
-                                push @max_children_msg_queue, $msg;
-                            } else {
-                                # ok, need to drop this one
-                                my $resp = OpenSRF::DomainObject::oilsMessage->new();
-                                $resp->type('STATUS');
-                                $resp->payload(
-                                    OpenSRF::DomainObject::oilsMethodException->new(
-                                        status => "Service unavailable: no available children and backlog queue at limit",
-                                        statusCode => STATUS_SERVICEUNAVAILABLE
-                                    )
-                                );
-                                $resp->threadTrace(1);
-
-                                $logger->set_osrf_xid($msg->osrf_xid);
-                                $self->{osrf_handle}->send(
-                                    to => $msg->from,
-                                    osrf_xid => $msg->osrf_xid, # Note that this is ignored, which
-                                                                # is why we called $logger->set_osrf_xid above.
-                                                                # We probably don't want that to be necessary
-                                                                # if osrf_xid is explicitly set here, but that'll
-                                                                # be a FIXME for later
-                                    thread => $msg->thread,
-                                    body => OpenSRF::Utils::JSON->perl2JSON([ $resp ])
-                                );
-                                $logger->warn("Backlog queue full for $self->{service}; forced to drop message " .
-                                              $msg->thread . " from " . $msg->from);
-                            }
-                        }
-                    }
-                }
+                my $child = pop(@{$self->{idle_list}});
+                push(@{$self->{active_list}}, $child);
+                $self->write_child($child, $msg);
             }
 
         } else {

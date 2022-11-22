@@ -113,7 +113,6 @@ sub run_service {
         min_children =>  $getval->(unix_config => 'min_children') || 1,
         min_spare_children =>  $getval->(unix_config => 'min_spare_children'),
         max_spare_children =>  $getval->(unix_config => 'max_spare_children'),
-        max_backlog_queue =>  $getval->(unix_config => 'max_backlog_queue'),
         stderr_log_path => $stderr_path
     );
 
