@@ -270,9 +270,9 @@ static char* osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
 
             case REQUEST: {
                 const jsonObject* params = msg->_params;
-                growing_buffer* act = buffer_init(128);	
+                growing_buffer* act = osrf_buffer_init(128);
                 char* method = msg->method_name;
-                buffer_fadd(act, "[%s] [%s] %s %s", trans->remoteHost, "",
+                osrf_buffer_fadd(act, "[%s] [%s] %s %s", trans->remoteHost, "",
                     trans->service, method);
 
                 const jsonObject* obj = NULL;
@@ -287,21 +287,21 @@ static char* osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
                     }
                 }
                 if(redactParams) {
-                    OSRF_BUFFER_ADD(act, " **PARAMS REDACTED**");
+                    osrf_buffer_add(act, " **PARAMS REDACTED**");
                 } else {
                     i = 0;
                     while((obj = jsonObjectGetIndex(params, i++))) {
                         str = jsonObjectToJSON(obj);
                         if( i == 1 )
-                            OSRF_BUFFER_ADD(act, " ");
+                            osrf_buffer_add(act, " ");
                         else
-                            OSRF_BUFFER_ADD(act, ", ");
-                        OSRF_BUFFER_ADD(act, str);
+                            osrf_buffer_add(act, ", ");
+                        osrf_buffer_add(act, str);
                         free((void *)str);
                     }
                 }
                 osrfLogActivity(OSRF_LOG_MARK, "%s", act->buf);
-                buffer_free(act);
+                osrf_buffer_free(act);
                 break;
             }
 
@@ -474,20 +474,20 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
             osrfListPush(trans->messages, msg->body);
 
             if(trans->complete || trans->connectOnly) {
-                growing_buffer* buf = buffer_init(128);
+                growing_buffer* buf = osrf_buffer_init(128);
                 unsigned int i;
-                OSRF_BUFFER_ADD(buf, osrfListGetIndex(trans->messages, 0));
+                osrf_buffer_add(buf, osrfListGetIndex(trans->messages, 0));
                 for(i = 1; i < trans->messages->size; i++) {
-                    buffer_chomp(buf); // chomp off the closing array bracket
+                    osrf_buffer_chomp(buf); // chomp off the closing array bracket
                     char* body = osrfListGetIndex(trans->messages, i);
                     char newbuf[strlen(body)];
                     sprintf(newbuf, "%s", body+1); // chomp off the opening array bracket
-                    OSRF_BUFFER_ADD_CHAR(buf, ',');
-                    OSRF_BUFFER_ADD(buf, newbuf);
+                    osrf_buffer_add_char(buf, ',');
+                    osrf_buffer_add(buf, newbuf);
                 }
 
                 ap_rputs(buf->buf, trans->apreq);
-                buffer_free(buf);
+                osrf_buffer_free(buf);
             }
         }
     }

@@ -144,7 +144,7 @@ JSONPushParser* jsonNewPushParser( const JSONHandlerMap* map, void* blob )
 	parser->pos         = 1;
 	parser->state       = PP_BEGIN;
 	parser->again       = '\0';
-	parser->buf         = buffer_init( 64 );
+	parser->buf         = osrf_buffer_init( 64 );
 	parser->state_stack = NULL;
 	parser->free_states = NULL;
 	parser->word_idx     = 0;
@@ -451,7 +451,7 @@ static int do_begin( JSONPushParser* parser, char c ) {
 	if( isspace( (unsigned char) c ) )   // skip white space
 		;
 	else if( '\"' == c ) {         // Found a string
-		buffer_reset( parser->buf );
+		osrf_buffer_reset( parser->buf );
 		push_pp_state( parser, PP_END );
 		parser->state = PP_STR;
 	} else if( '[' == c ) {        // Found an array
@@ -483,8 +483,8 @@ static int do_begin( JSONPushParser* parser, char c ) {
 			   || '.' == c
 			   || 'e' == c
 			   || 'E' == c ) {      // Found a number
-		buffer_reset( parser->buf );
-		buffer_add_char( parser->buf, c );
+		osrf_buffer_reset( parser->buf );
+		osrf_buffer_add_char( parser->buf, c );
 		push_pp_state( parser, PP_END );
 		parser->state = PP_NUM;
 	} else {
@@ -533,7 +533,7 @@ static int do_str    ( JSONPushParser* parser, char c ) {
 			(unsigned int) c );
 		rc = 1;
 	} else {
-		buffer_add_char( parser->buf, c );
+		osrf_buffer_add_char( parser->buf, c );
 	}
 
 	return rc;
@@ -693,7 +693,7 @@ static int do_num  ( JSONPushParser* parser, char c ) {
 				|| '.' == c
 				|| 'e' == c
 				|| 'E' == c ) {
-		buffer_add_char( parser->buf, c );
+		osrf_buffer_add_char( parser->buf, c );
 	} else {
 		const char* num_str = OSRF_BUFFER_C_STR( parser->buf );
 
@@ -736,7 +736,7 @@ static int do_array_begin( JSONPushParser* parser, char c ) {
 	if( isspace( (unsigned char) c ) )   // skip white space
 		;
 	else if( '\"' == c ) {    // Found a string
-		buffer_reset( parser->buf );
+		osrf_buffer_reset( parser->buf );
 		push_pp_state( parser, PP_ARRAY_VALUE );
 		parser->state = PP_STR;
 	} else if( '[' == c ) {     // Found a nested array
@@ -773,8 +773,8 @@ static int do_array_begin( JSONPushParser* parser, char c ) {
 				|| '.' == c
 				|| 'e' == c
 				|| 'E' == c ) {
-		buffer_reset( parser->buf );
-		buffer_add_char( parser->buf, c );
+		osrf_buffer_reset( parser->buf );
+		osrf_buffer_add_char( parser->buf, c );
 		push_pp_state( parser, PP_ARRAY_VALUE );
 		parser->state = PP_NUM;
 	} else {
@@ -828,7 +828,7 @@ static int do_array_comma( JSONPushParser* parser, char c ) {
 	if( isspace( (unsigned char) c ) )   // skip white space
 		;
 	else if( '\"' == c ) {    // Found a string
-		buffer_reset( parser->buf );
+		osrf_buffer_reset( parser->buf );
 		push_pp_state( parser, PP_ARRAY_VALUE );
 		parser->state = PP_STR;
 	} else if( '[' == c ) {     // Found a nested array
@@ -860,8 +860,8 @@ static int do_array_comma( JSONPushParser* parser, char c ) {
 				|| '.' == c
 				|| 'e' == c
 				|| 'E' == c ) {
-		buffer_reset( parser->buf );
-		buffer_add_char( parser->buf, c );
+		osrf_buffer_reset( parser->buf );
+		osrf_buffer_add_char( parser->buf, c );
 		push_pp_state( parser, PP_ARRAY_VALUE );
 		parser->state = PP_NUM;
 	} else {
@@ -886,7 +886,7 @@ static int do_obj_begin( JSONPushParser* parser, char c ) {
 	if( isspace( (unsigned char) c ) )   // skip white space
 		;
 	else if( '\"' == c ) {    // Found a string
-		buffer_reset( parser->buf );
+		osrf_buffer_reset( parser->buf );
 		push_pp_state( parser, PP_OBJ_KEY );
 		parser->state = PP_STR;
 	} else if( '}' == c ) {     // End of object
@@ -939,7 +939,7 @@ static int do_obj_colon( JSONPushParser* parser, char c ) {
 	if( isspace( (unsigned char) c ) )   // skip white space
 		;
 	else if( '\"' == c ) {    // Found a string
-		buffer_reset( parser->buf );
+		osrf_buffer_reset( parser->buf );
 		push_pp_state( parser, PP_OBJ_VALUE );
 		parser->state = PP_STR;
 	} else if( '[' == c ) {     // Found a nested array
@@ -971,8 +971,8 @@ static int do_obj_colon( JSONPushParser* parser, char c ) {
 				|| '.' == c
 				|| 'e' == c
 				|| 'E' == c ) {
-		buffer_reset( parser->buf );
-		buffer_add_char( parser->buf, c );
+		osrf_buffer_reset( parser->buf );
+		osrf_buffer_add_char( parser->buf, c );
 		push_pp_state( parser, PP_OBJ_VALUE );
 		parser->state = PP_NUM;
 	} else {
@@ -1026,7 +1026,7 @@ static int do_obj_comma( JSONPushParser* parser, char c ) {
 	if( isspace( (unsigned char) c ) )   // skip white space
 		;
 	else if( '\"' == c ) {    // Found a string
-		buffer_reset( parser->buf );
+		osrf_buffer_reset( parser->buf );
 		push_pp_state( parser, PP_OBJ_KEY );
 		parser->state = PP_STR;
 	} else {
@@ -1262,7 +1262,7 @@ static void report_pp_error( JSONPushParser* parser, const char* msg, ... ) {
 */
 void jsonPushParserFree( JSONPushParser* parser ) {
 	if( parser ) {
-		buffer_free( parser->buf );
+		osrf_buffer_free( parser->buf );
 
 		// Pop off all the StateNodes, and then free them
 		while( parser->state_stack ) {

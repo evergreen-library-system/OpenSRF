@@ -1251,7 +1251,7 @@ static int check_children( prefork_simple* forker, int forever ) {
 static void prefork_child_wait( prefork_child* child ) {
 
 	int i,n;
-	growing_buffer* gbuf = buffer_init( READ_BUFSIZE );
+	growing_buffer* gbuf = osrf_buffer_init( READ_BUFSIZE );
 	char buf[READ_BUFSIZE];
 
 	for( i = 0; i < child->max_requests; i++ ) {
@@ -1268,7 +1268,7 @@ static void prefork_child_wait( prefork_child* child ) {
 				set_fl( child->read_data_fd, O_NONBLOCK );
 				gotdata = 1;
 			}
-			buffer_add_n( gbuf, buf, n );
+			osrf_buffer_add_n( gbuf, buf, n );
 		}
 
 		if( errno == EAGAIN )
@@ -1290,7 +1290,7 @@ static void prefork_child_wait( prefork_child* child ) {
 			// Process the request
 			osrfLogDebug( OSRF_LOG_MARK, "Prefork child got a request.. processing.." );
 			terminate_now = prefork_child_process_request( child, gbuf->buf );
-			buffer_reset( gbuf );
+			osrf_buffer_reset( gbuf );
 		}
 
 		if( terminate_now ) {
@@ -1308,13 +1308,13 @@ static void prefork_child_wait( prefork_child* child ) {
 				osrfLogError( OSRF_LOG_MARK,
 					"Drone terminating: unable to notify listener of availability: %s",
 					strerror( errno ));
-				buffer_free( gbuf );
+				osrf_buffer_free( gbuf );
 				osrf_prefork_child_exit( child );
 			}
 		}
 	}
 
-	buffer_free( gbuf );
+	osrf_buffer_free( gbuf );
 
 	osrfLogDebug( OSRF_LOG_MARK, "Child with max-requests=%d, num-served=%d exiting...[%ld]",
 		child->max_requests, i, (long) getpid());

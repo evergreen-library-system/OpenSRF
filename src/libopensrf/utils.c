@@ -264,10 +264,10 @@ char* va_list_to_string(const char* format, ...) {
 	the string will ever be.  However the guess doesn't have to accurate, because more
 	memory will be allocated as needed.
 
-	The calling code is responsible for freeing the growing_buffer by calling buffer_free()
-	or buffer_release().
+	The calling code is responsible for freeing the growing_buffer by calling osrf_buffer_free()
+	or osrf_buffer_release().
 */
-growing_buffer* buffer_init(int num_initial_bytes) {
+growing_buffer* osrf_buffer_init(int num_initial_bytes) {
 
 	if( num_initial_bytes > BUFFER_MAX_SIZE ) return NULL;
 
@@ -283,6 +283,10 @@ growing_buffer* buffer_init(int num_initial_bytes) {
 	return gb;
 }
 
+growing_buffer* buffer_init( int initial_num_bytes) {
+        return osrf_buffer_init(initial_num_bytes);
+}
+
 
 /**
 	@brief Allocate more memory for a growing_buffer.
@@ -293,7 +297,7 @@ growing_buffer* buffer_init(int num_initial_bytes) {
 	This function fails if it is asked to allocate BUFFER_MAX_SIZE
 	or more bytes.
 */
-static int buffer_expand( growing_buffer* gb, size_t total_len ) {
+static int osrf_buffer_expand( growing_buffer* gb, size_t total_len ) {
 
 	// We do not check to see if the buffer is already big enough.  It is the
 	//responsibility of the calling function to call this only when necessary.
@@ -303,7 +307,7 @@ static int buffer_expand( growing_buffer* gb, size_t total_len ) {
 	if( total_len >= BUFFER_MAX_SIZE ) {
 		fprintf(stderr, "Buffer reached MAX_SIZE of %lu",
 				(unsigned long) BUFFER_MAX_SIZE );
-		buffer_free( gb );
+		osrf_buffer_free( gb );
 		return 1;
 	}
 
@@ -330,6 +334,9 @@ static int buffer_expand( growing_buffer* gb, size_t total_len ) {
 	return 0;
 }
 
+static int buffer_expand( growing_buffer* gb, size_t total_len ) {
+	return osrf_buffer_expand(gb, total_len);
+}
 
 /**
 	@brief Append a formatted string to a growing_buffer.
@@ -341,27 +348,51 @@ static int buffer_expand( growing_buffer* gb, size_t total_len ) {
 	This function fails if either of the first two parameters is NULL,
 	or if the resulting string requires BUFFER_MAX_SIZE or more bytes.
 */
+int osrf_buffer_fadd(growing_buffer* gb, const char* format, ... ) {
+
+        if(!gb || !format) return -1;
+
+        long len = 0;
+        va_list args;
+        va_list a_copy;
+
+        va_copy(a_copy, args);
+
+        va_start(args, format);
+        len = va_list_size(format, args);
+
+        char buf[len];
+        osrf_clearbuf(buf, sizeof(buf));
+
+        va_start(a_copy, format);
+        vsnprintf(buf, len - 1, format, a_copy);
+        va_end(a_copy);
+
+        return osrf_buffer_add(gb, buf);
+}
+
+/* Just repeating this wholesale because varargs is *handwave* unhappy *handwave* about something. */
 int buffer_fadd(growing_buffer* gb, const char* format, ... ) {
 
-	if(!gb || !format) return -1; 
+        if(!gb || !format) return -1;
 
-	long len = 0;
-	va_list args;
-	va_list a_copy;
+        long len = 0;
+        va_list args;
+        va_list a_copy;
 
-	va_copy(a_copy, args);
+        va_copy(a_copy, args);
 
-	va_start(args, format);
-	len = va_list_size(format, args);
+        va_start(args, format);
+        len = va_list_size(format, args);
 
-	char buf[len];
-	osrf_clearbuf(buf, sizeof(buf));
+        char buf[len];
+        osrf_clearbuf(buf, sizeof(buf));
 
-	va_start(a_copy, format);
-	vsnprintf(buf, len - 1, format, a_copy);
-	va_end(a_copy);
+        va_start(a_copy, format);
+        vsnprintf(buf, len - 1, format, a_copy);
+        va_end(a_copy);
 
-	return buffer_add(gb, buf);
+        return osrf_buffer_add(gb, buf);
 }
 
 
@@ -371,7 +402,7 @@ int buffer_fadd(growing_buffer* gb, const char* format, ... ) {
 	@param data A pointer to the string to be appended.
 	@return If successful, the length of the resulting string; or if not, -1.
 */
-int buffer_add(growing_buffer* gb, const char* data) {
+int osrf_buffer_add(growing_buffer* gb, const char* data) {
 	if(!(gb && data)) return -1;
 
 	int data_len = strlen( data );
@@ -381,13 +412,17 @@ int buffer_add(growing_buffer* gb, const char* data) {
 	int total_len = data_len + gb->n_used;
 
 	if( total_len >= gb->size ) {
-		if( buffer_expand( gb, total_len ) )
+		if( osrf_buffer_expand( gb, total_len ) )
 			return -1;
 	}
 
 	strcpy( gb->buf + gb->n_used, data );
 	gb->n_used = total_len;
 	return total_len;
+}
+
+int buffer_add(growing_buffer* gb, const char* c) {
+        return osrf_buffer_add(gb, c);
 }
 
 /**
@@ -400,7 +435,7 @@ int buffer_add(growing_buffer* gb, const char* data) {
 	If the characters to be appended include an embedded nul byte, it will be appended
 	along with the others.  The results are likely to be unpleasant.
 */
-int buffer_add_n(growing_buffer* gb, const char* data, size_t n) {
+int osrf_buffer_add_n(growing_buffer* gb, const char* data, size_t n) {
 	if(!(gb && data)) return -1;
 
 	if(n == 0) return 0;
@@ -408,7 +443,7 @@ int buffer_add_n(growing_buffer* gb, const char* data, size_t n) {
 	int total_len = n + gb->n_used;
 
 	if( total_len >= gb->size ) {
-		if( buffer_expand( gb, total_len ) )
+		if( osrf_buffer_expand( gb, total_len ) )
 			return -1;
 	}
 
@@ -418,19 +453,26 @@ int buffer_add_n(growing_buffer* gb, const char* data, size_t n) {
 	return total_len;
 }
 
+int buffer_add_n(growing_buffer* gb, const char* data, size_t n) {
+        return osrf_buffer_add_n(gb, data, n);
+}
 
 /**
 	@brief Reset a growing_buffer so that it contains an empty string.
 	@param gb A pointer to the growing_buffer.
 	@return 0 if successful, -1 if not.
 */
-int buffer_reset( growing_buffer *gb){
+int osrf_buffer_reset( growing_buffer *gb){
 	if( gb == NULL ) { return -1; }
 	if( gb->buf == NULL ) { return -1; }
 	osrf_clearbuf( gb->buf, gb->size );
 	gb->n_used = 0;
 	gb->buf[ 0 ] = '\0';
 	return gb->n_used;
+}
+
+int buffer_reset( growing_buffer* gb) {
+        return osrf_buffer_reset(gb);
 }
 
 /**
@@ -440,14 +482,18 @@ int buffer_reset( growing_buffer *gb){
 
 	The calling code is responsible for freeing the string.
 
-	This function is equivalent to buffer_data() followed by buffer_free().  However
+	This function is equivalent to osrf_buffer_data() followed by osrf_buffer_free().  However
 	it is more efficient, because it avoids calls to strudup and free().
 */
-char* buffer_release( growing_buffer* gb) {
+char* osrf_buffer_release( growing_buffer* gb) {
 	char* s = gb->buf;
 	s[gb->n_used] = '\0';
 	free( gb );
 	return s;
+}
+
+char* buffer_release( growing_buffer* gb ) {
+        return osrf_buffer_release(gb);
 }
 
 /**
@@ -455,12 +501,16 @@ char* buffer_release( growing_buffer* gb) {
 	@param gb A pointer to the growing_buffer.
 	@return 1 if successful, or 0 if not (because the input parameter is NULL).
 */
-int buffer_free( growing_buffer* gb ) {
+int osrf_buffer_free( growing_buffer* gb ) {
 	if( gb == NULL )
 		return 0;
 	free( gb->buf );
 	free( gb );
 	return 1;
+}
+
+int buffer_free( growing_buffer* gb ) {
+        return osrf_buffer_free(gb);
 }
 
 /**
@@ -472,8 +522,12 @@ int buffer_free( growing_buffer* gb ) {
 
 	The calling code is responsible for freeing the string.
 */
-char* buffer_data( const growing_buffer *gb) {
+char* osrf_buffer_data( const growing_buffer *gb) {
 	return strdup( gb->buf );
+}
+
+char* buffer_data( const growing_buffer* gb) {
+        return osrf_buffer_data(gb);
 }
 
 /**
@@ -481,7 +535,7 @@ char* buffer_data( const growing_buffer *gb) {
 	@param gb A pointer to the growing_buffer.
 	@return The character removed (or a nul byte if the string is already empty).
 */
-char buffer_chomp(growing_buffer* gb) {
+char osrf_buffer_chomp(growing_buffer* gb) {
 	char c = '\0';
     if(gb && gb->n_used > 0) {
 	    gb->n_used--;
@@ -491,6 +545,9 @@ char buffer_chomp(growing_buffer* gb) {
     return c;
 }
 
+char buffer_chomp(growing_buffer* gb) {
+        return osrf_buffer_chomp(gb);
+}
 
 /**
 	@brief Append a single character to a growing_buffer.
@@ -501,13 +558,13 @@ char buffer_chomp(growing_buffer* gb) {
 	If the character appended is a nul byte it will still be appended as if
 	it were a normal character.  The results are likely to be unpleasant.
 */
-int buffer_add_char(growing_buffer* gb, char c ) {
+int osrf_buffer_add_char(growing_buffer* gb, char c ) {
 	if(gb && gb->buf) {
 
 		int total_len = gb->n_used + 1;
 
 		if( total_len >= gb->size ) {
-			if( buffer_expand( gb, total_len ) )
+			if( osrf_buffer_expand( gb, total_len ) )
 				return -1;
 		}
 	
@@ -518,6 +575,9 @@ int buffer_add_char(growing_buffer* gb, char c ) {
 		return 0;
 }
 
+int buffer_add_char(growing_buffer* gb, char c) {
+        return osrf_buffer_add_char(gb, c);
+}
 
 /**
 	@brief Translate a UTF8 string into escaped ASCII, suitable for JSON.
@@ -527,7 +587,7 @@ int buffer_add_char(growing_buffer* gb, char c ) {
 		special characters.
 	@return A pointer to the translated version of the string.
 
-	Deprecated.  Use buffer_append_utf8() instead.
+	Deprecated.  Use osrf_buffer_append_utf8() instead.
 
 	If full_escape is non-zero, the translation will escape certain
 	certain characters with a backslash, according to the conventions
@@ -547,7 +607,7 @@ char* uescape( const char* string, int size, int full_escape ) {
 	if( NULL == string )
 		return NULL;
 	
-	growing_buffer* buf = buffer_init(size + 64);
+	growing_buffer* buf = osrf_buffer_init(size + 64);
 	int clen = 0;
 	int idx = 0;
 	unsigned long int c = 0x0;
@@ -581,10 +641,10 @@ char* uescape( const char* string, int size, int full_escape ) {
 
 				}
 
-				buffer_fadd(buf, "\\u%04x", c);
+				osrf_buffer_fadd(buf, "\\u%04x", c);
 
 			} else {
-				buffer_free(buf);
+				osrf_buffer_free(buf);
 				return NULL;
 			}
 
@@ -630,7 +690,7 @@ char* uescape( const char* string, int size, int full_escape ) {
 						break;
 
 					default:
-						if( c < 32 ) buffer_fadd(buf, "\\u%04x", c);
+						if( c < 32 ) osrf_buffer_fadd(buf, "\\u%04x", c);
 						else OSRF_BUFFER_ADD_CHAR(buf, c);
 				}
 
@@ -642,7 +702,7 @@ char* uescape( const char* string, int size, int full_escape ) {
 		idx++;
 	}
 
-	return buffer_release(buf);
+	return osrf_buffer_release(buf);
 }
 
 

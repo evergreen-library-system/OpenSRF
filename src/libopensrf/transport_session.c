@@ -126,23 +126,23 @@ transport_session* init_transport( const char* server,
 	session->component = component;
 
 	/* initialize the data buffers */
-	session->body_buffer        = buffer_init( JABBER_BODY_BUFSIZE );
-	session->subject_buffer     = buffer_init( JABBER_SUBJECT_BUFSIZE );
-	session->thread_buffer      = buffer_init( JABBER_THREAD_BUFSIZE );
-	session->from_buffer        = buffer_init( JABBER_JID_BUFSIZE );
-	session->status_buffer      = buffer_init( JABBER_STATUS_BUFSIZE );
-	session->recipient_buffer   = buffer_init( JABBER_JID_BUFSIZE );
-	session->message_error_type = buffer_init( JABBER_JID_BUFSIZE );
-	session->session_id         = buffer_init( 64 );
+	session->body_buffer        = osrf_buffer_init( JABBER_BODY_BUFSIZE );
+	session->subject_buffer     = osrf_buffer_init( JABBER_SUBJECT_BUFSIZE );
+	session->thread_buffer      = osrf_buffer_init( JABBER_THREAD_BUFSIZE );
+	session->from_buffer        = osrf_buffer_init( JABBER_JID_BUFSIZE );
+	session->status_buffer      = osrf_buffer_init( JABBER_STATUS_BUFSIZE );
+	session->recipient_buffer   = osrf_buffer_init( JABBER_JID_BUFSIZE );
+	session->message_error_type = osrf_buffer_init( JABBER_JID_BUFSIZE );
+	session->session_id         = osrf_buffer_init( 64 );
 
 	session->message_error_code = 0;
 
 	/* for OpenSRF extensions */
-	session->router_to_buffer   = buffer_init( JABBER_JID_BUFSIZE );
-	session->router_from_buffer = buffer_init( JABBER_JID_BUFSIZE );
-	session->osrf_xid_buffer    = buffer_init( JABBER_JID_BUFSIZE );
-	session->router_class_buffer    = buffer_init( JABBER_JID_BUFSIZE );
-	session->router_command_buffer  = buffer_init( JABBER_JID_BUFSIZE );
+	session->router_to_buffer   = osrf_buffer_init( JABBER_JID_BUFSIZE );
+	session->router_from_buffer = osrf_buffer_init( JABBER_JID_BUFSIZE );
+	session->osrf_xid_buffer    = osrf_buffer_init( JABBER_JID_BUFSIZE );
+	session->router_class_buffer    = osrf_buffer_init( JABBER_JID_BUFSIZE );
+	session->router_command_buffer  = osrf_buffer_init( JABBER_JID_BUFSIZE );
 
 	session->router_broadcast   = 0;
 
@@ -227,19 +227,19 @@ int session_discard( transport_session* session ) {
 	xmlDictCleanup();
 	xmlCleanupParser();
 
-	buffer_free(session->body_buffer);
-	buffer_free(session->subject_buffer);
-	buffer_free(session->thread_buffer);
-	buffer_free(session->from_buffer);
-	buffer_free(session->recipient_buffer);
-	buffer_free(session->status_buffer);
-	buffer_free(session->message_error_type);
-	buffer_free(session->router_to_buffer);
-	buffer_free(session->router_from_buffer);
-	buffer_free(session->osrf_xid_buffer);
-	buffer_free(session->router_class_buffer);
-	buffer_free(session->router_command_buffer);
-	buffer_free(session->session_id);
+	osrf_buffer_free(session->body_buffer);
+	osrf_buffer_free(session->subject_buffer);
+	osrf_buffer_free(session->thread_buffer);
+	osrf_buffer_free(session->from_buffer);
+	osrf_buffer_free(session->recipient_buffer);
+	osrf_buffer_free(session->status_buffer);
+	osrf_buffer_free(session->message_error_type);
+	osrf_buffer_free(session->router_to_buffer);
+	osrf_buffer_free(session->router_from_buffer);
+	osrf_buffer_free(session->osrf_xid_buffer);
+	osrf_buffer_free(session->router_class_buffer);
+	osrf_buffer_free(session->router_command_buffer);
+	osrf_buffer_free(session->session_id);
 
 	free(session->server);
 	free(session->unix_path);
@@ -422,7 +422,7 @@ int session_connect( transport_session* session,
 		/* server acknowledges our existence, now see if we can login */
 		if( session->state_machine->connecting == CONNECTING_2 ) {
 
-			int ss = buffer_length( session->session_id ) + strlen( password ) + 5;
+			int ss = osrf_buffer_length( session->session_id ) + strlen( password ) + 5;
 			char hashstuff[ss];
 			snprintf( hashstuff, sizeof(hashstuff), "%s%s",
 					OSRF_BUFFER_C_STR( session->session_id ), password );
@@ -485,7 +485,7 @@ int session_connect( transport_session* session,
 
 		} else if( auth_type == AUTH_DIGEST ) {
 
-			int ss = buffer_length( session->session_id ) + strlen( password ) + 5;
+			int ss = osrf_buffer_length( session->session_id ) + strlen( password ) + 5;
 			char hashstuff[ss];
 			snprintf( hashstuff, sizeof(hashstuff), "%s%s", OSRF_BUFFER_C_STR( session->session_id ), password );
 
@@ -571,8 +571,8 @@ static void startElementHandler(
 
 	if( strcmp( (char*) name, "message" ) == 0 ) {
 		ses->state_machine->in_message = 1;
-		buffer_add( ses->from_buffer, get_xml_attr( atts, "from" ) );
-		buffer_add( ses->recipient_buffer, get_xml_attr( atts, "to" ) );
+		osrf_buffer_add( ses->from_buffer, get_xml_attr( atts, "from" ) );
+		osrf_buffer_add( ses->recipient_buffer, get_xml_attr( atts, "to" ) );
 
 		return;
 	}
@@ -580,11 +580,11 @@ static void startElementHandler(
 	if( ses->state_machine->in_message ) {
 
 		if( strcmp( (char*) name, "opensrf" ) == 0 ) {
-			buffer_add( ses->router_from_buffer, get_xml_attr( atts, "router_from" ) );
-			buffer_add( ses->osrf_xid_buffer, get_xml_attr( atts, "osrf_xid" ) );
-			buffer_add( ses->router_to_buffer, get_xml_attr( atts, "router_to" ) );
-			buffer_add( ses->router_class_buffer, get_xml_attr( atts, "router_class" ) );
-			buffer_add( ses->router_command_buffer, get_xml_attr( atts, "router_command" ) );
+			osrf_buffer_add( ses->router_from_buffer, get_xml_attr( atts, "router_from" ) );
+			osrf_buffer_add( ses->osrf_xid_buffer, get_xml_attr( atts, "osrf_xid" ) );
+			osrf_buffer_add( ses->router_to_buffer, get_xml_attr( atts, "router_to" ) );
+			osrf_buffer_add( ses->router_class_buffer, get_xml_attr( atts, "router_class" ) );
+			osrf_buffer_add( ses->router_command_buffer, get_xml_attr( atts, "router_command" ) );
 			const char* broadcast = get_xml_attr( atts, "broadcast" );
 			if( broadcast )
 				ses->router_broadcast = atoi( broadcast );
@@ -611,8 +611,8 @@ static void startElementHandler(
 
 	if( strcmp( (char*) name, "presence" ) == 0 ) {
 		ses->state_machine->in_presence = 1;
-		buffer_add( ses->from_buffer, get_xml_attr( atts, "from" ) );
-		buffer_add( ses->recipient_buffer, get_xml_attr( atts, "to" ) );
+		osrf_buffer_add( ses->from_buffer, get_xml_attr( atts, "from" ) );
+		osrf_buffer_add( ses->recipient_buffer, get_xml_attr( atts, "to" ) );
 		return;
 	}
 
@@ -634,7 +634,7 @@ static void startElementHandler(
 	if( strcmp( (char*) name, "stream:stream" ) == 0 ) {
 		if( ses->state_machine->connecting == CONNECTING_1 ) {
 			ses->state_machine->connecting = CONNECTING_2;
-			buffer_add( ses->session_id, get_xml_attr(atts, "id") );
+			osrf_buffer_add( ses->session_id, get_xml_attr(atts, "id") );
 		}
 		return;
 	}
@@ -648,7 +648,7 @@ static void startElementHandler(
 
 	if( strcmp( (char*) name, "error" ) == 0 ) {
 		ses->state_machine->in_message_error = 1;
-		buffer_add( ses->message_error_type, get_xml_attr( atts, "type" ) );
+		osrf_buffer_add( ses->message_error_type, get_xml_attr( atts, "type" ) );
 		ses->message_error_code = atoi( get_xml_attr( atts, "code" ) );
 		osrfLogInfo( OSRF_LOG_MARK, "Received <error> message with type %s and code %d",
 			OSRF_BUFFER_C_STR( ses->message_error_type ), ses->message_error_code );
@@ -850,21 +850,21 @@ static void characterHandler(
 	if( machine->in_message ) {
 
 		if( machine->in_message_body ) {
-			buffer_add_n( ses->body_buffer, p, len );
+			osrf_buffer_add_n( ses->body_buffer, p, len );
 		}
 
 		if( machine->in_subject ) {
-			buffer_add_n( ses->subject_buffer, p, len );
+			osrf_buffer_add_n( ses->subject_buffer, p, len );
 		}
 
 		if( machine->in_thread ) {
-			buffer_add_n( ses->thread_buffer, p, len );
+			osrf_buffer_add_n( ses->thread_buffer, p, len );
 		}
 	}
 
 	/* set the presence status */
 	if( machine->in_presence && ses->state_machine->in_status ) {
-		buffer_add_n( ses->status_buffer, p, len );
+		osrf_buffer_add_n( ses->status_buffer, p, len );
 	}
 
 	if( machine->in_error ) {

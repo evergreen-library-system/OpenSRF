@@ -56,6 +56,7 @@ int is__utf8( int c );
 // Translate a string, escaping as needed, and append the
 // result to a growing_buffer
 
+int osrf_buffer_append_utf8( growing_buffer* buf, const char* string );
 int buffer_append_utf8( growing_buffer* buf, const char* string );
 
 #ifdef __cplusplus

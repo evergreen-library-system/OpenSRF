@@ -98,7 +98,7 @@ extern "C" {
 			if( _tl < _gb->size ) {\
 				strcpy( _gb->buf + _gb->n_used, _data ); \
 				_gb->n_used = _tl; \
-			} else { buffer_add(_gb, _data); }\
+			} else { osrf_buffer_add(_gb, _data); }\
 		}\
 	} while(0)
 
@@ -119,7 +119,7 @@ extern "C" {
 				memcpy( gb__->buf + gb__->n_used, data__, n__ ); \
 				gb__->buf[tl__] = '\0'; \
 				gb__->n_used = tl__; \
-} else { buffer_add_n(gb__, data__, n__); }\
+} else { osrf_buffer_add_n(gb__, data__, n__); }\
 }\
 } while(0)
 
@@ -313,8 +313,22 @@ typedef struct growing_buffer_struct growing_buffer;
 	@brief The length of the string stored by a growing_buffer.
 	@param x A pointer to the growing buffer.
 */
+#define osrf_buffer_length(x) (x)->n_used
 #define buffer_length(x) (x)->n_used
 
+growing_buffer* osrf_buffer_init( int initial_num_bytes);
+
+int osrf_buffer_add(growing_buffer* gb, const char* c);
+int osrf_buffer_add_n(growing_buffer* gb, const char* data, size_t n);
+int osrf_buffer_fadd(growing_buffer* gb, const char* format, ... );
+int osrf_buffer_reset( growing_buffer* gb);
+char* osrf_buffer_data( const growing_buffer* gb);
+char* osrf_buffer_release( growing_buffer* gb );
+int osrf_buffer_free( growing_buffer* gb );
+int osrf_buffer_add_char(growing_buffer* gb, char c);
+char osrf_buffer_chomp(growing_buffer* gb); // removes the last character from the buffer
+
+// Add legacy exports for the above to avoid name collision issues on Ubuntu with mod_shib installed.
 growing_buffer* buffer_init( int initial_num_bytes);
 
 int buffer_add(growing_buffer* gb, const char* c);

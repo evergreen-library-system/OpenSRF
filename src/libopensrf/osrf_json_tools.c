@@ -32,7 +32,7 @@ static void append_indentation( growing_buffer* buf, int depth ) {
 	size_t n = 2 * depth;
 	char indent[ n ];
 	memset( indent, ' ', n );
-	buffer_add_n( buf, indent, n );
+	osrf_buffer_add_n( buf, indent, n );
 }
 
 /**
@@ -53,7 +53,7 @@ static void append_indentation( growing_buffer* buf, int depth ) {
 char* jsonFormatString( const char* string ) {
 	if( !string ) return strdup( "" );
 
-	growing_buffer* buf = buffer_init( 64 );
+	growing_buffer* buf = osrf_buffer_init( 64 );
 	int i;
 	int depth = 0;
 	int in_quote = 0;   // boolean; true if in a string literal
@@ -112,7 +112,7 @@ char* jsonFormatString( const char* string ) {
 		}
 	}
 
-    return buffer_release( buf );
+    return osrf_buffer_release( buf );
 }
 
 
