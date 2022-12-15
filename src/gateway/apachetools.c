@@ -6,7 +6,7 @@ osrfStringArray* apacheParseParms(request_rec* r) {
 
 	char* arg = NULL;
 	apr_pool_t *p = r->pool;	/* memory pool */
-	growing_buffer* buffer = buffer_init(1025);
+	growing_buffer* buffer = osrf_buffer_init(1025);
 
 	/* gather the post args and append them to the url query string */
 	if( !strcmp(r->method,"POST") ) {
@@ -21,7 +21,7 @@ osrfStringArray* apacheParseParms(request_rec* r) {
 			/* Start with url query string, if any */
 			
 			if(r->args && r->args[0])
-				buffer_add(buffer, r->args);
+				osrf_buffer_add(buffer, r->args);
 
 			char body[1025];
 
@@ -39,7 +39,7 @@ osrfStringArray* apacheParseParms(request_rec* r) {
 				}
 
 				body[bread] = '\0';
-				buffer_add( buffer, body );
+				osrf_buffer_add( buffer, body );
 
 				osrfLogDebug(OSRF_LOG_MARK, 
 					"gateway read %ld bytes: %d bytes of data so far", bread, buffer->n_used);
@@ -47,7 +47,7 @@ osrfStringArray* apacheParseParms(request_rec* r) {
 				if(buffer->n_used > APACHE_TOOLS_MAX_POST_SIZE) {
 					osrfLogError(OSRF_LOG_MARK, "gateway received POST larger "
 						"than %d bytes. dropping request", APACHE_TOOLS_MAX_POST_SIZE);
-					buffer_free(buffer);
+					osrf_buffer_free(buffer);
 					return NULL;
 				}
 			}
@@ -58,7 +58,7 @@ osrfStringArray* apacheParseParms(request_rec* r) {
 	} else { /* GET */
 
         if(r->args && r->args[0])
-            buffer_add(buffer, r->args);
+            osrf_buffer_add(buffer, r->args);
     }
 
 
@@ -66,7 +66,7 @@ osrfStringArray* apacheParseParms(request_rec* r) {
         arg = apr_pstrdup(p, buffer->buf);
     else
         arg = NULL; 
-    buffer_free(buffer);
+    osrf_buffer_free(buffer);
 
 	if( !arg || !arg[0] ) { /* we received no request */
 		return NULL;

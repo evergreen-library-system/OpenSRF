@@ -669,14 +669,14 @@ static int flush_responses( osrfAppSession* ses, growing_buffer* outbuf ) {
 	osrf_app_session_queue_wait( ses, 0, NULL );
 
 	int rc = 0;
-	if( buffer_length( outbuf ) > 0 ) {    // If there's anything to send...
-		buffer_add_char( outbuf, ']' );    // Close the JSON array
+	if( osrf_buffer_length( outbuf ) > 0 ) {    // If there's anything to send...
+		osrf_buffer_add_char( outbuf, ']' );    // Close the JSON array
 		if( osrfSendTransportPayload( ses, OSRF_BUFFER_C_STR( ses->outbuf ))) {
 			osrfLogError( OSRF_LOG_MARK, "Unable to flush response buffer" );
 			rc = -1;
 		}
 	}
-	buffer_reset( ses->outbuf );
+	osrf_buffer_reset( ses->outbuf );
 	return rc;
 }
 
@@ -692,9 +692,9 @@ static int flush_responses( osrfAppSession* ses, growing_buffer* outbuf ) {
 */
 static inline void append_msg( growing_buffer* outbuf, const char* msg ) {
 	if( outbuf && msg ) {
-		char prefix = buffer_length( outbuf ) > 0 ? ',' : '[';
-		buffer_add_char( outbuf, prefix );
-		buffer_add( outbuf, msg );
+		char prefix = osrf_buffer_length( outbuf ) > 0 ? ',' : '[';
+		osrf_buffer_add_char( outbuf, prefix );
+		osrf_buffer_add( outbuf, msg );
 	}
 }
 
@@ -771,7 +771,7 @@ static int _osrfAppRespond( osrfMethodContext* ctx, const jsonObject* data, int 
                 osrfMessageFree( msg );
 
                 // If the new message would overflow the buffer, flush the output buffer first
-                int len_so_far = buffer_length( ctx->session->outbuf );
+                int len_so_far = osrf_buffer_length( ctx->session->outbuf );
                 if( len_so_far && (strlen( json ) + len_so_far + 3 >= ctx->method->max_bundle_size )) {
                     if( flush_responses( ctx->session, ctx->session->outbuf ))
                         return -1;

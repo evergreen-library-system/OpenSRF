@@ -204,18 +204,18 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 
 
 	if (param_locale) {
-		growing_buffer* osrf_locale_buf = buffer_init(16);
+		growing_buffer* osrf_locale_buf = osrf_buffer_init(16);
 		if (index(param_locale, ',')) {
 			int ind = index(param_locale, ',') - param_locale;
 			int i;
 			for ( i = 0; i < ind && i < 128; i++ )
-				buffer_add_char( osrf_locale_buf, param_locale[i] );
+				osrf_buffer_add_char( osrf_locale_buf, param_locale[i] );
 		} else {
-			buffer_add( osrf_locale_buf, param_locale );
+			osrf_buffer_add( osrf_locale_buf, param_locale );
 		}
 
 		free(param_locale);
-		osrf_locale = buffer_release( osrf_locale_buf );
+		osrf_locale = osrf_buffer_release( osrf_locale_buf );
 	} else {
 		osrf_locale = strdup( osrf_json_default_locale );
 	}
@@ -292,12 +292,12 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		/* log all requests to the activity log */
 		const char* authtoken = apr_table_get(r->headers_in, "X-OILS-Authtoken");
 		if(!authtoken) authtoken = "";
-		growing_buffer* act = buffer_init(128);
+		growing_buffer* act = osrf_buffer_init(128);
 #ifdef APACHE_MIN_24
-		buffer_fadd(act, "[%s] [%s] [%s] %s %s", r->connection->client_ip,
+		osrf_buffer_fadd(act, "[%s] [%s] [%s] %s %s", r->connection->client_ip,
 			authtoken, osrf_locale, service, method );
 #else
-		buffer_fadd(act, "[%s] [%s] [%s] %s %s", r->connection->remote_ip,
+		osrf_buffer_fadd(act, "[%s] [%s] [%s] %s %s", r->connection->remote_ip,
 			authtoken, osrf_locale, service, method );
 #endif
 
@@ -311,22 +311,22 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 			}
 		}
 		if(redact_params) {
-			OSRF_BUFFER_ADD(act, " **PARAMS REDACTED**");
+			osrf_buffer_add(act, " **PARAMS REDACTED**");
 		} else {
 			i = 0;
 			while( (str = osrfStringArrayGetString(mparams, i++)) ) {
 				if( i == 1 ) {
-					OSRF_BUFFER_ADD(act, " ");
-					OSRF_BUFFER_ADD(act, str);
+					osrf_buffer_add(act, " ");
+					osrf_buffer_add(act, str);
 				} else {
-					OSRF_BUFFER_ADD(act, ", ");
-					OSRF_BUFFER_ADD(act, str);
+					osrf_buffer_add(act, ", ");
+					osrf_buffer_add(act, str);
 				}
 			}
 		}
 
 		osrfLogActivity( OSRF_LOG_MARK, "%s", act->buf );
-		buffer_free(act);
+		osrf_buffer_free(act);
 		/* ----------------------------------------------------------------- */
 
 
@@ -392,24 +392,24 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 			/* add a debug field if the request died */
 			ap_log_rerror( APLOG_MARK, APLOG_INFO, 0, r,
 					"OpenSRF JSON Request returned error: %s -> %s", statusname, statustext );
-			growing_buffer* buf = buffer_init(512);
+			growing_buffer* buf = osrf_buffer_init(512);
 
 			if (isXML)
-				buffer_fadd(buf, "<debug>\"%s : %s\"</debug>", statusname, statustext);
+				osrf_buffer_fadd(buf, "<debug>\"%s : %s\"</debug>", statusname, statustext);
 
 			else {
-				buffer_fadd(buf, "%s : %s", statusname, statustext);
+				osrf_buffer_fadd(buf, "%s : %s", statusname, statustext);
 				jsonObject* tmp = jsonNewObject(buf->buf);
 				char* j = jsonToStringFunc(tmp);
-				buffer_reset(buf);
-				buffer_fadd(buf, ",\"debug\": %s", j);
+				osrf_buffer_reset(buf);
+				osrf_buffer_fadd(buf, ",\"debug\": %s", j);
 				free(j);
 				jsonObjectFree(tmp);
 			}
 
 			ap_rputs(buf->buf, r);
 
-			buffer_free(buf);
+			osrf_buffer_free(buf);
 			free(statusname);
 			free(statustext);
 		}

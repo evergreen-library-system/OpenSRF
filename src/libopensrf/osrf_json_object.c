@@ -512,7 +512,7 @@ static void add_json_to_buffer( const jsonObject* obj,
 			OSRF_BUFFER_ADD( buf, JSON_DATA_KEY );
 			OSRF_BUFFER_ADD( buf, "\":" );
 			add_json_to_buffer( obj, buf, 1, 1 );
-			buffer_add_char( buf, '}' );
+			osrf_buffer_add_char( buf, '}' );
 			return;
 		}
 	}
@@ -536,7 +536,7 @@ static void add_json_to_buffer( const jsonObject* obj,
 
 		case JSON_STRING:
 			OSRF_BUFFER_ADD_CHAR(buf, '"');
-			buffer_append_utf8(buf, obj->value.s);
+			osrf_buffer_append_utf8(buf, obj->value.s);
 			OSRF_BUFFER_ADD_CHAR(buf, '"');
 			break;
 			
@@ -564,7 +564,7 @@ static void add_json_to_buffer( const jsonObject* obj,
 			while( (item = osrfHashIteratorNext(itr)) ) {
 				if(i++ > 0) OSRF_BUFFER_ADD_CHAR(buf, ',');
 				OSRF_BUFFER_ADD_CHAR(buf, '"');
-				buffer_append_utf8(buf, osrfHashIteratorKey(itr));
+				osrf_buffer_append_utf8(buf, osrfHashIteratorKey(itr));
 				OSRF_BUFFER_ADD(buf, "\":");
 				add_json_to_buffer( item, buf, do_classname, second_pass );
 			}
@@ -585,9 +585,9 @@ static void add_json_to_buffer( const jsonObject* obj,
 */
 char* jsonObjectToJSONRaw( const jsonObject* obj ) {
 	if(!obj) return NULL;
-	growing_buffer* buf = buffer_init(32);
+	growing_buffer* buf = osrf_buffer_init(32);
 	add_json_to_buffer( obj, buf, 0, 0 );
-	return buffer_release( buf );
+	return osrf_buffer_release( buf );
 }
 
 /**
@@ -603,9 +603,9 @@ char* jsonObjectToJSONRaw( const jsonObject* obj ) {
  */
 char* jsonObjectToJSON( const jsonObject* obj ) {
 	if(!obj) return NULL;
-	growing_buffer* buf = buffer_init(32);
+	growing_buffer* buf = osrf_buffer_init(32);
 	add_json_to_buffer( obj, buf, 1, 0 );
-	return buffer_release( buf );
+	return osrf_buffer_release( buf );
 }
 
 /**
@@ -1162,7 +1162,7 @@ int jsonIsNumeric( const char* s ) {
 char* jsonScrubNumber( const char* s ) {
 	if( !s || !*s ) return NULL;
 
-	growing_buffer* buf = buffer_init( 64 );
+	growing_buffer* buf = osrf_buffer_init( 64 );
 
 	// Skip leading white space, if present
 
@@ -1172,7 +1172,7 @@ char* jsonScrubNumber( const char* s ) {
 
 	if( '-' == *s )
 	{
-		buffer_add_char( buf, '-' );
+		osrf_buffer_add_char( buf, '-' );
 		++s;
 	}
 	else if( '+' == *s )
@@ -1181,7 +1181,7 @@ char* jsonScrubNumber( const char* s ) {
 	if( '\0' == *s ) {
 		// No digits found
 
-		buffer_free( buf );
+		osrf_buffer_free( buf );
 		return NULL;
 	}
 	// Skip any leading zeros
@@ -1194,12 +1194,12 @@ char* jsonScrubNumber( const char* s ) {
 	int left_digit = 0;  // boolean
 
 	if( isdigit( (unsigned char) *s ) ) {
-		buffer_add_char( buf, *s++ );
+		osrf_buffer_add_char( buf, *s++ );
 		left_digit = 1;
 	}
 	
 	while( isdigit( (unsigned char) *s  ) )
-		buffer_add_char( buf, *s++ );
+		osrf_buffer_add_char( buf, *s++ );
 
 	// Now we expect to see a decimal point,
 	// an exponent, or end-of-string.
@@ -1213,22 +1213,22 @@ char* jsonScrubNumber( const char* s ) {
 			// Add a single leading zero, if we need to
 
 			if( ! left_digit )
-				buffer_add_char( buf, '0' );
-			buffer_add_char( buf, '.' );
+				osrf_buffer_add_char( buf, '0' );
+			osrf_buffer_add_char( buf, '.' );
 			++s;
 
 			if( ! left_digit && ! isdigit( (unsigned char) *s ) )
 			{
 				// No digits on either side of decimal
 
-				buffer_free( buf );
+				osrf_buffer_free( buf );
 				return NULL;
 			}
 
 			// Collect digits to right of decimal
 
 			while( isdigit( (unsigned char) *s ) )
-				buffer_add_char( buf, *s++ );
+				osrf_buffer_add_char( buf, *s++ );
 
 			break;
 		}
@@ -1240,46 +1240,46 @@ char* jsonScrubNumber( const char* s ) {
 			// to its left
 
 			if( ! left_digit )
-				buffer_add_char( buf, '1' );
+				osrf_buffer_add_char( buf, '1' );
 			break;
 		default :
 
 			// Unexpected character; bail out
 
-			buffer_free( buf );
+			osrf_buffer_free( buf );
 			return NULL;
 	}
 
 	if( '\0' == *s )    // Are we done yet?
-		return buffer_release( buf );
+		return osrf_buffer_release( buf );
 
 	if( 'e' != *s && 'E' != *s ) {
 
 		// Unexpected character: bail out
 
-		buffer_free( buf );
+		osrf_buffer_free( buf );
 		return NULL;
 	}
 
 	// We have an exponent.  Load the e or E,
 	// and the sign if there is one.
 
-	buffer_add_char( buf, *s++ );
+	osrf_buffer_add_char( buf, *s++ );
 
 	if( '+' == *s || '-' == *s )
-		buffer_add_char( buf, *s++ );
+		osrf_buffer_add_char( buf, *s++ );
 
 	// Collect digits of the exponent
 
 	while( isdigit( (unsigned char) *s ) )
-		buffer_add_char( buf, *s++ );
+		osrf_buffer_add_char( buf, *s++ );
 
 	// There better not be anything left
 
 	if( *s ) {
-		buffer_free( buf );
+		osrf_buffer_free( buf );
 		return NULL;
 	}
 
-	return buffer_release( buf );
+	return osrf_buffer_release( buf );
 }

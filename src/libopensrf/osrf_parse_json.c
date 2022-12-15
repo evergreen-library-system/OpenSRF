@@ -149,7 +149,7 @@ static jsonObject* parse_it( const char* s, int decode ) {
 		obj = NULL;
 	}
 
-	buffer_free( parser.str_buf );
+	osrf_buffer_free( parser.str_buf );
 	return obj;
 }
 
@@ -219,9 +219,9 @@ static jsonObject* get_json_node( Parser* parser, char firstc ) {
 static const char* get_string( Parser* parser ) {
 
 	if( parser->str_buf )
-		buffer_reset( parser->str_buf );
+		osrf_buffer_reset( parser->str_buf );
 	else
-		parser->str_buf = buffer_init( 64 );
+		parser->str_buf = osrf_buffer_init( 64 );
 
 	growing_buffer* gb = parser->str_buf;
 
@@ -284,9 +284,9 @@ static const char* get_string( Parser* parser ) {
 static jsonObject* get_number( Parser* parser, char firstc ) {
 
 	if( parser->str_buf )
-		buffer_reset( parser->str_buf );
+		osrf_buffer_reset( parser->str_buf );
 	else
-		parser->str_buf = buffer_init( 64 );
+		parser->str_buf = osrf_buffer_init( 64 );
 
 	growing_buffer* gb = parser->str_buf;
 	OSRF_BUFFER_ADD_CHAR( gb, firstc );
@@ -309,7 +309,7 @@ static jsonObject* get_number( Parser* parser, char firstc ) {
 		}
 	}
 
-	char* s = buffer_data( gb );
+	char* s = osrf_buffer_data( gb );
 	if( ! jsonIsNumeric( s ) ) {
 		char* temp = jsonScrubNumber( s );
 		free( s );

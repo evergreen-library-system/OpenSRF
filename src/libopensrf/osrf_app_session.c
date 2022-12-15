@@ -103,7 +103,7 @@ static void _osrf_app_request_free( osrfAppRequest * req ) {
 		}
 
         if (req->part_response_buffer)
-            buffer_free(req->part_response_buffer);
+            osrf_buffer_free(req->part_response_buffer);
 
 		free( req );
 	}
@@ -128,7 +128,7 @@ static void _osrf_app_request_push_queue( osrfAppRequest* req, osrfMessage* resu
             // assume the max_chunk_size of the server matches ours for
             // buffer initialization,  since the setting will usually be 
             // a site-wide value.
-	        req->part_response_buffer = buffer_init(OSRF_MSG_CHUNK_SIZE + 1);
+	        req->part_response_buffer = osrf_buffer_init(OSRF_MSG_CHUNK_SIZE + 1);
         }
 
         const char* partial = jsonObjectGetString(result->_result_content);
@@ -138,7 +138,7 @@ static void _osrf_app_request_push_queue( osrfAppRequest* req, osrfMessage* resu
                 "adding %d bytes to response buffer", strlen(partial));
         
             // add the partial contents of the message to the buffer
-            buffer_add(req->part_response_buffer, partial);
+            osrf_buffer_add(req->part_response_buffer, partial);
         }
 
         // all done.  req and result are freed by the caller
@@ -160,7 +160,7 @@ static void _osrf_app_request_push_queue( osrfAppRequest* req, osrfMessage* resu
                 result, req->part_response_buffer->buf);
 
             // free string, keep the buffer
-            buffer_reset(req->part_response_buffer); 
+            osrf_buffer_reset(req->part_response_buffer); 
 
         } else {
             osrfLogDebug(OSRF_LOG_MARK, 
@@ -701,7 +701,7 @@ osrfAppSession* osrf_app_server_session_init(
 		session->request_hash[ i ] = NULL;
 
 	session->panic = 0;
-	session->outbuf = buffer_init( 4096 );
+	session->outbuf = osrf_buffer_init( 4096 );
 
 	_osrf_app_session_push_session( session );
 	return session;
@@ -1292,7 +1292,7 @@ void osrfAppSessionFree( osrfAppSession* session ){
 	}
 
 	if( session->outbuf )
-		buffer_free( session->outbuf );
+		osrf_buffer_free( session->outbuf );
 
 	free(session);
 }

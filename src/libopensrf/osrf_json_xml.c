@@ -237,10 +237,10 @@ char* jsonObjectToXML(const jsonObject* obj) {
 	if (!obj)
 		return strdup("<null/>");
 	
-	growing_buffer * res_xml = buffer_init(1024);
+	growing_buffer * res_xml = osrf_buffer_init(1024);
 
 	_recurse_jsonObjectToXML( obj, res_xml );
-	return buffer_release(res_xml);
+	return osrf_buffer_release(res_xml);
 
 }
 
@@ -254,9 +254,9 @@ int _recurse_jsonObjectToXML(const jsonObject* obj, growing_buffer* res_xml) {
 	if(obj->type == JSON_NULL) {
 
 		if (hint)
-			buffer_fadd(res_xml, "<null class_hint=\"%s\"/>",hint);
+			osrf_buffer_fadd(res_xml, "<null class_hint=\"%s\"/>",hint);
 		else
-			buffer_add(res_xml, "<null/>");
+			osrf_buffer_add(res_xml, "<null/>");
 
 	} else if(obj->type == JSON_BOOL) {
 
@@ -267,18 +267,18 @@ int _recurse_jsonObjectToXML(const jsonObject* obj, growing_buffer* res_xml) {
 			bool_val = "false";
 
 		if (hint)
-			buffer_fadd(res_xml, "<boolean value=\"%s\" class_hint=\"%s\"/>", bool_val, hint);
+			osrf_buffer_fadd(res_xml, "<boolean value=\"%s\" class_hint=\"%s\"/>", bool_val, hint);
 		else
-			buffer_fadd(res_xml, "<boolean value=\"%s\"/>", bool_val);
+			osrf_buffer_fadd(res_xml, "<boolean value=\"%s\"/>", bool_val);
 
 	} else if (obj->type == JSON_STRING) {
 		if (hint) {
 			char * t = _escape_xml(jsonObjectGetString(obj));
-			buffer_fadd(res_xml,"<string class_hint=\"%s\">%s</string>", hint, t);
+			osrf_buffer_fadd(res_xml,"<string class_hint=\"%s\">%s</string>", hint, t);
 			free(t);
 		} else {
 			char * t = _escape_xml(jsonObjectGetString(obj));
-			buffer_fadd(res_xml,"<string>%s</string>", t);
+			osrf_buffer_fadd(res_xml,"<string>%s</string>", t);
 			free(t);
 		}
 
@@ -286,46 +286,46 @@ int _recurse_jsonObjectToXML(const jsonObject* obj, growing_buffer* res_xml) {
 		double x = jsonObjectGetNumber(obj);
 		if (hint) {
 			if (x == (int)x)
-				buffer_fadd(res_xml,"<number class_hint=\"%s\">%d</number>", hint, (int)x);
+				osrf_buffer_fadd(res_xml,"<number class_hint=\"%s\">%d</number>", hint, (int)x);
 			else
-				buffer_fadd(res_xml,"<number class_hint=\"%s\">%lf</number>", hint, x);
+				osrf_buffer_fadd(res_xml,"<number class_hint=\"%s\">%lf</number>", hint, x);
 		} else {
 			if (x == (int)x)
-				buffer_fadd(res_xml,"<number>%d</number>", (int)x);
+				osrf_buffer_fadd(res_xml,"<number>%d</number>", (int)x);
 			else
-				buffer_fadd(res_xml,"<number>%lf</number>", x);
+				osrf_buffer_fadd(res_xml,"<number>%lf</number>", x);
 		}
 
 	} else if (obj->type == JSON_ARRAY) {
 
 		if (hint) 
-        	       	buffer_fadd(res_xml,"<array class_hint=\"%s\">", hint);
+        	       	osrf_buffer_fadd(res_xml,"<array class_hint=\"%s\">", hint);
 		else
-               		buffer_add(res_xml,"<array>");
+               		osrf_buffer_add(res_xml,"<array>");
 
         int i;
         for ( i = 0; i!= obj->size; i++ )
 		    _recurse_jsonObjectToXML(jsonObjectGetIndex(obj,i), res_xml);
 
-		buffer_add(res_xml,"</array>");
+		osrf_buffer_add(res_xml,"</array>");
 
 	} else if (obj->type == JSON_HASH) {
 
 		if (hint)
-        	       	buffer_fadd(res_xml,"<object class_hint=\"%s\">", hint);
+        	       	osrf_buffer_fadd(res_xml,"<object class_hint=\"%s\">", hint);
 		else
-			buffer_add(res_xml,"<object>");
+			osrf_buffer_add(res_xml,"<object>");
 
 		jsonIterator* itr = jsonNewIterator(obj);
 		const jsonObject* tmp;
 		while( (tmp = jsonIteratorNext(itr)) ) {
-			buffer_fadd(res_xml,"<element key=\"%s\">",itr->key);
+			osrf_buffer_fadd(res_xml,"<element key=\"%s\">",itr->key);
 			_recurse_jsonObjectToXML(tmp, res_xml);
-			buffer_add(res_xml,"</element>");
+			osrf_buffer_add(res_xml,"</element>");
 		}
 		jsonIteratorFree(itr);
 
-		buffer_add(res_xml,"</object>");
+		osrf_buffer_add(res_xml,"</object>");
 	}
 
 	if (hint)
@@ -335,20 +335,20 @@ int _recurse_jsonObjectToXML(const jsonObject* obj, growing_buffer* res_xml) {
 }
 
 static char* _escape_xml (const char* text) {
-	growing_buffer* b = buffer_init(256);
+	growing_buffer* b = osrf_buffer_init(256);
 	int len = strlen(text);
 	int i;
 	for (i = 0; i < len; i++) {
 		if (text[i] == '&')
-			buffer_add(b,"&amp;");
+			osrf_buffer_add(b,"&amp;");
 		else if (text[i] == '<')
-			buffer_add(b,"&lt;");
+			osrf_buffer_add(b,"&lt;");
 		else if (text[i] == '>')
-			buffer_add(b,"&gt;");
+			osrf_buffer_add(b,"&gt;");
 		else
-			buffer_add_char(b,text[i]);
+			osrf_buffer_add_char(b,text[i]);
 	}
-	return buffer_release(b);
+	return osrf_buffer_release(b);
 }
 
 #endif

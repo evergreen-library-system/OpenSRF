@@ -344,7 +344,7 @@ typedef enum {
  for a JSON string -- including escaped hex values and surrogate
  pairs  where needed.  Append the result to a growing_buffer.
 */
-int buffer_append_utf8( growing_buffer* buf, const char* string ) {
+int osrf_buffer_append_utf8( growing_buffer* buf, const char* string ) {
 	utf8_state state = S_BEGIN;
 	unsigned long utf8_char = 0;
 	const unsigned char* s = (unsigned char *) string;
@@ -540,6 +540,10 @@ int buffer_append_utf8( growing_buffer* buf, const char* string ) {
 	} while ( state != S_END );
 	
 	return rc;
+}
+
+int buffer_append_utf8( growing_buffer* buf, const char* string ) {
+	return osrf_buffer_append_utf8(buf, string);
 }
 
 /**

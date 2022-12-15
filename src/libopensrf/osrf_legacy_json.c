@@ -210,31 +210,31 @@ int json_parse_json_bool(char* string, unsigned long* index, jsonObject* obj, in
 int json_parse_json_number(char* string, unsigned long* index, jsonObject* obj, int current_strlen) {
 	if( ! string || ! obj || *index >= current_strlen ) return -1;
 
-	growing_buffer* buf = buffer_init(64);
+	growing_buffer* buf = osrf_buffer_init(64);
 	char c = string[*index];
 
 	int done = 0;
 	int dot_seen = 0;
 
 	/* negative number? */
-	if(c == '-') { buffer_add(buf, "-"); (*index)++; }
+	if(c == '-') { osrf_buffer_add(buf, "-"); (*index)++; }
 
 	c = string[*index];
 
 	while(*index < current_strlen) {
 
 		if(isdigit(c)) {
-			buffer_add_char(buf, c);
+			osrf_buffer_add_char(buf, c);
 		}
 
 		else if( c == '.' ) {
 			if(dot_seen) {
-				buffer_free(buf);
+				osrf_buffer_free(buf);
 				return json_handle_error(string, index, 
 					"json_parse_json_number(): malformed json number");
 			}
 			dot_seen = 1;
-			buffer_add_char(buf, c);
+			osrf_buffer_add_char(buf, c);
 		} else {
 			done = 1; break;
 		}
@@ -245,7 +245,7 @@ int json_parse_json_number(char* string, unsigned long* index, jsonObject* obj, 
 	}
 
 	obj->type = JSON_NUMBER;
-	obj->value.s = buffer_release(buf);
+	obj->value.s = osrf_buffer_release(buf);
 	return 0;
 }
 
@@ -405,7 +405,7 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 
 	int in_escape = 0;	
 	int done = 0;
-	growing_buffer* buf = buffer_init(64);
+	growing_buffer* buf = osrf_buffer_init(64);
 
 	while(*index < current_strlen) {
 
@@ -415,7 +415,7 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 
 			case '\\':
 				if(in_escape) {
-					buffer_add(buf, "\\");
+					osrf_buffer_add(buf, "\\");
 					in_escape = 0;
 				} else 
 					in_escape = 1;
@@ -423,7 +423,7 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 
 			case '"':
 				if(in_escape) {
-					buffer_add(buf, "\"");
+					osrf_buffer_add(buf, "\"");
 					in_escape = 0;
 				} else 
 					done = 1;
@@ -431,42 +431,42 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 
 			case 't':
 				if(in_escape) {
-					buffer_add(buf,"\t");
+					osrf_buffer_add(buf,"\t");
 					in_escape = 0;
 				} else 
-					buffer_add_char(buf, c);
+					osrf_buffer_add_char(buf, c);
 				break;
 
 			case 'b':
 				if(in_escape) {
-					buffer_add(buf,"\b");
+					osrf_buffer_add(buf,"\b");
 					in_escape = 0;
 				} else 
-					buffer_add_char(buf, c);
+					osrf_buffer_add_char(buf, c);
 				break;
 
 			case 'f':
 				if(in_escape) {
-					buffer_add(buf,"\f");
+					osrf_buffer_add(buf,"\f");
 					in_escape = 0;
 				} else 
-					buffer_add_char(buf, c);
+					osrf_buffer_add_char(buf, c);
 				break;
 
 			case 'r':
 				if(in_escape) {
-					buffer_add(buf,"\r");
+					osrf_buffer_add(buf,"\r");
 					in_escape = 0;
 				} else 
-					buffer_add_char(buf, c);
+					osrf_buffer_add_char(buf, c);
 				break;
 
 			case 'n':
 				if(in_escape) {
-					buffer_add(buf,"\n");
+					osrf_buffer_add(buf,"\n");
 					in_escape = 0;
 				} else 
-					buffer_add_char(buf, c);
+					osrf_buffer_add_char(buf, c);
 				break;
 
 			case 'u':
@@ -474,7 +474,7 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 					(*index)++;
 
 					if(*index >= (current_strlen - 4)) {
-						buffer_free(buf);
+						osrf_buffer_free(buf);
 						return json_handle_error(string, index,
 							"json_parse_json_string(): truncated escaped unicode"); }
 
@@ -494,18 +494,18 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 	
 					if (ucs_char < 0x80) {
 						utf_out[0] = ucs_char;
-						buffer_add(buf, (char*) utf_out);
+						osrf_buffer_add(buf, (char*) utf_out);
 
 					} else if (ucs_char < 0x800) {
 						utf_out[0] = 0xc0 | (ucs_char >> 6);
 						utf_out[1] = 0x80 | (ucs_char & 0x3f);
-						buffer_add(buf, (char*) utf_out);
+						osrf_buffer_add(buf, (char*) utf_out);
 
 					} else {
 						utf_out[0] = 0xe0 | (ucs_char >> 12);
 						utf_out[1] = 0x80 | ((ucs_char >> 6) & 0x3f);
 						utf_out[2] = 0x80 | (ucs_char & 0x3f);
-						buffer_add(buf, (char*) utf_out);
+						osrf_buffer_add(buf, (char*) utf_out);
 					}
 					/* ----------------------------------------------------------------------- */
 					/* ----------------------------------------------------------------------- */
@@ -515,13 +515,13 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 
 				} else {
 
-					buffer_add_char(buf, c);
+					osrf_buffer_add_char(buf, c);
 				}
 
 				break;
 
 			default:
-				buffer_add_char(buf, c);
+				osrf_buffer_add_char(buf, c);
 		}
 
 		(*index)++;
@@ -529,7 +529,7 @@ int json_parse_json_string(char* string, unsigned long* index, jsonObject* obj, 
 	}
 
 	jsonObjectSetString(obj, buf->buf);
-	buffer_free(buf);
+	osrf_buffer_free(buf);
 	return 0;
 }
 
@@ -599,7 +599,7 @@ int json_eat_comment(char* string, unsigned long* index, char** buffer, int pars
 
 
 
-	growing_buffer* buf = buffer_init(64);
+	growing_buffer* buf = osrf_buffer_init(64);
 
 	int first_dash		= 0;
 	int second_dash	= 0;
@@ -632,7 +632,7 @@ int json_eat_comment(char* string, unsigned long* index, char** buffer, int pars
 				} 
 
 				if(second_dash && in_hint) {
-					buffer_add_char(buf, c);
+					osrf_buffer_add_char(buf, c);
 					break;
 				}
 
@@ -647,7 +647,7 @@ int json_eat_comment(char* string, unsigned long* index, char** buffer, int pars
 				}
 
 				if(second_dash && in_hint) {
-					buffer_add_char(buf, c);
+					osrf_buffer_add_char(buf, c);
 					break;
 				}
 
@@ -665,7 +665,7 @@ int json_eat_comment(char* string, unsigned long* index, char** buffer, int pars
 			default:
 				on_star = 0;
 				if(in_hint)
-					buffer_add_char(buf, c);
+					osrf_buffer_add_char(buf, c);
 		}
 
 		(*index)++;
@@ -673,9 +673,9 @@ int json_eat_comment(char* string, unsigned long* index, char** buffer, int pars
 	}
 
 	if( buf->n_used > 0 && buffer)
-		*buffer = buffer_data(buf);
+		*buffer = osrf_buffer_data(buf);
 
-	buffer_free(buf);
+	osrf_buffer_free(buf);
 	return 0;
 }
 
@@ -703,82 +703,82 @@ char* legacy_jsonObjectToJSON( const jsonObject* obj ) {
 
 	if(obj == NULL) return strdup("null");
 
-	growing_buffer* buf = buffer_init(64);
+	growing_buffer* buf = osrf_buffer_init(64);
 
 	/* add class hints if we have a class name */
 	if(obj->classname) {
-		buffer_add(buf,"/*--S ");
-		buffer_add(buf,obj->classname);
-		buffer_add(buf, "--*/");
+		osrf_buffer_add(buf,"/*--S ");
+		osrf_buffer_add(buf,obj->classname);
+		osrf_buffer_add(buf, "--*/");
 	}
 
 	switch( obj->type ) {
 
 		case JSON_BOOL: 
-			if(obj->value.b) buffer_add(buf, "true"); 
-			else buffer_add(buf, "false"); 
+			if(obj->value.b) osrf_buffer_add(buf, "true"); 
+			else osrf_buffer_add(buf, "false"); 
 			break;
 
 		case JSON_NUMBER: {
-			buffer_add(buf, obj->value.s);
+			osrf_buffer_add(buf, obj->value.s);
 			break;
 		}
 
 		case JSON_NULL:
-			buffer_add(buf, "null");
+			osrf_buffer_add(buf, "null");
 			break;
 
 		case JSON_STRING:
-			buffer_add(buf, "\"");
+			osrf_buffer_add(buf, "\"");
 			char* data = obj->value.s;
 			int len = strlen(data);
 			
 			char* output = uescape(data, len, 1);
-			buffer_add(buf, output);
+			osrf_buffer_add(buf, output);
 			free(output);
-			buffer_add(buf, "\"");
+			osrf_buffer_add(buf, "\"");
 			break;
 
 		case JSON_ARRAY:
-			buffer_add(buf, "[");
+			osrf_buffer_add(buf, "[");
 			int i;
 			for( i = 0; i!= obj->size; i++ ) {
 				const jsonObject* x = jsonObjectGetIndex(obj,i);
 				char* data = legacy_jsonObjectToJSON(x);
-				buffer_add(buf, data);
+				osrf_buffer_add(buf, data);
 				free(data);
 				if(i != obj->size - 1)
-					buffer_add(buf, ",");
+					osrf_buffer_add(buf, ",");
 			}
-			buffer_add(buf, "]");
+			osrf_buffer_add(buf, "]");
 			break;	
 
 		case JSON_HASH:
 	
-			buffer_add(buf, "{");
+			osrf_buffer_add(buf, "{");
 			jsonIterator* itr = jsonNewIterator(obj);
 			jsonObject* tmp;
 	
 			while( (tmp = jsonIteratorNext(itr)) ) {
 
-				buffer_add(buf, "\"");
+				osrf_buffer_add(buf, "\"");
 
 				const char* key = itr->key;
 				int len = strlen(key);
 				char* output = uescape(key, len, 1);
-				buffer_add(buf, output);
+				osrf_buffer_add(buf, output);
 				free(output);
 
-				buffer_add(buf, "\":");
+				osrf_buffer_add(buf, "\":");
 				char* data =  legacy_jsonObjectToJSON(tmp);
-				buffer_add(buf, data);
+				osrf_buffer_add(buf, data);
 				if(jsonIteratorHasNext(itr))
-					buffer_add(buf, ",");
+					osrf_buffer_add(buf, ",");
 				free(data);
 			}
 
 			jsonIteratorFree(itr);
-			buffer_add(buf, "}");
+			osrf_buffer_add(buf, "}");
 			break;
 		
 			default:
@@ -789,13 +789,13 @@ char* legacy_jsonObjectToJSON( const jsonObject* obj ) {
 
 	/* close out the object hint */
 	if(obj->classname) {
-		buffer_add(buf, "/*--E ");
-		buffer_add(buf, obj->classname);
-		buffer_add(buf, "--*/");
+		osrf_buffer_add(buf, "/*--E ");
+		osrf_buffer_add(buf, obj->classname);
+		osrf_buffer_add(buf, "--*/");
 	}
 
-	char* data = buffer_data(buf);
-	buffer_free(buf);
+	char* data = osrf_buffer_data(buf);
+	osrf_buffer_free(buf);
 	return data;
 }
 
