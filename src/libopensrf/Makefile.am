@@ -113,4 +113,4 @@ libopensrf_la_DEPENDENCIES = libosrf_json.la
 libopensrf_la_LIBADD = $(memcached_LIBS)
 
 libopensrf_la_SOURCES = $(TARGS) $(TARGS_HEADS) $(JSON_TARGS) $(JSON_TARGS_HEADS)
-libopensrf_la_LDFLAGS = -version-info 3:1:1
+libopensrf_la_LDFLAGS = -version-info 4:0:2
