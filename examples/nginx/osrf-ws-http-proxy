@@ -35,7 +35,7 @@ server {
 
     # -----------------------------------------------------------------
     # https://mozilla.github.io/server-side-tls/ssl-config-generator/
-    # generate with openssl dhparam -out dhparams.pem 2048
+    # generate with openssl dhparam -out /etc/apache2/ssl/dhparam.pem 2048
     ssl_dhparam /etc/apache2/ssl/dhparam.pem;
     ssl_session_timeout 1d;
     ssl_session_cache shared:SSL:50m;
