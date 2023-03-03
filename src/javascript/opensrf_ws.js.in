@@ -53,7 +53,7 @@ OpenSRF.WebSocket.prototype.send = function(message) {
 
     // we have no websocket or an invalid websocket.  build a new one.
 
-    var path = 'wss://' + location.host + ':' + 
+    var path = 'wss://' + location.hostname + ':' + 
         WEBSOCKET_PORT_SSL + WEBSOCKET_URL_PATH;
 
     console.debug('connecting websocket to ' + path);
