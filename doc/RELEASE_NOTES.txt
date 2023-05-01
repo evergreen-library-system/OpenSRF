@@ -25,7 +25,7 @@ Galen Charlton
 Bill Erickson
 
 OpenSRF 3.2.2 release notes
-===========================
+---------------------------
 
 OpenSRF 3.2.2
 -------------
