@@ -29,7 +29,7 @@ Issue the following commands as the *user* Linux account.
 +
 [source, bash]
 ------------------------------------------------------------------------------
-wget https://evergreen-ils.org/downloads/opensrf-3.2.2.tar.gz
+wget https://evergreen-ils.org/downloads/opensrf-3.2.3.tar.gz
 ------------------------------------------------------------------------------
 +
 [NOTE]
@@ -40,8 +40,8 @@ http://git.evergreen-ils.org/?p=OpenSRF.git
 +
 [source, bash]
 ------------------------------------------------------------------------------
-tar -xvf opensrf-3.2.2.tar.gz
-cd opensrf-3.2.2/
+tar -xvf opensrf-3.2.3.tar.gz
+cd opensrf-3.2.3/
 ------------------------------------------------------------------------------
 
 Installing prerequisites
@@ -572,7 +572,7 @@ apt-get install nginx
 +
 [source, bash]
 ---------------------------------------------------------------------------
-cd /path/to/opensrf-3.2.2
+cd /path/to/opensrf-3.2.3
 cp examples/nginx/osrf-ws-http-proxy /etc/nginx/sites-available/
 ln -s /etc/nginx/sites-available/osrf-ws-http-proxy /etc/nginx/sites-enabled/osrf-ws-http-proxy
 rm /etc/nginx/sites-enabled/default
@@ -617,7 +617,7 @@ apt-get install haproxy
 +
 [source, bash]
 ---------------------------------------------------------------------------
-cd /path/to/opensrf-3.2.2
+cd /path/to/opensrf-3.2.3
 cat examples/haproxy/osrf-ws-http-proxy >> /etc/haproxy/haproxy.cfg
 ---------------------------------------------------------------------------
 +
