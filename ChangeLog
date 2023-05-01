@@ -1,170 +1,256 @@
-commit ee76ac1a005350290823affc66001edffd956883
-Author: Galen Charlton <gmc@equinoxOLI.org>
-Date:   Tue Nov 9 12:08:03 2021 -0500
+commit e9bdf28cd59b14159b1b2d8c177f382d8ea67706
+Author: Jason Boyer <JBoyer@equinoxOLI.org>
+Date:   Mon May 1 11:17:14 2023 -0400
 
-    bump up version numbers for 3.2.2 release
+    Bump version number for 3.2.3
     
-    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
 
 5	5	README
 2	2	src/perl/lib/OpenSRF.pm
-1	1	src/python/setup.py
 1	1	version.m4
 
-commit 7d0af3f89bd57e8bccc6ce73a0dabeb5ec0f62a7
-Author: Galen Charlton <gmc@equinoxOLI.org>
-Date:   Tue Nov 9 12:06:31 2021 -0500
-
-    update release notes for 3.2.2
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-
-34	2	doc/RELEASE_NOTES.txt
-
-commit 23a7aaa03ddc8704fa19c135ce5eae52ceb6e8ca
-Author: Galen Charlton <gmc@equinoxOLI.org>
-Date:   Tue Nov 9 11:55:54 2021 -0500
-
-    LP1940146: (follow-up) remove a math_xul_client file from .gitignore
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-
-0	1	.gitignore
-
-commit c39f0561a2654a33a4cac052fc3c0097f7614ee2
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Thu Aug 19 14:13:10 2021 -0400
-
-    LP1940146: Clarify README
-    
-    Clarify Ejabberd shaper settings instructions for Debian 11, Bullseye
-    in the README.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-
-2	2	README
-
-commit dc748175b53a8a95a82bbc97c2ecebcd5a5bd95d
+commit a1eb15725e6974cea1646a0dcaa2a431130692ac
 Author: Jason Boyer <JBoyer@equinoxOLI.org>
-Date:   Tue Aug 17 14:01:55 2021 -0400
+Date:   Mon May 1 11:13:19 2023 -0400
 
-    Remove XUL opensrf.math Client
+    Update release notes for 3.2.3
     
     Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
+
+27	1	doc/RELEASE_NOTES.txt
+
+commit 40f994df91988a9c16a41c00689abe14870f695c
+Author: Chris Sharp <csharp@georgialibraries.org>
+Date:   Fri Jan 22 10:23:51 2021 -0500
+
+    LP#1912796: include systemd installation instructions in OpenSRF installation docs.
+    
+    Create an example systemd unit file that can be copied into place
+    and update the README with those instructions.
+    
     Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+    Signed-off-by: Josh Stompro <stompro@stompro.org>
+    Signed-off-by: Jane Sandberg <js7389@princeton.edu>
+
+16	0	README
+17	0	examples/websocketd-osrf.service.example
+ create mode 100644 examples/websocketd-osrf.service.example
+
+commit 37282ddf6cada0f32988558f3763de0485649dfc
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Thu May 19 09:44:05 2022 -0400
+
+    LP#1974193: fix memory leak in C apps
+    
+    This patch fixes a memory leak that can occur when
+    a C app does the following:
+    
+    - send a non-chunked response
+    - add a response to a bundle to send later
+    - send a request complete status message
+    
+    The leak could add up for long-lived C apps.
+    
+    To test
+    -------
+    [1] Set a up C app such as Evergreen's open-ils.pcrud and
+        send a lot of requests to it whose responses would not be
+        large enough to be chunked, but not so many as to go over
+        max_requests. It may be helpful to limit the service to
+        just a single child.
+    [2] Check memory usage of the child after the requests are
+        processed.
+    [3] Apply the patch and repeat step 1. This time, memory
+        usage should be less.
+    
     Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-
-1	3	Makefile.am
-1	2	configure.ac
-0	19	examples/math_xul_client/Makefile.in
-0	98	examples/math_xul_client/install.js
-0	53	examples/math_xul_client/math/content/conf/client_config.xml
-0	17	examples/math_xul_client/math/content/contents.rdf
-0	38	examples/math_xul_client/math/content/math.xul
-0	50	examples/math_xul_client/math/content/math_app.js
-0	32	examples/math_xul_client/math/content/math_overlay.xul
-0	19	examples/math_xul_client/math/locale/en-US/contents.rdf
-0	7	examples/math_xul_client/math/locale/en-US/math.dtd
-0	23	examples/math_xul_client/math/skin/contents.rdf
-0	4	examples/math_xul_client/math/skin/math.css
- delete mode 100644 examples/math_xul_client/Makefile.in
- delete mode 100644 examples/math_xul_client/install.js
- delete mode 100644 examples/math_xul_client/math/content/conf/client_config.xml
- delete mode 100644 examples/math_xul_client/math/content/contents.rdf
- delete mode 100644 examples/math_xul_client/math/content/math.xul
- delete mode 100644 examples/math_xul_client/math/content/math_app.js
- delete mode 100644 examples/math_xul_client/math/content/math_overlay.xul
- delete mode 100644 examples/math_xul_client/math/locale/en-US/contents.rdf
- delete mode 100644 examples/math_xul_client/math/locale/en-US/math.dtd
- delete mode 100644 examples/math_xul_client/math/skin/contents.rdf
- delete mode 100644 examples/math_xul_client/math/skin/math.css
-
-commit 7edcd9fb8dabf893ebb7dfd85f3c06b9c9f9b667
-Author: Jason Boyer <JBoyer@equinoxOLI.org>
-Date:   Tue Aug 17 14:00:20 2021 -0400
-
-    LP1940146: Update documentation
-    
-    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
     Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
 
-35	19	README
+6	2	src/libopensrf/osrf_application.c
 
-commit 12707b126fccbabcba31b004157cde1a63a27580
-Author: Jason Boyer <jboyer@bullseye.localdomain>
-Date:   Tue Aug 17 13:46:11 2021 -0400
+commit cd44561e7fe7af13a891be488a851185201f0aad
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Mon Oct 26 11:27:00 2020 -0400
 
-    LP1940146: Debian Bullseye Installation Support
+    LP1827055 Remove Python libs, install bits, and docs
     
-    This commit also addresses LP 1940145: Remove Installation
-    Support for Debian Jessie. The individual distribution-specific
-    targets (stretch, buster, etc.) have also been removed since
-    they are now all the same, much like both Ubuntu targets just
-    call ubuntu_generic. The two generic targets have been left
-    in case they're necessary again in future.
-    
-    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-
-21	58	src/extras/Makefile.install
-
-commit dd209cdd837350a75f13f62f4fd7bb3cdb544bcf
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Wed Oct 28 11:32:45 2020 -0400
-
-    Lp 1901899: Remove References to Ubuntu 16.04
-    
-    Remove references to Ubuntu 16.04 Xenial Xerus in the README and
-    Makefile.install.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
-    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-
-3	4	README
-1	4	src/extras/Makefile.install
-
-commit fb9cb5fa50968b36e928056e4b579f9035081ba4
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Mon Oct 26 13:41:44 2020 -0400
-
-    Lp 1875544: Add Installation Support for Ubuntu 20.04 Focal Fossa
-    
-    Update README and install prerequisites with ubuntu-focal target.
-    
-    Consolidate Ubuntu Makefile.install targets to remove redundant
-    "code."
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
     Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Ben Shum <ben@evergreener.net>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+
+1	6	Makefile.am
+1	22	README
+0	3	bin/opensrf-perl.pl.in
+0	4	bin/osrf_config.in
+1	52	configure.ac
+0	27	examples/math_client.py.in
+0	26	examples/simple_text.py.in
+0	8	src/Makefile.am
+0	14	src/extras/Makefile.install
+0	27	src/python/Makefile.am
+0	270	src/python/opensrf.py.in
+0	0	src/python/osrf/__init__.py
+0	196	src/python/osrf/app.py
+0	0	src/python/osrf/apps/__init__.py
+0	118	src/python/osrf/apps/example.py
+0	65	src/python/osrf/cache.py
+0	72	src/python/osrf/conf.py
+0	83	src/python/osrf/const.py
+0	50	src/python/osrf/ex.py
+0	227	src/python/osrf/gateway.py
+0	349	src/python/osrf/http_translator.py
+0	200	src/python/osrf/json.py
+0	199	src/python/osrf/log.py
+0	258	src/python/osrf/net.py
+0	288	src/python/osrf/net_obj.py
+0	489	src/python/osrf/server.py
+0	512	src/python/osrf/ses.py
+0	39	src/python/osrf/set.py
+0	131	src/python/osrf/stack.py
+0	124	src/python/osrf/system.py
+0	162	src/python/osrf/xml_obj.py
+0	24	src/python/setup.py
+0	538	src/python/srfsh.py
+0	89	src/python/tests/json_test.py
+0	75	src/python/tests/net_obj_test.py
+0	30	src/python/tests/test_coverage.py
+ delete mode 100644 examples/math_client.py.in
+ delete mode 100644 examples/simple_text.py.in
+ delete mode 100644 src/python/Makefile.am
+ delete mode 100755 src/python/opensrf.py.in
+ delete mode 100644 src/python/osrf/__init__.py
+ delete mode 100644 src/python/osrf/app.py
+ delete mode 100644 src/python/osrf/apps/__init__.py
+ delete mode 100644 src/python/osrf/apps/example.py
+ delete mode 100644 src/python/osrf/cache.py
+ delete mode 100644 src/python/osrf/conf.py
+ delete mode 100644 src/python/osrf/const.py
+ delete mode 100644 src/python/osrf/ex.py
+ delete mode 100644 src/python/osrf/gateway.py
+ delete mode 100644 src/python/osrf/http_translator.py
+ delete mode 100644 src/python/osrf/json.py
+ delete mode 100644 src/python/osrf/log.py
+ delete mode 100644 src/python/osrf/net.py
+ delete mode 100644 src/python/osrf/net_obj.py
+ delete mode 100644 src/python/osrf/server.py
+ delete mode 100644 src/python/osrf/ses.py
+ delete mode 100644 src/python/osrf/set.py
+ delete mode 100644 src/python/osrf/stack.py
+ delete mode 100644 src/python/osrf/system.py
+ delete mode 100644 src/python/osrf/xml_obj.py
+ delete mode 100644 src/python/setup.py
+ delete mode 100755 src/python/srfsh.py
+ delete mode 100644 src/python/tests/json_test.py
+ delete mode 100644 src/python/tests/net_obj_test.py
+ delete mode 100644 src/python/tests/test_coverage.py
+
+commit 66146fbc7b330da4458da1ab3811caf8967b7b6a
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Tue Apr 26 16:49:55 2022 -0400
+
+    LP#1970469: fix responses streamed out of order due to chunking
+    
+    If a streaming method starts off sending a couple small responses
+    followed by a large one, the responses can end up received out of
+    order under this scenario:
+    
+    - The initial small responses get stashed to be sent out as a bundle
+    - The large response, if big enough to require chunking, gets sent
+      out as a set of partial responses. However, any messages queued
+      up to go out as a bundle remain in the queue.
+    - When the method completes, or if further responses result in
+      exceeding the maximum bundle size, the queued messages get sent
+      _after_ the chunked response.
+    
+    This affects services written in C and Perl.
+    
+    To test
+    -------
+    
+    C service
+    =========
+    [1] Add the following stored procedure to an Evergreen database:
+    
+    CREATE OR REPLACE FUNCTION public.lp1970469_sample() RETURNS SETOF TEXT AS $$
+    BEGIN
+        RETURN NEXT 'abc';
+        RETURN NEXT 'def';
+        RETURN NEXT rpad('long', 65000, 'x');
+        RETURN NEXT 'xyz';
+        RETURN;
+    END;
+    $$ LANGUAGE PLPGSQL IMMUTABLE;
+    
+    [2] Run the following srfsh command:
+    
+    srfsh# open-ils.cstore open-ils.cstore.json_query.atomic {"from":["public.lp1970469_sample"]}
+    
+    [3] Note that longxxxxx* response is returned first, followed by abc,
+        def, and xyz.
+    [4] Apply the patch and repeat step 2. This time, the responses should
+        be returned in the expected order.
+    
+    Perl service
+    ============
+    [1] In an Evergreen database, attach a couple hundred items to
+        a record.
+    [2] Run the following srfsh command:
+    
+    srfsh# request open-ils.supercat open-ils.supercat.record.holdings_xml.retrieve BIBID, "-", null, 1
+    
+    [3] If enough items were attached, the first response streamed will
+        start with a <volume> element rather than the <holdings> element
+        and the overall response will not be well-formed XML.
+    [4] Apply the patch and repeat step 2. This time, the parts of the
+        response should be in the expected order.
+    
+    Note that this test scenario models an Evergreen glitch seen in the
+    wild that causes requests for
+    
+    https://EGSERVER//opac/extras/supercat/retrieve/marcxml-full/record/BIBID
+    
+    to fall if there are a lot of items attached to the bib.
+    
     Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-
-4	3	README
-11	17	src/extras/Makefile.install
-
-commit 5a41d66a9215a7da7f0a2dd2b3dd23610ba6d01a
-Author: kenstir <kenstir@gmail.com>
-Date:   Sat Jun 13 21:43:57 2020 -0400
-
-    Fix LP#1883169 by using growing_buffer
-    
-    When presented with an error message that has more than 32 characters
-    that need to be escaped, the gateway fails to reserve enough space in
-    the memory allocation it uses to build the JSON message.  Instead of
-    guessing at how much space will be needed, and failing for some
-    messages, this commit uses growing_buffer to build the JSON.
-    growing_buffer is limited to 10Mb, so while large messages could be
-    generated, they won't cause an OOM on the server side.
-    
-    Signed-off-by: Ken Cox <kenstir@gmail.com>
     Signed-off-by: Mike Rylander <mrylander@gmail.com>
 
-8	8	src/gateway/osrf_json_gateway.c
+5	0	src/libopensrf/osrf_application.c
+12	0	src/perl/lib/OpenSRF/AppSession.pm
+
+commit 0821dbdc35d1fa646d3bb30ef97bbde1bcf15b97
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Wed May 13 13:55:43 2020 -0400
+
+    LP#1919502 C listener backlog loop speedbump
+    
+    When the request backlog contains items in the C forking code, attempts
+    to process the request run in a tight loop without stopping until the
+    backlog is once again empty.  This can lead to spewing "Could not launch
+    a new child" warning messages at a high rate, saturating log files.
+    
+    This commit adds a 1 second speed bump between backlog processing loops
+    to allow time for drones to complete their task and start processing the
+    remaining queued requests.  The delay has a secondary affect of limited
+    the speed of the warning log spewing.
+    
+    This 1-second speedbump logic matches that of the Perl code.
+    
+    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Jeff Davis <jeff.davis@bc.libraries.coop>
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+5	2	src/libopensrf/osrf_prefork.c
+
+commit caa10d7d3f4611e78918091dba6e40b2f37f6ba8
+Author: Jason Boyer <JBoyer@EquinoxInitiative.org>
+Date:   Wed Jun 2 09:43:12 2021 -0400
+
+    LP1930578: Really Stop Single Services
+    
+    Use the same timeout / escalation method for single services as is
+    used for all services. Punted on any real refactoring for now.
+    
+    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+6	1	bin/opensrf-perl.pl.in
