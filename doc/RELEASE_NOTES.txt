@@ -5,7 +5,8 @@ OpenSRF 3.2.3
 -------------
 OpenSRF 3.2.3 was released on 1 May 2023. This release fixes four
 bugs and removes long-since unused Python support to restore building
-on modern Linux distributions.
+on modern Linux distributions. All users of OpenSRF 3.2.2 are advised
+to upgrade.
 
 Bug fixes include:
 
@@ -14,15 +15,16 @@ Bug fixes include:
   * LP#1970469: Fix responses streamed out of order due to chunking
   * LP#1919502: Log messages about the request backlog less frequently
   * LP#1930578: Fix an issue where stopping or restarting a single service
-    could timeout and leave it running or allow it to stop without resrtarting.
+    could timeout and leave it running or allow it to stop without restarting.
 
 Acknowledgements
 ~~~~~~~~~~~~~~~~
 
 We would like to thank the following people who contributed to OpenSRF 3.2.3:
-Jason Boyer
-Galen Charlton
-Bill Erickson
+
+  * Jason Boyer
+  * Galen Charlton
+  * Bill Erickson
 
 OpenSRF 3.2.2 release notes
 ---------------------------
