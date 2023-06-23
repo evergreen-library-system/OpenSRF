@@ -486,7 +486,7 @@ Optional Systemd Setup
 
 Websocketd is a standalone program with no daemon mode, but can be implemented as a systemd service.
 
-Copy <PREFIX>/examples/websocket-osrf.service.example into file /lib/systemd/system/websocketd-osrf.service
+Copy <PREFIX>/examples/websocketd-osrf.service.example into file /lib/systemd/system/websocketd-osrf.service
 
 Then add & start the service.
 
