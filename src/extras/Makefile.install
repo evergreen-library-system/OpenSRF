@@ -30,6 +30,8 @@ LBITS=$(shell getconf LONG_BIT)
 
 APT_TOOL=apt-get -yq
 
+# libssl-dev isn't directly required, but we need to include it until
+# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1038149 is closed.
 # Debian dependencies
 DEBS =  \
 	apache2 \
@@ -57,6 +59,7 @@ DEBS =  \
 	libjson-xs-perl \
 	liblog-log4perl-perl\
 	libmemcached-dev \
+	libssl-dev \
 	libmemcached-tools \
 	libmodule-build-perl\
 	libncurses5-dev \
@@ -147,7 +150,7 @@ DEB_APACHE_MODS = \
 all: 
 	@echo "please specify an OS" && exit 0
 
-
+debian-bookworm: generic_debian
 debian-bullseye: generic_debian
 debian-buster: generic_debian
 
