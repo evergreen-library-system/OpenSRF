@@ -4,7 +4,6 @@
 #include "opensrf/osrfConfig.h"
 #include <opensrf/osrf_json.h>
 #include <opensrf/osrf_json_xml.h>
-#include <opensrf/osrf_legacy_json.h>
 #include <opensrf/string_array.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -16,13 +15,6 @@
 #define GATEWAY_CONFIG "OSRFGatewayConfig"
 #define DEFAULT_LOCALE "OSRFDefaultLocale"
 #define CONFIG_CONTEXT "gateway"
-#define JSON_PROTOCOL "OSRFGatewayLegacyJSON"
-#define GATEWAY_USE_LEGACY_JSON 0
-
-typedef struct {
-	int legacyJSON;
-} osrf_json_gateway_dir_config;
-
 
 module AP_MODULE_DECLARE_DATA osrf_json_gateway_module;
 
@@ -44,30 +36,15 @@ static const char* osrf_json_gateway_set_config(cmd_parms *parms, void *config, 
 	return NULL;
 }
 
-static const char* osrf_json_gateway_set_json_proto(cmd_parms *parms, void *config, const char *arg) {
-	osrf_json_gateway_dir_config* cfg = (osrf_json_gateway_dir_config*) config;
-	cfg->legacyJSON = (!strcasecmp((char*) arg, "true")) ? 1 : 0;
-	return NULL;
-}
-
 /* tell apache about our commands */
 static const command_rec osrf_json_gateway_cmds[] = {
 	AP_INIT_TAKE1( GATEWAY_CONFIG, osrf_json_gateway_set_config,
 			NULL, RSRC_CONF, "osrf json gateway config file"),
 	AP_INIT_TAKE1( DEFAULT_LOCALE, osrf_json_gateway_set_default_locale,
 			NULL, RSRC_CONF, "osrf json gateway default locale"),
-	AP_INIT_TAKE1( JSON_PROTOCOL, osrf_json_gateway_set_json_proto,
-			NULL, ACCESS_CONF, "osrf json gateway config file"),
 	{NULL}
 };
 
-
-static void* osrf_json_gateway_create_dir_config( apr_pool_t* p, char* dir) {
-	osrf_json_gateway_dir_config* cfg = (osrf_json_gateway_dir_config*)
-			apr_palloc(p, sizeof(osrf_json_gateway_dir_config));
-	cfg->legacyJSON = GATEWAY_USE_LEGACY_JSON;
-	return (void*) cfg;
-}
 
 static apr_status_t child_exit(void* data) {
 	osrfLogInfo(OSRF_LOG_MARK, "Disconnecting on child cleanup...");
@@ -106,23 +83,6 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 	if (strcmp(r->handler, MODULE_NAME )) return DECLINED;
 
 	crossOriginHeaders(r, allowedOrigins);
-
-	osrf_json_gateway_dir_config* dir_conf =
-		ap_get_module_config(r->per_dir_config, &osrf_json_gateway_module);
-
-
-	/* provide 2 different JSON parsers and serializers to support legacy JSON */
-	jsonObject* (*parseJSONFunc) (const char*) = legacy_jsonParseString;
-	char* (*jsonToStringFunc) (const jsonObject*) = legacy_jsonObjectToJSON;
-
-	if(dir_conf->legacyJSON) {
-		ap_log_rerror( APLOG_MARK, APLOG_DEBUG, 0, r, "Using legacy JSON");
-
-	} else {
-		parseJSONFunc = jsonParse;
-		jsonToStringFunc = jsonObjectToJSON;
-	}
-
 
 	osrfLogDebug(OSRF_LOG_MARK, "osrf gateway: entered request handler");
 
@@ -254,7 +214,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 			int i = 0;
 
 			while( (str = osrfStringArrayGetString(mparams, i++)) )
-				jsonObjectPush(arr, parseJSONFunc(str));
+				jsonObjectPush(arr, jsonParse(str));
 
 			req_id = osrfAppSessionSendRequest( session, arr, method, api_level );
 			jsonObjectFree(arr);
@@ -356,7 +316,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 				if (isXML) {
 					output = jsonObjectToXML( res );
 				} else {
-					output = jsonToStringFunc( res );
+					output = jsonObjectToJSON( res );
 					if( morethan1 ) ap_rputs(",", r); /* comma between JSON array items */
 				}
 				ap_rputs(output, r);
@@ -400,7 +360,7 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 			else {
 				osrf_buffer_fadd(buf, "%s : %s", statusname, statustext);
 				jsonObject* tmp = jsonNewObject(buf->buf);
-				char* j = jsonToStringFunc(tmp);
+				char* j = jsonObjectToJSON(tmp);
 				osrf_buffer_reset(buf);
 				osrf_buffer_fadd(buf, ",\"debug\": %s", j);
 				free(j);
@@ -461,7 +421,7 @@ static void osrf_json_gateway_register_hooks (apr_pool_t *p) {
 
 module AP_MODULE_DECLARE_DATA osrf_json_gateway_module = {
 	STANDARD20_MODULE_STUFF,
-	osrf_json_gateway_create_dir_config,
+    NULL,
 	NULL,
 	NULL,
 	NULL,
