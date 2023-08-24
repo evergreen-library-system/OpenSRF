@@ -417,6 +417,11 @@ static int osrf_json_gateway_method_handler (request_rec *r) {
 		/* insert the status code */
 		char buf[32];
 
+        if (session->transport_error) {
+            // See osrf_stack.c : osrf_stack_transport_handler()
+            statuscode = 404;
+        }
+
 		if (isXML)
 			snprintf(buf, sizeof(buf), "<status>%d</status>", statuscode );
 		else
