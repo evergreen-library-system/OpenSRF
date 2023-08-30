@@ -4,12 +4,14 @@
 #
 # Makefile to install prerequisites for OpenSRF
 #
-# Currently supports Debian (buster/bullseye) and Ubuntu
+# Currently supports Debian (buster/bullseye/bookworm) and Ubuntu
 # (bionic/focal)
 #
 # Installs Perl prereqs, libjs with Perl wrapper
 #
 # usage:
+# 	make -f Makefile.install debian-bookworm
+# 	- or -
 # 	make -f Makefile.install debian-bullseye
 # 	- or -
 # 	make -f Makefile.install debian-buster

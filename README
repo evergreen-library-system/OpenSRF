@@ -64,6 +64,7 @@ make -f src/extras/Makefile.install <osname>
 
 Well-tested values for <osname> include:
 
+  * `debian-bookworm` for Debian 12
   * `debian-bullseye` for Debian 11
   * `debian-buster` for Debian 10
   * `ubuntu-focal` for Ubuntu 20.04
@@ -256,7 +257,7 @@ hosts:
 mod_legacy_auth: {}
 -----------------------
 +
-(Debian Bullseye / Ubuntu Jammy) Ejabberd 21.x::
+(Debian Bullseye / Debian Bookworm / Ubuntu Jammy) Ejabberd 21.x::
 Open `/etc/ejabberd/ejabberd.yml` and make the following
 changes:
   a. Define your public and private domains in the `hosts` directive. For
