@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <sys/select.h>
 #include <signal.h>
 #include "osrf_router.h"
