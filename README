@@ -289,16 +289,7 @@ cp redis-accounts.txt.example redis-accounts.txt
        password to match the password you set for the Redis `opensrf` user
        at the `private.localhost` domain.
 
-Creating Redis Accounts
---------------------------------------
-Before starting services, it's necessary to create Redis accounts.
-Issue the following command as the *opensrf* Linux account:
-+
-[source, bash]
----------------------------------------------------------------------------
-osrf_control --reset-message-bus
----------------------------------------------------------------------------
-+
+
 Accessing the Redis Command Line
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The script which creates Redis OpenSRF accounts also applies a password

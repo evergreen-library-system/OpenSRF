@@ -28,6 +28,8 @@ sub new {
 
     my $conf = OpenSRF::Utils::Config->current;
     my $domain = $conf->bootstrap->domain;
+    my $username = $conf->bootstrap->username;
+    my $router_name = $conf->bootstrap->router_name || 'router';
 
     # Create a connection for our primary node.
     $self->add_connection($domain);
@@ -35,7 +37,12 @@ sub new {
 
     if ($service) {
         # If we're a service, this is where we listen for service-level requests.
-        $self->{service_address} = "opensrf:service:$service";
+        # User $router_name instead of our username as the destination 
+        # for API calls for this domain, managed by this router.
+        # E.g. this allows 1.) direct to drone delivery and 2.) multiple
+        # listeners for the same service to run on a single router_name+domain
+        # segment.
+        $self->{service_address} = "opensrf:service:$username:$domain:$service";
     }
 
     return $_singleton = $self;
@@ -160,8 +167,8 @@ sub send_to {
         # Clients may be lurking on remote nodes.
         # Make sure we have a connection to said node.
 
-        # opensrf:client:domain:...
-        my (undef, undef, $domain) = split(/:/, $recipient);
+        # opensrf:client:username:domain:...
+        my (undef, undef, undef, $domain) = split(/:/, $recipient);
 
         $con = $self->get_connection($domain);
         if (!$con) {

@@ -37,7 +37,7 @@ void transport_con_msg_free(transport_con_msg* msg);
 
 int transport_con_connected(transport_con* con);
 
-void transport_con_set_address(transport_con* con, const char* service);
+void transport_con_set_address(transport_con* con, const char* username);
 
 int transport_con_connect(transport_con* con, 
     int port, const char* username, const char* password);

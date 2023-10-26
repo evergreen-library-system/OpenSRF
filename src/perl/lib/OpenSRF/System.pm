@@ -25,12 +25,12 @@ $| = 1;
 sub DESTROY {}
 
 sub load_bootstrap_config {
-    return if OpenSRF::Utils::Config->current;
+    return if OpenSRF::Utils::Config->current && $OpenSRF::Application::shared_conf;
 
     die "Please provide a bootstrap config file to OpenSRF::System\n"
         unless $bootstrap_config_file;
 
-    OpenSRF::Utils::Config->load(config_file => $bootstrap_config_file);
+    OpenSRF::Utils::Config->load(config_file => $bootstrap_config_file, force => 1);
     OpenSRF::Utils::JSON->register_class_hint(name => "OpenSRF::Application", hint => "method", type => "hash", strip => ['session']);
     OpenSRF::Transport::PeerHandle->set_peer_client("OpenSRF::Transport::Redis::PeerConnection");
     OpenSRF::Application->server_class('client');

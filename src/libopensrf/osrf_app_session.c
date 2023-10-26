@@ -542,7 +542,9 @@ osrfAppSession* osrfAppSessionClientInit( const char* remote_service ) {
 	}
 
     growing_buffer *buf = buffer_init(32);
-    buffer_add(buf, "opensrf:service:");
+    // Encode $username:$domain as _:_ since we don't care which 
+    // specific service listener processes our request.
+    buffer_add(buf, "opensrf:service:_:_:");
     buffer_add(buf, remote_service);
 
     session->remote_id = buffer_release(buf);
@@ -1143,9 +1145,14 @@ int osrfSendTransportPayload( osrfAppSession* session, const char* payload ) {
     char buf[1024 + 1];
     char* recipient = session->remote_id;
     if (strstr(recipient, "opensrf:service:")) {
-        snprintf(buf, 1024, "opensrf:router:%s", session->transport_handle->primary_domain);
+        snprintf(buf, 1024, "opensrf:router:%s:%s", 
+            session->transport_handle->router_name,
+            session->transport_handle->primary_domain
+        );
         recipient = buf;
     }
+
+    osrfLogInternal(OSRF_LOG_MARK, "Sending message to %s", recipient);
 
 	int retval = client_send_message_to(session->transport_handle, t_msg, recipient);
 	if( retval ) {

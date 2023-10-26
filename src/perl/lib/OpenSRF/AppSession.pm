@@ -209,7 +209,10 @@ sub last_sent_type {
 
 sub get_app_targets {
 	my $app = shift;
-    return ("opensrf:service:$app");
+    # Encode $username:$domain as _:_ since we don't care which
+    # specific service listener processes our request.
+    # Let the router sort out which service listener picks up our request.  
+    return ("opensrf:service:_:_:$app");
 }
 
 sub stateless {
@@ -578,7 +581,8 @@ sub send {
         # Send new requests to our router
         my $conf = OpenSRF::Utils::Config->current;
         my $domain = $conf->bootstrap->domain;
-        $recipient = "opensrf:router:$domain";
+        my $router_name = $conf->bootstrap->router_name || 'router';
+        $recipient = "opensrf:router:$router_name:$domain";
     }
 
     $logger->internal("AppSession sending doc to=$recipient: $json");

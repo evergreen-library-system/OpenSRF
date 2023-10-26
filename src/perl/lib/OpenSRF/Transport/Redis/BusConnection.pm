@@ -40,12 +40,14 @@ sub domain {
 sub set_address {
     my ($self) = @_;
 
-    # If this is a client operating on behalf of a service, include the
-    # service name in the bus address for improved debugability.
-    my $svc = $self->{service} ? ':' . $self->{service} . ':' : '';
-
     my $address = sprintf(
-        "opensrf:client:%s:%s:$svc$$:%s", $self->{domain}, hostfqdn(), int(rand(10_000_000)));
+        "opensrf:client:%s:%s:%s:%s:%s", 
+        $self->{username}, 
+        $self->{domain}, 
+        hostfqdn(), 
+        $$,
+        int(rand(10_000_000))
+    );
 
     $self->{address} = $address;
 }

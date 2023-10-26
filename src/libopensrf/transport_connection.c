@@ -44,7 +44,7 @@ int transport_con_connected(transport_con* con) {
     return con->bus != NULL;
 } 
 
-void transport_con_set_address(transport_con* con, const char* service) {
+void transport_con_set_address(transport_con* con, const char* username) {
     osrfLogInternal(OSRF_LOG_MARK, "TCON transport_con_set_address()");
 
     char hostname[1024];
@@ -52,11 +52,7 @@ void transport_con_set_address(transport_con* con, const char* service) {
     gethostname(hostname, 1023);
 
     growing_buffer *buf = buffer_init(64);
-    buffer_fadd(buf, "opensrf:client:%s:%s:", con->domain, hostname);
-
-    if (service != NULL) {
-        buffer_fadd(buf, "%s:", service);
-    }
+    buffer_fadd(buf, "opensrf:client:%s:%s:%s:", username, con->domain, hostname);
 
     buffer_fadd(buf, "%ld", (long) getpid());
 

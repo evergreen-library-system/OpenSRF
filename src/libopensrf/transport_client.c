@@ -1,4 +1,5 @@
 #include <opensrf/transport_client.h>
+#include <opensrf/osrfConfig.h>
 
 transport_client* client_init(const char* domain, 
     int port, const char* username, const char* password) {
@@ -18,6 +19,14 @@ transport_client* client_init(const char* domain,
 	client->service = NULL;
 	client->service_address = NULL;
 	client->router_address = NULL;
+
+    // Name of the router which runs on our primary domain.
+    char* router_name = osrfConfigGetValue(NULL, "/router_name");
+    if (router_name == NULL) {
+        client->router_name = strdup("router");
+    } else {
+        client->router_name = router_name;
+    }
 
     client->username = username ? strdup(username) : NULL;
     client->password = password ? strdup(password) : NULL;
@@ -53,7 +62,7 @@ static transport_con* get_transport_con(transport_client* client, const char* do
 
     con = client_connect_common(client, domain);
 
-    transport_con_set_address(con, NULL);
+    transport_con_set_address(con, client->username);
 
     // Connections to remote domains assume the same connection
     // attributes apply, minus the domain.
@@ -66,14 +75,20 @@ static transport_con* get_transport_con(transport_client* client, const char* do
 int client_connect_as_service(transport_client* client, const char* service) {
     growing_buffer* buf = buffer_init(32);
 
-    buffer_fadd(buf, "opensrf:service:%s", service);
+    buffer_fadd(
+        buf, 
+        "opensrf:service:%s:%s:%s", 
+        client->username,
+        client->primary_domain, 
+        service
+    );
 
     client->service_address = buffer_release(buf);
     client->service = strdup(service);
 
     transport_con* con = client_connect_common(client, client->primary_domain);
 
-    transport_con_set_address(con, service);
+    transport_con_set_address(con, client->username);
 
     client->primary_connection = con;
 
@@ -84,7 +99,8 @@ int client_connect_as_service(transport_client* client, const char* service) {
 int client_connect_as_router(transport_client* client, const char* domain) {
     growing_buffer* buf = buffer_init(32);
 
-    buffer_fadd(buf, "opensrf:router:%s", domain);
+    // NOTE domain here is the same as client->primary_domain.
+    buffer_fadd(buf, "opensrf:router:%s:%s", client->username, domain);
 
     client->router_address = buffer_release(buf);
 
@@ -92,7 +108,7 @@ int client_connect_as_router(transport_client* client, const char* domain) {
 
     // Routers get their own unique client address in addition to the
     // well-known router address.
-    transport_con_set_address(con, NULL);
+    transport_con_set_address(con, client->username);
 
     client->primary_connection = con;
 
@@ -108,7 +124,7 @@ int client_connect_for_service(transport_client* client, const char* service) {
     transport_con* con = client_connect_common(client, client->primary_domain);
 
     // Append the service name to the bus address
-    transport_con_set_address(con, service);
+    transport_con_set_address(con, client->username);
 
     client->primary_connection = con;
 
@@ -122,7 +138,7 @@ int client_connect(transport_client* client) {
 
     transport_con* con = client_connect_common(client, client->primary_domain);
 
-    transport_con_set_address(con, NULL);
+    transport_con_set_address(con, client->username);
 
     client->primary_connection = con;
 
@@ -158,23 +174,43 @@ int client_connected( const transport_client* client ) {
 	return (client != NULL && client->primary_connection != NULL);
 }
 
-char* get_domain_from_address(const char* address) {
+bus_address* parse_bus_address(const char* address) {
     if (address == NULL) { return NULL; }
 
     char* addr_copy = strdup(address);
-    strtok(addr_copy, ":"); // "opensrf:"
-    strtok(NULL, ":"); // "client:"
-    char* domain = strtok(NULL, ":");
+    strtok(addr_copy, ":"); // prefix ; opensrf:
 
-    if (domain) {
-        // About to free addr_copy...
-        domain = strdup(domain);
-    } else {
-        osrfLogError(OSRF_LOG_MARK, "No domain parsed from address: %s", address);
+    char* purpose = strtok(NULL, ":");
+    char* username = strtok(NULL, ":");
+    char* domain = strtok(NULL, ":");
+    char* remainder = strtok(NULL, ":");
+
+    if (!purpose || !domain || !username) {
+        osrfLogError(OSRF_LOG_MARK, "Invalid bus address: %s", address);
+        free(addr_copy);
+        return NULL;
+    }
+
+    bus_address* addr = safe_malloc(sizeof(bus_address));
+    addr->purpose = strdup(purpose);
+    addr->domain = strdup(domain);
+    addr->username = strdup(username);
+
+    if (remainder) {
+        addr->remainder = strdup(remainder);
     }
 
     free(addr_copy);
+    return addr;
+}
 
+// TODO migrate use of this function to parse_bus_address().
+char* get_domain_from_address(const char* address) {
+    bus_address* addr = parse_bus_address(address);
+    if (!addr) { return NULL; }
+
+    char* domain = strdup(addr->domain);
+    bus_address_free(addr);
     return domain;
 }
 
@@ -251,8 +287,10 @@ transport_message* client_recv_stream(transport_client* client, int timeout, con
 
     transport_con_msg_free(con_msg);
 
-    osrfLogInternal(OSRF_LOG_MARK, 
-        "client_recv() read response for thread %s", msg->thread);
+    if (msg) { // Can be NULL if the con_msg->msg_json is invalid.
+        osrfLogInternal(OSRF_LOG_MARK, 
+            "client_recv() read response for thread %s", msg->thread);
+    }
 
 	return msg;
 }
@@ -310,6 +348,7 @@ int client_discard( transport_client* client ) {
 	if (client->router_address) { free(client->router_address); }
     if (client->username) { free(client->username); }
     if (client->password) { free(client->password); }
+    if (client->router_name) { free(client->router_name); }
 
     // Clean up our connections.
     // We do not disconnect here since they caller may or may
@@ -334,3 +373,12 @@ int client_discard( transport_client* client ) {
 	return 1;
 }
 
+
+void bus_address_free(bus_address* addr) {
+    if (!addr) { return; }
+    if (addr->purpose) { free(addr->purpose); }
+    if (addr->domain) { free(addr->domain); }
+    if (addr->username) { free(addr->username); }
+    if (addr->remainder) { free(addr->remainder); }
+    free(addr);
+}

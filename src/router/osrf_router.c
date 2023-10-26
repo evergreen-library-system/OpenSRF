@@ -23,7 +23,12 @@
 // A specific OpenSRF Listener instance
 // Uses the bus/redis address as its unique identifier.
 typedef struct ServiceInstanceStruct {
+    // Unique client address per instance.
     char* address;
+
+    // Address where this instance will respond to API requests.
+    char* listen_address;
+
     // Each ServiceInstance runs on a single domain, defined by
     // its bus address.
     char* domain;
@@ -85,6 +90,7 @@ Router* osrfNewRouter(
 static void osrfFreeServiceInstance(ServiceInstance* si) {
     if (!si) { return; }
     free(si->address);
+    free(si->listen_address);
     free(si->domain);
     free(si);
 }
@@ -139,7 +145,7 @@ int osrfRouterConnect(Router* router) {
     return client_connect_as_router(router->client, router->domain) == 0 ? -1 : 0;
 }
 
-// Find a service entry by service name linked registered at the
+// Find a service entry by service name registered at the
 // provided router domain.
 static ServiceEntry* osrfGetServiceEntry(Router* router, const char* service) {
     osrfListIterator* iter = osrfNewListIterator(router->services);
@@ -300,7 +306,7 @@ static void osrfRouteApiCall(
     int stat = client_send_message_to_from_at(
         router->client, 
         tmsg, 
-        tmsg->recipient,    // opensrf:service:<servicename>
+        si->listen_address, // opensrf:service:$username:$domain:$service
         tmsg->sender,       // sending client address
         si->domain          // domain of our ServiceInstance
     );
@@ -410,9 +416,9 @@ static void osrfHandleRegister(
     }
 
     bool allowed = osrfStringArrayContains(router->trusted_servers, domain);
+    free(domain);
 
     if (!allowed) {
-        free(domain);
         osrfLogError(OSRF_LOG_MARK, 
             "Sending domain is not allowed on this router: %s", sender);
         return;
@@ -446,8 +452,24 @@ static void osrfHandleRegister(
             service, sender
         );
 
+        // Extract the username from the sender address so we can compose
+        // a service-level recipient address.
+        const bus_address* addr = parse_bus_address(sender);
+        if (!addr) { return; }
+
+        char service_address[1024];
+        snprintf(
+            service_address, 
+            1024, 
+            "opensrf:service:%s:%s:%s",
+            addr->username,
+            addr->domain,
+            service
+        );
+
         si = safe_malloc(sizeof(ServiceInstance));
         si->address = strdup(sender);
+        si->listen_address = strdup(service_address);
         si->domain = get_domain_from_address(sender);
 
         // Add this new instance to the entry instances
@@ -502,29 +524,26 @@ static void osrfRouteMessage(Router* router, transport_message* tmsg) {
         return;
     }
 
-    char* recipient = strdup(tmsg->recipient);
-    strtok(recipient, ":"); // opensrf:service:<service>
-    const char* purpose = strtok(NULL, ":");
-    const char* service = strtok(NULL, ":");
+    bus_address* addr = parse_bus_address(tmsg->recipient);
+    if (!addr) { return; }
 
     osrfLogDebug(OSRF_LOG_MARK, 
-        "Routing message from %s to %s, service=%s", 
-        tmsg->sender, tmsg->recipient, service
-    );
+        "Routing message from %s to %s", tmsg->sender, tmsg->recipient);
 
-    if (purpose == NULL) {
-        osrfLogError(OSRF_LOG_MARK, "Invalid recipient address: %s", recipient);
-    } else {
-        if (strcmp(purpose, "service") == 0) {
+    if (strcmp(addr->purpose, "service") == 0) {
+        const char* service = addr->remainder;
+        if (service) {
             osrfRouteApiCall(router, tmsg, service);
-        } else if (strcmp(purpose, "router") == 0) {
-            osrfHandleRouterCommand(router, tmsg);
         } else {
-            osrfLogError(OSRF_LOG_MARK, "Unexpected recipient: %s", recipient);
+            osrfLogError(OSRF_LOG_MARK, "Invalid service address: %s", tmsg->recipient);
         }
+    } else if (strcmp(addr->purpose, "router") == 0) {
+        osrfHandleRouterCommand(router, tmsg);
+    } else {
+        osrfLogError(OSRF_LOG_MARK, "Unexpected recipient: %s", tmsg->recipient);
     }
 
-    free(recipient);
+    bus_address_free(addr);
 }
 
 void osrfRouterRun(Router* router) {
@@ -532,7 +551,7 @@ void osrfRouterRun(Router* router) {
 
     while (!router->stop) {
 
-        osrfLogDebug(OSRF_LOG_MARK, "Waiting for messages at %s", router->domain);
+        osrfLogDebug(OSRF_LOG_MARK, "Waiting for messages at %s", router->client->router_address);
 
         tmsg = client_recv_for_router(router->client, POLL_TIMEOUT);
 

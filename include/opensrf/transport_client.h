@@ -19,6 +19,16 @@
 extern "C" {
 #endif
 
+typedef struct bus_address_struct {
+    char* purpose;
+    char* domain;
+    char* username;
+    char* remainder;
+} bus_address;
+
+bus_address* parse_bus_address(const char* address);
+void bus_address_free(bus_address*);
+
 struct message_list_struct;
 
 /**
@@ -32,6 +42,7 @@ struct transport_client_struct {
     char* service; // NULL if this is a standalone client.
     char* service_address; // NULL if this is not a service
     char* router_address; // NULL if this is not a router
+    char* router_name; // name of the router running on our primary domain.
     osrfHash* connections;
 
     int port;

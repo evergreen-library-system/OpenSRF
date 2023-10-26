@@ -42,7 +42,7 @@ char* cacheServers = DEFAULT_TRANSLATOR_CACHE_SERVERS;
 char* routerName = NULL;
 char* domainName = NULL;
 int osrfConnected = 0;
-char recipientBuf[128];
+char recipientBuf[512];
 char contentTypeBuf[80];
 osrfStringArray* allowedOrigins = NULL;
 
@@ -199,7 +199,10 @@ static int osrfHttpTranslatorSetTo(osrfHttpTranslator* trans) {
         } else {
             // service is specified, build a recipient address 
             // from the router, domain, and service
-            int size = snprintf(recipientBuf, 128, "opensrf:service:%s", trans->service);
+
+            // Encode $username:$domain as _:_ since we don't care which 
+            // specific service listener processes our request.
+            int size = snprintf(recipientBuf, 512, "opensrf:service:_:_:%s", trans->service);
             recipientBuf[size] = '\0';
             osrfLogDebug(OSRF_LOG_MARK, "Set recipient to %s", recipientBuf);
             trans->recipient = recipientBuf;
@@ -269,7 +272,7 @@ static char* osrfHttpTranslatorParseRequest(osrfHttpTranslator* trans) {
 
             case REQUEST: {
                 const jsonObject* params = msg->_params;
-                growing_buffer* act = osrf_buffer_init(128);
+                growing_buffer* act = osrf_buffer_init(512);
                 char* method = msg->method_name;
                 osrf_buffer_fadd(act, "[%s] [%s] %s %s", trans->remoteHost, "",
                     trans->service, method);
@@ -428,7 +431,8 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
     const char* send_to = trans->recipient;
     if (strstr(send_to, "opensrf:service:")) {
         char stbuf[1024 + 1];
-        snprintf(stbuf, 1024, "opensrf:router:%s", domainName);
+        snprintf(stbuf, 1024,
+            "opensrf:router:%s:%s", trans->handle->router_name, domainName);
         send_to = stbuf;
     }
 
@@ -482,7 +486,7 @@ static int osrfHttpTranslatorProcess(osrfHttpTranslator* trans) {
             osrfListPush(trans->messages, msg->body);
 
             if(trans->complete || trans->connectOnly) {
-                growing_buffer* buf = osrf_buffer_init(128);
+                growing_buffer* buf = osrf_buffer_init(512);
                 unsigned int i;
                 osrf_buffer_add(buf, osrfListGetIndex(trans->messages, 0));
                 for(i = 1; i < trans->messages->size; i++) {

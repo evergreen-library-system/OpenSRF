@@ -457,14 +457,21 @@ static void relay_stdin_message(const char* msg_string) {
             // Top level API calls are addressed to the service in question,
             // but they are sent to the router for processing.
 
+            // Encode $username:$domain as _:_ since we don't care which 
+            // specific service listener processes our request.
             int size = snprintf(recipient_buf, 
-                RECIP_BUF_SIZE - 1, "opensrf:service:%s", service);
+                RECIP_BUF_SIZE - 1, "opensrf:service:_:_:%s", service);
 
             recipient_buf[size] = '\0';
             recipient = recipient_buf;
 
-            size = snprintf(deliver_to_buf, 
-                RECIP_BUF_SIZE - 1, "opensrf:router:%s", osrf_domain);
+            size = snprintf(
+                deliver_to_buf, 
+                RECIP_BUF_SIZE - 1, 
+                "opensrf:router:%s:%s", 
+                osrf_handle->router_name, 
+                osrf_domain
+            );
 
             deliver_to_buf[size] = '\0';
             deliver_to = deliver_to_buf;

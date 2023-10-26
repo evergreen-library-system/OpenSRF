@@ -612,7 +612,11 @@ sub load_settings {
 }
 
 # Clear and reset permissions on the bus'es linked to our domains.
+# If force is not set, attempt to connect to each domain bus using
+# the default login.  If the default login fails, go into force 
+# mode and reset all bus accounts.
 sub do_reset_message_bus {
+    my $force = shift;
 
     OpenSRF::Utils::Config->load(config_file => $opt_config);
     my $conf = OpenSRF::Utils::Config->current;
@@ -643,7 +647,15 @@ sub do_reset_message_bus {
         if ($login =~ /AUTH failed/) {
             # Login failed.  Clear the password.
             delete $ENV{REDISCLI_AUTH};
+            # If we cannot login with the default password, a forced
+            # bus account reset is warranted.
+            $force = 1;
         } else {
+            # If we were able to login with the default bus password
+            # on this domain, no need to continue with resetting
+            # account unless we're in force mode.
+            next unless $force;
+
             # Multiple OpenSRF domains may run on the same Redis instance.
             # If so, make sure subsequent runs on the same redis instance 
             # use the just-applied password.  In this case, our $login
@@ -817,7 +829,17 @@ HELP
 exit;
 }
 
-do_reset_message_bus() if $opt_reset_message_bus;
+if ($opt_reset_message_bus) {
+    do_reset_message_bus(1);
+} elsif (
+    $opt_start ||
+    $opt_start_all ||
+    $opt_start_services ||
+    $opt_restart ||
+    $opt_restart_all ||
+    $opt_restart_services) {
+    do_reset_message_bus();
+}
 
 # we do not verify services for stop/signal actions, since those may
 # legitimately be used against services not (or no longer) configured

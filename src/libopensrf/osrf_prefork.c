@@ -233,7 +233,7 @@ static void osrf_prefork_send_router_registration(
 	transport_client* client = osrfSystemGetTransportClient();
 
 	// Construct the Jabber address of the router
-	char* jid = va_list_to_string( "opensrf:router:%s", routerDomain );
+	char* jid = va_list_to_string( "opensrf:router:%s:%s", routerName, routerDomain );
 
 	// Create the registration message, and send it
 	transport_message* msg;

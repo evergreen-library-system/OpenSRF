@@ -356,7 +356,14 @@ sub check_status {
 
         # refresh the read_set handles in case we lost a child in the previous iteration
         my $read_set = IO::Select->new;
-        $read_set->add($_->{pipe_to_child}) for @{$self->{active_list}};
+
+        # Copy the array so there's no chance we try to reference a
+        # free'd array ref in the loop below as a result of child
+        # process maintenance.
+        my @active = @{$self->{active_list}};
+
+        $read_set->add($_->{pipe_to_child}) for
+            grep {$_ && $_->{pipe_to_child}} @active;
 
         if(my @handles = $read_set->can_read(($block) ? undef : 0)) {
             my $pid = '';
@@ -534,7 +541,7 @@ sub register_routers {
 
     my $conf = OpenSRF::Utils::Config->current;
     my $routers = $conf->bootstrap->routers;
-    my $router_name = $conf->bootstrap->router_name;
+    my $router_name = $conf->bootstrap->router_name || 'router';
     my @targets;
 
     for my $router (@$routers) {
@@ -549,11 +556,12 @@ sub register_routers {
 
                 my $name = $router->{name};
                 my $domain = $router->{domain};
-                push(@targets, "opensrf:router:$domain");
+                push(@targets, "opensrf:router:$router_name:$domain");
             }
 
         } else {
-            push(@targets, "opensrf:router:$router");
+            # $router here == $domain
+            push(@targets, "opensrf:router:$router_name:$router");
         }
     }
 
