@@ -1,256 +1,68 @@
-commit e9bdf28cd59b14159b1b2d8c177f382d8ea67706
-Author: Jason Boyer <JBoyer@equinoxOLI.org>
-Date:   Mon May 1 11:17:14 2023 -0400
+commit 6218065ff65678fc0a9f4eba4752a4e768c8369d
+Author:     Galen Charlton <gmc@equinoxOLI.org>
+AuthorDate: Tue Dec 5 16:48:03 2023 -0500
+Commit:     Galen Charlton <gmc@equinoxOLI.org>
+CommitDate: Tue Dec 5 16:48:03 2023 -0500
 
-    Bump version number for 3.2.3
-    
-    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
-
-5	5	README
-2	2	src/perl/lib/OpenSRF.pm
-1	1	version.m4
-
-commit a1eb15725e6974cea1646a0dcaa2a431130692ac
-Author: Jason Boyer <JBoyer@equinoxOLI.org>
-Date:   Mon May 1 11:13:19 2023 -0400
-
-    Update release notes for 3.2.3
-    
-    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
-
-27	1	doc/RELEASE_NOTES.txt
-
-commit 40f994df91988a9c16a41c00689abe14870f695c
-Author: Chris Sharp <csharp@georgialibraries.org>
-Date:   Fri Jan 22 10:23:51 2021 -0500
-
-    LP#1912796: include systemd installation instructions in OpenSRF installation docs.
-    
-    Create an example systemd unit file that can be copied into place
-    and update the README with those instructions.
-    
-    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
-    Signed-off-by: Josh Stompro <stompro@stompro.org>
-    Signed-off-by: Jane Sandberg <js7389@princeton.edu>
-
-16	0	README
-17	0	examples/websocketd-osrf.service.example
- create mode 100644 examples/websocketd-osrf.service.example
-
-commit 37282ddf6cada0f32988558f3763de0485649dfc
-Author: Galen Charlton <gmc@equinoxOLI.org>
-Date:   Thu May 19 09:44:05 2022 -0400
-
-    LP#1974193: fix memory leak in C apps
-    
-    This patch fixes a memory leak that can occur when
-    a C app does the following:
-    
-    - send a non-chunked response
-    - add a response to a bundle to send later
-    - send a request complete status message
-    
-    The leak could add up for long-lived C apps.
-    
-    To test
-    -------
-    [1] Set a up C app such as Evergreen's open-ils.pcrud and
-        send a lot of requests to it whose responses would not be
-        large enough to be chunked, but not so many as to go over
-        max_requests. It may be helpful to limit the service to
-        just a single child.
-    [2] Check memory usage of the child after the requests are
-        processed.
-    [3] Apply the patch and repeat step 1. This time, memory
-        usage should be less.
+    bump up version number for 3.2.4
     
     Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
 
-6	2	src/libopensrf/osrf_application.c
+commit c229d2b49c4383b808b07ce2d27f6e89b0625e33
+Author:     Galen Charlton <gmc@equinoxOLI.org>
+AuthorDate: Tue Dec 5 16:45:20 2023 -0500
+Commit:     Galen Charlton <gmc@equinoxOLI.org>
+CommitDate: Tue Dec 5 16:45:20 2023 -0500
 
-commit cd44561e7fe7af13a891be488a851185201f0aad
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Mon Oct 26 11:27:00 2020 -0400
-
-    LP1827055 Remove Python libs, install bits, and docs
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-1	6	Makefile.am
-1	22	README
-0	3	bin/opensrf-perl.pl.in
-0	4	bin/osrf_config.in
-1	52	configure.ac
-0	27	examples/math_client.py.in
-0	26	examples/simple_text.py.in
-0	8	src/Makefile.am
-0	14	src/extras/Makefile.install
-0	27	src/python/Makefile.am
-0	270	src/python/opensrf.py.in
-0	0	src/python/osrf/__init__.py
-0	196	src/python/osrf/app.py
-0	0	src/python/osrf/apps/__init__.py
-0	118	src/python/osrf/apps/example.py
-0	65	src/python/osrf/cache.py
-0	72	src/python/osrf/conf.py
-0	83	src/python/osrf/const.py
-0	50	src/python/osrf/ex.py
-0	227	src/python/osrf/gateway.py
-0	349	src/python/osrf/http_translator.py
-0	200	src/python/osrf/json.py
-0	199	src/python/osrf/log.py
-0	258	src/python/osrf/net.py
-0	288	src/python/osrf/net_obj.py
-0	489	src/python/osrf/server.py
-0	512	src/python/osrf/ses.py
-0	39	src/python/osrf/set.py
-0	131	src/python/osrf/stack.py
-0	124	src/python/osrf/system.py
-0	162	src/python/osrf/xml_obj.py
-0	24	src/python/setup.py
-0	538	src/python/srfsh.py
-0	89	src/python/tests/json_test.py
-0	75	src/python/tests/net_obj_test.py
-0	30	src/python/tests/test_coverage.py
- delete mode 100644 examples/math_client.py.in
- delete mode 100644 examples/simple_text.py.in
- delete mode 100644 src/python/Makefile.am
- delete mode 100755 src/python/opensrf.py.in
- delete mode 100644 src/python/osrf/__init__.py
- delete mode 100644 src/python/osrf/app.py
- delete mode 100644 src/python/osrf/apps/__init__.py
- delete mode 100644 src/python/osrf/apps/example.py
- delete mode 100644 src/python/osrf/cache.py
- delete mode 100644 src/python/osrf/conf.py
- delete mode 100644 src/python/osrf/const.py
- delete mode 100644 src/python/osrf/ex.py
- delete mode 100644 src/python/osrf/gateway.py
- delete mode 100644 src/python/osrf/http_translator.py
- delete mode 100644 src/python/osrf/json.py
- delete mode 100644 src/python/osrf/log.py
- delete mode 100644 src/python/osrf/net.py
- delete mode 100644 src/python/osrf/net_obj.py
- delete mode 100644 src/python/osrf/server.py
- delete mode 100644 src/python/osrf/ses.py
- delete mode 100644 src/python/osrf/set.py
- delete mode 100644 src/python/osrf/stack.py
- delete mode 100644 src/python/osrf/system.py
- delete mode 100644 src/python/osrf/xml_obj.py
- delete mode 100644 src/python/setup.py
- delete mode 100755 src/python/srfsh.py
- delete mode 100644 src/python/tests/json_test.py
- delete mode 100644 src/python/tests/net_obj_test.py
- delete mode 100644 src/python/tests/test_coverage.py
-
-commit 66146fbc7b330da4458da1ab3811caf8967b7b6a
-Author: Galen Charlton <gmc@equinoxOLI.org>
-Date:   Tue Apr 26 16:49:55 2022 -0400
-
-    LP#1970469: fix responses streamed out of order due to chunking
-    
-    If a streaming method starts off sending a couple small responses
-    followed by a large one, the responses can end up received out of
-    order under this scenario:
-    
-    - The initial small responses get stashed to be sent out as a bundle
-    - The large response, if big enough to require chunking, gets sent
-      out as a set of partial responses. However, any messages queued
-      up to go out as a bundle remain in the queue.
-    - When the method completes, or if further responses result in
-      exceeding the maximum bundle size, the queued messages get sent
-      _after_ the chunked response.
-    
-    This affects services written in C and Perl.
-    
-    To test
-    -------
-    
-    C service
-    =========
-    [1] Add the following stored procedure to an Evergreen database:
-    
-    CREATE OR REPLACE FUNCTION public.lp1970469_sample() RETURNS SETOF TEXT AS $$
-    BEGIN
-        RETURN NEXT 'abc';
-        RETURN NEXT 'def';
-        RETURN NEXT rpad('long', 65000, 'x');
-        RETURN NEXT 'xyz';
-        RETURN;
-    END;
-    $$ LANGUAGE PLPGSQL IMMUTABLE;
-    
-    [2] Run the following srfsh command:
-    
-    srfsh# open-ils.cstore open-ils.cstore.json_query.atomic {"from":["public.lp1970469_sample"]}
-    
-    [3] Note that longxxxxx* response is returned first, followed by abc,
-        def, and xyz.
-    [4] Apply the patch and repeat step 2. This time, the responses should
-        be returned in the expected order.
-    
-    Perl service
-    ============
-    [1] In an Evergreen database, attach a couple hundred items to
-        a record.
-    [2] Run the following srfsh command:
-    
-    srfsh# request open-ils.supercat open-ils.supercat.record.holdings_xml.retrieve BIBID, "-", null, 1
-    
-    [3] If enough items were attached, the first response streamed will
-        start with a <volume> element rather than the <holdings> element
-        and the overall response will not be well-formed XML.
-    [4] Apply the patch and repeat step 2. This time, the parts of the
-        response should be in the expected order.
-    
-    Note that this test scenario models an Evergreen glitch seen in the
-    wild that causes requests for
-    
-    https://EGSERVER//opac/extras/supercat/retrieve/marcxml-full/record/BIBID
-    
-    to fall if there are a lot of items attached to the bib.
+    update release notes for 3.2.4
     
     Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-    Signed-off-by: Mike Rylander <mrylander@gmail.com>
 
-5	0	src/libopensrf/osrf_application.c
-12	0	src/perl/lib/OpenSRF/AppSession.pm
+commit 3d4d76cfdda298945fa06fae062d160e4a522513
+Author:     Jason Boyer <jboyer@equinoxOLI.org>
+AuthorDate: Thu Dec 15 15:59:48 2022 -0500
+Commit:     Galen Charlton <gmc@equinoxOLI.org>
+CommitDate: Fri Dec 1 17:36:57 2023 -0500
 
-commit 0821dbdc35d1fa646d3bb30ef97bbde1bcf15b97
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed May 13 13:55:43 2020 -0400
-
-    LP#1919502 C listener backlog loop speedbump
+    LP1999823: Bump libtool library version
     
-    When the request backlog contains items in the C forking code, attempts
-    to process the request run in a tight loop without stopping until the
-    backlog is once again empty.  This can lead to spewing "Could not launch
-    a new child" warning messages at a high rate, saturating log files.
+    Increasing Current, resetting Revision, and increasing Age, which should
+    mean that binaries built against the previous version can still use this
+    version.
     
-    This commit adds a 1 second speed bump between backlog processing loops
-    to allow time for drones to complete their task and start processing the
-    remaining queued requests.  The delay has a secondary affect of limited
-    the speed of the warning log spewing.
-    
-    This 1-second speedbump logic matches that of the Perl code.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
+    Signed-off-by: Jason Boyer <jboyer@equinoxOLI.org>
     Signed-off-by: Jeff Davis <jeff.davis@bc.libraries.coop>
     Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
 
-5	2	src/libopensrf/osrf_prefork.c
+commit 749f0e7f44f84c0593772e6067685f55935ad41e
+Author:     Jason Boyer <jboyer@equinoxOLI.org>
+AuthorDate: Thu Dec 15 15:55:47 2022 -0500
+Commit:     Galen Charlton <gmc@equinoxOLI.org>
+CommitDate: Fri Dec 1 17:36:22 2023 -0500
 
-commit caa10d7d3f4611e78918091dba6e40b2f37f6ba8
-Author: Jason Boyer <JBoyer@EquinoxInitiative.org>
-Date:   Wed Jun 2 09:43:12 2021 -0400
-
-    LP1930578: Really Stop Single Services
+    LP1999823: Additional growing_buffer function names
     
-    Use the same timeout / escalation method for single services as is
-    used for all services. Punted on any real refactoring for now.
+    If mod_shib is installed on Ubuntu our apache modules will crash
+    because of a function name collision with libssh. This patch adds
+    additional names for our growing_buffer manipulation functions so
+    the modules can use them but the old names are still available for
+    other users.
     
-    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
+    Signed-off-by: Jason Boyer <jboyer@equinoxOLI.org>
+    Signed-off-by: Jeff Davis <jeff.davis@bc.libraries.coop>
     Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
 
-6	1	bin/opensrf-perl.pl.in
+commit 35b42e5d64ba1078c9ce724265b00eb7166b296e
+Author:     Jason Stephenson <jason@sigio.com>
+AuthorDate: Fri Jun 23 12:23:08 2023 -0400
+Commit:     Jason Stephenson <jason@sigio.com>
+CommitDate: Fri Jun 23 12:26:58 2023 -0400
+
+    Fix error in README
+    
+    The suggestion to copy the websocketd-osrf.service.example file was
+    missing the 'd' in the source file.  Someone copying and pasting from
+    the README would encounter an error when copying the file.  This
+    commit adds the missing 'd' so a copy and paste will work.
+    
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
