@@ -1,6 +1,25 @@
 OpenSRF 3.2.3 release notes
 ===========================
 
+OpenSRF 3.2.4
+-------------
+OpenSRF 3.2.4 was released on 5 December 2023. This release fixes
+one bug and a typo in the README. Due to the nature of the bugfix,
+3.2.4 will be the minimum version of OpenSRF required to run Evergreen
+3.12.x.
+
+Bug fixes include:
+
+  * LP#1999823: Name collision causes apache gateway modules to fail when
+    mod_shib is installed 
+
+We would like to thank the following people who contributed to OpenSRF 3.2.3:
+
+  * Jason Boyer
+  * Jason Stephenson
+  * Jeff Davis
+  * Galen Charlton
+
 OpenSRF 3.2.3
 -------------
 OpenSRF 3.2.3 was released on 1 May 2023. This release fixes four
