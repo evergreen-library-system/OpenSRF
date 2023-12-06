@@ -1,0 +1,43 @@
+OpenSRF 3.3-beta
+----------------
+OpenSRF 3.3-beta was released on 5 December 2023. This release 
+updates Linux distribution support and language bindings and fixes
+bugs.
+
+Major Changes
+~~~~~~~~~~~~~
+
+  * Add support for Debian 12 "Bookworm" (LP#2023560)
+  * Add suport for Ubuntu 22.04 "Jammy Jellyfish" (LP#1970667)
+  * Remove support for Ubuntu 18.04 "Bionic Beaver (LP#1990969)
+  * Remove the Java language binding (LP#1827051)
+  * Remove the Python language binding (LP#1827055)
+
+Bugs Fixed
+~~~~~~~~~~
+
+  * Name collision causes Apache gateway modules to fail when mod_shib is installed (LP#1999823)
+  * OpenSRF crashes with Ejabberd 21.12 (LP#1973060)
+
+Upgrade Notes
+~~~~~~~~~~~~~
+OpenSRF 3.3 does not change the application binary interface
+(ABI) for C applications. Consequently, Evergreen users running
+OpenSRF 3.2.x may be able to upgrade to OpenSRF 3.3 without
+recompiling Evergreen.
+
+Evergreen Compatibility
+~~~~~~~~~~~~~~~~~~~~~~~
+OpenSRF 3.3 can be used by Evergreen 3.11 and later.
+
+Acknowledgements
+~~~~~~~~~~~~~~~
+
+We would like to thank the following people who contributed to OpenSRF 3.3-beta:
+
+  * Jason Boyer
+  * Galen Charlton
+  * Jeff Davis
+  * Bill Erickson
+  * Jane Sandberg
+  * Jason Stephenson
