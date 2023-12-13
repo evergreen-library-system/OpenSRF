@@ -1,28 +1,61 @@
+commit 29bbaace93f285f057db661b48cbf84673e2b8ef
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Wed Dec 13 16:43:06 2023 -0500
+
+    bump up version numbers for OpenSRF 3.3.0
+    
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+5	5	README
+2	2	src/perl/lib/OpenSRF.pm
+1	1	version.m4
+
+commit 79a5b2d36d9cbeaf663c50810f30f5d1efa87ec1
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Wed Dec 13 16:41:38 2023 -0500
+
+    update release notes for OpenSRF 3.3.0
+    
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+5	4	doc/RELEASE_NOTES.txt
+
+commit e15e099aff987035a6ec305847cabd1fb9e2c865
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Tue Dec 5 21:19:28 2023 -0500
+
+    update ChangeLog for 3.3.0-beta
+    
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+136	1272	ChangeLog
+
 commit 10dd13764728d9aa8c3c3dd2e61559e2a3f14dfd
-Author:     Galen Charlton <gmc@equinoxOLI.org>
-AuthorDate: Tue Dec 5 21:17:34 2023 -0500
-Commit:     Galen Charlton <gmc@equinoxOLI.org>
-CommitDate: Tue Dec 5 21:17:34 2023 -0500
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Tue Dec 5 21:17:34 2023 -0500
 
     bump up version number for 3.3.0-beta
     
     Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
 
+5	5	README
+2	2	src/perl/lib/OpenSRF.pm
+1	1	version.m4
+
 commit fc1df06ea36547d32361e5fc4020f26ef0e1ec68
-Author:     Galen Charlton <gmc@equinoxOLI.org>
-AuthorDate: Tue Dec 5 21:12:37 2023 -0500
-Commit:     Galen Charlton <gmc@equinoxOLI.org>
-CommitDate: Tue Dec 5 21:12:37 2023 -0500
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Tue Dec 5 21:12:37 2023 -0500
 
     release notes for OpenSRF 3.3-beta
     
     Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
 
+43	0	doc/RELEASE_NOTES.txt
+ create mode 100644 doc/RELEASE_NOTES.txt
+
 commit 214067410d23d618e4feff964d40008d44fb381d
-Author:     Jason Boyer <jboyer@equinoxOLI.org>
-AuthorDate: Thu Dec 15 15:59:48 2022 -0500
-Commit:     Galen Charlton <gmc@equinoxOLI.org>
-CommitDate: Fri Dec 1 16:48:28 2023 -0500
+Author: Jason Boyer <jboyer@equinoxOLI.org>
+Date:   Thu Dec 15 15:59:48 2022 -0500
 
     LP1999823: Bump libtool library version
     
@@ -34,11 +67,11 @@ CommitDate: Fri Dec 1 16:48:28 2023 -0500
     Signed-off-by: Jeff Davis <jeff.davis@bc.libraries.coop>
     Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
 
+1	1	src/libopensrf/Makefile.am
+
 commit 6146a41ed4aabe3b64c3b70f32fc783ce2f94a12
-Author:     Jason Boyer <jboyer@equinoxOLI.org>
-AuthorDate: Thu Dec 15 15:55:47 2022 -0500
-Commit:     Galen Charlton <gmc@equinoxOLI.org>
-CommitDate: Fri Dec 1 16:48:05 2023 -0500
+Author: Jason Boyer <jboyer@equinoxOLI.org>
+Date:   Thu Dec 15 15:55:47 2022 -0500
 
     LP1999823: Additional growing_buffer function names
     
@@ -52,11 +85,27 @@ CommitDate: Fri Dec 1 16:48:05 2023 -0500
     Signed-off-by: Jeff Davis <jeff.davis@bc.libraries.coop>
     Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
 
+1	0	include/opensrf/osrf_utf8.h
+16	2	include/opensrf/utils.h
+6	6	src/gateway/apachetools.c
+13	13	src/gateway/osrf_http_translator.c
+19	19	src/gateway/osrf_json_gateway.c
+18	18	src/libopensrf/jsonpush.c
+6	6	src/libopensrf/osrf_app_session.c
+7	7	src/libopensrf/osrf_application.c
+25	25	src/libopensrf/osrf_json_object.c
+3	3	src/libopensrf/osrf_json_tools.c
+26	26	src/libopensrf/osrf_json_xml.c
+59	59	src/libopensrf/osrf_legacy_json.c
+6	6	src/libopensrf/osrf_parse_json.c
+5	5	src/libopensrf/osrf_prefork.c
+5	1	src/libopensrf/osrf_utf8.c
+43	43	src/libopensrf/transport_session.c
+96	36	src/libopensrf/utils.c
+
 commit cd4e40510175de30cd9b1567b66b2250afe6a289
-Author:     Jason Stephenson <jason@sigio.com>
-AuthorDate: Wed Aug 30 08:19:27 2023 -0400
-Commit:     Jason Stephenson <jason@sigio.com>
-CommitDate: Wed Aug 30 08:19:27 2023 -0400
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Wed Aug 30 08:19:27 2023 -0400
 
     LP2023560: Update instructions for Debian Bookworm
     
@@ -65,11 +114,12 @@ CommitDate: Wed Aug 30 08:19:27 2023 -0400
     
     Signed-off-by: Jason Stephenson <jason@sigio.com>
 
+2	1	README
+3	1	src/extras/Makefile.install
+
 commit 3eba5bd31d1c88c9310a39ac96d448609c0124f6
-Author:     Jason Boyer <boyer.jason@gmail.com>
-AuthorDate: Fri Aug 4 21:26:19 2023 -0400
-Commit:     Jason Stephenson <jason@sigio.com>
-CommitDate: Wed Aug 30 08:18:08 2023 -0400
+Author: Jason Boyer <boyer.jason@gmail.com>
+Date:   Fri Aug 4 21:26:19 2023 -0400
 
     LP2023560: Debian Bookworm support
     
@@ -81,11 +131,11 @@ CommitDate: Wed Aug 30 08:18:08 2023 -0400
     Signed-off-by: Jason Boyer <boyer.jason@gmail.com>
     Signed-off-by: Jason Stephenson <jason@sigio.com>
 
+4	1	src/extras/Makefile.install
+
 commit ec2d71a8281a9edb2d0c9556bff31789cce85e53
-Author:     Jason Stephenson <jason@sigio.com>
-AuthorDate: Fri Jun 23 12:23:08 2023 -0400
-Commit:     Jason Stephenson <jason@sigio.com>
-CommitDate: Fri Jun 23 12:23:08 2023 -0400
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Fri Jun 23 12:23:08 2023 -0400
 
     Fix error in README
     
@@ -96,21 +146,21 @@ CommitDate: Fri Jun 23 12:23:08 2023 -0400
     
     Signed-off-by: Jason Stephenson <jason@sigio.com>
 
+1	1	README
+
 commit aea1b8914fc7d8b7fc0b5a03ea18801fc1710c7f
-Author:     Jason Boyer <JBoyer@equinoxOLI.org>
-AuthorDate: Thu Mar 2 12:55:25 2023 -0500
-Commit:     Jason Boyer <JBoyer@equinoxOLI.org>
-CommitDate: Thu Mar 2 12:55:25 2023 -0500
+Author: Jason Boyer <JBoyer@equinoxOLI.org>
+Date:   Thu Mar 2 12:55:25 2023 -0500
 
     Fix typo in example openssl command
     
     Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
 
+1	1	examples/nginx/osrf-ws-http-proxy
+
 commit 88ab0618e0977d2e82a78a7fa5564eaa9fb5a820
-Author:     Jason Stephenson <jason@sigio.com>
-AuthorDate: Tue Sep 27 09:48:20 2022 -0400
-Commit:     Jane Sandberg <js7389@princeton.edu>
-CommitDate: Wed Oct 26 17:51:27 2022 -0700
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Tue Sep 27 09:48:20 2022 -0400
 
     LP1990969: Remove Ubuntu Bionic Beaver Installation Prerequisites
     
@@ -120,11 +170,12 @@ CommitDate: Wed Oct 26 17:51:27 2022 -0700
     Signed-off-by: Jason Stephenson <jason@sigio.com>
     Signed-off-by: Jane Sandberg <js7389@princeton.edu>
 
+1	2	README
+0	3	src/extras/Makefile.install
+
 commit 48e12511c82f6856ea8c93eb87eaddc6c2e9911a
-Author:     Jason Stephenson <jason@sigio.com>
-AuthorDate: Mon Nov 22 10:46:57 2021 -0500
-Commit:     Jane Sandberg <js7389@princeton.edu>
-CommitDate: Wed Oct 26 17:51:27 2022 -0700
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Mon Nov 22 10:46:57 2021 -0500
 
     LP1947728: Remove Debian Stretch Prerequisites
     
@@ -134,11 +185,12 @@ CommitDate: Wed Oct 26 17:51:27 2022 -0700
     Signed-off-by: Jason Stephenson <jason@sigio.com>
     Signed-off-by: Jane Sandberg <js7389@princeton.edu>
 
+0	25	README
+1	4	src/extras/Makefile.install
+
 commit 4fbe2cd075d781c00be698d14e7d2847a0d88873
-Author:     Jason Stephenson <jason@sigio.com>
-AuthorDate: Sat May 28 11:27:35 2022 -0400
-Commit:     Jane Sandberg <sandbergja@gmail.com>
-CommitDate: Mon Sep 26 19:27:26 2022 -0700
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Sat May 28 11:27:35 2022 -0400
 
     LP1973060: Modernize XMPP Legacy Error Code Handling
     
@@ -168,11 +220,11 @@ CommitDate: Mon Sep 26 19:27:26 2022 -0700
     Signed-off-by: Bill Erickson <berickxx@gmail.com>
     Signed-off-by: Jane Sandberg <sandbergja@gmail.com>
 
+76	1	src/libopensrf/transport_session.c
+
 commit 4e8b86f70c7a608341535d14259f2ae5128b23cd
-Author:     Jason Stephenson <jason@sigio.com>
-AuthorDate: Mon May 9 15:08:21 2022 -0400
-Commit:     Jane Sandberg <sandbergja@gmail.com>
-CommitDate: Mon Sep 26 19:27:14 2022 -0700
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Mon May 9 15:08:21 2022 -0400
 
     LP1970667: Add Installation Support for Ubuntu 22.04 (Jammy Jellyfish)
     
@@ -186,3 +238,14 @@ CommitDate: Mon Sep 26 19:27:14 2022 -0700
     Signed-off-by: Jason Stephenson <jason@sigio.com>
     Signed-off-by: Bill Erickson <berickxx@gmail.com>
     Signed-off-by: Jane Sandberg <sandbergja@gmail.com>
+
+15	1	README
+1	4	configure.ac
+3	0	src/extras/Makefile.install
+46	0	tests/check_osrf_json_object.c
+38	0	tests/check_osrf_list.c
+12	0	tests/check_osrf_message.c
+2	0	tests/check_osrf_stack.c
+2	0	tests/check_osrf_utils.c
+18	0	tests/check_transport_client.c
+26	0	tests/check_transport_message.c
