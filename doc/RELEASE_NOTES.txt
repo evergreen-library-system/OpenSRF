@@ -1,5 +1,5 @@
 OpenSRF 3.3.0
-----------------
+-------------
 OpenSRF 3.3.0 was released on 13 December 2023. This release 
 updates Linux distribution support and language bindings and fixes
 bugs.
