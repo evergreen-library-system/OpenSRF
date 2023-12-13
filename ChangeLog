@@ -1,3 +1,23 @@
+commit 94476f52022d7d408ee7eb5915b9e12c011c657e
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Wed Dec 13 16:47:45 2023 -0500
+
+    fix typo in release notes
+    
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+1	1	doc/RELEASE_NOTES.txt
+
+commit 41491eb276f1e5fb78950b5d2ffff4e2ad850558
+Author: Galen Charlton <gmc@equinoxOLI.org>
+Date:   Wed Dec 13 16:45:05 2023 -0500
+
+    update change log for 3.3.0
+    
+    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+
+111	48	ChangeLog
+
 commit 29bbaace93f285f057db661b48cbf84673e2b8ef
 Author: Galen Charlton <gmc@equinoxOLI.org>
 Date:   Wed Dec 13 16:43:06 2023 -0500
