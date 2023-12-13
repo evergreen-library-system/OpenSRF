@@ -1,6 +1,6 @@
-OpenSRF 3.3-beta
+OpenSRF 3.3.0
 ----------------
-OpenSRF 3.3-beta was released on 5 December 2023. This release 
+OpenSRF 3.3.0 was released on 13 December 2023. This release 
 updates Linux distribution support and language bindings and fixes
 bugs.
 
@@ -28,12 +28,13 @@ recompiling Evergreen.
 
 Evergreen Compatibility
 ~~~~~~~~~~~~~~~~~~~~~~~
-OpenSRF 3.3 can be used by Evergreen 3.11 and later.
+OpenSRF 3.3 can be used by Evergreen 3.11 and later. It is the
+minimum version required by Evergreen 3.12.
 
 Acknowledgements
 ~~~~~~~~~~~~~~~
 
-We would like to thank the following people who contributed to OpenSRF 3.3-beta:
+We would like to thank the following people who contributed to OpenSRF 3.3.0:
 
   * Jason Boyer
   * Galen Charlton
