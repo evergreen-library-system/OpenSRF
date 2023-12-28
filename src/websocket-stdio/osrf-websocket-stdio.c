@@ -265,7 +265,10 @@ static void child_init(int argc, char* argv[]) {
     stateful_session_cache = osrfNewHash();
     osrfHashSetCallback(stateful_session_cache, release_hash_string);
 
-    client_ip = getenv("REMOTE_ADDR");
+    client_ip = getenv("HTTP_X_FORWARDED_FOR"); // prefer real client IP
+    if (!client_ip) {
+        client_ip = getenv("REMOTE_ADDR");
+    }
     osrfLogInfo(OSRF_LOG_MARK, "WS connect from %s", client_ip);
 }
 
