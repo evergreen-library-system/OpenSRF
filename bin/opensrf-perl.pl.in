@@ -829,7 +829,7 @@ HELP
 exit;
 }
 
-if ($opt_reset_message_bus) {
+if ($opt_reset_message_bus || $opt_diagnostic) {
     do_reset_message_bus(1);
 } elsif (
     $opt_start ||
