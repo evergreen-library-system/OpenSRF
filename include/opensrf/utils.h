@@ -174,14 +174,13 @@ extern "C" {
 	unsigned long __len = 0;\
 	va_list args; \
 	va_list a_copy;\
-	va_copy(a_copy, args); \
 	va_start(args, x); \
+	va_copy(a_copy, args); \
 	__len = vsnprintf(NULL, 0, x, args); \
 	va_end(args); \
 	__len += 2; \
 	char _b[__len]; \
 	bzero(_b, __len); \
-	va_start(a_copy, x); \
 	vsnprintf(_b, __len - 1, x, a_copy); \
 	va_end(a_copy); \
 	char* VA_BUF = _b; \
@@ -340,12 +339,6 @@ char* buffer_release( growing_buffer* gb );
 int buffer_free( growing_buffer* gb );
 int buffer_add_char(growing_buffer* gb, char c);
 char buffer_chomp(growing_buffer* gb); // removes the last character from the buffer
-
-/*
-	returns the size needed to fill in the vsnprintf buffer.
-	this calls va_end on the va_list argument*
-*/
-long va_list_size(const char* format, va_list);
 
 /* turns a va list into a string, caller must free the
 	allocated char */
