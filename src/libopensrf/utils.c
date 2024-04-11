@@ -206,46 +206,32 @@ int clr_fl( int fd, int flags ) {
 }
 
 /**
-	@brief Determine how lohg a string will be after printf-style formatting.
-	@param format The format string.
-	@param args The variable-length list of arguments
-	@return If successful: the length of the string that would be created, plus 1 for
-		a terminal nul, plus another 1, presumably to be on the safe side.  If unsuccessful
-		due to a formatting error: 1.
-
-	WARNINGS: the first parameter is not checked for NULL.  The return value in case of an
-	error is not obviously sensible.
-*/
-long va_list_size(const char* format, va_list args) {
-	int len = 0;
-	len = vsnprintf(NULL, 0, format, args);
-	va_end(args);
-	return len + 2;
-}
-
-
-/**
 	@brief Format a printf-style string into a newly allocated buffer.
 	@param format The format string.  Subsequent parameters, if any, will be
 		formatted and inserted into the resulting string.
-	@return A pointer to the string so created.
+	@return A pointer to the string so created or NULL on error.
 
 	The calling code is responsible for freeing the string.
 */
 char* va_list_to_string(const char* format, ...) {
 
 	long len = 0;
+	char *buf = NULL;
 	va_list args;
 	va_list a_copy;
 
 	va_start(args, format);
 	va_copy(a_copy, args);
+	len = vsnprintf(NULL, 0, format, args);
+	va_end(args);
 
-	len = va_list_size(format, args);
-	char* buf = safe_malloc( len );
-
-	va_start(a_copy, format);
-	vsnprintf(buf, len - 1, format, a_copy);
+	if (len > 0) {
+		len += 1; /* Add 1 for nul. */
+		buf = safe_malloc( len );
+		if (buf) {
+			vsnprintf(buf, len, format, a_copy);
+		}
+	}
 	va_end(a_copy);
 	return buf;
 }
@@ -350,49 +336,51 @@ static int buffer_expand( growing_buffer* gb, size_t total_len ) {
 */
 int osrf_buffer_fadd(growing_buffer* gb, const char* format, ... ) {
 
-        if(!gb || !format) return -1;
+	if(!gb || !format) return -1;
 
-        long len = 0;
-        va_list args;
-        va_list a_copy;
+	int rv = -1;
+	long len = 0;
+	va_list args;
+	va_list a_copy;
 
-        va_copy(a_copy, args);
-
-        va_start(args, format);
-        len = va_list_size(format, args);
-
-        char buf[len];
-        osrf_clearbuf(buf, sizeof(buf));
-
-        va_start(a_copy, format);
-        vsnprintf(buf, len - 1, format, a_copy);
-        va_end(a_copy);
-
-        return osrf_buffer_add(gb, buf);
+	va_start(args, format);
+	va_copy(a_copy, args);
+	len = vsnprintf(NULL, 0, format, args);
+	va_end(args);
+	if (len > 0) {
+		len += 1;
+		char buf[len];
+		osrf_clearbuf(buf, sizeof(buf));
+		vsnprintf(buf, len, format, a_copy);
+		rv = osrf_buffer_add(gb, buf);
+	}
+	va_end(a_copy);
+	return rv;
 }
 
 /* Just repeating this wholesale because varargs is *handwave* unhappy *handwave* about something. */
 int buffer_fadd(growing_buffer* gb, const char* format, ... ) {
 
-        if(!gb || !format) return -1;
+	if(!gb || !format) return -1;
 
-        long len = 0;
-        va_list args;
-        va_list a_copy;
+	int rv = -1;
+	long len = 0;
+	va_list args;
+	va_list a_copy;
 
-        va_copy(a_copy, args);
-
-        va_start(args, format);
-        len = va_list_size(format, args);
-
-        char buf[len];
-        osrf_clearbuf(buf, sizeof(buf));
-
-        va_start(a_copy, format);
-        vsnprintf(buf, len - 1, format, a_copy);
-        va_end(a_copy);
-
-        return osrf_buffer_add(gb, buf);
+	va_start(args, format);
+	va_copy(a_copy, args);
+	len = vsnprintf(NULL, 0, format, args);
+	va_end(args);
+	if (len > 0) {
+		len += 1;
+		char buf[len];
+		osrf_clearbuf(buf, sizeof(buf));
+		vsnprintf(buf, len, format, a_copy);
+		rv = osrf_buffer_add(gb, buf);
+	}
+	va_end(a_copy);
+	return rv;
 }
 
 
