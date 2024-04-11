@@ -238,11 +238,11 @@ char* va_list_to_string(const char* format, ...) {
 	va_list args;
 	va_list a_copy;
 
-	va_copy(a_copy, args);
 	va_start(args, format);
+	va_copy(a_copy, args);
 
-	char* buf = safe_malloc( va_list_size(format, args) );
-	*buf = '\0';
+	len = va_list_size(format, args);
+	char* buf = safe_malloc( len );
 
 	va_start(a_copy, format);
 	vsnprintf(buf, len - 1, format, a_copy);
