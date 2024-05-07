@@ -5,7 +5,7 @@
 # Makefile to install prerequisites for OpenSRF
 #
 # Currently supports Debian (buster/bullseye/bookworm) and Ubuntu
-# (bionic/focal)
+# (jammy/noble)
 #
 # Installs Perl prereqs, libjs with Perl wrapper
 #
@@ -16,7 +16,7 @@
 # 	- or -
 # 	make -f Makefile.install debian-buster
 # 	- or -
-#	make -f Makefile.install ubuntu-focal
+#	make -f Makefile.install ubuntu-noble
 # 	- or -
 #	make -f Makefile.install ubuntu-jammy
 # 	- or -
@@ -158,7 +158,7 @@ debian-buster: generic_debian
 
 generic_debian: install_debs debian_sys_config apache_mpm_prefork_mods apache_perl_mod
 
-ubuntu-focal: generic_ubuntu
+ubuntu-noble: generic_ubuntu
 ubuntu-jammy: generic_ubuntu
 
 generic_ubuntu: install_debs debian_sys_config apache_mpm_prefork_mods apache_perl_mod
