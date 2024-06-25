@@ -13,7 +13,7 @@ Bug fixes include:
   * LP#1999823: Name collision causes apache gateway modules to fail when
     mod_shib is installed 
 
-We would like to thank the following people who contributed to OpenSRF 3.2.3:
+We would like to thank the following people who contributed to OpenSRF 3.2.4:
 
   * Jason Boyer
   * Jason Stephenson
