@@ -1,5 +1,21 @@
-OpenSRF 3.2.3 release notes
-===========================
+OpenSRF 3.2.5
+-------------
+OpenSRF 3.2.5 was released on 26 June 2024. This releases fixes
+two bugs.
+
+Bug fixes include:
+
+  * LP#1953044: Perl services can crash with a "Use of freed value in
+    iteration" error
+
+  * LP#2061159: Potential Buffer Overflow in va_list_to_string utility
+    function
+
+We would like to thank the following people who contributed to OpenSRF 3.2.5:
+
+  * Galen Charlton
+  * Bill Erickson
+  * Jason Stephenson
 
 OpenSRF 3.2.4
 -------------
