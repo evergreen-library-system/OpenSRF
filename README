@@ -69,6 +69,7 @@ Well-tested values for <osname> include:
   * `debian-buster` for Debian 10
   * `ubuntu-focal` for Ubuntu 20.04
   * `ubuntu-jammy` for Ubuntu 22.04
+  * `ubuntu-noble` for Ubuntu 24.04
 
 Patches and suggestions for improvement from users of these distributions,
 or others, are welcome!
@@ -199,8 +200,8 @@ Configure the ejabberd server
 
 [TIP]
 =====
-It is recommended to disable the apparmor profile for ejabberd on *Ubuntu* before
-continuing.  If you are installing on any version of *Ubuntu*, run the following
+It is recommended to disable the apparmor profile for ejabberd on *Ubuntu 22.04* before
+continuing.  If you are installing on *Ubuntu 22.04*, run the following
 commands as the *root* Linux account:
 
 [source,bash]
@@ -257,7 +258,7 @@ hosts:
 mod_legacy_auth: {}
 -----------------------
 +
-(Debian Bullseye / Debian Bookworm / Ubuntu Jammy) Ejabberd 21.x::
+(Debian Bullseye / Debian Bookworm / Ubuntu Jammy / Ubuntu Noble) Ejabberd 21.x/23.10::
 Open `/etc/ejabberd/ejabberd.yml` and make the following
 changes:
   a. Define your public and private domains in the `hosts` directive. For
