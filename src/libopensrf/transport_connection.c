@@ -65,6 +65,7 @@ void transport_con_set_address(transport_con* con, const char* username) {
     buffer_add(buf, ":");
     buffer_add_n(buf, md5, 8);
 
+    free(md5);
     con->address = buffer_release(buf);
 
     osrfLogDebug(OSRF_LOG_MARK, "Connection set address to %s", con->address);

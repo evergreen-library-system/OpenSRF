@@ -129,9 +129,13 @@ transport_message* new_message_from_json(const char* msg_json) {
     // On the wire, it's just part of the message.  We could get
     // rid if this extra json encode/decode step if we treated
     // the body as a JSON object internally.
+    
     const char* body = jsonObjectToJSON(jsonObjectGetKeyConst(json_hash, "body"));
-    if (body == NULL) { body = ""; }
-    new_msg->body = strdup((const char*) body);
+    if (body == NULL) {
+        new_msg->body = strdup(""); // consistency
+    } else {
+        new_msg->body = body;
+    }
 
     jsonObjectFree(json_hash);
 

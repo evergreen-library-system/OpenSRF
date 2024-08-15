@@ -449,6 +449,7 @@ int osrf_system_bootstrap_common(const char* config_file,
 		free(facility);
 		free(actlog);
 		free(logtag);
+		osrfStringArrayFree(arr);
 		return 0;
 	}
 
@@ -471,6 +472,7 @@ int osrf_system_bootstrap_common(const char* config_file,
 	    }
     }
 
+	osrfStringArrayFree(arr);
 	free(actlog);
 	free(facility);
 	free(log_level);

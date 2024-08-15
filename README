@@ -170,9 +170,11 @@ example domains:
 .Example added entries for `/etc/hosts`
 [source, bash]
 ---------------------------------------------------------------------------
-127.0.1.2	public.localhost	public
-127.0.1.3	private.localhost	private
+127.0.0.1 private.localhost public.localhost
 ---------------------------------------------------------------------------
+
+'127.0.0.1' is the default listen address for Redis.  Change the Redis
+config and /etc/hosts if you wish to use a different IP address.
 
 Adjust the system dynamic library path
 --------------------------------------
@@ -193,44 +195,6 @@ ldconfig
 On most other systems, you can add these entries to `/etc/ld.so.conf`, or
 create a file within the `/etc/ld.so.conf.d/` directory, and then run
 `ldconfig` as the *root* Linux account.
-
-Configure the Redis server
------------------------------
-
-
-OpenSRF requires a Redis server.
-
-1. Stop Redis before making any changes to its configuration by issuing the
-   following command as the *root* Linux account:
-+
-.Stopping Redis
-[source, bash]
----------------------------------------------------------------------------
-systemctl stop redis-server
----------------------------------------------------------------------------
-+
-2. Edit the Redis config file.
-+
-Open `/etc/redis/redis.conf` and make the following
-changes:
-  a. Disable persistence by modifying the 'save' variable.
-   example:
-+
-[source, bash]
----------------------------------------------------------------------------
-# Snapshotting can be completely disabled with a single empty string argument
-# as in following example:
-#
-save ""
----------------------------------------------------------------------------
-+
-3. Restart the Redis server to make the changes take effect:
-+
-.Starting Redis
-[source, bash]
----------------------------------------------------------------------------
-systemctl start redis-server
----------------------------------------------------------------------------
 
 Update the OpenSRF configuration files
 --------------------------------------
@@ -296,14 +260,14 @@ The script which creates Redis OpenSRF accounts also applies a password
 to the 'default' Redis account for security.  To access the Redis
 command line with full privileges, use the password for the 'default'
 user from the SYSCONFDIR/redis-accounts.txt file.  For example:
-+
+
 [source,bash]
 ---------------------------------------------------------------------------
 REDISCLI_AUTH=f0d2ebcc-5a52-49e4-a910-a515144b4141 redis-cli
 ---------------------------------------------------------------------------
 
-Starting and stopping OpenSRF services
---------------------------------------
+Starting OpenSRF services
+-------------------------
 
 To start all OpenSRF services with a hostname of `localhost`, issue the
 following command as the *opensrf* Linux account:
@@ -311,14 +275,6 @@ following command as the *opensrf* Linux account:
 [source, bash]
 ---------------------------------------------------------------------------
 osrf_control --localhost --start-all
----------------------------------------------------------------------------
-
-To stop all OpenSRF services with a hostname of `localhost`, issue the
-following command as the *opensrf* Linux account:
-
-[source, bash]
----------------------------------------------------------------------------
-osrf_control --localhost --stop-all
 ---------------------------------------------------------------------------
 
 Testing the default OpenSRF services
@@ -345,6 +301,17 @@ srfsh# request opensrf.math add 2,2
 ---------------------------------------------------------------------------
 +
 You should receive the value `4`.
+
+Stopping OpenSRF Services
+-------------------------
+
+To stop all OpenSRF services with a hostname of `localhost`, issue the
+following command as the *opensrf* Linux account:
+
+[source, bash]
+---------------------------------------------------------------------------
+osrf_control --localhost --stop-all
+---------------------------------------------------------------------------
 
 Websockets installation instructions
 ------------------------------------

@@ -29,3 +29,6 @@ SET comment "set default password last so our logged-in account does not break m
 
 ACL SETUSER default resetpass
 ACL SETUSER default on >@DEFAULT_BUS_PASS@
+
+SET comment "Disable Redis persistence"
+CONFIG SET save ""
