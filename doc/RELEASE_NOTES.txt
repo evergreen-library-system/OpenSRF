@@ -1,3 +1,31 @@
+OpenSRF 3.3.2
+-------------
+OpenSRF 3.3.2 was released on 1 October 2024. This release fixes two
+bugs, adds prerequisite installation on Ubuntu 24.04 Noble Numbat, and
+removes the legacy JSON gateway.
+
+Bug fixes include:
+
+  * LP#1626139: Remove support for the OSRF legacy JSON gateway
+    (/gateway). Sites upgrading from previous versions of OpenSRF and
+    Evergreen will want to follow
+    https://evergreen-ils.org/documentation/release/RELEASE_NOTES_3_12.html#_removal_of_opensrf_legacy_json_gateway[this step from the Evergreen 3.12 release notes].
+
+  * LP#1928339: Return a 404 status response when attempting APIs that
+    do not exist.
+
+  * LP#2047662: Log real client IP address for websockets connections.
+
+  * LP#2054842: Add prerequisite installation on Ubuntu 24.04 (Noble
+    Numbat).
+
+We would like to thank the following people who contributed to OpenSRF 3.3.2:
+
+  * Jason Boyer
+  * Galen Charlton
+  * Bill Erickson
+  * Jason Stephenson
+
 OpenSRF 3.3.1
 -------------
 OpenSRF 3.3.1 was released on 26 June 2024. This releases fixes
