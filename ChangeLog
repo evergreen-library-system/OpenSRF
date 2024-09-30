@@ -1,136 +1,50 @@
-commit 0c5bbf0fc8c40bb2a0c465881f625ca800e885a1
+commit ca674d18b95dc39f9aa0c093b05921564f8050ee
 Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Jun 25 16:06:06 2024 -0400
+Date:   Mon Sep 30 20:25:26 2024 +0000
 
-    Bump up version numbers for 3.2.5
+    Bump version number for 3.2.6
     
     Signed-off-by: Jason Stephenson <jason@sigio.com>
 
 5	5	README
+19	0	doc/RELEASE_NOTES.txt
 2	2	src/perl/lib/OpenSRF.pm
 1	1	version.m4
 
-commit 0bc0b3acd2052425ef29374a0daa7beb875bd3d3
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Jun 25 16:02:14 2024 -0400
-
-    Update release notes for 3.2.5
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-18	2	doc/RELEASE_NOTES.txt
-
-commit 72f35819d89bb1112428e6968f7c8b63e42ea3da
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Jun 25 15:59:27 2024 -0400
-
-    Fix 3.2.4 release notes "typo"
-    
-    Fix version in 3.2.4 contributors line. It was "3.2.3."
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-1	1	doc/RELEASE_NOTES.txt
-
-commit e1374f24dda04cc897672b133b4267ed1f6bf3ed
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Thu Apr 11 11:07:35 2024 -0400
-
-    LP2061159: Perform more va_list related cleanup
-    
-    Remove the va_list_size function that is only used in 3 places and
-    replace it with more idiomatic C code.
-    
-    While removing va_list_size technically breaks ABI, it is not used
-    by Evergreen and is unlikely to have been used by any other application
-    that links to libopensrf. Consequently, the libtool version is left
-    unchanged by this patch.
-    
-    Also make modifications to the utils.c and utils.h library code in
-    libopensrf so that the use of va_start, va_copy, and va_end conforms
-    to the standard.  There are architectures and compilers where the
-    macros must be balanced at the same scope; also, va_start is supposed
-    to be used before va_copy.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-
-1	8	include/opensrf/utils.h
-47	59	src/libopensrf/utils.c
-
-commit a562da29d88ea5127a9415fa915e69349e4faee3
-Author: Jason Stephenson <jason@sigio.com>
-Date:   Thu Apr 11 10:36:22 2024 -0400
-
-    LP2061159: Fix buffer overflow in va_list_to_string
-    
-    Prevent a potential buffer overflow in the va_list_to_string utility
-    function by storing the length of the resulting string and passing
-    that to vsnprintf instead of -1.
-    
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-
-3	3	src/libopensrf/utils.c
-
-commit fc8a40b665d3521b356166facb2e1c23b25243bf
+commit d9ea57d2b871c9266f5a95cc07a4397fc25ae827
 Author: Galen Charlton <gmc@equinoxOLI.org>
-Date:   Thu Dec 2 09:40:45 2021 -0500
+Date:   Thu Dec 28 17:41:08 2023 -0500
 
-    LP#1953044: defer final cleanup of reaped children
+    LP#2047662: prefer real client IP for websocket activity logging
     
-    This patch makes OpenSRF::Server->reap_children() put
-    the objects representing reaped children onto a "zombie list"
-    for later cleanup. Doing this avoids a race condition
-    where ->reap_children(), when invoked via a signal, can destroy
-    a child object out from underneath the loop in ->check_status()
-    that sets up an IO::Select object to check for input from
-    child pipes. When this race condition is triggered, the
-    listener will crash with the following error and attempt
-    to reset itself:
+    This patch grabs the real client IP address (as set by in the
+    X-Forwarded-For header following the stock reverse proxy configs
+    and mapped to the HTTP_X_FORWARDED_FOR environment variable by
+    websocketd). If that header is not available, either because a
+    proxy isn't be used or because X-Forwarded-To isn't being set, revert
+    to REMOTE_ADDR.
     
-      server: died with error Use of freed value in iteration
-      at /usr/lib/x86_64-linux-gnu/perl/5.28/IO/Select.pm line 70.
-    
-    Because the reset logic itself has some problems, this type of
-    failure can result in a service that appears to be active
-    but whose listener thinks it has more active children than
-    is actually the case, degrading (or preventing) responsiveness.
-    In particular, one symptom of this bug is observing the size
-    of the service's backlog queue growing even when it hasn't
-    actually spawned the maximum number of drones it's configured to
-    have.
-    
-    To test
-    -------
-    [1] Fire a lot of requests at an OpenSRF service and check for
-        the error listed above. On Perl 5.24 or later, this will
-        eventually happen.
-    
-        To increase the chances of such an error happening quickly,
-        I found that the following change to opensrf.Slooooooow.wait
-        was enough to trigger the bug in a reasonable amount of
-        time. (Throwing a lot of parallel requests at the service
-        seems to help reduce the waiting time.)
-    
-        @@ -24,7 +24,10 @@ sub wait_for_it {
-            $pause //= 1;
-    
-            $log->info("Holding for $pause seconds...");
-        -    sleep($pause);
-        +    #sleep($pause);
-        +    select(undef, undef, undef, 0.1);
-        +
-        +    if (int(rand(10)) <= 5) { die; }
-            $log->info("Done waiting, time to return.");
-            return [$pause, @_]
-        }
-    
-    [2] Apply the patch and repeat step 1. This time, the error
-        should not occur.
+    This allows better tracing of requests coming through the WebSockets
+    gateway.
     
     Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
+    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+
+4	1	src/websocket-stdio/osrf-websocket-stdio.c
+
+commit 124782eabfa229ca399f24617200a8e023f69bc5
+Author: Bill Erickson <berickxx@gmail.com>
+Date:   Thu Aug 24 10:25:00 2023 -0400
+
+    LP1928339 Gateway returns 404 on not-found service
+    
+    A request like this will now return a 404 status in the response JSON
+    instead of a 200:
+    
+    https://my-server/osrf-gateway-v1?service=open-ils.notfound&method=ghost.like.swayze&param=%22Boo%22
+    
     Signed-off-by: Bill Erickson <berickxx@gmail.com>
     Signed-off-by: Jason Stephenson <jason@sigio.com>
 
-22	1	src/perl/lib/OpenSRF/Server.pm
+5	0	src/gateway/osrf_json_gateway.c
