@@ -19,8 +19,6 @@
 #	make -f Makefile.install ubuntu-noble
 # 	- or -
 #	make -f Makefile.install ubuntu-jammy
-# 	- or -
-# 	make -f Makefile.install fedora
 #
 # ---------------------------------------------------------------------
 
@@ -92,61 +90,6 @@ DEBS =  \
 	zip\
 	zlib1g-dev
 
-FEDORAS = \
-	autoconf \
-	automake \
-	check \
-	check-devel \
-	redis \
-	expat-devel \
-	gcc \
-	gdbm-devel \
-	httpd \
-	httpd-devel \
-	less \
-	libgcrypt-devel \
-	libmemcached \
-	libmemcached-devel \
-	libtool \
-	libxml-libxml-perl \
-	libxml-libxslt-perl \
-	libxml2-devel \
-	libxslt-devel \
-	make \
-	memcached \
-	mod_perl \
-	perl-Cache-Memcached \
-	perl-Class-DBI \
-	perl-Class-DBI-AbstractSearch \
-	perl-Class-DBI-SQLite \
-	perl-DateTime-Format-Builder \
-	perl-DateTime-Format-ISO8601 \
-	perl-DateTime-Format-Mail \
-	perl-DateTime-Set \
-	perl-devel \
-	perl-Error \
-	perl-File-Find-Rule \
-	perl-JSON-XS \
-	perl-libwww-perl \
-	perl-Log-Log4perl \
-	perl-Module-Build \
-	perl-Net-DNS \
-	perl-Net-Server \
-	perl-SQL-Abstract-Limit \
-	perl-Template-Toolkit \
-	perl-Test-Deep \
-	perl-Test-Exception \
-	perl-Test-Pod \
-	perl-Tie-IxHash \
-	perl-UNIVERSAL-require \
-	perl-Unix-Syslog \
-	perl-XML-LibXML \
-	perl-XML-LibXSLT \
-	perl-XML-Simple \
-	psmisc \
-	readline-devel \
-	tar
-
 DEB_APACHE_MODS = \
 	ssl
 
@@ -165,8 +108,6 @@ ubuntu-noble: generic_ubuntu
 ubuntu-jammy: generic_ubuntu
 
 generic_ubuntu: install_debs debian_sys_config apache_mpm_prefork_mods apache_perl_mod
-
-fedora: install_fedora_rpms
 
 # ------------------------------------------------------------------
 
@@ -189,10 +130,5 @@ apache_mpm_prefork_mods:
 # Need to activate mod_perl on some O/S.
 apache_perl_mod:
 	a2enmod perl
-
-# - FEDORA ---------------------------------------------------------
-# Fedora
-install_fedora_rpms:
-	yum -y install $(FEDORAS)
 
 # vim:noet:sw=4:ts=4:
