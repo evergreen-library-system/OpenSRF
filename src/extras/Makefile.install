@@ -16,6 +16,8 @@
 # 	- or -
 # 	make -f Makefile.install debian-buster
 # 	- or -
+# 	make -f Makefile.install debian-trixie
+# 	- or -
 #	make -f Makefile.install ubuntu-noble
 # 	- or -
 #	make -f Makefile.install ubuntu-jammy
@@ -101,6 +103,7 @@ all:
 debian-bookworm: generic_debian
 debian-bullseye: generic_debian
 debian-buster: generic_debian
+debian-trixie: generic_debian
 
 generic_debian: install_debs debian_sys_config apache_mpm_prefork_mods apache_perl_mod
 
