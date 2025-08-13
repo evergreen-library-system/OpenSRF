@@ -64,6 +64,7 @@ make -f src/extras/Makefile.install <osname>
 
 Well-tested values for <osname> include:
 
+  * `debian-trixie` for Debian 13
   * `debian-bookworm` for Debian 12
   * `debian-bullseye` for Debian 11
   * `debian-buster` for Debian 10
