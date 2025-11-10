@@ -337,7 +337,11 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 		osrf_app_session_queue_wait( req->session, 0, NULL );
 		if(req->session->transport_error) {
 			osrfLogError(OSRF_LOG_MARK, "Transport error in recv()");
-			return NULL;
+			osrfMessage *msg = osrf_message_init(STATUS, req->request_id, req->payload->protocol);
+			msg->status_code = OSRF_STATUS_INTERNALSERVERERROR;
+			msg->status_text = strdup("Transport Error");
+			msg->is_exception = 1;
+			return msg;
 		}
 
 		if( req->result != NULL ) { /* if we received any results for this request */
@@ -395,11 +399,15 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 
 	// Timeout exhausted; no messages for the request in question
 	char* paramString = jsonObjectToJSON(req->payload->_params);
-	osrfLogInfo( OSRF_LOG_MARK, "Returning NULL from app_request_recv after timeout: %s %s",
+	osrfLogInfo( OSRF_LOG_MARK, "Returning exception message from app_request_recv after timeout: %s %s",
 		req->payload->method_name, paramString);
 	free(paramString);
+	osrfMessage *msg = osrf_message_init(STATUS, req->request_id, req->payload->protocol);
+	msg->status_code = OSRF_STATUS_TIMEOUT;
+	msg->status_text = strdup("Request Response Timeout");
+	msg->is_exception = 1;
 
-	return NULL;
+	return msg;
 }
 
 // --------------------------------------------------------------------------
