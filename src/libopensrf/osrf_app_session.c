@@ -339,6 +339,7 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 			osrfLogError(OSRF_LOG_MARK, "Transport error in recv()");
 			osrfMessage *msg = osrf_message_init(STATUS, req->request_id, req->payload->protocol);
 			msg->status_code = OSRF_STATUS_INTERNALSERVERERROR;
+			msg->status_name = strdup("Internal Server Error");
 			msg->status_text = strdup("Transport Error");
 			msg->is_exception = 1;
 			return msg;
@@ -362,7 +363,12 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 
 		if(req->session->transport_error) {
 			osrfLogError(OSRF_LOG_MARK, "Transport error in recv()");
-			return NULL;
+			osrfMessage *msg = osrf_message_init(STATUS, req->request_id, req->payload->protocol);
+			msg->status_code = OSRF_STATUS_INTERNALSERVERERROR;
+			msg->status_name = strdup("Internal Server Error");
+			msg->status_text = strdup("Transport Error");
+			msg->is_exception = 1;
+			return msg;
 		}
 
 		if( req->result != NULL ) { /* if we received any results for this request */
@@ -404,7 +410,8 @@ static osrfMessage* _osrf_app_request_recv( osrfAppRequest* req, int timeout ) {
 	free(paramString);
 	osrfMessage *msg = osrf_message_init(STATUS, req->request_id, req->payload->protocol);
 	msg->status_code = OSRF_STATUS_TIMEOUT;
-	msg->status_text = strdup("Request Response Timeout");
+	msg->status_name = strdup("Timeout Error");
+	msg->status_text = strdup("Request Timeout");
 	msg->is_exception = 1;
 
 	return msg;
