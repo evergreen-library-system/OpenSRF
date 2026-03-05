@@ -259,7 +259,7 @@ hosts:
 mod_legacy_auth: {}
 -----------------------
 +
-(Debian Bullseye / Debian Bookworm Debian Trixie / Ubuntu Jammy / Ubuntu Noble) Ejabberd 21.x/23.10::
+(Debian Bullseye / Debian Bookworm / Debian Trixie / Ubuntu Jammy / Ubuntu Noble) Ejabberd 21.x/23.10::
 Open `/etc/ejabberd/ejabberd.yml` and make the following
 changes:
   a. Define your public and private domains in the `hosts` directive. For
