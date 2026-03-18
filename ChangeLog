@@ -1,84 +1,88 @@
-commit 5a38a0eaf66381fbf1a35f4049a21a48b9550591
+commit dfafa897afbbd9eb8f34156f86cbb37db3ece7c6
 Author: Jason Stephenson <jason@sigio.com>
-Date:   Mon Sep 30 19:24:14 2024 +0000
+Date:   Wed Mar 18 10:27:15 2026 -0400
 
-    Bump up version numbers for 3.3.2
+    Bump version numbers for 3.3.3
     
     Signed-off-by: Jason Stephenson <jason@sigio.com>
 
 5	5	README
-28	0	doc/RELEASE_NOTES.txt
+21	0	doc/RELEASE_NOTES.txt
 2	2	src/perl/lib/OpenSRF.pm
 1	1	version.m4
 
-commit 335e6f1bad7ee96d3422dcdb2b1239353235d0a8
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Wed Aug 23 10:55:09 2023 -0400
-
-    LP1626139 Remove OSRFGatewayLegacyJSON support
-    
-    Remove support from the Apache JSON gateway for legacy JSON parsing /
-    stringifying.
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-4	44	src/gateway/osrf_json_gateway.c
-
-commit 0fa43c1a345f1a6873a225cb40e9a2e26017e1f3
-Author: Galen Charlton <gmc@equinoxOLI.org>
-Date:   Thu Dec 28 17:41:08 2023 -0500
-
-    LP#2047662: prefer real client IP for websocket activity logging
-    
-    This patch grabs the real client IP address (as set by in the
-    X-Forwarded-For header following the stock reverse proxy configs
-    and mapped to the HTTP_X_FORWARDED_FOR environment variable by
-    websocketd). If that header is not available, either because a
-    proxy isn't be used or because X-Forwarded-To isn't being set, revert
-    to REMOTE_ADDR.
-    
-    This allows better tracing of requests coming through the WebSockets
-    gateway.
-    
-    Signed-off-by: Galen Charlton <gmc@equinoxOLI.org>
-    Signed-off-by: Jason Boyer <JBoyer@equinoxOLI.org>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-4	1	src/websocket-stdio/osrf-websocket-stdio.c
-
-commit c80b95c351782861312bbc70cd5b52e526c2004a
-Author: Bill Erickson <berickxx@gmail.com>
-Date:   Thu Aug 24 10:25:00 2023 -0400
-
-    LP1928339 Gateway returns 404 on not-found service
-    
-    A request like this will now return a 404 status in the response JSON
-    instead of a 200:
-    
-    https://my-server/osrf-gateway-v1?service=open-ils.notfound&method=ghost.like.swayze&param=%22Boo%22
-    
-    Signed-off-by: Bill Erickson <berickxx@gmail.com>
-    Signed-off-by: Jason Stephenson <jason@sigio.com>
-
-5	0	src/gateway/osrf_json_gateway.c
-
-commit ef827a6457674d4371bf3adf51c5783ebfe5a00a
+commit 58099523eaf80a59bc599cbc62741c5ab5685d34
 Author: Jason Stephenson <jason@sigio.com>
-Date:   Tue Jul 23 15:57:13 2024 -0400
+Date:   Thu Mar 5 09:34:19 2026 -0500
 
-    LP2054842: Add support for Ubuntu 24.04 Noble Numbat
+    LP#2120581: Followup on the followup
     
-    Update Makefile.install prerequisites and README for Ubuntu 24.04
-    Noble Numbat.
-    
-    This back port to the OpenSRF 3.3 series does not remove installation
-    on Ubuntu 20.04 Focal Fossa.  We normally only support 2 active Ubuntu
-    releases at a time.  This branch/commit makes an exception because the
-    release team does not want to force an OpenSRF upgrade for the planned
-    Evergreen 3.14.0 release.  This branch provides a stop gap for that.
+    Add missing slash.
     
     Signed-off-by: Jason Stephenson <jason@sigio.com>
 
-4	3	README
-4	1	src/extras/Makefile.install
+1	1	README
+
+commit f9534f6cdd776c96a7ad4d7c2a5517eb7abdcb3c
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Thu Mar 5 08:35:30 2026 -0500
+
+    LP#2120581: Followup README update
+    
+    Add "Debian Trixie" to the setup instructions for Ejabberd in the
+    README.  This was overlooked during the back port.
+    
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+
+1	1	README
+
+commit c7d6128f4bd786c4ecb8b7719b2b65e3c5215e50
+Author: Chris Sharp <csharp@georgialibraries.org>
+Date:   Wed Aug 13 14:33:50 2025 -0400
+
+    LP#2120581: Add Makefile.install target for debian-trixie
+    
+    Backport Trixie support from main to rel_3_3 for OpenSRF 3.3.3.
+    
+    Signed-off-by: Chris Sharp <csharp@georgialibraries.org>
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+
+1	0	README
+5	2	src/extras/Makefile.install
+
+commit d50656b5d8bbe9b428422fe38b291c5b92d5b320
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Tue Nov 11 16:38:44 2025 -0500
+
+    LP 2130496: Additional error reporting
+    
+    We missed 1 instance of a transport error that could return NULL in
+    the previous commit, so this commit patches that.
+    
+    This commit also adds a status_name to each of the error messages
+    returned by the internal _osrf_app_request_recv function to help
+    clarify what is going on.
+    
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Ken Cox <kenstir@gmail.com>
+
+9	2	src/libopensrf/osrf_app_session.c
+
+commit 6395c86feb6bf44c09492e2d207f28a9099ac2ec
+Author: Jason Stephenson <jason@sigio.com>
+Date:   Mon Nov 10 14:21:47 2025 -0500
+
+    LP 2130496: Return Error message from osrfAppRequestRecv
+    
+    When osrfAppRequestRecv gets a transport or timeout error, an empty
+    message is returned.  This result is not useful to clients.
+    
+    This commit changes the behavior to return a status message relevant
+    to the error.
+    
+    Co-authored-by: Mike Rylander <mrylander@gmail.com>
+    
+    Signed-off-by: Jason Stephenson <jason@sigio.com>
+    Signed-off-by: Ken Cox <kenstir@gmail.com>
+
+11	3	src/libopensrf/osrf_app_session.c
