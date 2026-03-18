@@ -1,3 +1,24 @@
+OpenSRF 3.3.3
+-------------
+OpenSRF 3.3.3 was released on 18 March 2026. This release fixes one
+bug and adds prerequisite installation on Debian 13 Trixie.
+
+Bug fixes include:
+
+  * LP#2120581: Add prerequisite installation for Debian 13 "Trixie."
+
+  * LP#2130496: Improve back end error reporting. Back end transport
+    and timeout errors previously returned an empty message. This
+    update changes that to return a status message indicating that an
+    error has occurred.
+
+We would like to thank the following people who contributed to OpenSRF 3.3.3:
+
+  * Ken Cox
+  * Mike Rylander
+  * Chris Sharp
+  * Jason Stephenson
+
 OpenSRF 3.3.2
 -------------
 OpenSRF 3.3.2 was released on 1 October 2024. This release fixes two
